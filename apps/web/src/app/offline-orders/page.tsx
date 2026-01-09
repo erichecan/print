@@ -71,7 +71,8 @@ type SizeQuantity = {
 
 // PRD v2.0: 产品颜色配置
 type ProductColor = {
-  colorId: string; // 颜色ID
+  groupId: string; // 唯一组ID，用于关联配置 (PRD v2.1)
+  colorId: string; // 颜色D
   colorName: string; // 颜色名称
   availableSizes: string[]; // 可用尺码列表（从配置读取）
   sizes: SizeQuantity[]; // 尺码数量配置
@@ -782,129 +783,94 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   // PRD v2.0: 为产品添加颜色（支持继承选项）
   const addColorToProduct = useCallback((itemId: string, colorId: string, colorName: string, inheritFromPrev: boolean = false) => {
     setFormState((prev) => {
-      const newItems = prev.productItems.map((item) => {
-        if (item.id === itemId) {
-          // 检查颜色是否已存在
-          if (item.colors.some((c) => c.colorId === colorId)) {
-            return item;
+      // 1. 找到目标产品
+      const targetItem = prev.productItems.find(i => i.id === itemId);
+      if (!targetItem) return prev;
+
+      // 2. 生成唯一 Group ID
+      const newGroupId = `${colorId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+
+      // 3. 准备新颜色对象
+      const newColor: ProductColor = {
+        groupId: newGroupId,
+        colorId,
+        colorName,
+        availableSizes: allSizes, // [2026-01-06] 从配置读取尺码列表
+        sizes: [],
+        totalQuantity: 0,
+        totalPrice: 0,
+      };
+
+      // 4. 准备新颜色组配置
+      let initialPositions: OrderItemColorGroup['positions'] = [];
+      let inheritsFromColorId: string | null = null;
+      let initialUnitPrice = 0;
+
+      if (inheritFromPrev && targetItem.colors.length > 0) {
+        const lastColor = targetItem.colors[targetItem.colors.length - 1];
+        const lastColorGroups = prev.colorGroupsByProduct[itemId] || [];
+        // 查找上一颜色的配置组（兼容旧数据用 colorId，新数据用 groupId）
+        const lastGroup = lastColorGroups.find(g =>
+          lastColor.groupId ? g.id === lastColor.groupId : g.colorCode === lastColor.colorId
+        );
+
+        if (lastGroup) {
+          if (lastGroup.positions.length > 0) {
+            initialPositions = lastGroup.positions.map(pos => ({
+              ...pos,
+              designAssetId: pos.designAssetId || null // 不复制文件引用
+            }));
           }
-
-          // 获取上一颜色的positions（如果选择继承）
-          let initialPositions: OrderItemColorGroup['positions'] = [];
-          let inheritsFromColorId: string | null = null;
-
-          if (inheritFromPrev && item.colors.length > 0) {
-            const lastColor = item.colors[item.colors.length - 1];
-            const lastColorGroups = prev.colorGroupsByProduct[itemId] || [];
-            const lastGroup = lastColorGroups.find(g => g.colorCode === lastColor.colorId);
-            if (lastGroup && lastGroup.positions.length > 0) {
-              initialPositions = lastGroup.positions.map(pos => ({
-                ...pos,
-                designAssetId: pos.designAssetId || null // 保留引用，不复制文件
-              }));
-              inheritsFromColorId = lastGroup.id;
-            }
-          }
-
-          const newColor: ProductColor = {
-            colorId,
-            colorName,
-            availableSizes: allSizes, // [2026-01-06] 从配置读取尺码列表
-            sizes: [],
-            totalQuantity: 0,
-            totalPrice: 0,
-          };
-
-          // 同时创建颜色组配置
-          const newColorGroup: OrderItemColorGroup = {
-            id: `${colorId} - ${Date.now()}`,
-            colorCode: colorId,
-            colorName,
-            quantities: {},
-            positions: initialPositions,
-            unitPrice: 0, // 颜色级别的单价
-            inheritsFromColorId
-          };
-
-          return {
-            ...item,
-            colors: [...item.colors, newColor],
-          };
+          inheritsFromColorId = lastGroup.id;
+          initialUnitPrice = lastGroup.unitPrice || 0;
         }
-        return item;
-      });
-
-      // 更新colorGroupsByProduct
-      const item = newItems.find(i => i.id === itemId);
-      if (item) {
-        const lastColor = item.colors[item.colors.length - 1];
-        const newColorGroup: OrderItemColorGroup = {
-          id: `${colorId} - ${Date.now()}`,
-          colorCode: colorId,
-          colorName,
-          quantities: {},
-          positions: inheritFromPrev && item.colors.length > 1
-            ? (() => {
-              const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
-              const prevColor = item.colors[item.colors.length - 2];
-              const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
-              if (prevGroup && prevGroup.positions.length > 0) {
-                return prevGroup.positions.map(pos => ({
-                  ...pos,
-                  designAssetId: pos.designAssetId || null
-                }));
-              }
-              return [];
-            })()
-            : [],
-          unitPrice: inheritFromPrev && item.colors.length > 1
-            ? (() => {
-              const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
-              const prevColor = item.colors[item.colors.length - 2];
-              const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
-              return prevGroup?.unitPrice || 0; // 继承上一颜色的单价
-            })()
-            : 0, // 颜色级别的单价
-          inheritsFromColorId: inheritFromPrev && item.colors.length > 1
-            ? (() => {
-              const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
-              const prevColor = item.colors[item.colors.length - 2];
-              const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
-              return prevGroup?.id || null;
-            })()
-            : null
-        };
-
-        return {
-          ...prev,
-          productItems: newItems,
-          colorGroupsByProduct: {
-            ...prev.colorGroupsByProduct,
-            [itemId]: [
-              ...(prev.colorGroupsByProduct[itemId] || []),
-              newColorGroup
-            ]
-          }
-        };
       }
 
-      return { ...prev, productItems: newItems };
-    });
-  }, []);
+      const newGroup: OrderItemColorGroup = {
+        id: newGroupId,
+        colorCode: colorId,
+        colorName,
+        quantities: {},
+        positions: initialPositions,
+        unitPrice: initialUnitPrice,
+        inheritsFromColorId
+      };
 
-  // PRD v2.0: 删除产品颜色
-  const removeColorFromProduct = useCallback((itemId: string, colorId: string) => {
+      // 5. 更新状态
+      return {
+        ...prev,
+        productItems: prev.productItems.map((item) =>
+          item.id === itemId ? { ...item, colors: [...item.colors, newColor] } : item
+        ),
+        colorGroupsByProduct: {
+          ...prev.colorGroupsByProduct,
+          [itemId]: [
+            ...(prev.colorGroupsByProduct[itemId] || []),
+            newGroup
+          ]
+        }
+      };
+    });
+  }, [allSizes]);
+
+  // PRD v2.0: 删除产品颜色 (Update v2.1: use groupId)
+  const removeColorFromProduct = useCallback((itemId: string, groupId: string) => {
     setFormState((prev) => {
       const newItems = prev.productItems.map((item) => {
         if (item.id === itemId) {
           return {
             ...item,
-            colors: item.colors.filter((c) => c.colorId !== colorId),
+            colors: item.colors.filter((c) => c.groupId !== groupId),
           };
         }
         return item;
       });
-      return { ...prev, productItems: newItems };
+      // 同步删除 colorGroupsByProduct 中的对应组
+      const newColorGroups = { ...prev.colorGroupsByProduct };
+      if (newColorGroups[itemId]) {
+        newColorGroups[itemId] = newColorGroups[itemId].filter(g => g.id !== groupId);
+      }
+      return { ...prev, productItems: newItems, colorGroupsByProduct: newColorGroups };
     });
   }, []);
 
@@ -912,19 +878,19 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const updateSizeQuantityInState = (
     prevState: FormState,
     itemId: string,
-    colorId: string,
+    groupId: string, // Changed from colorId
     size: string,
     quantity: number
   ): FormState => {
     // 从颜色组中获取单价
     const colorGroups = prevState.colorGroupsByProduct[itemId] || [];
-    const colorGroup = colorGroups.find(g => g.colorCode === colorId);
+    const colorGroup = colorGroups.find(g => g.id === groupId);
     const unitPrice = colorGroup?.unitPrice || 0;
 
     const newItems = prevState.productItems.map((item) => {
       if (item.id === itemId) {
         const newColors = item.colors.map((color) => {
-          if (color.colorId === colorId) {
+          if (color.groupId === groupId) {
             const additionalFee = sizeFeeMap[size] || 0;
             const existingSizeIndex = color.sizes.findIndex((s) => s.size === size);
             const newSizeQuantity: SizeQuantity = {
@@ -938,9 +904,18 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             let newSizes: SizeQuantity[];
             if (existingSizeIndex >= 0) {
               newSizes = [...color.sizes];
-              newSizes[existingSizeIndex] = newSizeQuantity;
+              if (quantity > 0) {
+                newSizes[existingSizeIndex] = newSizeQuantity;
+              } else {
+                // 如果数量为0，移除该尺码
+                newSizes = newSizes.filter((_, idx) => idx !== existingSizeIndex);
+              }
             } else {
-              newSizes = [...color.sizes, newSizeQuantity];
+              if (quantity > 0) {
+                newSizes = [...color.sizes, newSizeQuantity];
+              } else {
+                newSizes = color.sizes;
+              }
             }
 
             // 计算该颜色的总数量和总价
@@ -970,13 +945,37 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
       }
       return item;
     });
-    return { ...prevState, productItems: newItems };
+    // 同步更新 colorGroupsByProduct 中的 quantities
+    const newColorGroups = { ...prevState.colorGroupsByProduct };
+    const itemGroups = newColorGroups[itemId] || [];
+    const groupIndex = itemGroups.findIndex(g => g.id === groupId);
+
+    if (groupIndex >= 0) {
+      const group = itemGroups[groupIndex];
+      const newQuantities = { ...group.quantities };
+      if (quantity > 0) {
+        newQuantities[size] = quantity;
+      } else {
+        delete newQuantities[size];
+      }
+
+      const newGroup = { ...group, quantities: newQuantities };
+      const newItemGroups = [...itemGroups];
+      newItemGroups[groupIndex] = newGroup;
+      newColorGroups[itemId] = newItemGroups;
+    }
+
+    return {
+      ...prevState,
+      productItems: newItems,
+      colorGroupsByProduct: newColorGroups
+    };
   };
 
   // 更新尺码数量（单价从颜色组获取）
   const updateSizeQuantity = useCallback(
-    (itemId: string, colorId: string, size: string, quantity: number) => {
-      setFormState((prev) => updateSizeQuantityInState(prev, itemId, colorId, size, quantity));
+    (itemId: string, groupId: string, size: string, quantity: number) => { // Changed colorId to groupId
+      setFormState((prev) => updateSizeQuantityInState(prev, itemId, groupId, size, quantity));
     },
     [sizeFeeMap]
   );
@@ -1050,8 +1049,9 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
     if (formState.productItems.length === 1) {
       return formState.productItems[0].productName;
     }
-    // 多个产品时，返回产品列表
-    return formState.productItems.map(item => item.productName).join(', ');
+    // 多个产品时，返回产品列表（去重）
+    const names = formState.productItems.map(item => item.productName);
+    return Array.from(new Set(names)).join(', ');
   }, [formState.productItems]);
 
   // 文件列表摘要
@@ -1616,20 +1616,21 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                     }
                   }}
                   className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  disabled={availableProducts.length === 0}
+                  disabled={false} // PRD v2.1: 允许重复选择产品
                 >
                   <option value="">
-                    {availableProducts.length === 0
-                      ? (orderConfig.products.length === 0
-                        ? '暂无产品，请先在管理员后台添加产品'
-                        : '所有产品已添加')
+                    {orderConfig.products.length === 0
+                      ? '暂无产品，请先在管理员后台添加产品'
                       : t('selectProductType') || '选择产品'}
                   </option>
-                  {availableProducts.map((product) => (
-                    <option key={product.id} value={product.id}>
-                      {product.name} {product.isCustomerOwned ? '(客户自带服装)' : ''}
-                    </option>
-                  ))}
+                  {orderConfig.products.map((product) => {
+                    const isAdded = addedProductIds.includes(product.id);
+                    return (
+                      <option key={product.id} value={product.id}>
+                        {product.name} {product.isCustomerOwned ? '(客户自带服装)' : ''} {isAdded ? (t('alreadyAdded') || '(已添加)') : ''}
+                      </option>
+                    );
+                  })}
                 </select>
                 {availableProducts.length === 0 && orderConfig.products.length > 0 && (
                   <p className="mt-2 text-xs text-gray-600">
@@ -1736,9 +1737,13 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
                     {/* 使用整合的颜色组卡片组件 */}
                     {item.colors.map((color, colorIndex) => {
+                      // 兼容旧数据：如果没有 groupId，使用 colorId
+                      const effectiveGroupId = color.groupId || color.colorId;
+
                       // 获取或创建颜色组配置
                       const colorGroups = formState.colorGroupsByProduct[item.id] || [];
-                      const colorGroup = colorGroups.find(g => g.colorCode === color.colorId);
+                      // PRD v2.1: 使用 effecitveGroupId 查找配置
+                      const colorGroup = colorGroups.find(g => g.id === effectiveGroupId);
 
                       // 如果颜色组不存在，从ProductColor转换
                       let group: OrderItemColorGroup;
@@ -1751,32 +1756,22 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                           quantities[sizeQty.size] = sizeQty.quantity;
                         });
 
+                        // 容错逻辑：如果没有找到 group，使用 effectiveGroupId
                         group = {
-                          id: `${color.colorId}-${Date.now()}`,
+                          id: effectiveGroupId,
                           colorCode: color.colorId,
                           colorName: color.colorName,
                           quantities,
                           positions: [],
-                          unitPrice: 0, // 颜色级别的单价
+                          unitPrice: 0,
                           inheritsFromColorId: null
                         };
-
-                        // 初始化颜色组到state
-                        setFormState(prev => ({
-                          ...prev,
-                          colorGroupsByProduct: {
-                            ...prev.colorGroupsByProduct,
-                            [item.id]: [
-                              ...(prev.colorGroupsByProduct[item.id] || []),
-                              group
-                            ]
-                          }
-                        }));
                       }
 
                       // 获取上一颜色组（用于继承）
                       const previousGroup = colorIndex > 0
-                        ? colorGroups.find(g => g.colorCode === item.colors[colorIndex - 1].colorId)
+                        // 同样使用 fallback 逻辑查找上一组
+                        ? colorGroups.find(g => g.id === (item.colors[colorIndex - 1].groupId || item.colors[colorIndex - 1].colorId))
                         : null;
 
                       // 获取颜色的hex值
@@ -1785,7 +1780,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
                       return (
                         <ColorGroupCardIntegrated
-                          key={color.colorId}
+                          key={effectiveGroupId} // Use stable effectiveGroupId as key
                           group={group}
                           productItemId={item.productId}
                           availableSizes={color.availableSizes.length > 0 ? color.availableSizes : allSizes}
@@ -1800,15 +1795,22 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                             // 更新颜色组配置
                             setFormState(prev => {
                               const groups = prev.colorGroupsByProduct[item.id] || [];
-                              const newGroups = groups.map(g =>
-                                g.id === updated.id ? updated : g
-                              );
+                              const existingIndex = groups.findIndex(g => g.id === updated.id);
+
+                              let newGroups: OrderItemColorGroup[];
+                              if (existingIndex >= 0) {
+                                newGroups = [...groups];
+                                newGroups[existingIndex] = updated;
+                              } else {
+                                // 容错：如果找不到组（可能是render时临时创建的），则添加它
+                                newGroups = [...groups, updated];
+                              }
 
                               // 同步更新ProductColor的sizes
                               const newItems = prev.productItems.map(productItem => {
                                 if (productItem.id === item.id) {
                                   const newColors = productItem.colors.map(c => {
-                                    if (c.colorId === color.colorId) {
+                                    if (c.groupId === color.groupId) { // Check groupId
                                       // 从quantities更新sizes
                                       // 从颜色组获取单价
                                       const colorGroup = updated;
@@ -1861,10 +1863,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                               };
                             });
                           }}
-                          onRemove={() => removeColorFromProduct(item.id, color.colorId)}
+                          onRemove={() => removeColorFromProduct(item.id, color.groupId)} // Pass groupId
                           onCopyToOthers={() => {
                             // 复制到其他颜色的逻辑
-                            const otherColors = item.colors.filter(c => c.colorId !== color.colorId);
+                            const otherColors = item.colors.filter(c => c.groupId !== color.groupId); // Check groupId
                             if (otherColors.length === 0) {
                               alert('没有其他颜色可以复制到');
                               return;
@@ -1874,7 +1876,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                             // if (confirm(`确定要将"${color.colorName}"的配置复制到其他 ${otherColors.length} 个颜色吗？`)) {
                             setFormState(prev => {
                               const groups = prev.colorGroupsByProduct[item.id] || [];
-                              const sourceGroup = groups.find(g => g.colorCode === color.colorId);
+                              const sourceGroup = groups.find(g => g.id === color.groupId);
                               if (!sourceGroup) return prev;
 
                               const sourcePositions = sourceGroup.positions.map(pos => ({
@@ -1883,7 +1885,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                               }));
 
                               const newGroups = groups.map(g => {
-                                if (otherColors.some(c => c.colorId === g.colorCode)) {
+                                if (otherColors.some(c => c.groupId === g.id)) {
                                   return {
                                     ...g,
                                     positions: sourcePositions,
@@ -1905,7 +1907,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                           }}
                           previousGroup={previousGroup}
                           onSizeQuantityChange={(size, quantity) => {
-                            updateSizeQuantity(item.id, color.colorId, size, quantity);
+                            // 使用 groupId
+                            updateSizeQuantity(item.id, color.groupId, size, quantity);
                           }}
                         />
                       );
@@ -1918,7 +1921,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                         onChange={(e) => {
                           if (e.target.value) {
                             const color = availableColors.find(c => c.id === e.target.value);
-                            if (color && !item.colors.some(c => c.colorId === color.id)) {
+                            if (color) { // Removed !item.colors.some(c => c.colorId === color.id) check to allow duplicates
                               // 如果是第一个颜色，直接添加，不显示弹窗
                               // 去掉第一个颜色的提示弹窗
                               const isFirstColor = item.colors.length === 0;

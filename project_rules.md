@@ -23,3 +23,19 @@
 
 ### 3.1 部署验证
 - **规则**: 在执行重大部署（尤其是核心业务逻辑变更）后，必须通过控制台打印或版本接口确认前端/后端运行的是最新代码。
+
+## 4. React 开发反模式 (React Anti-Patterns)
+
+### 4.1 禁止在渲染阶段更新 State (No State Updates During Render)
+- **Error**: "Too many re-renders. React limits the number of renders to prevent an infinite loop."
+- **Root Cause**: Calling `setState` (or `setFormState`) directly inside the component body or inside a `map` loop, which triggers a re-render immediately, causing an infinite loop.
+- **Rule**:
+    - **Never** call state setters synchronously in the render path.
+    - If you strictly need to initialize state based on props/render logic, do it in `useEffect` (carefully) or ensure the data is prepared *before* render (e.g., in the event handler that added the item).
+    - **Self-Healing Fallbacks**: If you need "fault tolerance" for missing data during render, use a local variable derived from default values for **display only**. Do NOT try to "fix" the state by writing back to it during the render.
+
+### 4.2 数据展示去重 (Data Display Deduplication)
+- **Problem**: When allowing duplicate items (e.g., duplicate products or colors), naively joining their names (e.g., `names.join(', ')`) results in redundant strings like "Product A, Product A".
+- **Rule**:
+    - **Deduplicate before Display**: When aggregating names or labels for a summary view, ALWAYS use `Array.from(new Set(list))` to remove duplicates first.
+    - **Example**: `uniqueNames.join(', ')` instead of `allNames.join(', ')`.
