@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { adminShippingApi, ShippingSettingsPayload } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 const DEFAULT_SHIPPING: ShippingSettingsPayload = {
     standard: {
@@ -24,6 +25,7 @@ const DEFAULT_SHIPPING: ShippingSettingsPayload = {
 };
 
 export default function ShippingSettingsPage() {
+    const { t } = useAdminI18n();
     const { data, isLoading, error, mutate } = useSWR('admin-shipping-settings', adminShippingApi.get);
     const [settings, setSettings] = useState<ShippingSettingsPayload>(DEFAULT_SHIPPING);
     const [saving, setSaving] = useState(false);
@@ -54,50 +56,50 @@ export default function ShippingSettingsPage() {
             setSaving(true);
             await adminShippingApi.update(settings);
             await mutate();
-            alert('Shipping settings saved successfully');
+            alert(t('saveShippingSuccess') || 'Shipping settings saved successfully');
         } catch (apiError) {
-            alert((apiError as Error).message || 'Failed to save settings');
+            alert((apiError as Error).message || t('saveError') || 'Failed to save settings');
         } finally {
             setSaving(false);
         }
     };
 
     if (isLoading && !data) {
-        return <div className="admin-table-placeholder">Loading settings...</div>;
+        return <div className="admin-table-placeholder">{t('loading')}</div>;
     }
 
     if (error) {
-        return <div className="admin-table-placeholder error">Failed to load settings.</div>;
+        return <div className="admin-table-placeholder error">{t('failedDashboard')}</div>;
     }
 
     return (
         <div style={{ marginTop: 24, maxWidth: 840 }}>
             <div className="admin-page-header">
                 <div>
-                    <h1>Shipping Configuration</h1>
-                    <p className="text-muted">Manage shipping rates and estimated delivery times</p>
+                    <h1>{t('shippingConfigTitle')}</h1>
+                    <p className="text-muted">{t('shippingConfigSubtitle')}</p>
                 </div>
             </div>
 
             <form className="admin-form" onSubmit={handleSubmit}>
                 <div style={{ marginBottom: 32 }}>
-                    <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: 10, marginBottom: 20 }}>Standard Shipping</h3>
+                    <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: 10, marginBottom: 20 }}>{t('standardShipping')}</h3>
 
                     <div className="admin-form-group">
-                        <label>Enable Standard Shipping</label>
+                        <label>{t('enableStandard')}</label>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                             <input
                                 type="checkbox"
                                 checked={settings.standard.enabled}
                                 onChange={(e) => handleStandardChange('enabled', e.target.checked)}
                             />
-                            <span>Enabled</span>
+                            <span>{t('enabled')}</span>
                         </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                         <div className="admin-form-group">
-                            <label>Cost (CAD)</label>
+                            <label>{t('costCAD')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -106,7 +108,7 @@ export default function ShippingSettingsPage() {
                             />
                         </div>
                         <div className="admin-form-group">
-                            <label>Cost (USD)</label>
+                            <label>{t('costUSD')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -115,7 +117,7 @@ export default function ShippingSettingsPage() {
                             />
                         </div>
                         <div className="admin-form-group">
-                            <label>Cost (Intl)</label>
+                            <label>{t('costIntl')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -127,7 +129,7 @@ export default function ShippingSettingsPage() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                         <div className="admin-form-group">
-                            <label>Estimated Days (CA)</label>
+                            <label>{t('estDaysCA')}</label>
                             <input
                                 type="number"
                                 value={settings.standard.estimatedDaysCA}
@@ -135,7 +137,7 @@ export default function ShippingSettingsPage() {
                             />
                         </div>
                         <div className="admin-form-group">
-                            <label>Estimated Days (US)</label>
+                            <label>{t('estDaysUS')}</label>
                             <input
                                 type="number"
                                 value={settings.standard.estimatedDaysUS}
@@ -146,23 +148,23 @@ export default function ShippingSettingsPage() {
                 </div>
 
                 <div style={{ marginBottom: 32 }}>
-                    <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: 10, marginBottom: 20 }}>Express Shipping</h3>
+                    <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: 10, marginBottom: 20 }}>{t('expressShipping')}</h3>
 
                     <div className="admin-form-group">
-                        <label>Enable Express Shipping</label>
+                        <label>{t('enableExpress')}</label>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                             <input
                                 type="checkbox"
                                 checked={settings.express.enabled}
                                 onChange={(e) => handleExpressChange('enabled', e.target.checked)}
                             />
-                            <span>Enabled</span>
+                            <span>{t('enabled')}</span>
                         </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                         <div className="admin-form-group">
-                            <label>Cost (CAD)</label>
+                            <label>{t('costCAD')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -171,7 +173,7 @@ export default function ShippingSettingsPage() {
                             />
                         </div>
                         <div className="admin-form-group">
-                            <label>Cost (USD)</label>
+                            <label>{t('costUSD')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -180,7 +182,7 @@ export default function ShippingSettingsPage() {
                             />
                         </div>
                         <div className="admin-form-group">
-                            <label>Cost (Intl)</label>
+                            <label>{t('costIntl')}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -192,7 +194,7 @@ export default function ShippingSettingsPage() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                         <div className="admin-form-group">
-                            <label>Estimated Days (CA)</label>
+                            <label>{t('estDaysCA')}</label>
                             <input
                                 type="number"
                                 value={settings.express.estimatedDaysCA}
@@ -200,7 +202,7 @@ export default function ShippingSettingsPage() {
                             />
                         </div>
                         <div className="admin-form-group">
-                            <label>Estimated Days (US)</label>
+                            <label>{t('estDaysUS')}</label>
                             <input
                                 type="number"
                                 value={settings.express.estimatedDaysUS}
@@ -211,7 +213,7 @@ export default function ShippingSettingsPage() {
                 </div>
 
                 <button type="submit" className="btn" disabled={saving}>
-                    {saving ? 'Saving...' : 'Save Settings'}
+                    {saving ? t('saving') : t('saveSettings')}
                 </button>
             </form>
         </div>

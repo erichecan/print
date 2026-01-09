@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import useSWR, { mutate } from 'swr';
 import { adminUsersApi, AdminUserSummary } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext';
 import { CreateUserModal } from '@/components/admin/CreateUserModal';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
@@ -27,6 +28,7 @@ const remoteDefaults: RemoteFilters = {
 };
 
 export default function AdminUsersPage() {
+  const { t } = useAdminI18n();
   const [filters, setFilters] = useState<RemoteFilters>(remoteDefaults);
   const [searchDraft, setSearchDraft] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -141,8 +143,8 @@ export default function AdminUsersPage() {
     <div style={{ marginTop: 24 }}>
       <div className="admin-page-header">
         <div>
-          <h1 data-i18n="users">Users</h1>
-          <p className="text-muted">Manage customer and admin accounts</p>
+          <h1 data-i18n="users">{t('usersTitle')}</h1>
+          <p className="text-muted">{t('manageUsers')}</p>
         </div>
         <div className="admin-btn-group">
           <button
@@ -150,7 +152,7 @@ export default function AdminUsersPage() {
             className="btn btn--primary"
             onClick={() => setIsCreateModalOpen(true)}
           >
-            + Invite User
+            {t('inviteUser')}
           </button>
         </div>
       </div>
@@ -166,36 +168,36 @@ export default function AdminUsersPage() {
         <form className="admin-search admin-search-form" onSubmit={handleSearchSubmit}>
           <input
             type="text"
-            placeholder="Search users..."
+            placeholder={t('searchUsersPlaceholder')}
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
           />
           <button type="submit" className="btn btn--outline btn--xs">
-            Search
+            {t('search')}
           </button>
         </form>
         <select value={filters.role} onChange={(event) => handleRoleChange(event.target.value as RemoteFilters['role'])}>
-          <option value="all">All Roles</option>
-          <option value="customer">Customer</option>
-          <option value="admin">Admin</option>
+          <option value="all">{t('allRoles')}</option>
+          <option value="customer">{t('roleCustomer')}</option>
+          <option value="admin">{t('roleAdmin')}</option>
         </select>
         <select
           value={filters.status}
           onChange={(event) => handleStatusChange(event.target.value as RemoteFilters['status'])}
         >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all">{t('statusFilterAll')}</option>
+          <option value="active">{t('statusLabelActive')}</option>
+          <option value="inactive">{t('statusFilterInactive')}</option>
         </select>
       </div>
 
       <div className="admin-table-wrapper" data-api="/api/admin/users" data-method="GET">
         {isLoading ? (
-          <div className="admin-table-placeholder">Loading users…</div>
+          <div className="admin-table-placeholder">{t('loading')}</div>
         ) : error ? (
-          <div className="admin-table-placeholder error">Failed to load users.</div>
+          <div className="admin-table-placeholder error">{t('failedToLoadOrders')}</div>
         ) : users.length === 0 ? (
-          <div className="admin-table-placeholder">No users match current filters.</div>
+          <div className="admin-table-placeholder">{t('noRowsFound')}</div>
         ) : (
           <table className="admin-table">
             <thead>
@@ -203,14 +205,14 @@ export default function AdminUsersPage() {
                 <th>
                   <input type="checkbox" checked={allSelected} onChange={(event) => toggleAll(event.target.checked)} />
                 </th>
-                <th data-i18n="user">User</th>
-                <th data-i18n="email">Email</th>
-                <th data-i18n="role">Role</th>
-                <th data-i18n="orders">Orders</th>
-                <th>Total Spent</th>
-                <th data-i18n="status">Status</th>
-                <th data-i18n="joined">Joined</th>
-                <th data-i18n="actions">Actions</th>
+                <th data-i18n="user">{t('user')}</th>
+                <th data-i18n="email">{t('email')}</th>
+                <th data-i18n="role">{t('role')}</th>
+                <th data-i18n="orders">{t('orders')}</th>
+                <th data-i18n="totalSpent">{t('totalSpent')}</th>
+                <th data-i18n="status">{t('status')}</th>
+                <th data-i18n="joined">{t('joined')}</th>
+                <th data-i18n="actions">{t('actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -242,14 +244,14 @@ export default function AdminUsersPage() {
                   <td>{formatCurrency(user.totalSpent)}</td>
                   <td>
                     <span className={user.emailVerified ? 'badge badge-success' : 'badge badge-pending'}>
-                      {user.emailVerified ? 'Active' : 'Invite Pending'}
+                      {user.emailVerified ? 'Active' : t('invitePending')}
                     </span>
                   </td>
                   <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <Link href={`/admin/users/${user.id}`} className="btn-icon btn--outline" style={{ fontSize: 12 }}>
-                        View
+                        {t('viewDetails')}
                       </Link>
                       <button
                         type="button"
@@ -260,7 +262,7 @@ export default function AdminUsersPage() {
                         className="btn-icon btn--outline text-danger"
                         style={{ fontSize: 12, color: '#ef4444' }}
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </div>
                   </td>
@@ -274,7 +276,7 @@ export default function AdminUsersPage() {
       {pagination && (
         <div className="admin-pagination">
           <button type="button" disabled={!canPrev} onClick={() => canPrev && goToPage(filters.page - 1)}>
-            Previous
+            {t('paginationPrevious')}
           </button>
           {Array.from({ length: totalPages }).map((_, index) => {
             const pageNumber = index + 1;
@@ -290,7 +292,7 @@ export default function AdminUsersPage() {
             );
           })}
           <button type="button" disabled={!canNext} onClick={() => canNext && goToPage(filters.page + 1)}>
-            Next
+            {t('paginationNext')}
           </button>
         </div>
       )}
@@ -299,18 +301,18 @@ export default function AdminUsersPage() {
         isDeleting={isDeleting}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDeleteUser}
-        title="Delete User"
+        title={t('deleteUser')}
         itemName={userToDelete?.fullName || userToDelete?.email}
-        description="Are you sure you want to delete this user? This action cannot be undone."
+        description={t('deleteUserConfirm')}
       />
       <DeleteConfirmationModal
         isOpen={isBulkDeleteModalOpen}
         isDeleting={isDeleting}
         onClose={() => setIsBulkDeleteModalOpen(false)}
         onConfirm={executeBulkDelete}
-        title="Delete Selected Users"
-        description={`Are you sure you want to delete ${selectedIds.size} selected users? This action cannot be undone.`}
-        confirmLabel={`Delete ${selectedIds.size} Users`}
+        title={t('deleteSelectedUsers')}
+        description={t('deleteSelectedUsersConfirm', { count: selectedIds.size })}
+        confirmLabel={t('deleteUsersButton', { count: selectedIds.size })}
       />
     </div>
   );

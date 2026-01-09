@@ -1669,6 +1669,10 @@ export const adminProductsApi = {
   },
   deleteImage: (productId: string, imageId: string) =>
     api(`/admin/products/${productId}/images/${imageId}`, { method: 'DELETE' }),
+  activate: (id: string) => api(`/admin/products/${id}/activate`, { method: 'PATCH' }),
+  deactivate: (id: string) => api(`/admin/products/${id}/deactivate`, { method: 'PATCH' }),
+  bulkUpdateStatus: (ids: string[], status: string) => api('/admin/products/batch/status', { method: 'PATCH', body: { ids, status } }),
+  bulkDelete: (ids: string[]) => api('/admin/products/batch/delete', { method: 'POST', body: { ids } }),
 };
 
 export interface AdminUserSummary {
@@ -2219,10 +2223,20 @@ export interface ContentConfig {
   footer?: FooterConfig;
 }
 
+export interface ColorMappingPayload {
+  id: string;
+  productColor: string;
+  values: string[];
+  images: string[];
+}
+
 export const adminSettingsApi = {
   getSite: () => api<{ data: SiteSettingsPayload }>('/admin/settings/site'),
   updateSite: (data: SiteSettingsPayload) =>
     api<{ data: SiteSettingsPayload }>('/admin/settings/site', { method: 'PUT', body: data }),
+  getColorMappings: () => api<{ data: ColorMappingPayload[] }>('/admin/settings/color-mappings'),
+  updateColorMappings: (mappings: ColorMappingPayload[]) => api('/admin/settings/color-mappings', { method: 'PUT', body: { mappings } }),
+  deleteColorMapping: (id: string) => api(`/admin/settings/color-mappings/${id}`, { method: 'DELETE' }),
 };
 
 export interface ShippingRate {
@@ -3704,4 +3718,7 @@ export const unifiedOrdersApi = {
   },
 };
 
-export default api;
+
+// Website Content Types
+// End of file
+

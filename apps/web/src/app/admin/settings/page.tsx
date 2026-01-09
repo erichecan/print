@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { adminSettingsApi, SiteSettingsPayload, adminProductionTemplatesApi, ProductionTemplate, adminOfflineOrdersApi, OfflineOrderStage } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 const DEFAULT_SETTINGS: SiteSettingsPayload = {
   siteName: 'suvernire plus',
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: SiteSettingsPayload = {
 };
 
 export default function AdminSettingsPage() {
+  const { t } = useAdminI18n();
   const { data, isLoading, error, mutate } = useSWR('admin-site-settings', adminSettingsApi.getSite);
   const [settings, setSettings] = useState<SiteSettingsPayload>(DEFAULT_SETTINGS);
   const [saving, setSaving] = useState(false);
@@ -131,7 +133,7 @@ export default function AdminSettingsPage() {
     setOfflineStages((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [field]: value };
-// Ensure legacy "label" field is also updated for compatibility
+      // Ensure legacy "label" field is also updated for compatibility
       if (field === 'labelEn' || field === 'labelZh') {
         const stage = next[index];
         next[index].label = stage.labelZh || stage.labelEn || stage.label;
@@ -165,29 +167,29 @@ export default function AdminSettingsPage() {
     }
   };
 
-// CMS 内容管理已移至独立的 /admin/content-manager 页面
+  // CMS 内容管理已移至独立的 /admin/content-manager 页面
 
   if (isLoading && !data) {
-    return <div className="admin-table-placeholder">Loading settings…</div>;
+    return <div className="admin-table-placeholder">{t('loading')}</div>;
   }
 
   if (error) {
-    return <div className="admin-table-placeholder error">Failed to load settings.</div>;
+    return <div className="admin-table-placeholder error">{t('failedDashboard')}</div>;
   }
 
   return (
     <div style={{ marginTop: 24, maxWidth: 840 }}>
       <div className="admin-page-header">
         <div>
-          <h1 data-i18n="settings">Settings</h1>
-          <p className="text-muted">Configure storefront, payments, and review workflow</p>
+          <h1 data-i18n="settings">{t('settingsTitle')}</h1>
+          <p className="text-muted">{t('settingsSubtitle')}</p>
         </div>
       </div>
 
       <div className="admin-form" style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>Offline Workflow Stages</h3>
-          <span className="text-muted" style={{ fontSize: 13 }}>Global stages for Kanban Board</span>
+          <h3 style={{ margin: 0, fontSize: 18 }}>{t('offlineWorkflowStages')}</h3>
+          <span className="text-muted" style={{ fontSize: 13 }}>{t('offlineWorkflowSubtitle')}</span>
         </div>
         {offlineStageLoading && !offlineStages.length && <div className="admin-table-placeholder">Loading stages…</div>}
         {offlineStageError && <div className="admin-table-placeholder error">Failed to load offline workflow stages.</div>}
@@ -305,21 +307,21 @@ export default function AdminSettingsPage() {
       </div>
 
       <form className="admin-form" onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-        <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Site Settings</h3>
+        <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>{t('settingsTitle')}</h3>
         <div className="admin-form-group">
-          <label>Site Name</label>
+          <label>{t('siteName')}</label>
           <input type="text" value={settings.siteName} onChange={(event) => handleChange('siteName', event.target.value)} />
         </div>
         <div className="admin-form-group">
-          <label>Contact Email</label>
+          <label>{t('contactEmail')}</label>
           <input type="email" value={settings.contactEmail} onChange={(event) => handleChange('contactEmail', event.target.value)} />
         </div>
         <div className="admin-form-group">
-          <label>Phone Number</label>
+          <label>{t('contactPhone')}</label>
           <input type="tel" value={settings.contactPhone} onChange={(event) => handleChange('contactPhone', event.target.value)} />
         </div>
         <div className="admin-form-group">
-          <label>Default Currency</label>
+          <label>{t('defaultCurrency')}</label>
           <select value={settings.currency} onChange={(event) => handleChange('currency', event.target.value)}>
             <option value="USD">USD ($)</option>
             <option value="EUR">EUR (€)</option>
@@ -327,7 +329,7 @@ export default function AdminSettingsPage() {
           </select>
         </div>
         <div className="admin-form-group">
-          <label>Default Shipping Provider</label>
+          <label>{t('shippingProvider')}</label>
           <select value={settings.shippingProvider} onChange={(event) => handleChange('shippingProvider', event.target.value)}>
             <option value="UPS">UPS</option>
             <option value="FedEx">FedEx</option>
@@ -336,14 +338,14 @@ export default function AdminSettingsPage() {
           </select>
         </div>
         <button type="submit" className="btn" disabled={saving}>
-          {saving ? 'Saving…' : 'Save Settings'}
+          {saving ? t('saving') : t('saveSettings')}
         </button>
       </form>
 
       <div className="admin-form" style={{ marginBottom: 24 }}>
-        <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Payment Integration</h3>
+        <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>{t('paymentIntegration')}</h3>
         <div className="admin-form-group">
-          <label>Payment Gateway</label>
+          <label>{t('paymentGateway')}</label>
           <select value={settings.paymentGateway} onChange={(event) => handleChange('paymentGateway', event.target.value)}>
             <option value="Stripe">Stripe</option>
             <option value="PayPal">PayPal</option>
@@ -351,65 +353,65 @@ export default function AdminSettingsPage() {
           </select>
         </div>
         <div className="admin-form-group">
-          <label>Test Mode</label>
+          <label>{t('testMode')}</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
               type="checkbox"
               checked={settings.testMode}
               onChange={(event) => handleChange('testMode', event.target.checked)}
             />
-            <span>Enable test/sandbox mode</span>
+            <span>{t('testModeDesc')}</span>
           </div>
         </div>
         <button type="button" className="btn" disabled>
-          API Keys managed via environment variables
+          {t('apiKeyManaged')}
         </button>
       </div>
 
       <div className="admin-form" style={{ marginBottom: 24 }}>
-        <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Design Review Settings</h3>
+        <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>{t('designReviewSettings')}</h3>
         <div className="admin-form-group">
-          <label>Auto-approve designs</label>
+          <label>{t('autoApproveDesigns')}</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
               type="checkbox"
               checked={settings.autoApproveDesigns}
               onChange={(event) => handleChange('autoApproveDesigns', event.target.checked)}
             />
-            <span>Automatically approve designs without review</span>
+            <span>{t('autoApproveDesignsDesc')}</span>
           </div>
         </div>
         <div className="admin-form-group">
-          <label>Copyright Check</label>
+          <label>{t('copyrightCheck')}</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
               type="checkbox"
               checked={settings.copyrightCheck}
               onChange={(event) => handleChange('copyrightCheck', event.target.checked)}
             />
-            <span>Enable automatic copyright detection</span>
+            <span>{t('copyrightCheckDesc')}</span>
           </div>
         </div>
         <div className="admin-form-group">
-          <label>Review Notification Email</label>
+          <label>{t('reviewEmail')}</label>
           <input type="email" value={settings.reviewEmail} onChange={(event) => handleChange('reviewEmail', event.target.value)} />
         </div>
         <button type="button" className="btn btn--outline" disabled={saving}>
-          {saving ? 'Saving…' : 'Save Review Settings'}
+          {saving ? t('saving') : t('saveReviewSettings')}
         </button>
       </div>
 
       <div className="admin-form" style={{ border: '2px solid #EF4444', background: 'rgba(239,68,68,0.05)' }}>
-        <h3 style={{ margin: '0 0 20px', fontSize: 18, color: '#EF4444' }}>Danger Zone</h3>
+        <h3 style={{ margin: '0 0 20px', fontSize: 18, color: '#EF4444' }}>{t('dangerZone')}</h3>
         <div style={{ display: 'grid', gap: 12 }}>
           <button className="btn" style={{ background: '#EF4444', borderColor: '#EF4444' }} disabled>
-            Clear All Cache
+            {t('clearCache')}
           </button>
           <button className="btn" style={{ background: '#EF4444', borderColor: '#EF4444' }} disabled>
-            Reset Database
+            {t('resetDatabase')}
           </button>
           <button className="btn" style={{ background: '#EF4444', borderColor: '#EF4444' }} disabled>
-            Delete All Test Data
+            {t('deleteTestData')}
           </button>
         </div>
       </div>

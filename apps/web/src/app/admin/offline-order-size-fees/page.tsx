@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import { adminOfflineOrdersApi, OfflineOrderSizeFee } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 interface SizeFeeEditState {
   id: string | null;
@@ -19,6 +20,7 @@ interface SizeFeeEditState {
 }
 
 export default function OfflineOrderSizeFeesPage() {
+  const { t } = useAdminI18n();
   const [sizeFees, setSizeFees] = useState<OfflineOrderSizeFee[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -50,10 +52,10 @@ export default function OfflineOrderSizeFeesPage() {
       setLoading(false);
     }
     if (fetchError) {
-      setError(fetchError.message || '加载失败');
+      setError(fetchError.message || t('failedProducts')); // Reuse general failed message or add specific
       setLoading(false);
     }
-  }, [data, fetchError]);
+  }, [data, fetchError, t]);
 
   const handleStartEdit = (sizeFee: OfflineOrderSizeFee) => {
     setEditingId(sizeFee.id || null);
@@ -94,13 +96,13 @@ export default function OfflineOrderSizeFeesPage() {
       setEditingId(null);
       mutate();
     } catch (err: any) {
-      setError(err.message || '更新失败');
+      setError(err.message || t('saveError'));
     }
   };
 
   const handleCreate = async () => {
     if (!editForm.size.trim()) {
-      setError('尺码名称不能为空');
+      setError(t('sizeNameRequired'));
       return;
     }
 
@@ -124,12 +126,12 @@ export default function OfflineOrderSizeFeesPage() {
       });
       mutate();
     } catch (err: any) {
-      setError(err.message || '创建失败');
+      setError(err.message || t('createError'));
     }
   };
 
   const handleDelete = async (id: string, size: string) => {
-    if (!confirm(`确定要删除尺码 "${size}" 吗？`)) {
+    if (!confirm(t('deleteSizeConfirm').replace('{size}', size))) {
       return;
     }
 
@@ -138,7 +140,7 @@ export default function OfflineOrderSizeFeesPage() {
       await adminOfflineOrdersApi.deleteSizeFee(id);
       mutate();
     } catch (err: any) {
-      setError(err.message || '删除失败');
+      setError(err.message || t('deleteError'));
     }
   };
 
@@ -159,7 +161,7 @@ export default function OfflineOrderSizeFeesPage() {
   if (loading) {
     return (
       <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-        <div>加载中...</div>
+        <div>{t('loading')}</div>
       </div>
     );
   }
@@ -168,10 +170,10 @@ export default function OfflineOrderSizeFeesPage() {
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-          线下订单尺码费用配置
+          {t('sizeFeesTitle')}
         </h1>
         <p style={{ color: '#6b7280' }}>
-          管理所有尺码的名称、类型、费用和显示顺序
+          {t('sizeFeesSubtitle')}
         </p>
       </div>
 
@@ -214,7 +216,7 @@ export default function OfflineOrderSizeFeesPage() {
             fontWeight: '500',
           }}
         >
-          + 添加新尺码
+          {t('addSizeFee')}
         </button>
 
         <select
@@ -226,10 +228,10 @@ export default function OfflineOrderSizeFeesPage() {
             border: '1px solid #d1d5db',
           }}
         >
-          <option value="All">所有类型</option>
-          <option value="Youth">Youth（童装）</option>
-          <option value="Adult">Adult（成人）</option>
-          <option value="Other">Other（其他）</option>
+          <option value="All">{t('filterAllTypes')}</option>
+          <option value="Youth">{t('filterYouth')}</option>
+          <option value="Adult">{t('filterAdult')}</option>
+          <option value="Other">{t('filterOther')}</option>
         </select>
 
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -238,7 +240,7 @@ export default function OfflineOrderSizeFeesPage() {
             checked={showInactive}
             onChange={(e) => setShowInactive(e.target.checked)}
           />
-          <span>显示已停用</span>
+          <span>{t('showInactive')}</span>
         </label>
       </div>
 
@@ -253,17 +255,17 @@ export default function OfflineOrderSizeFeesPage() {
             borderRadius: '0.5rem',
           }}
         >
-          <h3 style={{ marginBottom: '1rem', fontWeight: '600' }}>添加新尺码</h3>
+          <h3 style={{ marginBottom: '1rem', fontWeight: '600' }}>{t('addSizeTitle')}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                尺码名称 *
+                {t('sizeNameLabel')} *
               </label>
               <input
                 type="text"
                 value={editForm.size}
                 onChange={(e) => setEditForm({ ...editForm, size: e.target.value })}
-                placeholder="例如: 6XL"
+                placeholder="e.g. 6XL"
                 style={{
                   width: '100%',
                   padding: '0.5rem',
@@ -274,7 +276,7 @@ export default function OfflineOrderSizeFeesPage() {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                类型
+                {t('sizeTypeLabel')}
               </label>
               <select
                 value={editForm.sizeType}
@@ -286,14 +288,14 @@ export default function OfflineOrderSizeFeesPage() {
                   border: '1px solid #d1d5db',
                 }}
               >
-                <option value="Adult">Adult（成人）</option>
-                <option value="Youth">Youth（童装）</option>
-                <option value="Other">Other（其他）</option>
+                <option value="Adult">{t('filterAdult')}</option>
+                <option value="Youth">{t('filterYouth')}</option>
+                <option value="Other">{t('filterOther')}</option>
               </select>
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                额外费用 (CAD)
+                {t('additionalFeeLabel')}
               </label>
               <input
                 type="number"
@@ -311,7 +313,7 @@ export default function OfflineOrderSizeFeesPage() {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                显示顺序
+                {t('displayOrderLabel')}
               </label>
               <input
                 type="number"
@@ -334,7 +336,7 @@ export default function OfflineOrderSizeFeesPage() {
                 checked={editForm.isActive}
                 onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
               />
-              <span>启用</span>
+              <span>{t('activeLabel')}</span>
             </label>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -349,7 +351,7 @@ export default function OfflineOrderSizeFeesPage() {
                 cursor: 'pointer',
               }}
             >
-              创建
+              {t('createButton')}
             </button>
             <button
               onClick={() => {
@@ -371,7 +373,7 @@ export default function OfflineOrderSizeFeesPage() {
                 cursor: 'pointer',
               }}
             >
-              取消
+              {t('cancelButton')}
             </button>
           </div>
         </div>
@@ -382,19 +384,19 @@ export default function OfflineOrderSizeFeesPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '0.5rem', overflow: 'hidden' }}>
           <thead>
             <tr style={{ backgroundColor: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
-              <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>尺码</th>
-              <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>类型</th>
-              <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>额外费用 (CAD)</th>
-              <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>显示顺序</th>
-              <th style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '600' }}>状态</th>
-              <th style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600' }}>操作</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>{t('sizeColumn')}</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>{t('typeColumn')}</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>{t('feeColumn')}</th>
+              <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>{t('orderColumn')}</th>
+              <th style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '600' }}>{t('statusLabel')}</th>
+              <th style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600' }}>{t('actionsLabel')}</th>
             </tr>
           </thead>
           <tbody>
             {filteredSizeFees.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-                  没有找到尺码配置
+                  {t('noSizeFeesFound')}
                 </td>
               </tr>
             ) : (
@@ -436,9 +438,9 @@ export default function OfflineOrderSizeFeesPage() {
                             border: '1px solid #d1d5db',
                           }}
                         >
-                          <option value="Adult">Adult</option>
-                          <option value="Youth">Youth</option>
-                          <option value="Other">Other</option>
+                          <option value="Adult">{t('filterAdult')}</option>
+                          <option value="Youth">{t('filterYouth')}</option>
+                          <option value="Other">{t('filterOther')}</option>
                         </select>
                       ) : (
                         <span>{sf.sizeType || 'Adult'}</span>
@@ -498,7 +500,7 @@ export default function OfflineOrderSizeFeesPage() {
                             fontSize: '0.875rem',
                           }}
                         >
-                          {sf.isActive ? '启用' : '停用'}
+                          {sf.isActive ? t('activeStatus') : t('inactiveStatus')}
                         </span>
                       )}
                     </td>
@@ -516,7 +518,7 @@ export default function OfflineOrderSizeFeesPage() {
                               cursor: 'pointer',
                             }}
                           >
-                            保存
+                            {t('saveButton')}
                           </button>
                           <button
                             onClick={handleCancelEdit}
@@ -528,7 +530,7 @@ export default function OfflineOrderSizeFeesPage() {
                               cursor: 'pointer',
                             }}
                           >
-                            取消
+                            {t('cancelButton')}
                           </button>
                         </div>
                       ) : (
@@ -543,7 +545,7 @@ export default function OfflineOrderSizeFeesPage() {
                               cursor: 'pointer',
                             }}
                           >
-                            编辑
+                            {t('editButton')}
                           </button>
                           {sf.id && (
                             <button
@@ -557,7 +559,7 @@ export default function OfflineOrderSizeFeesPage() {
                                 cursor: 'pointer',
                               }}
                             >
-                              删除
+                              {t('deleteButton')}
                             </button>
                           )}
                         </div>

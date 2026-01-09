@@ -194,7 +194,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         if (isNetworkError) {
           // 网络错误：可能是后端服务器崩溃或重启，不要立即跳转，给用户提示
           console.error('[AdminShell] Network error checking auth:', errorMessage);
-          setAuthMessage('无法连接到服务器，请稍后重试。如果问题持续，请检查后端服务是否正常运行。');
+          setAuthMessage(t('networkError'));
           // 延迟重试而不是立即跳转
           setTimeout(() => {
             if (mounted) {

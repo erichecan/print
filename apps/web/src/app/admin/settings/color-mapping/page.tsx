@@ -1,226 +1,150 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ProductColor } from '@/lib/product-data';
-import { getDefaultProductBaseImages } from '@/lib/customink-images';
-import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import useSWR from 'swr';
+import { adminSettingsApi, ColorMappingPayload } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 export default function ColorMappingPage() {
-    const [colors, setColors] = useState<ProductColor[]>([]);
+    const { t } = useAdminI18n();
+    const { data, isLoading, error, mutate } = useSWR('admin-color-mappings', adminSettingsApi.getColorMappings);
+    const [mappings, setMappings] = useState<ColorMappingPayload[]>([]);
     const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState('');
-    const [showTopBtn, setShowTopBtn] = useState(false);
-    const [deleteModal, setDeleteModal] = useState<{ id: string, name: string } | null>(null);
-    const [deleting, setDeleting] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    // Initialize from API
     useEffect(() => {
-        const fetchColors = async () => {
-            try {
-                const res = await fetch('/api/proxy/product-color-images', { cache: 'no-store' });
-                if (!res.ok) throw new Error('Failed to fetch colors');
-                const data = await res.json();
-                setColors(data.data || []);
-            } catch (error) {
-                console.error('Error fetching colors:', error);
-            }
-        };
-        fetchColors();
+        if (data?.data) {
+            setMappings(data.data);
+        }
+    }, [data]);
 
-        const handleScroll = () => {
-            if (window.scrollY > 300) {
-                setShowTopBtn(true);
-            } else {
-                setShowTopBtn(false);
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    const scrollToTop = () => {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth',
-        });
-    };
-
-    const handleHexChange = (index: number, newHex: string) => {
-        const updated = [...colors];
-        updated[index] = { ...updated[index], hex: newHex };
-        setColors(updated);
+    const handleHexChange = (id: string, index: number, value: string) => {
+        setMappings(prev => prev.map(m => {
+            if (m.id !== id) return m;
+            const newValues = [...m.values];
+            newValues[index] = value;
+            return { ...m, values: newValues };
+        }));
     };
 
     const handleSave = async () => {
-        setSaving(true);
-        setMessage('');
         try {
-            // Only Update HEX mapping
-            const res = await fetch('/api/proxy/product-color-images/update-mapping', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ colors }),
-            });
-
-            if (!res.ok) throw new Error('Failed to update mapping file');
-
-            setMessage('Successfully saved settings! Reloading...');
-
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-
-        } catch (err: any) {
+            setSaving(true);
+            await adminSettingsApi.updateColorMappings(mappings);
+            await mutate(); // Refresh source of truth
+            alert(t('successfullySaved') || 'Successfully saved settings!');
+        } catch (err) {
             console.error(err);
-            setMessage('Error: ' + err.message);
+            alert(t('saveError') || 'Failed to save settings');
         } finally {
             setSaving(false);
         }
     };
 
-    const handleDeleteClick = (id: string | undefined, name: string) => {
-        if (!id) return;
-        setDeleteModal({ id, name });
-    };
-
-    const confirmDelete = async () => {
-        if (!deleteModal) return;
-        const { id, name } = deleteModal;
-        setDeleting(true);
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        const mappingToDelete = mappings.find(m => m.id === deleteId);
+        if (!mappingToDelete) return;
 
         try {
-            const res = await fetch(`/api/proxy/product-color-images/${id}`, {
-                method: 'DELETE',
-            });
-
-            if (!res.ok) throw new Error('Failed to delete mapping');
-
-            setMessage(`Successfully deleted ${name}`);
-            setColors(colors.filter(c => c.id !== id));
-            setDeleteModal(null);
-        } catch (err: any) {
+            setSaving(true);
+            await adminSettingsApi.deleteColorMapping(deleteId);
+            setDeleteId(null);
+            await mutate();
+            alert((t('successfullyDeleted') || 'Successfully deleted {name}').replace('{name}', mappingToDelete.productColor));
+        } catch (err) {
             console.error(err);
-            setMessage('Error: ' + err.message);
+            alert(t('deleteError') || 'Failed to delete mapping');
         } finally {
-            setDeleting(false);
+            setSaving(false);
         }
     };
 
-    return (
-        <div className="p-8 max-w-full mx-auto bg-gray-50 min-h-screen relative">
-            <div className="flex justify-between items-center mb-6 sticky top-0 bg-gray-50 py-4 z-10 border-b shadow-sm px-4 -mx-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Product Color & Image Editor</h1>
-                    <p className="text-gray-500 text-sm">Review scraped images and adjust hex codes.</p>
-                </div>
-                <div className="flex gap-4 items-center">
-                    {message && (
-                        <div className={`px-4 py-2 rounded shadow-sm text-sm font-medium ${message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                            {message}
-                        </div>
-                    )}
-                    <button
-                        onClick={handleSave}
-                        className="px-8 py-3 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 disabled:opacity-50 font-bold transition-all transform hover:scale-105 active:scale-95"
-                        disabled={saving}
-                    >
-                        {saving ? 'Saving...' : 'Save Hex Changes'}
-                    </button>
-                </div>
-            </div>
+    if (isLoading) return <div className="admin-table-placeholder">{t('loading')}</div>;
+    if (error) return <div className="admin-table-placeholder error">{t('failedDashboard')}</div>;
 
-            <div className="overflow-hidden bg-white shadow-xl rounded-2xl border border-gray-100">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50/50">
+    const viewLabels = [t('viewFront'), t('viewBack'), t('viewLeftSleeve'), t('viewRightSleeve')];
+
+    return (
+        <div className="admin-page">
+            <header className="admin-page-header">
+                <div>
+                    <h1>{t('colorMappingTitle')}</h1>
+                    <p className="text-muted">{t('colorMappingSubtitle')}</p>
+                </div>
+                <button
+                    onClick={handleSave}
+                    className="btn btn--primary"
+                    disabled={saving}
+                >
+                    {saving ? t('saving') : t('saveHexChanges')}
+                </button>
+            </header>
+
+            <div className="admin-table-container">
+                <table className="admin-table">
+                    <thead>
                         <tr>
-                            <th className="px-6 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest w-12">#</th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase w-48">Product Color</th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase w-64">Values</th>
-                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Product Images (4 Views)</th>
-                            <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase w-24">Actions</th>
+                            <th data-i18n="productColorColumn">{t('productColorColumn')}</th>
+                            <th data-i18n="valuesColumn">{t('valuesColumn')}</th>
+                            <th data-i18n="productImagesColumn">{t('productImagesColumn')}</th>
+                            <th className="text-right" data-i18n="actionsColumn">{t('actionsColumn')}</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                        {colors.map((color, index) => (
-                            <tr key={`${color.name}-${index}`} className="hover:bg-blue-50/30 transition-colors group">
-                                <td className="px-6 py-6 whitespace-nowrap text-sm text-gray-300 font-mono">{index + 1}</td>
-                                <td className="px-6 py-6 whitespace-nowrap">
-                                    <div className="text-sm font-black text-slate-800">{color.name}</div>
-                                    {color.externalColorId && (
-                                        <div className="text-[10px] text-gray-400 font-mono mt-1">ID: {color.externalColorId}</div>
-                                    )}
-                                </td>
-                                <td className="px-6 py-6 whitespace-nowrap">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex flex-col items-center gap-1">
-                                            <input
-                                                type="color"
-                                                value={color.hex}
-                                                onChange={(e) => handleHexChange(index, e.target.value)}
-                                                className="h-10 w-10 p-0.5 border border-gray-200 rounded-lg bg-white cursor-pointer shadow-sm hover:ring-2 ring-indigo-500 transition-all"
-                                            />
-                                            <span className="text-[10px] text-gray-400 font-mono">{color.hex}</span>
-                                        </div>
-                                        <input
-                                            type="text"
-                                            value={color.hex}
-                                            onChange={(e) => handleHexChange(index, e.target.value)}
-                                            className="border border-gray-200 rounded-lg px-3 py-2 w-28 font-mono text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none uppercase"
-                                        />
+                    <tbody>
+                        {mappings.map((mapping) => (
+                            <tr key={mapping.id}>
+                                <td className="align-top">
+                                    <div className="font-bold mb-1">{mapping.productColor}</div>
+                                    <div className="text-xs text-muted" title={mapping.id}>
+                                        <span data-i18n="idLabel">{t('idLabel')}</span>: {mapping.id.substring(0, 8)}...
                                     </div>
                                 </td>
-                                <td className="px-6 py-6">
+                                <td className="align-top">
+                                    <div className="flex flex-col gap-2">
+                                        {mapping.values.map((hex, index) => (
+                                            <div key={index} className="flex items-center gap-2">
+                                                <div
+                                                    className="w-6 h-6 rounded border shadow-sm"
+                                                    style={{ backgroundColor: hex }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={hex}
+                                                    onChange={(e) => handleHexChange(mapping.id, index, e.target.value)}
+                                                    className="font-mono text-sm px-2 py-1 border rounded w-24"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </td>
+                                <td>
                                     <div className="grid grid-cols-4 gap-4">
-                                        {(['front', 'back', 'left_sleeve', 'right_sleeve'] as const).map(view => {
-                                            // Map underscore (DB) to hyphen (Helper)
-                                            const helperKey = view.replace('_', '-') as 'front' | 'back' | 'left-sleeve' | 'right-sleeve';
-
-                                            // 1. Try Scraped Data (DB)
-                                            const scrapedUrl = color.imageUrls?.[view];
-
-                                            // 2. Try Helper Default (Local/Hardcoded)
-                                            const defaultUrl = getDefaultProductBaseImages(color.name)[helperKey];
-
-                                            const currentUrl = scrapedUrl || defaultUrl;
-
-                                            return (
-                                                <div key={view} className="flex flex-col gap-2 group/item">
-                                                    <div className="relative aspect-square bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden group-hover/item:border-indigo-200 transition-all">
-                                                        <div className="absolute top-2 left-2 z-10">
-                                                            <span className="px-2 py-0.5 bg-slate-100/90 backdrop-blur-sm text-slate-500 text-[9px] font-black uppercase rounded text-center border border-slate-200 shadow-sm">
-                                                                {view.replace('_', ' ')}
-                                                            </span>
-                                                        </div>
-                                                        <a href={currentUrl} target="_blank" rel="noreferrer" className="block w-full h-full cursor-zoom-in">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                            <img
-                                                                src={currentUrl}
-                                                                alt={`${color.name} - ${view}`}
-                                                                className="w-full h-full object-contain p-2 hover:scale-110 transition-transform duration-300"
-                                                                loading="lazy"
-                                                            />
-                                                        </a>
-                                                    </div>
+                                        {mapping.images.map((url, i) => (
+                                            <div key={i} className="text-center">
+                                                <div className="border rounded p-1 bg-gray-50 mb-1">
+                                                    <Image
+                                                        src={url}
+                                                        alt={`${mapping.productColor} - View ${i + 1}`}
+                                                        width={100}
+                                                        height={100}
+                                                        className="object-contain mx-auto"
+                                                    />
                                                 </div>
-                                            );
-                                        })}
+                                                <span className="text-xs text-muted">{viewLabels[i] || `View ${i + 1}`}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </td>
-                                <td className="px-6 py-6 whitespace-nowrap text-right text-sm font-medium">
+                                <td className="text-right align-top">
                                     <button
-                                        onClick={() => handleDeleteClick(color.id, color.name)}
-                                        className="text-red-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50"
-                                        title="Delete Mapping"
+                                        onClick={() => setDeleteId(mapping.id)}
+                                        className="btn btn--outline btn--danger btn--xs"
+                                        data-i18n="delete"
+                                        disabled={saving}
                                     >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                                        </svg>
+                                        {t('delete')}
                                     </button>
                                 </td>
                             </tr>
@@ -229,27 +153,20 @@ export default function ColorMappingPage() {
                 </table>
             </div>
 
-            <DeleteConfirmationModal
-                isOpen={!!deleteModal}
-                isDeleting={deleting}
-                onClose={() => setDeleteModal(null)}
-                onConfirm={confirmDelete}
-                title="Confirm Deletion"
-                itemName={deleteModal?.name}
-                description={`Are you sure you want to delete the mapping for ${deleteModal?.name}? This action cannot be undone.`}
-            />
-
-            {/* Back to Top Button */}
-            {showTopBtn && (
-                <button
-                    onClick={scrollToTop}
-                    className="fixed bottom-8 right-8 p-4 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-700 transition-all transform hover:scale-110 active:scale-95 z-50 flex items-center justify-center group"
-                    aria-label="Back to top"
-                >
-                    <svg className="w-6 h-6 group-hover:-translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
-                    </svg>
-                </button>
+            {/* Delete Confirmation Modal */}
+            {deleteId && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>{t('deleteMappingTitle')}</h3>
+                        <p>{(t('deleteMappingConfirm') || 'Confirm delete for {name}').replace('{name}', mappings.find(m => m.id === deleteId)?.productColor || 'this item')}</p>
+                        <div className="modal-actions">
+                            <button className="btn btn--outline" onClick={() => setDeleteId(null)} disabled={saving}>{t('cancel')}</button>
+                            <button className="btn btn--danger" onClick={handleDelete} disabled={saving}>
+                                {saving ? t('saving') : t('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
