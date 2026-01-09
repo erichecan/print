@@ -941,7 +941,6 @@ export default function SalesOrdersPage() {
                             <button
                               type="button"
                               className="sales-orders-detail-btn-small"
-                              style={{ backgroundColor: '#64748b' }}
                               onClick={() => window.open(`/offline-orders/sales/orders/${order.id}?print=true`, '_blank')}
                               title={t('btnPrint')}
                             >

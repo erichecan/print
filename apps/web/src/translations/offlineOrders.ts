@@ -79,6 +79,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     tagRush: 'RUSH',
     btnDetail: 'Detail',
     btnDelete: 'Delete',
+    btnPrint: 'Print',
 
     // Config Management
     colorManagement: 'Color Management',
@@ -465,6 +466,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     tagRush: '加急',
     btnDetail: '详情',
     btnDelete: '删除',
+    btnPrint: '打印',
 
     // Config Management
     colorManagement: '颜色管理',
