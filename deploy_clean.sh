@@ -74,6 +74,15 @@ docker build --platform linux/amd64 \
 echo "⬆️ Pushing Frontend Image..."
 docker push $IMAGE_URL
 
+# Clearing env vars first to avoid conflicts if needed, but since we are deploying a new revision with set-env-vars, 
+# if the type conflict persists, we might need a separate update command. 
+# However, `gcloud run deploy` with --clear-env-vars AND --set-env-vars for THE SAME KEY is tricky.
+# Let's try to just remove the clear-env-vars flag and handle the type change by manually ensuring
+# the user deletes the old variable if they changed types, OR, actually, let's use the --clear-env-vars in a PRE-STEP.
+
+echo "🧹 Ensuring environment is clean..."
+gcloud run services update $SERVICE_NAME --platform managed --region $REGION --clear-env-vars NEXT_PUBLIC_API_URL --project $PROJECT_ID || true
+
 echo "🚀 Deploying Frontend Service (No Traffic)..."
 gcloud run deploy $SERVICE_NAME \
   --image $IMAGE_URL \
@@ -83,15 +92,6 @@ gcloud run deploy $SERVICE_NAME \
   --set-env-vars="NEXT_PUBLIC_API_URL=${BACKEND_URL}/api" \
   --set-secrets NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest \
   --project $PROJECT_ID
-
-# Clearing env vars first to avoid conflicts if needed, but since we are deploying a new revision with set-env-vars, 
-# if the type conflict persists, we might need a separate update command. 
-# However, `gcloud run deploy` with --clear-env-vars AND --set-env-vars for THE SAME KEY is tricky.
-# Let's try to just remove the clear-env-vars flag and handle the type change by manually ensuring
-# the user deletes the old variable if they changed types, OR, actually, let's use the --clear-env-vars in a PRE-STEP.
-
-echo "🧹 Ensuring environment is clean..."
-gcloud run services update $SERVICE_NAME --platform managed --region $REGION --clear-env-vars NEXT_PUBLIC_API_URL --project $PROJECT_ID || true
 
 
 # ==========================================
