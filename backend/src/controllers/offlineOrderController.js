@@ -11,6 +11,7 @@ const {
 } = require('../services/offlineWorkflowService');
 const { uploadBufferToGcs } = require('../utils/gcsStorage');
 const { InternalServerError } = require('../utils/errors');
+const settingService = require('../services/settingService');
 
 
 const parseBoolean = (value) => {
@@ -1388,26 +1389,27 @@ exports.getOrderConfig = async (req, res, next) => {
       products = [];
     }
 
-    // 尝试获取颜色列表
+    // 尝试获取颜色列表 (使用 site.colorMappings 设置)
     try {
-      logger.info('[getOrderConfig] Querying offline_order_colors...');
-      // 检查 prisma 对象是否可用
-      if (!prisma || !prisma.offline_order_colors) {
-        logger.error('[getOrderConfig] prisma.offline_order_colors is not available');
-        throw new Error('Prisma Client model offline_order_colors is not available');
-      }
-      colors = await prisma.offline_order_colors.findMany({
-        orderBy: { name: 'asc' },
-      });
-      logger.info(`[getOrderConfig] Found ${colors.length} colors`);
+      logger.info('[getOrderConfig] Fetching site.colorMappings setting...');
+      // 获取设置值，默认为空数组
+      const colorMappings = await settingService.getSettingValue('site.colorMappings', []);
+
+      // 映射到前端期望的格式 (id, name, hexCode)
+      // 注意：site.colorMappings 中的格式是 { id, name, hex, ... }
+      // 前端 offlineOrders/page.tsx 期望 hexCode 字段 (line 1457 in original file: hexCode: c.hex_code)
+      // 而数据库 offline_order_colors 字段为 hex_code
+      // 我们统一映射为 hex_code 以匹配下方的 response mapping
+      colors = colorMappings.map(c => ({
+        id: c.id,
+        name: c.name,
+        hex_code: c.hex, // Map 'hex' from setting to 'hex_code' expected by response mapper
+        ...c
+      }));
+
+      logger.info(`[getOrderConfig] Found ${colors.length} colors from settings`);
     } catch (error) {
-      logger.error('[getOrderConfig] Error querying offline_order_colors:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-        prismaAvailable: !!prisma,
-        modelAvailable: !!(prisma && prisma.offline_order_colors),
-      });
+      logger.error('[getOrderConfig] Error fetching site.colorMappings:', error);
       colors = [];
     }
 
