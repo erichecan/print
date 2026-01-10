@@ -75,6 +75,10 @@ echo "⬆️ Pushing Frontend Image..."
 docker push $IMAGE_URL
 
 echo "🚀 Deploying Frontend Service (No Traffic)..."
+gcloud run deploy $SERVICE_NAME \
+  --image $IMAGE_URL \
+  --region $REGION \
+  --platform managed \
   --allow-unauthenticated \
   --set-env-vars="NEXT_PUBLIC_API_URL=${BACKEND_URL}/api" \
   --set-secrets NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest \
