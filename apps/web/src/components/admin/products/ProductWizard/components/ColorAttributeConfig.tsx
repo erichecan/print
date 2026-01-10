@@ -151,6 +151,39 @@ export function ColorAttributeConfig({
     onColorsChange(newColors);
   };
 
+  /* New State for URL Input */
+  const [activeUrlInputIndex, setActiveUrlInputIndex] = useState<number | null>(null);
+  const [tempUrl, setTempUrl] = useState('');
+
+  const handleAddUrlClick = (index: number) => {
+    setActiveUrlInputIndex(index);
+    setTempUrl('');
+  };
+
+  const handleConfirmUrl = (index: number) => {
+    if (!tempUrl.trim()) return;
+
+    // Simple validation (can be improved)
+    if (!tempUrl.match(/^https?:\/\/.+/)) {
+      alert('请输入有效的图片链接 (http:// 或 https://)');
+      return;
+    }
+
+    const newColors = [...colors];
+    newColors[index].images = [
+      ...newColors[index].images,
+      { url: tempUrl },
+    ];
+    onColorsChange(newColors);
+    setActiveUrlInputIndex(null);
+    setTempUrl('');
+  };
+
+  const handleCancelUrl = () => {
+    setActiveUrlInputIndex(null);
+    setTempUrl('');
+  };
+
   return (
     <div className="color-attribute-config">
       <div className="color-attribute-config__header">
@@ -318,12 +351,61 @@ export function ColorAttributeConfig({
                           </button>
                         </div>
                       ))}
-                      <div
-                        className="variant-image-upload-btn"
-                        onClick={() => fileInputRefs.current[index]?.click()}
-                      >
-                        <span>+ 上传图片</span>
-                      </div>
+
+                      {/* Add Buttons or Input Form */}
+                      {activeUrlInputIndex === index ? (
+                        <div className="url-input-container">
+                          <input
+                            type="text"
+                            value={tempUrl}
+                            onChange={(e) => setTempUrl(e.target.value)}
+                            placeholder="https://..."
+                            className="url-input"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleConfirmUrl(index);
+                              if (e.key === 'Escape') handleCancelUrl();
+                            }}
+                          />
+                          <div className="url-input-actions">
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmUrl(index)}
+                              className="url-action-btn confirm"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelUrl}
+                              className="url-action-btn cancel"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {/* File Upload Button */}
+                          <div
+                            className="variant-image-upload-btn"
+                            onClick={() => fileInputRefs.current[index]?.click()}
+                            title="上传本地图片"
+                          >
+                            <span>+ 上传</span>
+                          </div>
+
+                          {/* URL Button */}
+                          <div
+                            className="variant-image-upload-btn url-btn"
+                            onClick={() => handleAddUrlClick(index)}
+                            title="添加网络图片链接"
+                          >
+                            <span>🔗 链接</span>
+                          </div>
+                        </>
+                      )}
+
                       <input
                         ref={(el) => { fileInputRefs.current[index] = el; }}
                         type="file"
@@ -340,7 +422,7 @@ export function ColorAttributeConfig({
                       />
                     </div>
                     <small className="form-field__hint">
-                      建议上传 3-5 张不同角度的图片
+                      支持本地上传或网络图片链接
                     </small>
                   </div>
 
@@ -566,17 +648,78 @@ export function ColorAttributeConfig({
           border: 2px dashed #c9cccf;
           border-radius: 4px;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           font-size: 12px;
           color: #6d7175;
           transition: all 0.2s;
+          background: #fff;
+          text-align: center;
         }
 
         .variant-image-upload-btn:hover {
           border-color: #005bd3;
           color: #005bd3;
+        }
+        
+        .variant-image-upload-btn.url-btn {
+          background-color: #f9fafb;
+        }
+
+        .url-input-container {
+          width: 200px;
+          height: 80px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          border: 1px solid #c9cccf;
+          border-radius: 4px;
+          padding: 4px;
+          background: #fff;
+        }
+
+        .url-input {
+          width: 100%;
+          flex: 1;
+          border: 1px solid #e1e3e5;
+          border-radius: 2px;
+          padding: 2px 4px;
+          font-size: 12px;
+        }
+        
+        .url-input:focus {
+          border-color: #005bd3;
+          outline: none;
+        }
+
+        .url-input-actions {
+          display: flex;
+          gap: 4px;
+          height: 24px;
+        }
+
+        .url-action-btn {
+          flex: 1;
+          border: none;
+          border-radius: 2px;
+          cursor: pointer;
+          font-weight: bold;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+        }
+        
+        .url-action-btn.confirm {
+          background: #005bd3;
+          color: white;
+        }
+        
+        .url-action-btn.cancel {
+          background: #e1e3e5;
+          color: #202223;
         }
 
         .form-field__hint {
