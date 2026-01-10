@@ -30,7 +30,24 @@ const DEFAULT_SHIPPING_SETTINGS = {
     estimatedDaysCA: 3,
     estimatedDaysUS: 5,
   },
+  express: {
+    enabled: true,
+    cost: 19.99,
+    costUS: 24.99,
+    costIntl: 29.99,
+    estimatedDaysCA: 3,
+    estimatedDaysUS: 5,
+  },
 };
+
+const DEFAULT_COLOR_MAPPINGS = [
+  //  { id: 'color-white', productColor: 'White', values: ['#FFFFFF'], images: [] },
+  //  { id: 'color-black', productColor: 'Black', values: ['#000000'], images: [] },
+  //  { id: 'color-grey', productColor: 'Grey', values: ['#808080'], images: [] },
+  //  { id: 'color-navy', productColor: 'Navy', values: ['#000080'], images: [] },
+  //  { id: 'color-red', productColor: 'Red', values: ['#FF0000'], images: [] },
+  //  { id: 'color-blue', productColor: 'Royal', values: ['#4169E1'], images: [] },
+];
 
 // ... (DEFAULT_CONTENT_CONFIG and DEFAULT_PRODUCTION_TEMPLATES remain same)
 // 扩展内容配置，包含首页、关于页、帮助页和静态文字
@@ -465,6 +482,43 @@ exports.updateShippingSettings = async (req, res) => {
   } catch (error) {
     console.error('[adminSettingController] updateShippingSettings error:', error);
     res.status(500).json({ error: 'Failed to update shipping settings' });
+  }
+};
+
+// Color Mappings
+exports.getColorMappings = async (req, res) => {
+  try {
+    const data = await getSettingValue('site.colorMappings', DEFAULT_COLOR_MAPPINGS);
+    console.log('[Debug] getColorMappings result count:', data ? data.length : 0);
+    // console.log('[Debug] Data sample:', data ? JSON.stringify(data[0]) : 'null');
+    res.json({ data });
+  } catch (error) {
+    console.error('[adminSettingController] getColorMappings error:', error);
+    res.status(500).json({ error: 'Failed to load color mappings' });
+  }
+};
+
+exports.updateColorMappings = async (req, res) => {
+  try {
+    const { mappings } = req.body;
+    await upsertSetting('site.colorMappings', mappings, req.user?.id);
+    res.json({ success: true, data: mappings });
+  } catch (error) {
+    console.error('[adminSettingController] updateColorMappings error:', error);
+    res.status(500).json({ error: 'Failed to update color mappings' });
+  }
+};
+
+exports.deleteColorMapping = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentMappings = await getSettingValue('site.colorMappings', DEFAULT_COLOR_MAPPINGS);
+    const newMappings = currentMappings.filter(m => m.id !== id);
+    await upsertSetting('site.colorMappings', newMappings, req.user?.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[adminSettingController] deleteColorMapping error:', error);
+    res.status(500).json({ error: 'Failed to delete color mapping' });
   }
 };
 

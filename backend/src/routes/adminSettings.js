@@ -19,5 +19,10 @@ router.put('/production/templates', controller.updateProductionTemplates);
 router.get('/shipping', controller.getShippingSettings);
 router.put('/shipping', controller.updateShippingSettings);
 
+// Color Mappings
+router.get('/color-mappings', controller.getColorMappings);
+router.put('/color-mappings', controller.updateColorMappings);
+router.delete('/color-mappings/:id', controller.deleteColorMapping);
+
 module.exports = router;
 
