@@ -81,7 +81,7 @@ docker push $IMAGE_URL
 # the user deletes the old variable if they changed types, OR, actually, let's use the --clear-env-vars in a PRE-STEP.
 
 echo "🧹 Ensuring environment is clean..."
-gcloud run services update $SERVICE_NAME --platform managed --region $REGION --clear-env-vars=NEXT_PUBLIC_API_URL --project $PROJECT_ID || true
+gcloud run services update $SERVICE_NAME --platform managed --region $REGION --remove-env-vars NEXT_PUBLIC_API_URL --project $PROJECT_ID || true
 
 echo "🚀 Deploying Frontend Service (No Traffic)..."
 gcloud run deploy $SERVICE_NAME \
