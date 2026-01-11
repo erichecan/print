@@ -344,12 +344,11 @@ export function ColorAttributeConfig({
                     <div className="variant-images-upload">
                       {colorConfig.images.map((image, imgIndex) => (
                         <div key={imgIndex} className="variant-image-item">
-                        <div key={imgIndex} className="variant-image-item">
-                          <a 
+                          <a
                             href={image.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="variant-image-preview" 
+                            className="variant-image-preview"
                             style={{ display: 'block', cursor: 'pointer' }}
                             title="点击在新标签页打开大图"
                           >
@@ -780,5 +779,5 @@ export function ColorAttributeConfig({
         }
       `}</style>
     </div>
-      );
+  );
 }
