@@ -94,6 +94,10 @@ export function ColorAttributeConfig({
           color: mapping.productColor, // Internal ID/Name
           colorHex: mapping.values[0] || '#CCCCCC',
           displayName: mapping.productColor, // Default display name
+          // Auto-populate images if available in mapping
+          images: mapping.images && mapping.images.length > 0
+            ? mapping.images.map(url => ({ url }))
+            : []
         });
       }
     }

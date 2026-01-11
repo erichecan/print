@@ -93,15 +93,53 @@ if (!AUTH_TOKEN) {
     process.exit(1);
 }
 
+// Image Generation Logic (from apps/web/src/lib/customink-images.ts)
+const GCS_BASE_URL = 'https://storage.googleapis.com/print-main-product-images';
+const PRODUCT_SLUG = 'gildan-softstyle-tshirt';
+
+// Specific assets for White (Demo Override)
+const ASSETS_WHITE = {
+    front: 'https://storage.googleapis.com/print-main-assets/products/customink/colors/176100/front_large_extended.png',
+    back: 'https://storage.googleapis.com/print-main-assets/products/customink/colors/176100/back_large_extended.png',
+    leftSleeve: 'https://storage.googleapis.com/print-main-assets/products/customink/colors/176100/left_sleeve_large_extended.png',
+    rightSleeve: 'https://storage.googleapis.com/print-main-assets/products/customink/colors/176100/right_sleeve_large_extended.png',
+};
+
+function generateImages(colorName) {
+    const safeColor = colorName || 'White';
+
+    if (safeColor.toLowerCase() === 'white') {
+        return [
+            ASSETS_WHITE.front,
+            ASSETS_WHITE.back,
+            ASSETS_WHITE.leftSleeve,
+            ASSETS_WHITE.rightSleeve
+        ];
+    }
+
+    // Standard GCS URL Generation
+    const colorSlug = safeColor.toLowerCase().trim().replace(/\s+/g, '-');
+
+    // We generate 4 views: front, back, left-sleeve, right-sleeve
+    return [
+        `${GCS_BASE_URL}/design-lab-products/${PRODUCT_SLUG}/${colorSlug}/front-large_extended.png`,
+        `${GCS_BASE_URL}/design-lab-products/${PRODUCT_SLUG}/${colorSlug}/back-large_extended.png`,
+        `${GCS_BASE_URL}/design-lab-products/${PRODUCT_SLUG}/${colorSlug}/sleeve-large_extended.png`, // Left Sleeve (Standard)
+        `${GCS_BASE_URL}/design-lab-products/${PRODUCT_SLUG}/${colorSlug}/sleeve-large_extended.png`  // Right Sleeve (Same as Left for now)
+    ];
+}
+
 const mappings = PRODUCTION_COLORS.map(color => ({
     id: `color-${color.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${color.externalId}`,
     productColor: color.name,
     values: [color.hex],
-    images: []
+    images: generateImages(color.name)
 }));
 
 console.log(`🚀 Seeding ${mappings.length} colors to ${API_URL}...`);
 
+// Chunking requests to avoid payload too large (though 80 items is small enough, better safe)
+// For now, sending all at once as per API design
 const payload = JSON.stringify({ mappings });
 
 const url = new URL(`${API_URL}/api/admin/settings/color-mappings`);
@@ -124,7 +162,10 @@ const req = https.request(url, (res) => {
 
     res.on('end', () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-            console.log('✅ Success! Colors updated.');
+            console.log('✅ Success! Colors and Images updated.');
+            console.log(`   Detailed example (${mappings[0].productColor}):`);
+            console.log(`   - Images: ${mappings[0].images.length} urls`);
+            console.log(`   - First Image: ${mappings[0].images[0]}`);
         } else {
             console.error(`❌ Failed with status ${res.statusCode}:`);
             console.error(responseData);
