@@ -217,7 +217,14 @@ export function ColorAttributeConfig({
                     className="color-config-item__swatch"
                     style={{ backgroundColor: colorConfig.colorHex }}
                   />
-                  <span className="color-config-item__name">{colorConfig.displayName}</span>
+                  <div className="color-config-item__info">
+                    <span className="color-config-item__name">{colorConfig.displayName}</span>
+                    {colorConfig.mappingId && (
+                      <span className="color-config-item__id" style={{ display: 'block', fontSize: '11px', color: '#999', marginTop: '2px' }}>
+                        ID: {colorConfig.mappingId}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="color-config-item__actions">
                   {colorConfig.images.length > 0 && (
@@ -337,15 +344,23 @@ export function ColorAttributeConfig({
                     <div className="variant-images-upload">
                       {colorConfig.images.map((image, imgIndex) => (
                         <div key={imgIndex} className="variant-image-item">
-                          <div className="variant-image-preview">
+                        <div key={imgIndex} className="variant-image-item">
+                          <a 
+                            href={image.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="variant-image-preview" 
+                            style={{ display: 'block', cursor: 'pointer' }}
+                            title="点击在新标签页打开大图"
+                          >
                             <Image
                               src={image.url}
                               alt={`${colorConfig.displayName} ${imgIndex + 1}`}
                               fill
-                              style={{ objectFit: 'cover' }}
+                              style={{ objectFit: 'contain' }}
                               unoptimized
                             />
-                          </div>
+                          </a>
                           <button
                             type="button"
                             className="variant-image-remove"
@@ -765,5 +780,5 @@ export function ColorAttributeConfig({
         }
       `}</style>
     </div>
-  );
+      );
 }

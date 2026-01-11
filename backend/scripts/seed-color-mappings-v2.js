@@ -2,7 +2,20 @@ require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const GCS_BASE_URL = 'https://storage.googleapis.com/print-main-assets/products/customink/colors';
+
+function generateImages(externalId) {
+    if (!externalId) return [];
+    return [
+        `${GCS_BASE_URL}/${externalId}/front_large_extended.png`,
+        `${GCS_BASE_URL}/${externalId}/back_large_extended.png`,
+        `${GCS_BASE_URL}/${externalId}/left_sleeve_large_extended.png`,
+        `${GCS_BASE_URL}/${externalId}/right_sleeve_large_extended.png`
+    ];
+}
+
 // Data extracted from user's provided production list
+// Cleaned up duplicates and ensured uniqueness
 const PRODUCTION_COLORS = [
     { name: 'Antique Cherry Red', hex: '#811E36', externalId: '176115' },
     { name: 'Antique Heliconia', hex: '#943962', externalId: '176135' },
@@ -30,19 +43,13 @@ const PRODUCTION_COLORS = [
     { name: 'Heather Cardinal Red', hex: '#A04759', externalId: '176148' },
     { name: 'Heather Coral Silk', hex: '#DC8576', externalId: '176161' },
     { name: 'Heather Dark Grey', hex: '#C24146', externalId: '176118' },
-    // Note: There are two Heather Dark Greys in source (ID 176118 and 176177). 
-    // 176118 has a reddish hex in the text provided (#C24146)? That seems odd for "Dark Grey", 
-    // but trusting the explicit hex. The second one (176177) is #545454. 
-    // We will keep both, distinguishing by ID in our system if needed, or just let them coexist.
-    { name: 'Heather Dark Grey (Reddish)', hex: '#C24146', externalId: '176118' },
-    { name: 'Heather Dark Grey', hex: '#545454', externalId: '176177' },
+    { name: 'Heather Dark Grey (Alt)', hex: '#545454', externalId: '176177' },
     { name: 'Heather Forest Green', hex: '#6E7963', externalId: '176162' },
     { name: 'Heather Galapagos Blue', hex: '#68969D', externalId: '176163' },
     { name: 'Heather Heliconia', hex: '#BE5269', externalId: '176164' },
     { name: 'Heather Indigo', hex: '#738A9A', externalId: '176149' },
     { name: 'Heather Irish Green', hex: '#5FA66D', externalId: '176129' },
     { name: 'Heather Maroon', hex: '#654751', externalId: '176116' },
-    // Duplicate Heather Maroon name
     { name: 'Heather Maroon (Alt)', hex: '#724951', externalId: '176165' },
     { name: 'Heather Military Green', hex: '#74746D', externalId: '176125' },
     { name: 'Heather Navy', hex: '#4C5064', externalId: '176109' },
@@ -92,18 +99,21 @@ const PRODUCTION_COLORS = [
 ];
 
 async function main() {
-    console.log('🌱 Starting color mapping seed V2 (High Fidelity)...');
+    console.log('🌱 Starting color mapping seed V2 (High Fidelity with Images)...');
+
+    // Check for DATABASE_URL
+    if (!process.env.DATABASE_URL) {
+        console.error('❌ Error: DATABASE_URL is missing. Please set it to your production connection string.');
+        process.exit(1);
+    }
 
     try {
         const mappings = PRODUCTION_COLORS.map(color => {
-            // Create a nicer ID for internal use, but maybe we should store externalId?
-            // Since the Schema for mappings is just { id, productColor, values, images }, 
-            // and we saw in StepVariants.tsx it wants unique IDs.
             return {
-                id: `color-${color.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${color.externalId}`,
+                id: color.externalId, // Using 6-digit externalId as requested
                 productColor: color.name,
                 values: [color.hex],
-                images: []
+                images: generateImages(color.externalId)
             };
         });
 
@@ -113,6 +123,7 @@ async function main() {
         const key = 'site.colorMappings';
         const valueJson = JSON.stringify(mappings);
 
+        // Raw SQL to ensure efficiency and bypass complexity
         const existing = await prisma.$queryRaw`SELECT * FROM settings WHERE key = ${key}`;
 
         if (existing && existing.length > 0) {

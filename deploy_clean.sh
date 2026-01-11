@@ -81,7 +81,12 @@ docker push $IMAGE_URL
 # the user deletes the old variable if they changed types, OR, actually, let's use the --clear-env-vars in a PRE-STEP.
 
 echo "🧹 Ensuring environment is clean..."
-gcloud run services update $SERVICE_NAME --platform managed --region $REGION --remove-env-vars NEXT_PUBLIC_API_URL --project $PROJECT_ID || true
+# Try to clear the variable first to resolve type conflicts
+# We capture the error but allow it to proceed if the service doesn't exist yet
+gcloud run services update $SERVICE_NAME --platform managed --region $REGION --remove-env-vars NEXT_PUBLIC_API_URL --project $PROJECT_ID || echo "Service may not exist or variable not present, continuing..."
+
+echo "⏳ Waiting for env var cleanup..."
+sleep 5
 
 echo "🚀 Deploying Frontend Service (No Traffic)..."
 gcloud run deploy $SERVICE_NAME \

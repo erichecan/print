@@ -1,20 +1,24 @@
-const https = require('https');
-const { URL } = require('url');
-
-// 1. 定义数据 (使用正确的 externalId)
+// 1. 定义数据
 const GCS_BASE_URL = 'https://storage.googleapis.com/print-main-assets/products/customink/colors';
 
-function generateImages(id) {
-    if (!id) return [];
+// View mapping: internal ID -> filename part
+// front -> front_large_extended.png
+// back -> back_large_extended.png
+// sleeve -> left_sleeve_large_extended.png (standardizing on left sleeve for general 'sleeve' view)
+// left-sleeve -> left_sleeve_large_extended.png
+// right-sleeve -> right_sleeve_large_extended.png
+
+function generateImages(externalId) {
+    if (!externalId) return [];
+
     return [
-        `${GCS_BASE_URL}/${id}/front_large_extended.png`,
-        `${GCS_BASE_URL}/${id}/back_large_extended.png`,
-        `${GCS_BASE_URL}/${id}/left_sleeve_large_extended.png`,
-        `${GCS_BASE_URL}/${id}/right_sleeve_large_extended.png`
+        `${GCS_BASE_URL}/${externalId}/front_large_extended.png`,
+        `${GCS_BASE_URL}/${externalId}/back_large_extended.png`,
+        `${GCS_BASE_URL}/${externalId}/left_sleeve_large_extended.png`,
+        `${GCS_BASE_URL}/${externalId}/right_sleeve_large_extended.png`
     ];
 }
 
-// Data exctracted from seed-color-mappings-v2.js
 const PRODUCTION_COLORS = [
     { name: 'Antique Cherry Red', hex: '#811E36', externalId: '176115' }, { name: 'Antique Heliconia', hex: '#943962', externalId: '176135' },
     { name: 'Antique Sapphire', hex: '#007D9E', externalId: '176121' }, { name: 'Azalea', hex: '#E274A5', externalId: '176140' },
@@ -58,17 +62,6 @@ const PRODUCTION_COLORS = [
     { name: 'White', hex: '#FFFFFF', externalId: '176100' },
 ];
 
-const API_URL = process.env.API_URL || 'http://localhost:3001';
-const AUTH_TOKEN = process.env.AUTH_TOKEN;
-
-if (!AUTH_TOKEN) {
-    if (!process.env.CI) { // Allow running in CI/Tests without token if just checking syntax
-        console.error('❌ Error: AUTH_TOKEN definition is missing');
-        console.error('Usage: AUTH_TOKEN="your_token" API_URL="your_url" node scripts/seed-remote-color-mappings.js');
-        process.exit(1);
-    }
-}
-
 const mappings = PRODUCTION_COLORS.map(color => ({
     id: `color-${color.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${color.externalId}`,
     productColor: color.name,
@@ -76,36 +69,32 @@ const mappings = PRODUCTION_COLORS.map(color => ({
     images: generateImages(color.externalId)
 }));
 
-console.log(`🚀 Seeding ${mappings.length} colors to ${API_URL}...`);
+// Browser Executable Block
+(async () => {
+    console.log(`🚀 Preparing to update ${mappings.length} mappings with correct URLs...`);
 
-// Use Node.js https/http module to send request
-const lib = API_URL.startsWith('https') ? https : require('http');
-const endpoint = new URL('/api/admin/settings/color-mappings', API_URL);
+    // Verify first URL
+    console.log('Sample URL:', mappings[0].images[0]);
+    // Expected: .../176115/front_large_extended.png
 
-const req = lib.request(endpoint, {
-    method: 'PUT',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${AUTH_TOKEN}`
-    }
-}, (res) => {
-    let data = '';
-    res.on('data', chunk => data += chunk);
-    res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
+    try {
+        const response = await fetch('/api/proxy/admin/settings/color-mappings', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+            },
+            body: JSON.stringify({ mappings })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
             console.log('✅ Success:', data);
+            alert('Settings updated successfully with CORRECT URLs!');
         } else {
-            console.error(`❌ Failed with status ${res.statusCode}:`);
-            console.error(data);
-            process.exit(1);
+            console.error('❌ Failed:', response.status, await response.text());
         }
-    });
-});
-
-req.on('error', (e) => {
-    console.error(`❌ Request error: ${e.message}`);
-    process.exit(1);
-});
-
-req.write(JSON.stringify({ mappings }));
-req.end();
+    } catch (err) {
+        console.error('❌ Network Error:', err);
+    }
+})();
