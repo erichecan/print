@@ -1402,8 +1402,8 @@ exports.getOrderConfig = async (req, res, next) => {
       // 我们统一映射为 hex_code 以匹配下方的 response mapping
       colors = colorMappings.map(c => ({
         id: c.id,
-        name: c.name,
-        hex_code: c.hex, // Map 'hex' from setting to 'hex_code' expected by response mapper
+        name: c.name || c.productColor, // Support both old 'name' and new 'productColor' keys
+        hex_code: c.hex || (Array.isArray(c.values) ? c.values[0] : null), // Map 'hex' or 'values[0]' to 'hex_code'
         ...c
       }));
 
