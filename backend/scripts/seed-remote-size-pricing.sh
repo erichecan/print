@@ -50,8 +50,8 @@ for item in "${SIZE_FEES[@]}"; do
   
   # Call the admin API to create/update size fee
   response=$(curl -s -w "\n%{http_code}" \
-    -X POST \
-    "$BACKEND_URL/api/admin/offline-orders/size-fees" \
+    -X PATCH \
+    "$BACKEND_URL/api/admin/offline-order-size-fees" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $AUTH_TOKEN" \
     -d "{\"sizeFees\": [{\"size\": \"$size\", \"additionalFee\": $fee}]}")
