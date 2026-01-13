@@ -6,12 +6,12 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
-import api from '@/lib/api';
+import { authApi, salesOrdersApi, SalesOfflineOrderSummary, authenticatedFetch } from '@/lib/api';
 import useSWR from 'swr';
 import { useAuth } from '@/contexts/AuthContext';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+import { FilterPanel, FilterOptions } from './components/FilterPanel';
 
 // 状态选择组件 - 参考 PillSelect 的单选版样式
 function StatusSelector({
@@ -197,6 +197,7 @@ interface Product {
   name: string;
   imageUrl: string | null;
   isCustomerOwned: boolean;
+  unitCost: number;
 }
 
 // 尺码费用接口
@@ -260,6 +261,15 @@ export default function SalesOrdersPage() {
   const [selectedCreator, setSelectedCreator] = useState('');
   const [creators, setCreators] = useState<Array<{ id: string; name: string; email: string }>>([]);
 
+  // Filter states
+  const [filters, setFilters] = useState<FilterOptions>({
+    statuses: [],
+    paymentStatuses: [],
+    printMethods: [],
+    dateRange: { start: null, end: null }
+  });
+  const [allOrders, setAllOrders] = useState<SalesOfflineOrderSummary[]>([]); // Store all orders for client-side filtering
+
   // Debounce search query
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -313,10 +323,12 @@ export default function SalesOrdersPage() {
   const [newProductName, setNewProductName] = useState('');
   const [newProductImageUrl, setNewProductImageUrl] = useState('');
   const [newProductIsCustomerOwned, setNewProductIsCustomerOwned] = useState(false);
+  const [newProductUnitCost, setNewProductUnitCost] = useState('');
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editProductName, setEditProductName] = useState('');
   const [editProductImageUrl, setEditProductImageUrl] = useState('');
   const [editProductIsCustomerOwned, setEditProductIsCustomerOwned] = useState(false);
+  const [editProductUnitCost, setEditProductUnitCost] = useState('');
 
   // 尺码费用状态
   const [sizeFees, setSizeFees] = useState<SizeFee[]>([]);
@@ -383,12 +395,12 @@ export default function SalesOrdersPage() {
       try {
         const response = await salesOrdersApi.list({
           page: 1,
-          limit: 50,
+          limit: 200, // Fetch more for client-side filtering
           search: debouncedSearch,
           creatorId: selectedCreator || undefined
         });
         if (!cancelled) {
-          setOrders(response.data);
+          setAllOrders(response.data); // Store all orders
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -405,7 +417,172 @@ export default function SalesOrdersPage() {
       fetchOrders();
     }
     return () => { cancelled = true; };
-  }, [currentUser, authLoading, activeTab, debouncedSearch, selectedCreator]);
+  }, [currentUser, authLoading, activeTab, debouncedSearch, selectedCreator, t]);
+
+  // Load filters from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem('offline-orders-filters');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setFilters({
+          statuses: parsed.statuses || [],
+          paymentStatuses: parsed.paymentStatuses || [],
+          printMethods: parsed.printMethods || [],
+          dateRange: {
+            start: parsed.dateRange?.start ? new Date(parsed.dateRange.start) : null,
+            end: parsed.dateRange?.end ? new Date(parsed.dateRange.end) : null
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to load filters from localStorage', e);
+    }
+  }, []);
+
+  // Save filters to localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('offline-orders-filters', JSON.stringify({
+        ...filters,
+        dateRange: {
+          start: filters.dateRange.start?.toISOString() || null,
+          end: filters.dateRange.end?.toISOString() || null
+        }
+      }));
+    } catch (e) {
+      console.warn('Failed to save filters to localStorage', e);
+    }
+  }, [filters]);
+
+  // Calculate payment status for an order
+  const calculatePaymentStatus = useCallback((order: SalesOfflineOrderSummary) => {
+    const config = order.configuration || {};
+    const productItems = (config.productItems || []) as any[];
+    const discount = config.discount || 0;
+    const taxRate = config.taxRate || 0.13;
+    const requiresInvoice = config.requiresInvoice || false;
+    const depositAmount = order.payment?.depositAmount || 0;
+    const dstFileFee = order.payment?.dstFileFee || 0;
+
+    const subtotal = productItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+    const discountAmount = (subtotal * discount) / 100;
+    const taxBase = subtotal - discountAmount + dstFileFee;
+    const taxAmount = requiresInvoice ? taxBase * taxRate : 0;
+    const total = taxBase + taxAmount;
+
+    return {
+      hasDeposit: depositAmount > 0,
+      noDeposit: depositAmount === 0,
+      fullyPaid: depositAmount >= total,
+      balanceDue: depositAmount < total && depositAmount > 0
+    };
+  }, []);
+
+  // Extract unique print methods from all orders
+  const availablePrintMethods = useMemo(() => {
+    const methods = new Set<string>();
+    allOrders.forEach(order => {
+      const config = order.configuration || {};
+      const colorGroupsByProduct = config.colorGroupsByProduct || {};
+      Object.values(colorGroupsByProduct).forEach((groups: any) => {
+        if (Array.isArray(groups)) {
+          groups.forEach(group => {
+            if (Array.isArray(group.positions)) {
+              group.positions.forEach((pos: any) => {
+                if (pos.method) methods.add(pos.method);
+              });
+            }
+          });
+        }
+      });
+    });
+    return Array.from(methods).sort();
+  }, [allOrders]);
+
+  // Apply filters to orders
+  const filteredOrders = useMemo(() => {
+    let result = [...allOrders];
+
+    // Status filter
+    if (filters.statuses.length > 0) {
+      result = result.filter(order => {
+        const status = order.status;
+        const rushOrder = order.rushOrder;
+
+        // Handle ACTIVE_RUSH as a special case
+        if (filters.statuses.includes('ACTIVE_RUSH')) {
+          if (status === 'ACTIVE' && rushOrder) return true;
+        }
+
+        // Check regular statuses
+        return filters.statuses.includes(status);
+      });
+    }
+
+    // Payment status filter
+    if (filters.paymentStatuses.length > 0) {
+      result = result.filter(order => {
+        const paymentStatus = calculatePaymentStatus(order);
+        return filters.paymentStatuses.some(status => paymentStatus[status as keyof typeof paymentStatus]);
+      });
+    }
+
+    // Print method filter
+    if (filters.printMethods.length > 0) {
+      result = result.filter(order => {
+        const config = order.configuration || {};
+        const colorGroupsByProduct = config.colorGroupsByProduct || {};
+        const orderMethods = new Set<string>();
+
+        Object.values(colorGroupsByProduct).forEach((groups: any) => {
+          if (Array.isArray(groups)) {
+            groups.forEach(group => {
+              if (Array.isArray(group.positions)) {
+                group.positions.forEach((pos: any) => {
+                  if (pos.method) orderMethods.add(pos.method);
+                });
+              }
+            });
+          }
+        });
+
+        return filters.printMethods.some(method => orderMethods.has(method));
+      });
+    }
+
+    // Date range filter
+    if (filters.dateRange.start || filters.dateRange.end) {
+      result = result.filter(order => {
+        if (!order.deliveryDate) return false;
+        const orderDate = new Date(order.deliveryDate);
+        orderDate.setHours(0, 0, 0, 0);
+
+        if (filters.dateRange.start) {
+          const start = new Date(filters.dateRange.start);
+          start.setHours(0, 0, 0, 0);
+          if (orderDate < start) return false;
+        }
+
+        if (filters.dateRange.end) {
+          const end = new Date(filters.dateRange.end);
+          end.setHours(23, 59, 59, 999);
+          if (orderDate > end) return false;
+        }
+
+        return true;
+      });
+    }
+
+    return result;
+  }, [allOrders, filters, calculatePaymentStatus]);
+
+  // Update orders state when filtered orders change
+  useEffect(() => {
+    setOrders(filteredOrders);
+  }, [filteredOrders]);
 
   const handleViewDetail = (orderId: string) => {
     router.push(`/offline-orders/sales/orders/${orderId}`);
@@ -570,10 +747,12 @@ export default function SalesOrdersPage() {
   const handleCreateColor = async () => {
     if (!newColorName.trim()) return;
     try {
-      await api('/api/proxy/admin/offline-order-colors', {
+      const response = await authenticatedFetch('/api/proxy/admin/offline-order-colors', {
         method: 'POST',
-        body: { name: newColorName.trim(), hexCode: newColorHex.trim() || null },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newColorName.trim(), hexCode: newColorHex.trim() || null }),
       });
+      if (!response.ok) throw new Error('Failed to create color');
       setNewColorName('');
       setNewColorHex('');
       mutateColors();
@@ -585,10 +764,12 @@ export default function SalesOrdersPage() {
   const handleUpdateColor = async (id: string) => {
     if (!editColorName.trim()) return;
     try {
-      await api(`/api/proxy/admin/offline-order-colors/${id}`, {
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-colors/${id}`, {
         method: 'PATCH',
-        body: { name: editColorName.trim(), hexCode: editColorHex.trim() || null },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editColorName.trim(), hexCode: editColorHex.trim() || null }),
       });
+      if (!response.ok) throw new Error('Failed to update color');
       setEditingColorId(null);
       mutateColors();
     } catch (err: any) {
@@ -599,7 +780,8 @@ export default function SalesOrdersPage() {
   const handleDeleteColor = async (id: string) => {
     // confirmation removed
     try {
-      await api(`/api/proxy/admin/offline-order-colors/${id}`, { method: 'DELETE' });
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-colors/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete color');
       mutateColors();
     } catch (err: any) {
       alert(err.message || t('errorDeleteFailed'));
@@ -610,16 +792,20 @@ export default function SalesOrdersPage() {
   const handleCreateProduct = async () => {
     if (!newProductName.trim()) return;
     try {
-      await api('/api/proxy/admin/offline-order-products', {
+      const response = await authenticatedFetch('/api/proxy/admin/offline-order-products', {
         method: 'POST',
-        body: {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: newProductName.trim(),
           imageUrl: newProductImageUrl.trim() || null,
           isCustomerOwned: newProductIsCustomerOwned,
-        },
+          unitCost: newProductUnitCost,
+        }),
       });
+      if (!response.ok) throw new Error('Failed to create product');
       setNewProductName('');
       setNewProductImageUrl('');
+      setNewProductUnitCost('');
       setNewProductIsCustomerOwned(false);
       mutateProducts();
     } catch (err: any) {
@@ -630,14 +816,17 @@ export default function SalesOrdersPage() {
   const handleUpdateProduct = async (id: string) => {
     if (!editProductName.trim()) return;
     try {
-      await api(`/api/proxy/admin/offline-order-products/${id}`, {
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-products/${id}`, {
         method: 'PATCH',
-        body: {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: editProductName.trim(),
           imageUrl: editProductImageUrl.trim() || null,
           isCustomerOwned: editProductIsCustomerOwned,
-        },
+          unitCost: editProductUnitCost,
+        }),
       });
+      if (!response.ok) throw new Error('Failed to update product');
       setEditingProductId(null);
       mutateProducts();
     } catch (err: any) {
@@ -648,7 +837,8 @@ export default function SalesOrdersPage() {
   const handleDeleteProduct = async (id: string) => {
     // confirmation removed
     try {
-      await api(`/api/proxy/admin/offline-order-products/${id}`, { method: 'DELETE' });
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-products/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete product');
       mutateProducts();
     } catch (err: any) {
       alert(err.message || t('errorDeleteFailed'));
@@ -666,12 +856,14 @@ export default function SalesOrdersPage() {
     try {
       // Using bulk update for single item for simplicity as per API design, or creating specific endpoint if needed.
       // Based on controller, it accepts array of sizeFees.
-      await api('/api/proxy/admin/offline-order-size-fees', {
+      const response = await authenticatedFetch('/api/proxy/admin/offline-order-size-fees', {
         method: 'PATCH',
-        body: {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           sizeFees: [{ size, additionalFee: fee }]
-        }
+        })
       });
+      if (!response.ok) throw new Error('Failed to update size fee');
       setEditingSizeFeeId(null);
       mutateSizeFees();
     } catch (err: any) {
@@ -829,6 +1021,70 @@ export default function SalesOrdersPage() {
                 </div>
               )}
             </div>
+
+            {/* Filters Row */}
+            <div className="mb-6">
+              <FilterPanel
+                filters={filters}
+                onChange={setFilters}
+                availablePrintMethods={availablePrintMethods}
+                locale={locale as 'en' | 'zh'}
+              />
+            </div>
+
+            {/* Active Filter Badges */}
+            {(filters.statuses.length > 0 || filters.paymentStatuses.length > 0 || filters.printMethods.length > 0 || filters.dateRange.start || filters.dateRange.end) && (
+              <div className="mb-4 flex flex-wrap gap-2">
+                {filters.statuses.map(status => (
+                  <span key={status} className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium bg-indigo-100 text-indigo-700 rounded-full">
+                    {status}
+                    <button
+                      type="button"
+                      onClick={() => setFilters({ ...filters, statuses: filters.statuses.filter(s => s !== status) })}
+                      className="ml-1 hover:text-indigo-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {filters.paymentStatuses.map(status => (
+                  <span key={status} className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium bg-green-100 text-green-700 rounded-full">
+                    {status}
+                    <button
+                      type="button"
+                      onClick={() => setFilters({ ...filters, paymentStatuses: filters.paymentStatuses.filter(s => s !== status) })}
+                      className="ml-1 hover:text-green-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {filters.printMethods.map(method => (
+                  <span key={method} className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-700 rounded-full">
+                    {method}
+                    <button
+                      type="button"
+                      onClick={() => setFilters({ ...filters, printMethods: filters.printMethods.filter(m => m !== method) })}
+                      className="ml-1 hover:text-blue-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {(filters.dateRange.start || filters.dateRange.end) && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium bg-purple-100 text-purple-700 rounded-full">
+                    {filters.dateRange.start?.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US')} - {filters.dateRange.end?.toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US')}
+                    <button
+                      type="button"
+                      onClick={() => setFilters({ ...filters, dateRange: { start: null, end: null } })}
+                      className="ml-1 hover:text-purple-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                )}
+              </div>
+            )}
 
             {loading ? (
               <p>{t('loadingOrders')}</p>
@@ -1141,6 +1397,15 @@ export default function SalesOrdersPage() {
                       onChange={(e) => setNewProductImageUrl(e.target.value)}
                       className="config-input"
                     />
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder={t('unitCost')}
+                      value={newProductUnitCost}
+                      onChange={(e) => setNewProductUnitCost(e.target.value)}
+                      className="config-input"
+                      style={{ width: '120px' }}
+                    />
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
                       <input
                         type="checkbox"
@@ -1161,6 +1426,7 @@ export default function SalesOrdersPage() {
                       <tr>
                         <th>{t('productName')}</th>
                         <th>{t('thImage')}</th>
+                        <th>{t('unitCost')}</th>
                         <th>{t('thType')}</th>
                         <th>{t('thActions')}</th>
                       </tr>
@@ -1194,6 +1460,19 @@ export default function SalesOrdersPage() {
                               <img src={product.imageUrl} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
                             ) : (
                               '—'
+                            )}
+                          </td>
+                          <td>
+                            {editingProductId === product.id ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={editProductUnitCost}
+                                onChange={(e) => setEditProductUnitCost(e.target.value)}
+                                className="config-input-inline"
+                              />
+                            ) : (
+                              `$${Number(product.unitCost || 0).toFixed(2)}`
                             )}
                           </td>
                           <td>
@@ -1236,6 +1515,7 @@ export default function SalesOrdersPage() {
                                     setEditProductName(product.name);
                                     setEditProductImageUrl(product.imageUrl || '');
                                     setEditProductIsCustomerOwned(product.isCustomerOwned);
+                                    setEditProductUnitCost(String(product.unitCost || ''));
                                   }}
                                   className="config-btn config-btn-secondary"
                                 >

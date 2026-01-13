@@ -5,6 +5,12 @@ const logger = require('../utils/logger');
 const { BadRequestError, NotFoundError, ConflictError, InternalServerError } = require('../utils/errors');
 const { v4: uuidv4 } = require('uuid');
 
+const parseDecimal = (value) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 /**
  * 获取产品列表（公开接口，仅返回激活的产品）
  * GET /api/offline-orders/products
@@ -16,7 +22,7 @@ exports.listProducts = async (req, res, next) => {
       originalUrl: req.originalUrl,
       url: req.url,
     });
-    
+
     const products = await prisma.offline_order_products.findMany({
       where: {
         is_active: true,
@@ -30,6 +36,7 @@ exports.listProducts = async (req, res, next) => {
         name: true,
         image_url: true,
         is_customer_owned: true,
+        unit_cost: true, // Optional: Include cost if needed for margin calc on frontend
       },
     });
 
@@ -44,6 +51,7 @@ exports.listProducts = async (req, res, next) => {
         name: p.name,
         imageUrl: p.image_url,
         isCustomerOwned: p.is_customer_owned,
+        unitCost: Number(p.unit_cost || 0),
       })),
     });
   } catch (error) {
@@ -74,6 +82,7 @@ exports.listAllProducts = async (req, res, next) => {
         isCustomerOwned: p.is_customer_owned,
         displayOrder: p.display_order,
         isActive: p.is_active,
+        unitCost: Number(p.unit_cost || 0),
         createdAt: p.created_at,
         updatedAt: p.updated_at,
       })),
@@ -91,7 +100,7 @@ exports.listAllProducts = async (req, res, next) => {
  */
 exports.createProduct = async (req, res, next) => {
   try {
-    const { name, imageUrl, isCustomerOwned, displayOrder } = req.body;
+    const { name, imageUrl, isCustomerOwned, displayOrder, unitCost } = req.body;
 
     if (!name || !name.trim()) {
       return next(new BadRequestError('Product name is required'));
@@ -103,7 +112,7 @@ exports.createProduct = async (req, res, next) => {
       select: { display_order: true },
     });
 
-// 创建产品
+    // 创建产品
     const product = await prisma.offline_order_products.create({
       data: {
         id: uuidv4(),
@@ -112,8 +121,7 @@ exports.createProduct = async (req, res, next) => {
         is_customer_owned: Boolean(isCustomerOwned) || false,
         display_order: displayOrder !== undefined ? displayOrder : (maxOrder?.display_order || 0) + 1,
         is_active: true,
-        // created_at 由 @default(now()) 自动处理
-        // updated_at 由 @updatedAt 自动处理
+        unit_cost: parseDecimal(unitCost) || 0,
       },
     });
 
@@ -126,6 +134,7 @@ exports.createProduct = async (req, res, next) => {
         isCustomerOwned: product.is_customer_owned,
         displayOrder: product.display_order,
         isActive: product.is_active,
+        unitCost: Number(product.unit_cost || 0),
         createdAt: product.created_at,
         updatedAt: product.updated_at,
       },
@@ -143,7 +152,7 @@ exports.createProduct = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, imageUrl, isCustomerOwned, displayOrder, isActive } = req.body;
+    const { name, imageUrl, isCustomerOwned, displayOrder, isActive, unitCost } = req.body;
 
     const existing = await prisma.offline_order_products.findUnique({
       where: { id },
@@ -175,6 +184,9 @@ exports.updateProduct = async (req, res, next) => {
     if (isActive !== undefined) {
       updateData.is_active = Boolean(isActive);
     }
+    if (unitCost !== undefined) {
+      updateData.unit_cost = parseDecimal(unitCost);
+    }
 
     const product = await prisma.offline_order_products.update({
       where: { id },
@@ -190,6 +202,7 @@ exports.updateProduct = async (req, res, next) => {
         isCustomerOwned: product.is_customer_owned,
         displayOrder: product.display_order,
         isActive: product.is_active,
+        unitCost: Number(product.unit_cost || 0),
         createdAt: product.created_at,
         updatedAt: product.updated_at,
       },
