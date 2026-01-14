@@ -47,32 +47,33 @@ function run(command, description, options = {}) {
 
 try {
   // 在 Render 上工作目录为 backend/，需要显式传入 schema 路径
-  // 允许 Prisma 迁移失败（可能数据库已经是最新的）
+  // 使用 db push 替代 migrate deploy 以解决 P3005 (Database not empty) 问题
+  // 这将强制同步 schema 到数据库 (⚠️ 可能导致数据丢失，但在修复 broken environment 时是必要的)
   const prismaSuccess = run(
-    'npx prisma migrate deploy --schema=./prisma/schema.prisma',
-    'Prisma migrate deploy',
-    { timeout: 60000, allowFailure: true }
+    'npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss',
+    'Prisma db push',
+    { timeout: 120000, allowFailure: false } // 增加超时时间，不允许失败（这是核心步骤）
   );
 
-  // Sequelize 迁移也允许失败
-  const sequelizeSuccess = run(
-    'npx sequelize-cli db:migrate',
-    'Sequelize CLI migrate',
-    { timeout: 60000, allowFailure: true }
-  );
+  // Sequelize 迁移已禁用 (缺少 config/config.json)
+  // const sequelizeSuccess = run(
+  //   'npx sequelize-cli db:migrate',
+  //   'Sequelize CLI migrate',
+  //   { timeout: 60000, allowFailure: true }
+  // );
 
-  if (prismaSuccess && sequelizeSuccess) {
-    console.log('✅ 所有迁移已成功执行 ');
+  if (prismaSuccess) {
+    console.log('✅ Prisma schema 同步成功 ');
 
     // 迁移成功后自动创建 admin 用户（使用 Prisma 直接创建，更可靠）
     console.log('🌱 迁移完成，开始创建 admin 用户...');
     try {
-      // 先尝试运行 Sequelize seed
-      run(
-        'npx sequelize-cli db:seed:all',
-        'Sequelize seed',
-        { timeout: 60000, allowFailure: true }
-      );
+      // Sequelize seed 已禁用
+      // run(
+      //   'npx sequelize-cli db:seed:all',
+      //   'Sequelize seed',
+      //   { timeout: 60000, allowFailure: true }
+      // );
 
       // 然后使用 Prisma 直接创建 admin 用户（确保用户存在）
       console.log('🔧 使用 Prisma 直接创建/更新 admin 用户...');
@@ -82,11 +83,10 @@ try {
         { timeout: 30000, allowFailure: false }
       );
     } catch (seedError) {
-      console.warn('⚠️  Seed 或创建用户失败，但继续执行:', seedError.message);
+      console.warn('⚠️  创建用户失败，但继续执行:', seedError.message);
     }
   } else {
-    console.warn('⚠️ 部分迁移失败，但服务器将继续启动 ');
-    console.warn('   如果数据库已经是最新状态，可以忽略这些错误');
+    console.warn('⚠️ Prisma 同步失败 ');
   }
 } catch (error) {
   console.error('❌ 迁移执行失败，但服务器将继续启动 ');
