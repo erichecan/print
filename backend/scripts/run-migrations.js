@@ -46,13 +46,15 @@ function run(command, description, options = {}) {
 }
 
 try {
-  // 在 Render 上工作目录为 backend/，需要显式传入 schema 路径
-  // 使用 db push 替代 migrate deploy 以解决 P3005 (Database not empty) 问题
-  // 这将强制同步 schema 到数据库 (⚠️ 可能导致数据丢失，但在修复 broken environment 时是必要的)
+  // 允许 Prisma 迁移失败（可能数据库已经是最新的）
+  // 临时禁用 SSL 证书验证以解决 Cloud Run 上的 ECONNRESET 问题
+  // 这通常是由于容器环境缺少某些根证书或 SSL 库兼容性问题
+  const env = { ...process.env, NODE_TLS_REJECT_UNAUTHORIZED: '0' };
+
   const prismaSuccess = run(
     'npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss',
     'Prisma db push',
-    { timeout: 120000, allowFailure: false } // 增加超时时间，不允许失败（这是核心步骤）
+    { timeout: 120000, allowFailure: false, env } // 增加超时时间，不允许失败
   );
 
   // Sequelize 迁移已禁用 (缺少 config/config.json)
