@@ -4,6 +4,10 @@ const { execSync } = require('child_process');
 const fs = require('fs'); // 用于检查 Prisma Client 是否存在
 const path = require('path'); // 用于路径操作
 
+// 临时禁用 SSL 证书验证以解决 Cloud Run 上的 ECONNRESET 问题
+// 这是一个全局修复，适用于 runtime 和 migration (作为子进程继承)
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const PORT = process.env.PORT || 3001; // 默认端口改为3001，避免与前端冲突
 
 // 验证 DATABASE_URL 环境变量
