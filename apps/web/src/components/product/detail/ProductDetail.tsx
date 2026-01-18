@@ -109,7 +109,8 @@ export function ProductDetail() {
 
     // 找到对应的 variant (Case-insensitive matching)
     let matchingVariant = null;
-    for (const v of apiProduct.variants) {
+    const variants = (apiProduct as any)?.variants || [];
+    for (const v of variants) {
       const vColor = (v.color || '').toLowerCase().trim();
       const pColor = (payload.color || '').toLowerCase().trim();
       const colorMatch = !pColor || vColor === pColor || !vColor;
@@ -250,7 +251,7 @@ export function ProductDetail() {
       };
       const colorOptions = Array.from(
         new Set(
-          (apiProduct.variants || [])
+          ((apiProduct as any).variants || [])
             .map((v: any) => v.color)
             .filter((color: string | null): color is string => Boolean(color))
         )
@@ -364,23 +365,25 @@ export function ProductDetail() {
   const primaryVariantForColor =
     selectedColor && rawApiProduct?.variants
       ? rawApiProduct.variants.find(
-          (v: any) =>
-            (v.color || '').toLowerCase().trim() ===
-            (selectedColor || '').toLowerCase().trim()
-        )
+        (v: any) =>
+          (v.color || '').toLowerCase().trim() ===
+          (selectedColor || '').toLowerCase().trim()
+      )
       : null;
   const primaryVariantImageUrl: string | null =
     primaryVariantForColor?.imageUrl || null;
 
-  // 基于颜色过滤出的图片组
+  // 基于颜色过滤出的图片组 (Case-insensitive)
   let colorImages = selectedColor
-    ? productData.images.filter((img) => img.color === selectedColor)
+    ? productData.images.filter((img) =>
+      (img.color || '').toLowerCase().trim() === (selectedColor || '').toLowerCase().trim()
+    )
     : [];
 
-  // 如果变体有自己的 imageUrl，则确保它出现在该颜色图片组的第一张
+  // 如果变体有自己的 primaryVariantImageUrl，则确保它出现在该颜色图片组的第一张 (URL normalization handled)
   if (selectedColor && primaryVariantImageUrl) {
     const existingIndex = colorImages.findIndex(
-      (img) => img.url === primaryVariantImageUrl
+      (img) => img.url.split('?')[0] === primaryVariantImageUrl.split('?')[0]
     );
 
     if (existingIndex === -1) {
@@ -404,10 +407,13 @@ export function ProductDetail() {
     }
   }
 
-  const imagesToShow =
-    selectedColor && colorImages.length > 0
-      ? colorImages
-      : selectedColor && mainImage
+  // 这里的逻辑：
+  // 1. 如果选中颜色且有该颜色图，展示该颜色图列表 (colorImages)
+  // 2. 如果选中颜色但没有颜色图，展示产品主图 (mainImage)
+  // 3. 如果没选颜色，展示全部图 (productData.images)
+  const imagesToShow = (selectedColor && colorImages.length > 0)
+    ? colorImages
+    : (selectedColor && mainImage)
       ? [mainImage]
       : productData.images;
 

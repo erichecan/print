@@ -110,34 +110,86 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
             return a.value.localeCompare(b.value);
         });
 
-    // 转换图片数据
-    const images = apiProduct.images
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map(img => {
-            // Find if this image is linked to any color
-            // Strategy 1: Strict URL match
-            let linkedColor = Array.from(colorMap.entries()).find(([_, data]) => data.imageUrl === img.url)?.[0];
-
-            // Strategy 2: Fallback to Alt text matching (e.g. "Black 1", "Black 2")
-            // This is robust against URL mismatches (e.g. if variant URL is blob but image URL is http, or vice versa, or just different params)
-            if (!linkedColor && img.alt) {
-                // Check if alt text explicitly starts with any known color name
-                // Sort colors by length desc to match "Dark Blue" before "Blue"
-                const sortedColorNames = Array.from(colorMap.keys()).sort((a, b) => b.length - a.length);
-                const matchedName = sortedColorNames.find(c => img.alt!.startsWith(c));
-                if (matchedName) {
-                    linkedColor = matchedName;
-                }
+    // 提取 apiProduct.colorImages 中的映射 (如果有)
+    const colorImageMap = new Map<string, string>();
+    if (apiProduct.colorImages) {
+        apiProduct.colorImages.forEach(ci => {
+            if (ci.imageUrls && ci.imageUrls.length > 0) {
+                ci.imageUrls.forEach(url => {
+                    // Normalize URL by removing query params for matching
+                    const normalizedUrl = url.split('?')[0];
+                    if (!colorImageMap.has(normalizedUrl)) {
+                        colorImageMap.set(normalizedUrl, ci.color);
+                    }
+                });
             }
-
-            return {
-                id: img.id,
-                url: img.url,
-                alt: img.alt || apiProduct.name,
-                thumbnail: img.url, // 可以后续优化为生成缩略图
-                color: linkedColor || null,
-            };
         });
+    }
+
+    // 转换图片数据
+    const existingImages = apiProduct.images.map(img => {
+        // Strategy 1: Check colorImages mapping from DB (ProductColorImage)
+        const normalizedImgUrl = img.url.split('?')[0];
+        let linkedColor = colorImageMap.get(normalizedImgUrl);
+
+        // Strategy 2: URL match from variants
+        if (!linkedColor) {
+            linkedColor = Array.from(colorMap.entries()).find(([_, data]) => {
+                return data.imageUrl && data.imageUrl.split('?')[0] === normalizedImgUrl;
+            })?.[0];
+        }
+
+        // Strategy 3: Fallback to Alt text matching (Robust)
+        if (!linkedColor && img.alt) {
+            const altText = img.alt.toLowerCase();
+            const sortedColorNames = Array.from(colorMap.keys()).sort((a, b) => b.length - a.length);
+
+            const matchedName = sortedColorNames.find(c => {
+                const cLower = c.toLowerCase();
+                // 匹配模式： "Color", "Product - Color - View", "Color - View", "Product - Color"
+                return altText === cLower ||
+                    altText.includes(` - ${cLower} - `) ||
+                    altText.endsWith(` - ${cLower}`) ||
+                    altText.startsWith(`${cLower} - `);
+            });
+
+            if (matchedName) {
+                linkedColor = matchedName;
+            }
+        }
+
+        return {
+            id: img.id,
+            url: img.url,
+            alt: img.alt || apiProduct.name,
+            thumbnail: img.url,
+            color: linkedColor || null,
+        };
+    });
+
+    // 额外合并 colorImages 中可能不在主 images 列表里的图片
+    const extraImages: any[] = [];
+    if (apiProduct.colorImages) {
+        apiProduct.colorImages.forEach(ci => {
+            if (ci.imageUrls) {
+                ci.imageUrls.forEach((url, idx) => {
+                    const normalizedUrl = url.split('?')[0];
+                    const alreadyExists = existingImages.some(ei => ei.url.split('?')[0] === normalizedUrl);
+                    if (!alreadyExists) {
+                        extraImages.push({
+                            id: `colorImg-${ci.color}-${idx}`,
+                            url: url,
+                            alt: `${apiProduct.name} - ${ci.color} - view ${idx + 1}`,
+                            thumbnail: url,
+                            color: ci.color,
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    const finalImages = [...existingImages, ...extraImages];
 
     // 生成产品特性 - 不再从描述生成，使用通用默认值，或者留空
     const features = [
@@ -214,7 +266,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
             { value: 'back', label: 'Back' },
             { value: 'both', label: 'Front & Back' },
         ],
-        images: images,
+        images: finalImages,
         rating: {
             average: apiProduct.rating?.average || 4.5,
             count: apiProduct.rating?.count || 0,
