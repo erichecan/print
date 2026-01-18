@@ -35,17 +35,6 @@ export function SEOChecker({ wizardData }: SEOCheckerProps) {
         : '建议在标题中添加更多描述性关键词',
     });
 
-    // Check tags
-    const tags = wizardData.tags || [];
-    results.push({
-      id: 'tags',
-      label: '商品标签',
-      status: tags.length >= 3 ? 'pass' : 'warning',
-      message:
-        tags.length >= 3
-          ? `已添加 ${tags.length} 个标签`
-          : `建议添加更多商品标签（当前：${tags.length} 个）`,
-    });
 
     // Check all variants have images
     const colors = wizardData.colors || [];
