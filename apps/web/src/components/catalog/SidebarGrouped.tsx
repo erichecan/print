@@ -43,13 +43,13 @@ const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((r)
 export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-// Fixed possible null searchParams
+  // Fixed possible null searchParams
   const search = searchParams?.get('search') || '';
   const collection = searchParams?.get('collection') || ''; // Support collection filter if needed
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-// Switch to the robust filters API which already aggregates product data
+  // Switch to the robust filters API which already aggregates product data
   // passing collection/search to get accurate counts
   const apiUrl = `${API_BASE_URL}/products/filters/options?collection=${collection}&search=${search}`;
 
@@ -62,7 +62,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
     }
   );
 
-// Transform filter options categories into Group structure
+  // Transform filter options categories into Group structure
   // The API returns a flat list or tree depending on backend, but DynamicFilters expected a tree.
   // Let's assume filterOptions.categories is the array of categories.
   const groups: CategoryGroup[] = (() => {
@@ -70,7 +70,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
 
     const rawCategories: any[] = filterOptions.categories;
 
-// Fix: Identify all child categories to avoid rendering them as top-level duplicates
+    // Fix: Identify all child categories to avoid rendering them as top-level duplicates
     const childIds = new Set<string>();
     rawCategories.forEach(cat => {
       if (cat.children && Array.isArray(cat.children)) {
@@ -108,7 +108,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
       });
   })();
 
-// 从 URL 解析选中状态
+  // 从 URL 解析选中状态
   useEffect(() => {
     // Legacy support for onSelect callback if used
     if (onSelect) {
@@ -117,7 +117,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
     }
   }, [pathname, onSelect]);
 
-// 切换分组折叠/展开
+  // 切换分组折叠/展开
   const toggleGroup = (groupSlug: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
@@ -173,8 +173,13 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
 
           return (
             <section key={group.id} className={styles.group}>
-              {/* Group Title - Main Heading Style */}
-              <h3 className={styles.groupTitle}>{group.name}</h3>
+              {/* Group Title - Main Heading Style, also clickable to see all in category */}
+              <Link
+                href={`/products?category=${group.slug}`}
+                className={`${styles.groupTitle} ${isCategoryActive(group.slug) ? styles.activeGroup : ''}`}
+              >
+                {group.name}
+              </Link>
 
               <ul className={styles.childList}>
                 {/* Add "All [Group Name]" option? Optional but common */}
@@ -193,8 +198,6 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
                         }}
                       >
                         <span className={styles.childName}>{child.name}</span>
-                        {/* Remove count if user wants clean look, or keep lightly */}
-                        <span className={styles.childCount}>({child.count})</span>
                       </Link>
                     </li>
                   );
