@@ -14,7 +14,7 @@
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
 }
 
 .group {
@@ -24,17 +24,19 @@
 
 .groupTitle {
   display: block;
-  font-size: 20px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 700;
   color: #111827;
-  margin: 0 0 16px 0;
+  margin: 0 0 10px 0;
   padding: 0;
   line-height: 1.2;
-  text-decoration: none;
 }
 
-.groupTitle:hover {
-  text-decoration: underline;
+.groupCount {
+  font-size: 14px;
+  font-weight: 400;
+  color: #9ca3af;
+  margin-left: 4px;
 }
 
 .activeGroup {
@@ -47,38 +49,42 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
 .child {
-  display: block;
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
-  color: #374151;
-  font-size: 16px;
-  line-height: 1.5;
-  transition: all 0.15s;
-  padding: 6px 12px;
-  border-radius: 4px;
-  margin: 0 -12px;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: all 0.1s;
+  padding: 0;
 }
 
 .child:hover {
-  color: #2563eb;
-  background-color: #f1f5fe;
+  color: #111827;
+  text-decoration: underline;
 }
 
 .child.active {
-  font-weight: 500;
+  font-weight: 600;
   color: #2563eb;
-  background-color: #f1f5fe;
 }
 
 .childName {
-  display: inline-block;
+  display: inline;
+}
+
+.childCount {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-left: 4px;
 }
 
 .showMore {
-  margin-top: 12px;
+  margin-top: 4px;
   padding: 4px 0;
   background: none;
   border: none;

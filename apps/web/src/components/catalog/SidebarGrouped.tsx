@@ -23,6 +23,7 @@ interface CategoryGroup {
   id: string;
   name: string;
   slug: string;
+  count: number;
   children: CategoryChild[];
 }
 
@@ -85,7 +86,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
         const hasChildren = cat.children && Array.isArray(cat.children) && cat.children.length > 0;
 
         // If category has children, render them. If not (flat category like Mugs), render itself as the only option.
-        const children = hasChildren
+        const children = (hasChildren
           ? cat.children.map((child: any) => ({
             id: child.id,
             name: child.name,
@@ -97,15 +98,19 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
             name: cat.name,
             slug: cat.slug,
             count: cat.count || 0
-          }];
+          }]).filter((child: any) => child.count > 0);
+
+        const totalCount = children.reduce((sum: number, child: CategoryChild) => sum + child.count, 0);
 
         return {
           id: cat.id,
           name: cat.name,
           slug: cat.slug,
+          count: totalCount || cat.count || 0,
           children
         };
-      });
+      })
+      .filter(group => group.count > 0);
   })();
 
   // 从 URL 解析选中状态
@@ -173,13 +178,11 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
 
           return (
             <section key={group.id} className={styles.group}>
-              {/* Group Title - Main Heading Style, also clickable to see all in category */}
-              <Link
-                href={`/products?category=${group.slug}`}
-                className={`${styles.groupTitle} ${isCategoryActive(group.slug) ? styles.activeGroup : ''}`}
-              >
+              {/* Group Title - Main Heading Style */}
+              <h3 className={styles.groupTitle}>
                 {group.name}
-              </Link>
+                {group.count > 0 && <span className={styles.groupCount}> ({group.count})</span>}
+              </h3>
 
               <ul className={styles.childList}>
                 {/* Add "All [Group Name]" option? Optional but common */}
@@ -198,6 +201,9 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
                         }}
                       >
                         <span className={styles.childName}>{child.name}</span>
+                        {child.count > 0 && (
+                          <span className={styles.childCount}>({child.count})</span>
+                        )}
                       </Link>
                     </li>
                   );
