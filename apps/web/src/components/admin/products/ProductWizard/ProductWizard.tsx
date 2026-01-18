@@ -65,7 +65,7 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
         description: initialProduct.description || undefined,
         longDescription: initialProduct.longDescription || undefined,
         sku: initialProduct.sku,
-        basePrice: Number(initialProduct.basePrice) / 100, // Convert cents to dollars
+        basePrice: Number(initialProduct.basePrice), // Backend returns dollars, no need to divide by 100
         salePrice: initialProduct.salePrice ? Number(initialProduct.salePrice) : undefined,
         unitCost: initialProduct.unitCost ? Number(initialProduct.unitCost) : undefined,
         grossProfit: initialProduct.grossProfit ? Number(initialProduct.grossProfit) : undefined,
@@ -80,6 +80,17 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
         tags: [], // TODO: Extract from product if tags are stored
         slug: initialProduct.slug,
         publishOption: initialProduct.isActive ? 'publish' : 'draft',
+        // Load variant combinations
+        variantCombinations: initialProduct.variants && initialProduct.variants.length > 0
+          ? initialProduct.variants.map((v) => ({
+            color: v.color || 'UNSET',
+            size: v.size || 'ONE',
+            enabled: true,
+            sku: v.sku,
+            stockQuantity: v.stockQuantity || 0,
+            hasImage: !!v.imageUrl,
+          }))
+          : undefined,
         // Load colors from variants
         colors: initialProduct.variants && initialProduct.variants.length > 0
           ? (() => {
@@ -92,6 +103,7 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
               mappingId?: string;
             }>();
 
+            // First pass: aggregated from variants
             initialProduct.variants.forEach((variant) => {
               if (variant.color) {
                 const colorKey = variant.color;
@@ -106,12 +118,39 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
                 } else {
                   // Add image if not already present
                   const colorConfig = colorMap.get(colorKey)!;
-                  if (variant.imageUrl && !colorConfig.images.find(img => img.url === variant.imageUrl)) {
+                  if (variant.imageUrl && !colorConfig.images.find((img) => img.url === variant.imageUrl)) {
                     colorConfig.images.push({ url: variant.imageUrl });
                   }
                 }
               }
             });
+
+            // Second pass: enrich with multi-view images from `colorImages`
+            if (initialProduct.colorImages && initialProduct.colorImages.length > 0) {
+              initialProduct.colorImages.forEach(ci => {
+                const colorKey = ci.colorName;
+                if (colorMap.has(colorKey)) {
+                  const config = colorMap.get(colorKey)!;
+                  // Update Hex if missing
+                  if (ci.colorHex && (!config.colorHex || config.colorHex === '#CCCCCC')) {
+                    config.colorHex = ci.colorHex;
+                  }
+                  // Overwrite/Append Images from verified source
+                  // If we have verified multi-view images, let's prefer them.
+                  if (ci.imageUrls && Array.isArray(ci.imageUrls) && ci.imageUrls.length > 0) {
+                    // Filter out existing to avoid dups
+                    const newImages = (ci.imageUrls as string[]).map(url => ({ url }));
+                    // Strategy: If we have multi-view, replace the single variant image?
+                    // Or append? Let's append unique ones.
+                    newImages.forEach(newImg => {
+                      if (!config.images.find(curr => curr.url === newImg.url)) {
+                        config.images.push(newImg);
+                      }
+                    });
+                  }
+                }
+              });
+            }
 
             return Array.from(colorMap.values());
           })()

@@ -1,0 +1,552 @@
+{
+  "alternatives": [
+    {
+      "color": "176000",
+      "link": "/products/t-shirts/short-sleeve-t-shirts/hanes-perfect-t-crewneck-t-shirt/176000",
+      "sizing": "YXS-4XL",
+      "min_qty": 1,
+      "complement_badge": "Also in Women's",
+      "rating_score": "4.4",
+      "rating_count": "(7,559 ratings)",
+      "name": "Hanes Perfect-T Crewneck T-shirt",
+      "style_id": 176000,
+      "image_src": "https://mms-images.out.customink.com/mms/images/catalog/05866b675598f94469692fd2953397b4/colors/176000/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270",
+      "image_srcset": "https://mms-images.out.customink.com/mms/images/catalog/05866b675598f94469692fd2953397b4/colors/176000/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270 1x, https://mms-images.out.customink.com/mms/images/catalog/05866b675598f94469692fd2953397b4/colors/176000/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=432 2x",
+      "sizes": [
+        "YXS",
+        "YS",
+        "YM",
+        "YL",
+        "YXL",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "XXXXL"
+      ],
+      "default_unit_prices": [
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 25,
+          "price": "13.55"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 50,
+          "price": "11.45"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 1,
+          "price": "33.25"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 10,
+          "price": "20.40"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 500,
+          "price": "8.85"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 30,
+          "price": "11.50"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 20,
+          "price": "14.60"
+        }
+      ],
+      "primary_category_id": 16,
+      "style_type": "apparel",
+      "default_quote_qty": 500
+    },
+    {
+      "color": "871100",
+      "link": "/products/t-shirts/short-sleeve-t-shirts/district-vit-t-shirt/871100",
+      "sizing": "YXS-4XL",
+      "min_qty": 1,
+      "complement_badge": "Also in Women's",
+      "rating_score": "4.5",
+      "rating_count": "(250 ratings)",
+      "name": "District V.I.T. T-shirt",
+      "style_id": 871100,
+      "image_src": "https://mms-images.out.customink.com/mms/images/catalog/ac81a6e33a2d310dbbeb3ae65a504f3a/colors/871100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270",
+      "image_srcset": "https://mms-images.out.customink.com/mms/images/catalog/ac81a6e33a2d310dbbeb3ae65a504f3a/colors/871100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270 1x, https://mms-images.out.customink.com/mms/images/catalog/ac81a6e33a2d310dbbeb3ae65a504f3a/colors/871100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=432 2x",
+      "sizes": [
+        "YXS",
+        "YS",
+        "YM",
+        "YL",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "XXXXL"
+      ],
+      "default_unit_prices": [
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 25,
+          "price": "15.60"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 10,
+          "price": "22.25"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 50,
+          "price": "13.50"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 500,
+          "price": "10.95"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 30,
+          "price": "13.69"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 1,
+          "price": "32.50"
+        }
+      ],
+      "primary_category_id": 16,
+      "style_type": "apparel",
+      "default_quote_qty": 500
+    },
+    {
+      "color": "124200",
+      "link": "/products/t-shirts/short-sleeve-t-shirts/bella-+-canvas-jersey-t-shirt/124200",
+      "sizing": "YS-4XL",
+      "min_qty": 1,
+      "complement_badge": "Also in Women's",
+      "rating_score": "4.5",
+      "rating_count": "(10,000+ ratings)",
+      "name": "Bella + Canvas Jersey T-shirt",
+      "style_id": 124200,
+      "image_src": "https://mms-images.out.customink.com/mms/images/catalog/6e96a124dd1d35f39d34353b56a31270/colors/124200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270",
+      "image_srcset": "https://mms-images.out.customink.com/mms/images/catalog/6e96a124dd1d35f39d34353b56a31270/colors/124200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270 1x, https://mms-images.out.customink.com/mms/images/catalog/6e96a124dd1d35f39d34353b56a31270/colors/124200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=432 2x",
+      "sizes": [
+        "YS",
+        "YM",
+        "YL",
+        "YXL",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "XXXXL"
+      ],
+      "default_unit_prices": [
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 10,
+          "price": "22.50"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 25,
+          "price": "15.80"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 1,
+          "price": "36.25"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 100,
+          "price": "12.55"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 50,
+          "price": "13.75"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 500,
+          "price": "11.15"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 30,
+          "price": "14.28"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 20,
+          "price": "16.85"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 12,
+          "price": "20.50"
+        }
+      ],
+      "primary_category_id": 16,
+      "style_type": "apparel",
+      "default_quote_qty": 500
+    },
+    {
+      "color": "172100",
+      "link": "/products/t-shirts/short-sleeve-t-shirts/next-level-jersey-t-shirt/172100",
+      "sizing": "YXS-4XL",
+      "min_qty": 1,
+      "complement_badge": "Also in Women's",
+      "rating_score": "4.5",
+      "rating_count": "(4,190 ratings)",
+      "name": "Next Level Jersey T-shirt",
+      "style_id": 172100,
+      "image_src": "https://mms-images.out.customink.com/mms/images/catalog/0d007aab74776ee1e2c247960593f65e/colors/172100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270",
+      "image_srcset": "https://mms-images.out.customink.com/mms/images/catalog/0d007aab74776ee1e2c247960593f65e/colors/172100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270 1x, https://mms-images.out.customink.com/mms/images/catalog/0d007aab74776ee1e2c247960593f65e/colors/172100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=432 2x",
+      "sizes": [
+        "YXS",
+        "YS",
+        "YM",
+        "YL",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "XXXXL"
+      ],
+      "default_unit_prices": [
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 1,
+          "price": "35.25"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 25,
+          "price": "15.40"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 100,
+          "price": "12.15"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 50,
+          "price": "13.35"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 500,
+          "price": "10.80"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 30,
+          "price": "14.28"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 20,
+          "price": "16.45"
+        }
+      ],
+      "primary_category_id": 16,
+      "style_type": "apparel",
+      "default_quote_qty": 500
+    }
+  ],
+  "complements": [
+    {
+      "color": "1503500",
+      "link": "/products/womens/womens-short-sleeve-t-shirts/gildan-womens-midweight-softstyle-jersey-t-shirt/1503500",
+      "sizing": "S-3XL",
+      "min_qty": 1,
+      "complement_badge": "Also in Men's",
+      "rating_score": "4.3",
+      "rating_count": "(548 ratings)",
+      "name": "Gildan Women's Midweight Softstyle Jersey T-shirt",
+      "style_id": 1503500,
+      "image_src": "https://mms-images.out.customink.com/mms/images/catalog/8d4b4b1ecd745ee35e71ff8ca625702f/colors/1503500/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270",
+      "image_srcset": "https://mms-images.out.customink.com/mms/images/catalog/8d4b4b1ecd745ee35e71ff8ca625702f/colors/1503500/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270 1x, https://mms-images.out.customink.com/mms/images/catalog/8d4b4b1ecd745ee35e71ff8ca625702f/colors/1503500/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=432 2x",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL"
+      ],
+      "default_unit_prices": [
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 25,
+          "price": "14.45"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 500,
+          "price": "9.75"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 30,
+          "price": "14.48"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 1,
+          "price": "34.25"
+        }
+      ],
+      "primary_category_id": 109,
+      "style_type": "apparel",
+      "default_quote_qty": 500
+    },
+    {
+      "color": "108200",
+      "link": "/products/sweatshirts/hoodies/gildan-midweight-50-50-pullover-hoodie/108200",
+      "sizing": "YXS-5XL",
+      "min_qty": 1,
+      "complement_badge": "Youth & Adult Sizes",
+      "rating_score": "4.5",
+      "rating_count": "(10,000+ ratings)",
+      "name": "Gildan Midweight 50/50 Pullover Hoodie",
+      "style_id": 108200,
+      "image_src": "https://mms-images.out.customink.com/mms/images/catalog/65a9596ce3369215f1e716d477e39147/colors/108200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270",
+      "image_srcset": "https://mms-images.out.customink.com/mms/images/catalog/65a9596ce3369215f1e716d477e39147/colors/108200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270 1x, https://mms-images.out.customink.com/mms/images/catalog/65a9596ce3369215f1e716d477e39147/colors/108200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=432 2x",
+      "sizes": [
+        "YXS",
+        "YS",
+        "YM",
+        "YL",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "XXXXL",
+        "XXXXXL"
+      ],
+      "default_unit_prices": [
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 1,
+          "price": "47.70"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 20,
+          "price": "28.55"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 10,
+          "price": "34.05"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 50,
+          "price": "25.50"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 25,
+          "price": "27.50"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 100,
+          "price": "24.35"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 500,
+          "price": "22.95"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 15,
+          "price": "30.30"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 12,
+          "price": "32.10"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 2,
+          "price": "46.20"
+        }
+      ],
+      "primary_category_id": 71,
+      "style_type": "apparel",
+      "default_quote_qty": 500
+    },
+    {
+      "color": "107200",
+      "link": "/products/sweatshirts/crewneck-sweatshirts/gildan-midweight-50-50-crewneck-sweatshirt/107200",
+      "sizing": "YXS-5XL",
+      "min_qty": 1,
+      "complement_badge": "Youth & Adult Sizes",
+      "rating_score": "4.6",
+      "rating_count": "(10,000+ ratings)",
+      "name": "Gildan Midweight 50/50 Crewneck Sweatshirt",
+      "style_id": 107200,
+      "image_src": "https://mms-images.out.customink.com/mms/images/catalog/40059b06c9fd29f2c0df8987e936700f/colors/107200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270",
+      "image_srcset": "https://mms-images.out.customink.com/mms/images/catalog/40059b06c9fd29f2c0df8987e936700f/colors/107200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270 1x, https://mms-images.out.customink.com/mms/images/catalog/40059b06c9fd29f2c0df8987e936700f/colors/107200/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=432 2x",
+      "sizes": [
+        "YXS",
+        "YS",
+        "YM",
+        "YL",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "XXXXL",
+        "XXXXXL"
+      ],
+      "default_unit_prices": [
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 1,
+          "price": "42.70"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 25,
+          "price": "20.75"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 50,
+          "price": "18.75"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 10,
+          "price": "27.35"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 20,
+          "price": "21.80"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 500,
+          "price": "16.25"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 2,
+          "price": "41.20"
+        }
+      ],
+      "primary_category_id": 120,
+      "style_type": "apparel",
+      "default_quote_qty": 500
+    },
+    {
+      "color": "6100",
+      "link": "/products/t-shirts/long-sleeve-t-shirts/gildan-ultra-cotton-long-sleeve-t-shirt/6100",
+      "sizing": "S-5XL",
+      "min_qty": 1,
+      "complement_badge": null,
+      "rating_score": "4.6",
+      "rating_count": "(10,000+ ratings)",
+      "name": "Gildan Ultra Cotton Long Sleeve T-shirt",
+      "style_id": 6100,
+      "image_src": "https://mms-images.out.customink.com/mms/images/catalog/12e83e1866aa03d571ba2f0bec83525b/colors/6100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270",
+      "image_srcset": "https://mms-images.out.customink.com/mms/images/catalog/12e83e1866aa03d571ba2f0bec83525b/colors/6100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=270 1x, https://mms-images.out.customink.com/mms/images/catalog/12e83e1866aa03d571ba2f0bec83525b/colors/6100/views/alt/front_medium_extended.png?autoNegate=1&ixbg=%23ffffff&ixfm=jpeg&ixq=60&ixw=432 2x",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL",
+        "XXXXL",
+        "XXXXXL"
+      ],
+      "default_unit_prices": [
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 1,
+          "price": "36.70"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 10,
+          "price": "24.30"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 25,
+          "price": "17.45"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 100,
+          "price": "14.15"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 50,
+          "price": "15.35"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 500,
+          "price": "12.70"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 30,
+          "price": "15.68"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 20,
+          "price": "18.50"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 32,
+          "price": "15.47"
+        },
+        {
+          "algorithm": "default-2022-03-24",
+          "quantity": 2,
+          "price": "35.20"
+        }
+      ],
+      "primary_category_id": 17,
+      "style_type": "apparel",
+      "default_quote_qty": 500
+    }
+  ]
+}

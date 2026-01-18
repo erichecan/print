@@ -1,0 +1,19 @@
+{
+  "deliveryText": "Delivery &mdash; Get it by Fri. Jan 30",
+  "rushDeliveryText": "Rush or Super Rush &mdash; Get it as soon as Thu. Jan 22",
+  "details": {
+    "standard": {
+      "delivery_date": "2026-01-30",
+      "days": 14
+    },
+    "rush": {
+      "delivery_date": "2026-01-24",
+      "days": 7
+    },
+    "super_rush": {
+      "delivery_date": "2026-01-22",
+      "days": 3
+    }
+  },
+  "individualShipEligible": true
+}

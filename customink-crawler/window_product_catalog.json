@@ -1,0 +1,190 @@
+{
+  "IFrame": {
+    "setBodyStyleAttributes": {},
+    "prefix": {}
+  },
+  "gtmEvent": {},
+  "gtmEcomEvent": {},
+  "Faqs": {},
+  "PostMessage": {
+    "sendReadyMessage": {},
+    "handleLabLinkClick": {
+      "guid": 39
+    },
+    "handleQtyToggle": {
+      "guid": 40
+    },
+    "postMessage": {}
+  },
+  "LocalStorage": {
+    "isLocalStorageSupported": {},
+    "write": {},
+    "read": {},
+    "inMemoryStorage": {},
+    "localStorageSupported": true
+  },
+  "Pricing": {
+    "defaultAlgorithm": "default-2022-03-24",
+    "defaultQuoteEl": {},
+    "defaultQuoteCategory": {},
+    "isDefaultQuoteCategory": {},
+    "fetchOrdQtyPricing": {},
+    "ipResponse": {
+      "city": "Markham",
+      "subdivision": {
+        "short": "ON",
+        "long": "Ontario"
+      },
+      "postal_code": "L6G",
+      "country": {
+        "short": "CA",
+        "long": "Canada"
+      },
+      "coordinates": [
+        43.8483,
+        -79.3349
+      ],
+      "time_zone": "America/Toronto",
+      "cloudfront_country": "CA",
+      "cloudfront_eu": false,
+      "algorithm": null
+    }
+  },
+  "MultiItem": {
+    "compositeId": null,
+    "digest": null
+  },
+  "Analytics": {},
+  "ImageLazyLoader": {
+    "imageObserve": {},
+    "spinnerInsert": {},
+    "observeAll": {},
+    "unobserveAll": {},
+    "lazyImageObserver": {}
+  },
+  "Toolbar": {
+    "waypointHandlerToolbar": {},
+    "waypointHandlerFooter": {},
+    "waypointRefreshFooter": {}
+  },
+  "ToolbarShopBy": {
+    "searchOpened": {
+      "guid": 54
+    },
+    "searchClosed": {
+      "guid": 55
+    },
+    "toggleDropdown": {
+      "guid": 56
+    },
+    "fireShopBySelectEvent": {
+      "guid": 59
+    },
+    "onHeaderUnfocus": {
+      "guid": 57
+    },
+    "windowWidth": 1280
+  },
+  "ToolbarSearch": {
+    "searchOpened": {},
+    "searchClosed": {
+      "guid": 60
+    },
+    "searchShow": {},
+    "searchHide": {
+      "guid": 62
+    },
+    "searchCleared": {
+      "guid": 61
+    },
+    "navSearchTarget": ".pc-SearchTarget"
+  },
+  "Overlay": {
+    "hide": {}
+  },
+  "OverlayDropdown": {
+    "open": {
+      "guid": 63
+    },
+    "close": {
+      "guid": 64
+    },
+    "closeAll": {},
+    "globalClose": {
+      "guid": 65
+    }
+  },
+  "PostMessenger": {},
+  "Style": {
+    "root": ".pc-Style",
+    "colorDirectToLab": {
+      "guid": 66
+    },
+    "updateSelectedColor": {
+      "guid": 68
+    },
+    "updateQuoteUrlParams": {
+      "guid": 69
+    },
+    "updateUrl": {},
+    "toggleSampleRequestForm": {
+      "guid": 71
+    },
+    "nonInteractiveSwatchSelector": ".pc-Swatch-noninteractive",
+    "nonInteractiveTrimSwatchSelector": ".pc-Swatch-noninteractive .pc-Swatch-trim",
+    "scrollTriggerSelector": "a[data-scrollto]",
+    "selectedColorNameSelector": ".pc-Style-selectedColor-name",
+    "colorDirectToLabSelector": ".pc-Style-hero-allColors > a",
+    "designLabComplementsLinkSelector": ".pc-Style-complements-textSubtitle-link",
+    "enabledColorDirectToLab": false,
+    "shouldFireRequestSampleTooltipEvent": true
+  },
+  "UserPhotos": {
+    "userPhotosWrapper": ".pc-Style-userPhotos",
+    "attachPhotosWrapper": {},
+    "detachPhotosWrapper": {},
+    "userPhotosSection": ".pc-Style-userPhotos-photos",
+    "carouselCounter": 0,
+    "page": 1,
+    "styleId": 176100,
+    "userPhotos": []
+  },
+  "ImagePreloader": {
+    "images": {}
+  },
+  "Tooltip": {
+    "showMobile": {
+      "guid": 72
+    },
+    "closeMobile": {
+      "guid": 73
+    },
+    "showLarge": {
+      "guid": 74
+    },
+    "closeLarge": {
+      "guid": 75
+    },
+    "closeAll": {},
+    "closerSelector": ".pc-Tooltip-closer",
+    "tooltipSelector": ".pc-Tooltip",
+    "triggerSelector": "span[data-tooltip], a[data-tooltip], abbr[data-tooltip]"
+  },
+  "BulkSplitShipModal": {
+    "bssSelector": ".pc-Style-BssAwareness, .pc-ProductCard-BssAwareness",
+    "tagCategory": "bss modal",
+    "openSelector": ".pc-Style-BssAwareness-link, .pc-ProductCard-BssAwareness-link",
+    "openBulkSplitShipModal": {},
+    "clickBulkSplitShipModalButton": {},
+    "clickBulkSplitShipModalTemplate": {},
+    "clickBulkSplitShipModalPhone": {},
+    "clickBulkSplitShipModalChat": {},
+    "tagAction": "pdp"
+  },
+  "GtmDetails": {
+    "swatchSelected": {
+      "guid": 82
+    },
+    "detailEcomEvent": {}
+  }
+}
