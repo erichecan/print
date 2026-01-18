@@ -138,8 +138,9 @@ export function Step4Preview() {
         }
       }
 
-      // Redirect to product edit page or products list
-      router.push(`/admin/products/${product.id}`);
+      // Show success message and redirect to products list
+      alert('商品发布成功');
+      router.push('/admin/products');
     } catch (error: any) {
       console.error('Failed to publish product:', error);
       setSubmitError(error?.message || '发布失败，请稍后重试');
