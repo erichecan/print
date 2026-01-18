@@ -4,7 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import Image from 'next/image';
-import { adminProductsApi, AdminProductSummary } from '@/lib/api';
+import { adminProductsApi, AdminProductSummary, adminCategoriesApi } from '@/lib/api';
 import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 type StatusFilter = 'all' | 'active' | 'out_of_stock' | 'archived';
@@ -40,8 +40,7 @@ export default function AdminProductsPage() {
   );
 
   const { data: categoriesData } = useSWR('admin-categories', () =>
-    // This would ideally come from a categories API
-    Promise.resolve({ data: [] })
+    adminCategoriesApi.list({ limit: 100 })
   );
 
   const handleSearch = () => {
@@ -182,7 +181,11 @@ export default function AdminProductsPage() {
             <option value="" data-i18n="allCategories">
               {t('allCategories')}
             </option>
-            {/* Categories would be populated here */}
+            {categoriesData?.data?.map((cat: any) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
           </select>
 
           <select
@@ -301,8 +304,8 @@ export default function AdminProductsPage() {
                     </div>
                   </td>
                   <td className="font-mono text-sm">{product.sku || '-'}</td>
-                  <td data-i18n="categoryUnassigned">
-                    {product.category?.name || t('categoryUnassigned')}
+                  <td>
+                    {product.category?.name || <span data-i18n="categoryUnassigned">{t('categoryUnassigned')}</span>}
                   </td>
                   <td>${product.basePrice.toFixed(2)}</td>
                   <td>

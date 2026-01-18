@@ -93,18 +93,20 @@ async function main() {
         let targetCategoryName = null;
 
         // Mapping logic
-        if (nameLower.includes('t-shirt') || nameLower.includes('tee') || nameLower.includes('tank') || nameLower.includes('sleeveless') || nameLower.includes('polo')) {
+        const isApparel = nameLower.includes('t-shirt') || nameLower.includes('tee') || nameLower.includes('tank') || nameLower.includes('sleeveless') || nameLower.includes('polo') || nameLower.includes('shirt') || nameLower.includes('bodysuit');
+
+        if (isApparel && !(nameLower.includes('hoodie') || nameLower.includes('sweatshirt') || nameLower.includes('pullover'))) {
             // T-shirts sub-categorization
-            if (nameLower.includes('long sleeve')) {
+            if (nameLower.includes('performance') || nameLower.includes('polo') || nameLower.includes('competitor')) {
+                targetCategoryName = 'Performance Shirts';
+            } else if (nameLower.includes('youth') || nameLower.includes('kids') || nameLower.includes('baby') || nameLower.includes('toddler') || nameLower.includes('child') || nameLower.includes('infant') || nameLower.includes('bodysuit')) {
+                targetCategoryName = 'Kids T-shirts';
+            } else if (nameLower.includes('long sleeve')) {
                 targetCategoryName = 'Long Sleeve T-shirts';
             } else if (nameLower.includes('tri-blend')) {
                 targetCategoryName = 'Soft Tri-Blend T-shirts';
-            } else if (nameLower.includes('performance') || nameLower.includes('polo')) {
-                targetCategoryName = 'Performance Shirts';
             } else if (nameLower.includes("women's")) {
                 targetCategoryName = "Women's T-shirts";
-            } else if (nameLower.includes('youth') || nameLower.includes('kids') || nameLower.includes('baby') || nameLower.includes('toddler') || nameLower.includes('child') || nameLower.includes('infant')) {
-                targetCategoryName = 'Kids T-shirts';
             } else if (nameLower.includes('tie-dye')) {
                 targetCategoryName = 'Tie-Dye T-shirts';
             } else if (nameLower.includes('tank') || nameLower.includes('sleeveless')) {
