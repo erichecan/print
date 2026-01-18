@@ -420,6 +420,7 @@ exports.getProductById = async (req, res) => {
         images: {
           orderBy: { sortOrder: 'asc' },
         },
+        colorImages: true, // Include multi-view images
         collectionProducts: {
           include: {
             collection: {

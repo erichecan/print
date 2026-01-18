@@ -375,6 +375,16 @@ export function SiteHeader() {
               </li>
             </>
           )}
+          {/* Mobile Only: Offline Order Link */}
+          <li>
+            <Link
+              href="/mobile/offline-orders/create"
+              className="mobile-nav__link"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Offline Order
+            </Link>
+          </li>
         </ul>
         <div className="mobile-nav__footer">
           {authLoading ? (

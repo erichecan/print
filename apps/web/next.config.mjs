@@ -176,6 +176,13 @@ const remotePatterns = [
     port: '',
     pathname: '/**',
   },
+  // [2026-01-17] Allow CustomInk raw image domain
+  {
+    protocol: 'https',
+    hostname: 'mms-images.out.customink.com',
+    port: '',
+    pathname: '/**',
+  },
   // [2025-01-30 19:50:00] 允许 via.placeholder.com（用于占位图）
   {
     protocol: 'https',

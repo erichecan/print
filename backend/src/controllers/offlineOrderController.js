@@ -41,12 +41,13 @@ const safeJsonParse = (value) => {
 
 /**
  * 生成订单编号
-* 修改规则：最后6位 = 前3位流水号（001开始递增）+ 后3位随机字母
+ * 修改规则：最后6位 = 前3位流水号（001开始递增）+ 后3位随机字母
  * @param {Object} tx - Prisma transaction 对象（可选）
+ * @param {Date} date - 订单日期（可选，默认为当前时间）
  * @returns {Promise<string>} 订单编号
  */
-const generateOrderCode = async (tx = null) => {
-  const timestamp = new Date();
+const generateOrderCode = async (tx = null, date = null) => {
+  const timestamp = date || new Date(); // Use provided date or current time
   // YYMMDD 格式 (e.g., 2026-01-08 -> 260108)
   const fullDate = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
   const datePart = fullDate.substring(2);
@@ -258,8 +259,13 @@ exports.createOfflineOrder = async (req, res) => {
       orderNotes, // PRD v2.0: 支持从orderNotes字段获取
       dstFileFee,
       paymentMethod,
-      referenceNumber
+      referenceNumber,
+      startDate, // New: Optional start date for historical imports
+      status, // New: Optional status override (e.g., COMPLETED)
+      dueDate // New: Optional explicit due date
     } = req.body;
+
+    logger.info('[offlineOrderController] Creating order with payload:', { startDate, status, dueDate, deliveryDate });
 
     // PRD v2.0: 解析configuration以获取orderNotes（如果projectName不存在）
     const configData = safeJsonParse(configuration);
@@ -320,7 +326,7 @@ exports.createOfflineOrder = async (req, res) => {
       stageKey: initialStage.key,
       stageLabel: initialStage.label,
       stagePosition: initialStage.position ?? 0,
-      status: 'ACTIVE',
+      status: status ? status.toUpperCase() : 'ACTIVE', // Support status override
       // 修复：contactName 和 email 改为可选字段，使用默认值或null
       contactName: contactName?.trim() || '未提供',
       company: company?.trim() || null,
@@ -340,7 +346,8 @@ exports.createOfflineOrder = async (req, res) => {
       order_notes: orderNotes?.trim() || null,
       payment_method: paymentMethod?.trim() || null,
       reference_number: referenceNumber?.trim() || null,
-      deposit_amount: req.body.depositAmount ? parseFloat(req.body.depositAmount) : null
+      deposit_amount: req.body.depositAmount ? parseFloat(req.body.depositAmount) : null,
+      createdAt: startDate ? parseDate(startDate) : undefined, // Override created_at if startDate is provided
     };
 
     const files = Array.isArray(req.files) ? req.files : [];
@@ -348,14 +355,16 @@ exports.createOfflineOrder = async (req, res) => {
     // Upload files to GCS
     const assetPayloads = await Promise.all(files.map(processAssetUpload));
 
+    const orderDate = startDate ? parseDate(startDate) : new Date();
+
     const order = await prisma.$transaction(async (tx) => {
       // 在事务中生成订单编号（使用流水号）
-      let uniqueCode = await generateOrderCode(tx);
+      let uniqueCode = await generateOrderCode(tx, orderDate);
       let exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
       // 如果发生冲突（理论上不应该发生），重新生成
       let retryCount = 0;
       while (exists && retryCount < 10) {
-        uniqueCode = await generateOrderCode(tx);
+        uniqueCode = await generateOrderCode(tx, orderDate);
         exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
         retryCount++;
       }
@@ -414,7 +423,51 @@ exports.createOfflineOrder = async (req, res) => {
         }
       });
 
-      return createdOrder;
+      // Critical: Create ProductionWorkOrder immediately if startDate or dueDate is provided, or always?
+      // The previous code didn't strictly create it in proper separate call?
+      // Wait, `productionWorkOrder` is a relation. The previous code didn't CREATE it in the data payload?
+      // Ah, I missed where productionWorkOrder is created. It seems it wasn't created in the main create call payload?
+      // Let's check the schema. It's a 1:1 relation. 
+      // If it's missing in `data`, it won't be created. 
+      // Checking line 374-401... I don't see `productionWorkOrder` being created!
+      // This means current `createOfflineOrder` doesn't create a production work order!
+      // But `mapOrder` expects it.
+      // If I want to set startDate/dueDate, I MUST create it.
+
+      // Let's create it now.
+      if (!createdOrder.productionWorkOrder) {
+        // Determine work order status based on order status
+        let workOrderStatus = 'PLANNING';
+        const orderStatus = status ? status.toUpperCase() : 'ACTIVE';
+
+        if (orderStatus === 'COMPLETED') {
+          workOrderStatus = 'COMPLETED';
+        } else if (orderStatus === 'CANCELLED') {
+          workOrderStatus = 'CANCELLED';
+        }
+
+        await tx.productionWorkOrder.create({
+          data: {
+            offlineOrderId: createdOrder.id,
+            workOrderCode: generateWorkOrderCode(),
+            status: workOrderStatus,
+            startDate: startDate ? parseDate(startDate) : null,
+            dueDate: dueDate ? parseDate(dueDate) : (deliveryDate ? parseDate(deliveryDate) : null),
+          }
+        });
+      }
+
+      // Re-fetch to include the production work order
+      const finalOrder = await tx.offlineOrder.findUnique({
+        where: { id: createdOrder.id },
+        include: {
+          assets: true,
+          histories: { orderBy: { createdAt: 'desc' } },
+          productionWorkOrder: { include: { events: { orderBy: { createdAt: 'desc' } } } }
+        }
+      });
+
+      return finalOrder;
     });
 
     res.status(201).json({
@@ -476,6 +529,9 @@ exports.listOfflineOrders = async (req, res, next) => {
     const statusFilter = req.query.status ? req.query.status.toString().toUpperCase() : null;
     const rushFilter = req.query.rush === 'true' ? true : req.query.rush === 'false' ? false : null;
     const search = req.query.search?.toString().trim();
+    const paymentMethod = req.query.paymentMethod?.toString().trim();
+    const paymentStatus = req.query.paymentStatus?.toString().toUpperCase();
+    const dateFilter = req.query.date?.toString().trim();
 
     const where = {
       AND: []
@@ -491,6 +547,41 @@ exports.listOfflineOrders = async (req, res, next) => {
 
     if (rushFilter !== null) {
       where.AND.push({ rushOrder: rushFilter });
+    }
+
+    if (paymentMethod) {
+      where.AND.push({ payment_method: paymentMethod });
+    }
+
+    if (paymentStatus === 'PAID') {
+      where.AND.push({
+        deposit_amount: {
+          gt: 0
+        }
+      });
+    } else if (paymentStatus === 'UNPAID') {
+      where.AND.push({
+        OR: [
+          { deposit_amount: { equals: 0 } },
+          { deposit_amount: null }
+        ]
+      });
+    }
+
+    if (dateFilter) {
+      const startDate = new Date(dateFilter);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(dateFilter);
+      endDate.setHours(23, 59, 59, 999);
+
+      if (!isNaN(startDate.getTime())) {
+        where.AND.push({
+          createdAt: {
+            gte: startDate,
+            lte: endDate
+          }
+        });
+      }
     }
 
     if (search) {

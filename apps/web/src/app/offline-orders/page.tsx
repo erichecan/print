@@ -145,6 +145,10 @@ type FormState = {
   referenceNumber: string; // 参考号
   total: number; // 总计（含税）
 
+  // PRD v2.1: Backdating support
+  startDate: string; // Order "Start Date" (overrides createdAt)
+  status: string; // Order Status (e.g., ACTIVE, COMPLETED)
+
   // 流程控制
   currentStep: number; // 当前步骤（1-3）
 };
@@ -218,6 +222,8 @@ const initialFormState: FormState = {
   paymentMethod: '',
   referenceNumber: '',
   total: 0,
+  startDate: '',
+  status: 'ACTIVE',
   currentStep: 1,
 };
 
@@ -1514,6 +1520,16 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         if (formState.depositAmount > 0) {
           payload.append('depositAmount', formState.depositAmount.toString());
         }
+        if (formState.startDate) {
+          payload.append('startDate', formState.startDate);
+        }
+        if (formState.status) {
+          payload.append('status', formState.status);
+        }
+        if (formState.dueDate) {
+          // Also append explicit dueDate if needed by backend, though backend usually reads deliveryDate
+          payload.append('dueDate', formState.dueDate);
+        }
 
         // PRD v2.0: 添加文件到 payload（使用 files state，不是 formState.files）
         files.forEach((file) => payload.append('assets', file, file.name));
@@ -2100,6 +2116,33 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                 onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">
+                Start Date
+                <span className="text-gray-400 text-xs font-normal ml-2">(Backdate Override)</span>
+              </span>
+              <input
+                type="date"
+                name="startDate"
+                value={formState.startDate}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">Order Status</span>
+              <select
+                value={formState.status}
+                onChange={(e) => setField('status', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
+                <option value="ACTIVE">Active (In Production)</option>
+                <option value="COMPLETED">Completed (Historical)</option>
+                <option value="DRAFT">Draft</option>
+              </select>
             </label>
           </div>
         </section>

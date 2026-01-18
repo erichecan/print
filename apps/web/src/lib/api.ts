@@ -1432,6 +1432,17 @@ export interface AdminProductDetail extends AdminProductSummary {
     'left-sleeve'?: { width: number; height: number; x: number; y: number };
     'right-sleeve'?: { width: number; height: number; x: number; y: number };
   } | null;
+  colorImages?: Array<{
+    id: string;
+    productId: string | null;
+    customInkProductId: string;
+    customInkColorId: string;
+    colorName: string;
+    colorHex: string | null;
+    imageUrls: string[]; // JSON array of strings
+    isVerified: boolean;
+    isActive: boolean;
+  }>;
 }
 
 export interface AdminProductPayload {
@@ -2804,12 +2815,15 @@ export const adminOfflineOrdersApi = {
       method: 'PATCH',
       body: payload,
     }),
-  list: (params?: { stageKey?: string; search?: string; rush?: boolean; status?: string }) => {
+  list: (params?: { stageKey?: string; search?: string; rush?: boolean; status?: string; paymentMethod?: string; paymentStatus?: string; date?: string }) => {
     const query = new URLSearchParams();
     if (params?.stageKey) query.append('stageKey', params.stageKey);
     if (params?.search) query.append('search', params.search);
     if (params?.status) query.append('status', params.status);
     if (params?.rush !== undefined) query.append('rush', params.rush ? 'true' : 'false');
+    if (params?.paymentMethod) query.append('paymentMethod', params.paymentMethod);
+    if (params?.paymentStatus) query.append('paymentStatus', params.paymentStatus);
+    if (params?.date) query.append('date', params.date);
     const queryString = query.toString();
     return api<AdminOfflineOrderListResponse>(
       `/admin/offline-orders${queryString ? `?${queryString}` : ''}`
