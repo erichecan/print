@@ -152,10 +152,24 @@ async function main() {
 
         if (targetCategoryName && categoryMap.has(targetCategoryName)) {
             const categoryId = categoryMap.get(targetCategoryName);
-            if (product.categoryId !== categoryId) {
+
+            // Check if we need to update ProductCategory
+            const pc = await prisma.productCategory.findFirst({
+                where: { productId: product.id, categoryId }
+            });
+
+            if (product.categoryId !== categoryId || !pc) {
                 await prisma.product.update({
                     where: { id: product.id },
-                    data: { categoryId },
+                    data: {
+                        categoryId,
+                        productCategories: {
+                            deleteMany: {}, // Remove old categories
+                            create: {
+                                categoryId
+                            }
+                        }
+                    },
                 });
                 updatedCount++;
             }
