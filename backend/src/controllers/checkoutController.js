@@ -397,6 +397,8 @@ exports.prepareCheckout = async (req, res) => {
     const sessionId = req.sessionId || null;
     const { shippingAddress, shippingMethod = 'standard', couponCode } = req.body || {}; // 支持优惠券代码
 
+    const shippingSettings = await getSettingValue('site.shipping', DEFAULT_SHIPPING_SETTINGS);
+
     const cart = await getOrCreateCart(userId, sessionId);
 
     if (cart.items.length === 0) {
