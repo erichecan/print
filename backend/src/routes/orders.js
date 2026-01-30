@@ -19,8 +19,8 @@ const { authenticate } = require('../middleware/auth');
 // GET /api/orders - List user's orders (auth required)
 router.get('/', authenticate, getOrders);
 
-// GET /api/orders/number/:orderNumber - Get order by order number (guest access with email)
-router.get('/number/:orderNumber', getOrderByOrderNumber);
+// GET /api/orders/number/:orderNumber - Get order by order number (auth required)
+router.get('/number/:orderNumber', authenticate, getOrderByOrderNumber);
 
 // GET /api/orders/:id/tracking - Get order tracking (auth required if user order)
 router.get('/:id/tracking', getOrderTracking);

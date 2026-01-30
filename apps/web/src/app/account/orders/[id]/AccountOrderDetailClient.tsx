@@ -22,7 +22,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-// Real-time tracking information
+  // Real-time tracking information
   const [trackingInfo, setTrackingInfo] = useState<any>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
@@ -35,8 +35,8 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
       const data = await ordersApi.getById(id);
       setOrder(data);
     } catch (err: any) {
-console.error(' 加载订单失败', err);
-// 区分 404 和其他错误
+      console.error(' 加载订单失败', err);
+      // 区分 404 和其他错误
       if (err?.message?.includes('404') || err?.message?.includes('Not Found') || err?.message?.includes('not found')) {
         setError('NOT_FOUND');
       } else {
@@ -51,7 +51,7 @@ console.error(' 加载订单失败', err);
     loadOrder();
   }, [loadOrder]);
 
-// Load and poll tracking information
+  // Load and poll tracking information
   const loadTrackingInfo = useCallback(async () => {
     if (!order) return;
     setTrackingLoading(true);
@@ -59,7 +59,7 @@ console.error(' 加载订单失败', err);
       const data = await ordersApi.getTracking(order.id);
       setTrackingInfo(data);
     } catch (err) {
-console.error(' 加载跟踪信息失败', err);
+      console.error(' 加载跟踪信息失败', err);
     } finally {
       setTrackingLoading(false);
     }
@@ -68,7 +68,7 @@ console.error(' 加载跟踪信息失败', err);
   useEffect(() => {
     if (order) {
       loadTrackingInfo();
-// Poll tracking info every 30 seconds if order is shipped
+      // Poll tracking info every 30 seconds if order is shipped
       if (order.status === 'SHIPPED' || order.status === 'PROCESSING') {
         const interval = setInterval(() => {
           loadTrackingInfo();
@@ -93,7 +93,7 @@ console.error(' 加载跟踪信息失败', err);
       link.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-console.error(' 发票下载失败', err);
+      console.error(' 发票下载失败', err);
       alert('Invoice download failed, please retry later.');
     } finally {
       setDownloading(false);
@@ -101,10 +101,10 @@ console.error(' 发票下载失败', err);
   };
 
   const handleResendEmail = () => {
-alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
+    alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
   };
 
-// 订单取消功能
+  // 订单取消功能
   const handleCancelOrder = async () => {
     if (!order) return;
     if (!cancelReason.trim()) {
@@ -131,7 +131,7 @@ alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
     }
   };
 
-// 检查订单是否可以取消
+  // 检查订单是否可以取消
   const canCancel = order && (order.status === 'PENDING' || order.status === 'PROCESSING');
 
   if (loading) {
@@ -142,7 +142,7 @@ alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
     );
   }
 
-// 404 错误处理：显示友好的空状态
+  // 404 错误处理：显示友好的空状态
   if (error === 'NOT_FOUND' || (!loading && !order && error)) {
     return (
       <section className="container" style={{ padding: '48px', textAlign: 'center' }}>
@@ -236,7 +236,17 @@ alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
         </button>
         <Link
           className="btn btn--outline"
-          href={`/orders/${order.orderNumber}?email=${encodeURIComponent(userEmail)}`}
+          href={
+            (order as any).email || userEmail
+              ? `/orders/${order.orderNumber}?email=${encodeURIComponent((order as any).email || userEmail)}`
+              : '#'
+          }
+          onClick={(e) => {
+            if (!((order as any).email || userEmail)) {
+              e.preventDefault();
+              alert('Order email is missing.');
+            }
+          }}
         >
           Open guest view
         </Link>
@@ -245,7 +255,7 @@ alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
         </Link>
       </div>
 
-{/* 订单取消对话框 */}
+      {/* 订单取消对话框 */}
       {showCancelDialog && (
         <div className="modal-overlay" onClick={() => setShowCancelDialog(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -368,7 +378,7 @@ alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
             </address>
           </div>
 
-{/* 订单状态时间线 */}
+          {/* 订单状态时间线 */}
           <OrderTimeline
             events={[
               {
@@ -378,18 +388,18 @@ alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
               },
               ...(order.status !== 'PENDING'
                 ? [
-                    {
-                      date: order.updatedAt || order.createdAt,
-                      status: order.status,
-                      description: `Order ${order.status.toLowerCase()}`,
-                    },
-                  ]
+                  {
+                    date: order.updatedAt || order.createdAt,
+                    status: order.status,
+                    description: `Order ${order.status.toLowerCase()}`,
+                  },
+                ]
                 : []),
             ]}
             currentStatus={order.status}
           />
 
-{/* Enhanced tracking information with real-time updates */}
+          {/* Enhanced tracking information with real-time updates */}
           {(trackingInfo || primaryShipment) && (
             <div className="tracking-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -417,7 +427,7 @@ alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
                         await navigator.clipboard.writeText(trackingInfo.trackingNumber || '');
                         alert('跟踪号已复制到剪贴板');
                       } catch (err) {
-console.error(' 复制跟踪号失败', err);
+                        console.error(' 复制跟踪号失败', err);
                       }
                     }}
                   >
@@ -438,7 +448,7 @@ console.error(' 复制跟踪号失败', err);
                 </p>
               )}
 
-{/* Tracking events timeline */}
+              {/* Tracking events timeline */}
               {trackingInfo?.events && trackingInfo.events.length > 0 && (
                 <div style={{ marginTop: '16px' }}>
                   <h4 style={{ marginBottom: '12px', fontSize: '0.95em', fontWeight: 600 }}>跟踪事件</h4>

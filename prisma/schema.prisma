@@ -163,6 +163,7 @@ model Product {
   promotionProducts  PromotionProduct[]
   giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
   variants           Variant[]
+  shippingTemplates  ShippingTemplateProduct[] // Shipping templates that apply to this product
 
   @@index([slug])
   @@index([categoryId])
@@ -1147,4 +1148,79 @@ enum GuestMessageStatus {
   UNREAD
   READ
   ARCHIVED
+}
+
+// ============================================
+// Shipping Configuration Models
+// ============================================
+
+model ShippingTemplate {
+  id          String                   @id @default(uuid())
+  name        String                   @db.VarChar(60)
+  description String?                  @db.Text
+  priority    Int                      @default(50)
+  isActive    Boolean                  @default(true) @map("is_active")
+  startDate   DateTime?                @map("start_date")
+  endDate     DateTime?                @map("end_date")
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  updatedAt   DateTime                 @updatedAt @map("updated_at")
+  createdBy   String?                  @map("created_by")
+  rules       ShippingRule[]
+  products    ShippingTemplateProduct[] // Products that trigger this template
+
+  @@index([isActive])
+  @@index([priority])
+  @@index([startDate, endDate])
+  @@map("shipping_templates")
+}
+
+model ShippingTemplateProduct {
+  id         String           @id @default(uuid())
+  templateId String           @map("template_id")
+  productId  String           @map("product_id")
+  template   ShippingTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  product    Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@unique([templateId, productId])
+  @@index([templateId])
+  @@index([productId])
+  @@map("shipping_template_products")
+}
+
+model ShippingRule {
+  id               String            @id @default(uuid())
+  templateId       String            @map("template_id")
+  template         ShippingTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  // Geographic conditions
+  country          String?           @db.VarChar(10) // 'CA', 'US', 'INTL', 'ALL'
+  provinces        String[]          // ['ON', 'QC', 'BC']
+  postalCodePattern String?          @map("postal_code_pattern") @db.VarChar(20) // 'M*', 'K1A*'
+  
+  // Time conditions
+  startDate        DateTime?         @map("start_date")
+  endDate          DateTime?         @map("end_date")
+  seasonTag        String?           @map("season_tag") @db.VarChar(50) // 'winter', 'summer', 'holiday'
+  
+  // Order conditions
+  minOrderAmount   Decimal?          @map("min_order_amount") @db.Decimal(10, 2)
+  maxOrderAmount   Decimal?          @map("max_order_amount") @db.Decimal(10, 2)
+  minWeight        Decimal?          @map("min_weight") @db.Decimal(10, 2)
+  maxWeight        Decimal?          @map("max_weight") @db.Decimal(10, 2)
+  
+  // Shipping options
+  shippingMethod   String            @map("shipping_method") @db.VarChar(50) // 'standard', 'express', 'rush'
+  estimatedDays    Int               @map("estimated_days")
+  cost             Decimal           @db.Decimal(10, 2)
+  isFreeShipping   Boolean           @default(false) @map("is_free_shipping")
+  
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  @@index([templateId])
+  @@index([country])
+  @@index([shippingMethod])
+  @@index([startDate, endDate])
+  @@map("shipping_rules")
 }

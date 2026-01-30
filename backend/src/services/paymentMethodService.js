@@ -7,14 +7,14 @@ const logger = require('../utils/logger');
 const { BadRequestError, NotFoundError } = require('../utils/errors');
 const Stripe = require('stripe');
 
-// Stripe client initialization
-const getStripe = () => {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey || secretKey.trim() === '') {
-    throw new Error('STRIPE_SECRET_KEY is not configured');
-  }
-  return Stripe(secretKey);
-};
+// Global Stripe Initialization to fail fast
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeSecretKey ? Stripe(stripeSecretKey) : null;
+
+if (!stripeSecretKey && process.env.NODE_ENV === 'production') {
+  logger.warn('WARNING: STRIPE_SECRET_KEY is not set in paymentMethodService');
+}
+
 
 /**
  * Save payment method for user
@@ -29,7 +29,8 @@ async function savePaymentMethod(userId, paymentMethodId, options = {}) {
 
   try {
     // Verify payment method exists in Stripe
-    const stripe = getStripe();
+    if (!stripe) throw new Error('Stripe is not initialized');
+
     const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
 
     if (!paymentMethod) {
@@ -239,7 +240,8 @@ async function deletePaymentMethod(paymentMethodId, userId) {
  */
 async function attachPaymentMethodToCustomer(paymentMethodId, customerId) {
   try {
-    const stripe = getStripe();
+    if (!stripe) throw new Error('Stripe is not initialized');
+
     const paymentMethod = await stripe.paymentMethods.attach(paymentMethodId, {
       customer: customerId,
     });

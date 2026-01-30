@@ -9,28 +9,36 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { checkoutApi } from '@/lib/api';
+import { useCart } from '@/contexts/CartContext'; // Import useCart hook
 
 export function CheckoutSuccessClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { refreshCart } = useCart(); // Access cart context
   const orderNumber = searchParams?.get('orderNumber') || '';
   const email = searchParams?.get('email') || '';
-const paymentIntentId = searchParams?.get('payment_intent') || ''; // From Stripe return_url
+  const paymentIntentId = searchParams?.get('payment_intent') || ''; // From Stripe return_url
   const [copied, setCopied] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-// Handle return_url from Stripe - confirm order if payment_intent is present
+  // Trigger cart refresh on mount to clear badge after successful purchase
+  // The backend has already emptied the cart, but frontend needs to sync
+  useEffect(() => {
+    refreshCart();
+  }, [refreshCart]);
+
+  // Handle return_url from Stripe - confirm order if payment_intent is present
   useEffect(() => {
     if (paymentIntentId && !orderNumber && !isProcessing && !error) {
       setIsProcessing(true);
-      
+
       // Retrieve payment intent status and confirm order
       // Note: In a real scenario, you might want to call an API endpoint to retrieve order details
       // For now, we'll redirect to a page that can handle the payment_intent
       // The backend webhook should have already processed the payment
-console.log(' Payment intent from return_url:', paymentIntentId);
-      
+      console.log(' Payment intent from return_url:', paymentIntentId);
+
       // The order should already be confirmed by webhook, but we can verify
       // For now, just show a message that payment is being processed
       setTimeout(() => {
@@ -52,11 +60,11 @@ console.log(' Payment intent from return_url:', paymentIntentId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-console.error(' Failed to copy order number:', err);
+      console.error(' Failed to copy order number:', err);
     }
   };
 
-// Show processing state if payment_intent is present but orderNumber is not yet available
+  // Show processing state if payment_intent is present but orderNumber is not yet available
   if (paymentIntentId && !orderNumber && isProcessing) {
     return (
       <div className="success-page">

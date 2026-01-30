@@ -28,6 +28,7 @@ import EditArtPanel from './components/panels/EditArtPanel'; // Import EditArtPa
 import ProductColorsPanel from './components/panels/ProductColorsPanel'; // 5.0 版本：Product Colors - 颜色选择面板
 import { registerUniversalCornerControls, applyCornerControls } from '../design-lab5/upload-controls/registerUploadCornerControls';
 import { FloatingObjectControls } from './components/FloatingObjectControls';
+import { ImageCropper } from './components/ImageCropper';
 import * as fabric from 'fabric';
 import { useDesignStore } from './store/useDesignStore'; // Import Store
 import { serializeCanvas, applyViewState } from './utils/serialization'; // Import Serialization
@@ -460,6 +461,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // Add Text: 当前选中的文本对象
   const [selectedText, setSelectedText] = useState<fabric.IText | null>(null);
   const [selectedArt, setSelectedArt] = useState<fabric.Image | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [croppingImage, setCroppingImage] = useState<fabric.Image | null>(null);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false); // 5.0 Version: Catalog Modal state
   const [catalogMode, setCatalogMode] = useState<'add' | 'change'>('add'); // 'add' to insert, 'change' to update current
 
@@ -698,6 +701,77 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.renderAll();
     }
+  };
+
+  const handleStartCrop = (image: fabric.Image) => {
+    console.log('[DesignLab 5.0] handleStartCrop called with:', image);
+    if (image && image.type === 'image') {
+      // Non-destructive: Save original source if not present
+      const imgAny = image as any;
+      if (!imgAny.originalSrc) {
+        imgAny.originalSrc = image.getSrc();
+      }
+      setIsCropping(true);
+      setCroppingImage(image);
+    }
+  };
+
+  const handleResetUpload = () => {
+    console.log('[DesignLab 5.0] handleResetUpload called');
+    if (selectedImage) {
+      const imgAny = selectedImage as any;
+      if (imgAny.originalSrc) {
+        const imgElement = new window.Image();
+        imgElement.crossOrigin = "anonymous";
+        imgElement.src = imgAny.originalSrc;
+        imgElement.onload = () => {
+          selectedImage.setElement(imgElement);
+          selectedImage.set({
+            width: imgElement.width,
+            height: imgElement.height,
+            dirty: true
+          });
+          selectedImage.setCoords();
+          fabricCanvasRef.current?.renderAll();
+          handleCanvasUpdate();
+        };
+      } else {
+        console.warn('[DesignLab 5.0] No originalSrc found for reset');
+      }
+    }
+  };
+
+  // Add debug effect for binding
+  useEffect(() => {
+    console.log('[DesignLab 5.0] handleStartCrop bound:', !!handleStartCrop);
+  }, [handleStartCrop]);
+
+  const handleApplyCrop = (blob: Blob) => {
+    if (!croppingImage || !fabricCanvasRef.current) return;
+
+    const newUrl = URL.createObjectURL(blob);
+    console.log('[DesignLab 5.0] Apply Crop:', newUrl);
+
+    // Update fabric image
+    const imgElement = new window.Image();
+    imgElement.src = newUrl;
+    imgElement.onload = () => {
+      croppingImage.setElement(imgElement);
+      // Reset dimensions to match new image
+      croppingImage.set({
+        width: imgElement.width,
+        height: imgElement.height,
+        dirty: true
+      });
+
+      croppingImage.setCoords();
+      fabricCanvasRef.current?.renderAll();
+      // Force update to ensure thumbnail updates if needed
+      handleCanvasUpdate();
+    };
+
+    setIsCropping(false);
+    setCroppingImage(null);
   };
 
   // Product List State for "Add Product" feature
@@ -3802,6 +3876,20 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     onUpdate={handleCanvasUpdate}
                     onClose={handleBackToHome}
                     onSave={handleSaveRequest} // Use handleSaveRequest
+                    onReset={handleResetUpload}
+                    onCrop={handleStartCrop}
+                  />
+                )}
+
+                {/* Crop Overlay */}
+                {isCropping && croppingImage && (
+                  <ImageCropper
+                    imageSrc={(croppingImage as any).originalSrc || croppingImage.getSrc()}
+                    onApply={handleApplyCrop}
+                    onCancel={() => {
+                      setIsCropping(false);
+                      setCroppingImage(null);
+                    }}
                   />
                 )}
 

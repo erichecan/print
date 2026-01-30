@@ -274,7 +274,7 @@ function requiresAuthProxy(path: string): boolean {
   return AUTH_REQUIRED_PATHS.some(prefix => path.startsWith(prefix));
 }
 
-async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+export async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   // 添加超时控制和取消支持
   const { method = 'GET', body, headers = {} } = options;
   const timeout = 120000; // 120秒超时
@@ -669,8 +669,8 @@ export const checkoutApi = {
       method: 'POST',
       ...(payload ? { body: payload } : {}),
     }),
-  getShippingRates: (address: CheckoutAddressPayload) => // Issue #105 - Replace any with proper type
-    api('/checkout/shipping-rates', { method: 'POST', body: { address } }),
+  getShippingRates: (address: Partial<CheckoutAddressPayload>, cartItems?: any[]) => // Issue #105 - Replace any with proper type
+    api('/checkout/shipping-rates', { method: 'POST', body: { address, cartItems } }),
   // 添加优惠券支持
   // Enhanced: Added draftOrderId, amount, currency, customerEmail, metadata
   createPaymentIntent: (
@@ -768,8 +768,9 @@ export const ordersApi = {
     return api<{ orders: AccountOrderDetail[]; pagination?: PaginationResponse } | { data: AccountOrderDetail[]; pagination?: PaginationResponse }>(`/orders?${query.toString()}`); // Issue #105 - Replace any with proper type
   },
   getById: (id: string) => api<AccountOrderDetail>(`/orders/${id}`),
-  getByOrderNumber: (orderNumber: string, email: string) =>
-    api<AccountOrderDetail>(`/orders/number/${orderNumber}?email=${encodeURIComponent(email)}`),
+  // [2026-01-27] 移除 email 参数，改为需要登录认证
+  getByOrderNumber: (orderNumber: string) =>
+    api<AccountOrderDetail>(`/orders/number/${orderNumber}`),
   downloadInvoice: async (id: string) => {
     const response = await fetch(`${API_BASE_URL}/orders/${id}/invoice`, {
       method: 'GET',
@@ -2251,25 +2252,6 @@ export const adminSettingsApi = {
   deleteColorMapping: (id: string) => api(`/admin/settings/color-mappings/${id}`, { method: 'DELETE' }),
 };
 
-export interface ShippingRate {
-  enabled: boolean;
-  cost: number;
-  costUS?: number;
-  costIntl?: number;
-  estimatedDaysCA: number;
-  estimatedDaysUS: number;
-}
-
-export interface ShippingSettingsPayload {
-  standard: ShippingRate;
-  express: ShippingRate;
-}
-
-export const adminShippingApi = {
-  get: () => api<{ data: ShippingSettingsPayload }>('/admin/settings/shipping'),
-  update: (data: ShippingSettingsPayload) =>
-    api<{ data: ShippingSettingsPayload }>('/admin/settings/shipping', { method: 'PUT', body: data }),
-};
 
 export const adminContentApi = {
   get: () => api<{ data: ContentConfig }>('/admin/settings/content'),
@@ -3735,5 +3717,135 @@ export const unifiedOrdersApi = {
 
 
 // Website Content Types
+
+// Production Template Management API (Admin)
+export const activeWorkflowApi = {
+  // Get active workflows for a specific product category
+  getByCategory: (categorySlug: string) => api<{
+    category: string;
+    stages: Array<{
+      key: string;
+      label: string;
+      description?: string;
+      status: 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed';
+    }>;
+  }>(`/production/active-workflows/${categorySlug}`),
+};
+
+// Shipping Settings API (Admin)
+export interface ShippingSettingsPayload {
+  standard: {
+    enabled: boolean;
+    cost: number;
+    costUS: number; // Add US cost
+    costIntl: number; // Add International cost
+    estimatedDaysCA: number;
+    estimatedDaysUS: number;
+  };
+  express: {
+    enabled: boolean;
+    cost: number;
+    costUS: number; // Add US cost
+    costIntl: number; // Add International cost
+    estimatedDaysCA: number;
+    estimatedDaysUS: number;
+  };
+}
+
+export const adminShippingApi = {
+  get: () => api<{ data: ShippingSettingsPayload }>('/admin/settings/shipping'),
+  update: (data: ShippingSettingsPayload) =>
+    api('/admin/settings/shipping', { method: 'PUT', body: data }),
+};
+
+// Shipping Template API Types
+export interface ShippingRule {
+  id?: string;
+  templateId?: string;
+  country: string | null;
+  provinces: string[];
+  postalCodePattern: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  seasonTag: string | null;
+  minOrderAmount: number | null;
+  maxOrderAmount: number | null;
+  minWeight: number | null;
+  maxWeight: number | null;
+  shippingMethod: string;
+  estimatedDays: number;
+  cost: number;
+  isFreeShipping: boolean;
+}
+
+export interface ShippingTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  priority: number;
+  isActive: boolean;
+  startDate: string | null;
+  endDate: string | null;
+  createdBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  rules: ShippingRule[];
+  products?: Array<{
+    id: string;
+    templateId: string;
+    productId: string;
+    product: {
+      id: string;
+      name: string;
+      sku: string;
+    };
+  }>;
+  _count?: {
+    rules: number;
+    products: number;
+  };
+}
+
+export interface ShippingTemplatePayload {
+  name: string;
+  description?: string | null;
+  priority?: number;
+  isActive?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  rules: ShippingRule[];
+  productIds?: string[];
+}
+
+export const shippingTemplateApi = {
+  list: (includeInactive: boolean = false) =>
+    api<{ templates: ShippingTemplate[] }>(`/admin/shipping-templates?includeInactive=${includeInactive}`),
+
+  get: (id: string) =>
+    api<{ template: ShippingTemplate }>(`/admin/shipping-templates/${id}`),
+
+  create: (data: ShippingTemplatePayload) =>
+    api<{ template: ShippingTemplate }>('/admin/shipping-templates', {
+      method: 'POST',
+      body: data
+    }),
+
+  update: (id: string, data: Partial<ShippingTemplatePayload>) =>
+    api<{ template: ShippingTemplate }>(`/admin/shipping-templates/${id}`, {
+      method: 'PATCH',
+      body: data
+    }),
+
+  delete: (id: string) =>
+    api<{ success: boolean }>(`/admin/shipping-templates/${id}`, {
+      method: 'DELETE'
+    }),
+
+  duplicate: (id: string) =>
+    api<{ template: ShippingTemplate }>(`/admin/shipping-templates/${id}/duplicate`, {
+      method: 'POST'
+    }),
+};
+
 // End of file
 

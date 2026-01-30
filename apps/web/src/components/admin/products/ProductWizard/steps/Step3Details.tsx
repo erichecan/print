@@ -9,7 +9,8 @@ import React, { useEffect } from 'react';
 import { useProductWizard } from '../ProductWizard';
 
 const parseNumber = (value: any): number => {
-  const parsed = Number(value);
+  if (value === '' || value === undefined || value === null) return 0;
+  const parsed = parseFloat(value);
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
@@ -40,6 +41,36 @@ export function Step3Details() {
     }
   }, [wizardData.variantCombinations, updateWizardData, wizardData.stockQuantity]);
 
+  // Local state for numeric inputs to handle intermediate string states (like "0.")
+  const [localBasePrice, setLocalBasePrice] = React.useState<string>(
+    wizardData.basePrice?.toString() ?? ''
+  );
+  const [localSalePrice, setLocalSalePrice] = React.useState<string>(
+    wizardData.salePrice?.toString() ?? ''
+  );
+  const [localUnitCost, setLocalUnitCost] = React.useState<string>(
+    wizardData.unitCost?.toString() ?? ''
+  );
+
+  // Sync from wizardData when it changes externally (e.g. initial load)
+  useEffect(() => {
+    if (wizardData.basePrice !== undefined && parseNumber(localBasePrice) !== wizardData.basePrice) {
+      setLocalBasePrice(wizardData.basePrice.toString());
+    }
+  }, [wizardData.basePrice]);
+
+  useEffect(() => {
+    if (wizardData.salePrice !== undefined && parseNumber(localSalePrice) !== wizardData.salePrice) {
+      setLocalSalePrice(wizardData.salePrice.toString());
+    }
+  }, [wizardData.salePrice]);
+
+  useEffect(() => {
+    if (wizardData.unitCost !== undefined && parseNumber(localUnitCost) !== wizardData.unitCost) {
+      setLocalUnitCost(wizardData.unitCost.toString());
+    }
+  }, [wizardData.unitCost]);
+
   const handleChange = (field: string, value: any) => {
     updateWizardData({ [field]: value });
   };
@@ -69,8 +100,12 @@ export function Step3Details() {
                   step="0.01"
                   className="form-field__input"
                   placeholder="0.00"
-                  value={wizardData.basePrice || ''}
-                  onChange={(e) => handleChange('basePrice', parseNumber(e.target.value))}
+                  value={localBasePrice}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLocalBasePrice(val);
+                    handleChange('basePrice', parseNumber(val));
+                  }}
                 />
               </div>
             </div>
@@ -83,10 +118,12 @@ export function Step3Details() {
                   step="0.01"
                   className="form-field__input"
                   placeholder="0.00"
-                  value={wizardData.salePrice || ''}
-                  onChange={(e) =>
-                    handleChange('salePrice', e.target.value ? parseNumber(e.target.value) : undefined)
-                  }
+                  value={localSalePrice}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLocalSalePrice(val);
+                    handleChange('salePrice', val ? parseNumber(val) : undefined);
+                  }}
                 />
               </div>
             </div>
@@ -102,10 +139,12 @@ export function Step3Details() {
                   step="0.01"
                   className="form-field__input"
                   placeholder="0.00"
-                  value={wizardData.unitCost || ''}
-                  onChange={(e) =>
-                    handleChange('unitCost', e.target.value ? parseNumber(e.target.value) : undefined)
-                  }
+                  value={localUnitCost}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setLocalUnitCost(val);
+                    handleChange('unitCost', val ? parseNumber(val) : undefined);
+                  }}
                 />
               </div>
               <small className="form-field__hint">客户不可见</small>
@@ -277,22 +316,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.front?.width || 546}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           front: {
-                            ...(wizardData.printableArea?.front || {
-                              width: 546,
-                              height: 960,
-                              x: 326,
-                              y: 240,
-                            }),
+                            ...current.front,
                             width: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="form-field">
@@ -301,22 +340,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.front?.height || 960}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           front: {
-                            ...(wizardData.printableArea?.front || {
-                              width: 546,
-                              height: 960,
-                              x: 326,
-                              y: 240,
-                            }),
+                            ...current.front,
                             height: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="form-field">
@@ -325,22 +364,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.front?.x || 326}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           front: {
-                            ...(wizardData.printableArea?.front || {
-                              width: 546,
-                              height: 960,
-                              x: 326,
-                              y: 240,
-                            }),
+                            ...current.front,
                             x: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="form-field">
@@ -349,22 +388,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.front?.y || 240}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           front: {
-                            ...(wizardData.printableArea?.front || {
-                              width: 546,
-                              height: 960,
-                              x: 326,
-                              y: 240,
-                            }),
+                            ...current.front,
                             y: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
               </div>
@@ -380,22 +419,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.back?.width || 546}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           back: {
-                            ...(wizardData.printableArea?.back || {
-                              width: 546,
-                              height: 960,
-                              x: 326,
-                              y: 240,
-                            }),
+                            ...current.back,
                             width: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="form-field">
@@ -404,22 +443,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.back?.height || 960}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           back: {
-                            ...(wizardData.printableArea?.back || {
-                              width: 546,
-                              height: 960,
-                              x: 326,
-                              y: 240,
-                            }),
+                            ...current.back,
                             height: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="form-field">
@@ -428,22 +467,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.back?.x || 326}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           back: {
-                            ...(wizardData.printableArea?.back || {
-                              width: 546,
-                              height: 960,
-                              x: 326,
-                              y: 240,
-                            }),
+                            ...current.back,
                             x: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="form-field">
@@ -452,22 +491,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.back?.y || 240}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           back: {
-                            ...(wizardData.printableArea?.back || {
-                              width: 546,
-                              height: 960,
-                              x: 326,
-                              y: 240,
-                            }),
+                            ...current.back,
                             y: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
               </div>
@@ -483,22 +522,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.sleeve?.width || 500}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           sleeve: {
-                            ...(wizardData.printableArea?.sleeve || {
-                              width: 500,
-                              height: 500,
-                              x: 600,
-                              y: 300,
-                            }),
+                            ...current.sleeve,
                             width: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
                 <div className="form-field">
@@ -507,22 +546,22 @@ export function Step3Details() {
                     type="number"
                     className="form-field__input"
                     value={wizardData.printableArea?.sleeve?.height || 500}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const current = wizardData.printableArea || {
+                        front: { width: 546, height: 960, x: 326, y: 240 },
+                        back: { width: 546, height: 960, x: 326, y: 240 },
+                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+                      };
                       updateWizardData({
                         printableArea: {
-                          ...wizardData.printableArea,
+                          ...current,
                           sleeve: {
-                            ...(wizardData.printableArea?.sleeve || {
-                              width: 500,
-                              height: 500,
-                              x: 600,
-                              y: 300,
-                            }),
+                            ...current.sleeve,
                             height: parseNumber(e.target.value),
                           },
                         },
-                      })
-                    }
+                      });
+                    }}
                   />
                 </div>
               </div>

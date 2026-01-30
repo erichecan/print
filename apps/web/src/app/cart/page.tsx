@@ -364,25 +364,29 @@ export default function CartPage() {
             <article key={item.id} className="cart-card">
               <div className="cart-card__media">
                 {item.thumbnail ? (
-                  <Image
-                    src={item.thumbnail}
-                    alt={item.productName}
-                    width={144}
-                    height={144}
-                    onError={(e) => {
-                      // 图片加载失败时显示占位符
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const placeholder = target.nextElementSibling as HTMLElement;
-                      if (placeholder && placeholder.classList.contains('cart-card__placeholder')) {
-                        placeholder.style.display = 'flex';
-                      }
-                    }}
-                    unoptimized={item.thumbnail.startsWith('http') && !item.thumbnail.includes('storage.googleapis.com')}
-                  />
+                  <Link href={`/products/${item.productId}`} target="_blank">
+                    <Image
+                      src={item.thumbnail}
+                      alt={item.productName}
+                      width={144}
+                      height={144}
+                      onError={(e) => {
+                        // 图片加载失败时显示占位符
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const placeholder = target.nextElementSibling as HTMLElement;
+                        if (placeholder && placeholder.classList.contains('cart-card__placeholder')) {
+                          placeholder.style.display = 'flex';
+                        }
+                      }}
+                      unoptimized={item.thumbnail.startsWith('http') && !item.thumbnail.includes('storage.googleapis.com')}
+                    />
+                  </Link>
                 ) : null}
                 {/* 图片占位符：当图片加载失败或无图片时显示 */}
-                <div
+                <Link
+                  href={`/products/${item.productId}`}
+                  target="_blank"
                   className="cart-card__placeholder"
                   style={{
                     display: item.thumbnail ? 'none' : 'flex',
@@ -392,16 +396,19 @@ export default function CartPage() {
                     justifyContent: 'center',
                     fontSize: '14px',
                     color: 'var(--color-text-muted)',
-                    fontWeight: 500
+                    fontWeight: 500,
+                    textDecoration: 'none'
                   }}
                 >
                   {item.thumbnail ? 'Image' : 'Design Preview'}
-                </div>
+                </Link>
               </div>
               <div className="cart-card__body">
                 <div className="cart-card__top">
                   <div>
-                    <p className="cart-card__design-name">{item.productName}</p>
+                    <Link href={`/products/${item.productId}`} target="_blank" className="cart-card__design-name" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      {item.productName}
+                    </Link>
                     {/* 暂时隐藏 Edit Design 按钮（功能待实现） */}
                     {/* <button type="button" className="cart-card__link">
                       Edit Design
@@ -431,13 +438,13 @@ export default function CartPage() {
                 </p>
                 <p className="cart-card__meta">
                   Qty {item.quantity}+ <span>XS | 1 |</span>{' '}
-                  <button type="button" className="cart-card__link">
+                  <Link href={`/products/${item.productId}`} target="_blank" className="cart-card__link" style={{ display: 'inline', padding: 0, border: 'none', background: 'none' }}>
                     Edit Sizes
-                  </button>{' '}
+                  </Link>{' '}
                   <span>|</span>{' '}
-                  <button type="button" className="cart-card__link">
+                  <Link href={`/products/${item.productId}`} target="_blank" className="cart-card__link" style={{ display: 'inline', padding: 0, border: 'none', background: 'none' }}>
                     Add Another Color
-                  </button>
+                  </Link>
                 </p>
 
                 <div className="cart-card__controls">

@@ -4,6 +4,7 @@ import type * as fabric from 'fabric';
 interface FloatingObjectControlsProps {
     canvas: fabric.Canvas | null;
     fabricModule: any;
+    onCrop?: (object: fabric.Object) => void;
 }
 
 interface ControlButtonProps {
@@ -48,7 +49,7 @@ const ControlButton: React.FC<ControlButtonProps> = ({ icon, onClick, onMouseDow
     </div>
 );
 
-export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ canvas, fabricModule }) => {
+export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ canvas, fabricModule, onCrop }) => {
     const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
     const [coords, setCoords] = useState<{ tl: { x: number, y: number }; tr: { x: number, y: number }; bl: { x: number, y: number }; br: { x: number, y: number } } | null>(null);
 
@@ -78,7 +79,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         const cssWidth = rect.width;
         const cssHeight = rect.height;
 
-// Fix: Handle object-fit: contain
+        // Fix: Handle object-fit: contain
         // Determine effective render scale
         const scaleXRaw = logicalWidth > 0 ? cssWidth / logicalWidth : 1;
         const scaleYRaw = logicalHeight > 0 ? cssHeight / logicalHeight : 1;
@@ -178,7 +179,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         };
     }, [canvas, updateCoords]);
 
-// Handle window resize to keep controls pinned
+    // Handle window resize to keep controls pinned
     useEffect(() => {
         const handleResize = () => {
             requestAnimationFrame(updateCoords);
@@ -250,7 +251,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         const cssWidth = canvasRect.width;
         const cssHeight = canvasRect.height;
 
-// Fix: Handle object-fit: contain for resize logic
+        // Fix: Handle object-fit: contain for resize logic
         const scaleXRaw = logicalWidth > 0 ? cssWidth / logicalWidth : 1;
         const scaleYRaw = logicalHeight > 0 ? cssHeight / logicalHeight : 1;
         const renderScale = Math.min(scaleXRaw, scaleYRaw);
@@ -298,6 +299,14 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
 
     if (!activeObject || !coords) return null;
 
+    const isImage = activeObject.type === 'image';
+    console.log('[FloatingObjectControls] Rendering:', {
+        type: activeObject.type,
+        isImage,
+        hasOnCrop: !!onCrop,
+        coords
+    });
+
     const trashIcon = (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="3 6 5 6 21 6"></polyline>
@@ -321,9 +330,18 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         </svg>
     );
 
+    const cropIcon = (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6.13 1L6 16a2 2 0 0 0 2 2h15"></path>
+            <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15"></path>
+        </svg>
+    );
+
     const OFFSET = 15;
     const SIZE = 24;
     const HALF_SIZE = SIZE / 2;
+
+
 
     return (
         <div
@@ -367,6 +385,17 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
                     top: coords.br.y - HALF_SIZE + OFFSET,
                 }}
             />
+            {isImage && onCrop && (
+                <ControlButton
+                    icon={cropIcon}
+                    onClick={() => onCrop(activeObject)}
+                    title="Crop Image"
+                    style={{
+                        left: coords.bl.x - HALF_SIZE - OFFSET,
+                        top: coords.bl.y - HALF_SIZE + OFFSET,
+                    }}
+                />
+            )}
         </div>
     );
 };

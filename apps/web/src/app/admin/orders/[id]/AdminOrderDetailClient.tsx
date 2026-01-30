@@ -266,11 +266,20 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
               </div>
               <div className="admin-form-group">
                 <label>Carrier</label>
-                <input
-                  type="text"
+                <select
                   value={form.carrier || ''}
                   onChange={(event) => setForm((prev) => ({ ...prev, carrier: event.target.value }))}
-                />
+                >
+                  <option value="">Select Carrier</option>
+                  <option value="Canada Post">Canada Post</option>
+                  <option value="UPS">UPS</option>
+                  <option value="FedEx">FedEx</option>
+                  <option value="Purolator">Purolator</option>
+                  <option value="Canpar">Canpar</option>
+                  <option value="DHL">DHL</option>
+                  <option value="Pickup">Pickup</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
             <div className="admin-form-group">
@@ -286,6 +295,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                 {updating ? '保存中…' : '保存更改'}
               </button>
               {/* Generate shipping label button */}
+              {/* Generate shipping label button - Disabled for Phase 1
               {order.status !== 'CANCELLED' && order.status !== 'REFUNDED' && (
                 <button
                   type="button"
@@ -296,6 +306,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                   {generatingLabel ? '生成中…' : loadingRates ? '加载报价…' : '生成发货标签'}
                 </button>
               )}
+              */}
               {/* Enhanced refund button with modal */}
               {data.paymentStatus === 'COMPLETED' && data.status !== 'REFUNDED' && (
                 <button
@@ -513,6 +524,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
           )}
 
           {/* Shipping rates modal */}
+          {/* Shipping rates modal - Disabled for Phase 1
           {showRatesModal && (
             <div
               style={{
@@ -604,6 +616,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
               </div>
             </div>
           )}
+          */}
 
           {/* Activity Log 功能已移除 */}
         </aside>

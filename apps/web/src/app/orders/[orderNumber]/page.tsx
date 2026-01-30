@@ -1,6 +1,8 @@
 // 服务器组件包装器，用于静态导出模式
-// 移除 Suspense，简化结构以避免 Next.js 解析问题
-// 修复 Next.js 14 的异步 params 问题
+// [2026-01-27] 修复：必须使用 Suspense 包裹使用 useSearchParams 的组件
+// 否则会导致 "Bail out to client-side rendering: useSearchParams()" 错误（500）
+// 修复 Next.js 14/15 的异步 params 问题
+import { Suspense } from 'react';
 import { OrderDetailContent } from './OrderDetailContent';
 
 // 为静态导出模式添加 generateStaticParams
@@ -12,7 +14,12 @@ export async function generateStaticParams() {
 
 // 修复：Next.js 15 中 params 可能是 Promise，需要 await
 export default async function OrderDetailPage({ params }: { params: Promise<{ orderNumber: string }> | { orderNumber: string } }) {
-// 处理 params 可能是 Promise 的情况
+  // 处理 params 可能是 Promise 的情况
   const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
-  return <OrderDetailContent orderNumber={resolvedParams.orderNumber} />;
+  // 使用 Suspense 包裹使用 useSearchParams 的客户端组件，避免 SSR 错误
+  return (
+    <Suspense fallback={<div className="container" style={{ padding: '2rem', textAlign: 'center' }}>Loading order details...</div>}>
+      <OrderDetailContent orderNumber={resolvedParams.orderNumber} />
+    </Suspense>
+  );
 }

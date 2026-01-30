@@ -18,6 +18,7 @@ interface EditUploadPanelProps {
   onReset?: () => void;
   onSave?: () => void;
   onClose?: () => void;
+  onCrop?: (object: fabric.Image) => void;
   // 已移除上传评分模块：保留回调仅为兼容旧调用点（当前面板不再渲染入口）
   onOpenRatingModal?: () => void;
   isMobile?: boolean;
@@ -30,6 +31,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   onReset,
   onSave,
   onClose,
+  onCrop,
   onOpenRatingModal,
   isMobile = false
 }) => {
@@ -44,9 +46,9 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   // 保存原始图片数据用于 Reset
   useEffect(() => {
     if (selectedImage && !originalImageData) {
-      selectedImage.toDataURL((dataUrl) => {
-        setOriginalImageData(dataUrl);
-      });
+      // Fabric v6 toDataURL is synchronous and returns string
+      const dataUrl = selectedImage.toDataURL();
+      setOriginalImageData(dataUrl);
     }
   }, [selectedImage, originalImageData]);
 
@@ -339,9 +341,16 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
 
   // Reset To Original
   const handleReset = () => {
+    // Priority: Use external handler if provided (supports non-destructive crop logic)
+    if (onReset) {
+      console.log('[EditUploadPanel] Delegating reset to onReset handler');
+      onReset();
+      return;
+    }
+
     if (!selectedImage || !originalImageData) return;
 
-    fabric.Image.fromURL(originalImageData, (img) => {
+    fabric.Image.fromURL(originalImageData).then((img) => {
       if (canvas && selectedImage) {
         const left = selectedImage.left;
         const top = selectedImage.top;
@@ -361,7 +370,6 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
         canvas.setActiveObject(img);
         canvas.renderAll();
         onUpdate();
-        onReset?.();
       }
     });
   };
@@ -478,6 +486,10 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
           onFlipHorizontal={handleFlipHorizontal}
           onFlipVertical={handleFlipVertical}
           onDuplicate={handleDuplicate}
+          onCrop={() => {
+            console.log('[EditUploadPanel] onCrop wrapper called', { selectedImage: !!selectedImage, hasOnCrop: !!onCrop });
+            selectedImage && onCrop?.(selectedImage);
+          }}
           rotation={rotation}
           onRotationSliderChange={handleRotationSliderChange}
           onRotationInputChange={handleRotationInputChange}

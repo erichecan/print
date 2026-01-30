@@ -77,7 +77,7 @@ export default function AccountOrdersPage() {
         );
         let filteredOrders: AccountOrderSummary[] = [];
         if ('orders' in data) {
-          filteredOrders = (data.orders || []).map((order: AccountOrderDetail) => ({
+          filteredOrders = (data.orders || []).map((order: any) => ({
             id: order.id,
             orderNumber: order.orderNumber,
             status: order.status,
@@ -85,11 +85,12 @@ export default function AccountOrdersPage() {
             total: order.total,
             currency: order.currency,
             createdAt: order.createdAt,
-            itemCount: order.items?.length || 0,
-            thumbnail: order.items?.[0]?.thumbnail || null,
+            // Use _count from API if available, otherwise fallback to items length
+            itemCount: order.itemCount !== undefined ? order.itemCount : (order.items?.length || 0),
+            thumbnail: order.thumbnail || order.items?.[0]?.thumbnail || null,
           }));
         } else if ('data' in data) {
-          filteredOrders = (data.data || []).map((order: AccountOrderDetail) => ({
+          filteredOrders = (data.data || []).map((order: any) => ({
             id: order.id,
             orderNumber: order.orderNumber,
             status: order.status,
@@ -97,8 +98,8 @@ export default function AccountOrdersPage() {
             total: order.total,
             currency: order.currency,
             createdAt: order.createdAt,
-            itemCount: order.items?.length || 0,
-            thumbnail: order.items?.[0]?.thumbnail || null,
+            itemCount: order.itemCount !== undefined ? order.itemCount : (order.items?.length || 0),
+            thumbnail: order.thumbnail || order.items?.[0]?.thumbnail || null,
           }));
         }
 
@@ -208,166 +209,159 @@ export default function AccountOrdersPage() {
   }
 
   return (
-    <section className="container">
-      <header className="page-header">
+    <section className="space-y-6">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <p className="eyebrow">Account</p>
-          <h1>Order History</h1>
-          <p>Review past orders, download invoices, and jump into detailed receipts.</p>
+          <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase mb-1">Account</p>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Order History</h1>
+          <p className="text-gray-500 mt-1">Review past orders, download invoices, and jump into detailed receipts.</p>
         </div>
-        <Link className="btn btn--outline" href="/checkout/success">
-          View latest order tips
-        </Link>
       </header>
 
-      {/* 添加筛选和搜索功能 */}
-      {/* Enhanced with payment status filter and improved UI */}
-      <div className="filters-section">
-        <div className="filters-row">
-          <div className="filter-group">
-            <label htmlFor="search">Search Orders</label>
-            <input
-              id="search"
-              type="text"
-              placeholder="Search by order # or email..."
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              className="filter-input"
-            />
+      {/* Enhanced Filter Bar */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="flex flex-col lg:flex-row gap-4 items-end lg:items-center">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            <div className="space-y-1.5">
+              <label htmlFor="search" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Search</label>
+              <input
+                id="search"
+                type="text"
+                placeholder="Order # or email..."
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="w-full bg-gray-50 border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary px-3 py-2 transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="status" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</label>
+              <select
+                id="status"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="w-full bg-gray-50 border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary px-3 py-2 transition-all"
+              >
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="PROCESSING">Processing</option>
+                <option value="SHIPPED">Shipped</option>
+                <option value="DELIVERED">Delivered</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="REFUNDED">Refunded</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="paymentStatus" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Payment</label>
+              <select
+                id="paymentStatus"
+                value={paymentStatusFilter}
+                onChange={(event) => setPaymentStatusFilter(event.target.value)}
+                className="w-full bg-gray-50 border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary px-3 py-2 transition-all"
+              >
+                <option value="">All Payments</option>
+                <option value="PENDING">Pending</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="FAILED">Failed</option>
+                <option value="REFUNDED">Refunded</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="sort" className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sort</label>
+              <select
+                id="sort"
+                value={sortBy}
+                onChange={(event) => setSortBy(event.target.value)}
+                className="w-full bg-gray-50 border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary px-3 py-2 transition-all"
+              >
+                <option value="createdAt_desc">Newest First</option>
+                <option value="createdAt_asc">Oldest First</option>
+                <option value="total_desc">Amount High to Low</option>
+                <option value="total_asc">Amount Low to High</option>
+                <option value="orderNumber_asc">Order # Ascending</option>
+                <option value="orderNumber_desc">Order # Descending</option>
+              </select>
+            </div>
           </div>
-          <div className="filter-group">
-            <label htmlFor="status">Order Status</label>
-            <select
-              id="status"
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value);
-              }}
-              className="filter-select"
-            >
-              <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="REFUNDED">Refunded</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <label htmlFor="paymentStatus">Payment Status</label>
-            <select
-              id="paymentStatus"
-              value={paymentStatusFilter}
-              onChange={(event) => {
-                setPaymentStatusFilter(event.target.value);
-              }}
-              className="filter-select"
-            >
-              <option value="">All Payments</option>
-              <option value="PENDING">Pending</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="FAILED">Failed</option>
-              <option value="REFUNDED">Refunded</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <label htmlFor="sort">Sort By</label>
-            <select
-              id="sort"
-              value={sortBy}
-              onChange={(event) => {
-                setSortBy(event.target.value);
-              }}
-              className="filter-select"
-            >
-              <option value="createdAt_desc">Newest First</option>
-              <option value="createdAt_asc">Oldest First</option>
-              <option value="total_desc">Amount High to Low</option>
-              <option value="total_asc">Amount Low to High</option>
-              <option value="orderNumber_asc">Order # Ascending</option>
-              <option value="orderNumber_desc">Order # Descending</option>
-            </select>
-          </div>
-        </div>
-        {(debouncedSearchQuery || statusFilter || paymentStatusFilter) && (
-          <div className="search-results-info">
-            <span>
-              {debouncedSearchQuery && `Search: "${debouncedSearchQuery}"`}
-              {statusFilter && ` | Status: ${statusFilter}`}
-              {paymentStatusFilter && ` | Payment: ${paymentStatusFilter}`}
-            </span>
+
+          {(debouncedSearchQuery || statusFilter || paymentStatusFilter) && (
             <button
               type="button"
-              className="btn-clear-search"
+              className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors whitespace-nowrap"
               onClick={() => {
                 setSearchQuery('');
                 setStatusFilter('');
                 setPaymentStatusFilter('');
               }}
             >
-              Clear Filters
+              Clear
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
+      {/* Orders Grid */}
       {orders.length === 0 ? (
-        <div className="empty-state">
-          <h2>No orders yet</h2>
-          <p>
-            When you place an order it will appear here. Ready to start?{' '}
-            <Link href="/products">Browse products</Link>
+        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
+          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">📦</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">No orders found</h2>
+          <p className="text-gray-500 mb-6 max-w-md mx-auto">
+            We couldn't find any orders matching your criteria. Try adjusting your filters or browse our products to start a new order.
           </p>
+          <Link href="/products" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-primary hover:bg-primary-600 transition-all hover:-translate-y-0.5">
+            Browse Products
+          </Link>
         </div>
       ) : (
-        <div className="orders-list">
+        <div className="grid gap-6">
           {orders.map((order) => (
-            <article key={order.id} className="order-card">
-              <div className="order-card__header">
-                <div>
-                  <h2>Order #{order.orderNumber}</h2>
-                  <p>
-                    Placed on{' '}
-                    {new Date(order.createdAt).toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </p>
-                </div>
-                <div className="status-group">
-                  <span className={`status-badge status-${order.status}`}>{order.status}</span>
-                  <span className={`status-badge payment-${order.paymentStatus}`}>
-                    Payment {order.paymentStatus}
-                  </span>
-                </div>
-              </div>
+            <article key={order.id} className="group relative bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h2 className="text-lg font-bold text-gray-900">
+                      Order #{order.orderNumber}
+                    </h2>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide uppercase
+                      ${order.status === 'DELIVERED' ? 'bg-green-50 text-green-700' :
+                        order.status === 'SHIPPED' ? 'bg-emerald-50 text-emerald-700' :
+                          order.status === 'PROCESSING' ? 'bg-blue-50 text-blue-700' :
+                            order.status === 'CANCELLED' ? 'bg-red-50 text-red-700' :
+                              'bg-amber-50 text-amber-900'
+                      }`}>
+                      {order.status}
+                    </span>
+                  </div>
 
-              <div className="order-card__body">
-                <div className="order-card__meta">
-                  <p>{order.itemCount} items</p>
-                  <p className="order-total">
-                    ${order.total.toFixed(2)} {order.currency}
-                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-8 text-sm">
+                    <div>
+                      <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Date</span>
+                      <span className="font-medium text-gray-900">
+                        {new Date(order.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Items</span>
+                      <span className="font-medium text-gray-900">{order.itemCount} items</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Total</span>
+                      <span className="font-bold text-gray-900">
+                        ${order.total.toFixed(2)} {order.currency}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="order-card__actions">
-                  <Link href={`/account/orders/${order.id}`} className="btn btn--outline">
-                    View details
-                  </Link>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => handleDownload(order.id, order.orderNumber)}
-                    disabled={downloading === order.id}
-                  >
-                    {downloading === order.id ? 'Downloading…' : 'Download invoice'}
-                  </button>
+
+                <div className="flex items-center gap-3 pt-4 md:pt-0 border-t md:border-0 border-gray-100 w-full md:w-auto">
                   <Link
                     href={`/orders/${order.orderNumber}?email=${encodeURIComponent(userEmail)}`}
-                    className="btn btn--text"
+                    className="flex-1 md:flex-none inline-flex items-center justify-center px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all hover:shadow-sm"
                   >
-                    Share guest link
+                    View Details
                   </Link>
                 </div>
               </div>
@@ -377,21 +371,21 @@ export default function AccountOrdersPage() {
       )}
 
       {pagination.totalPages > 1 && (
-        <div className="pagination">
+        <div className="flex items-center justify-center gap-3 pt-8">
           <button
             type="button"
-            className="pagination-btn"
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onClick={() => goToPage(pagination.page - 1)}
             disabled={pagination.page === 1}
           >
             Previous
           </button>
-          <span>
+          <span className="text-sm font-medium text-gray-600">
             Page {pagination.page} of {pagination.totalPages}
           </span>
           <button
             type="button"
-            className="pagination-btn"
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             onClick={() => goToPage(pagination.page + 1)}
             disabled={pagination.page === pagination.totalPages}
           >
@@ -399,252 +393,6 @@ export default function AccountOrdersPage() {
           </button>
         </div>
       )}
-
-      <style jsx>{`
-        .container {
-          max-width: 960px;
-          margin: 0 auto;
-          padding: 64px 16px;
-          display: grid;
-          gap: 24px;
-        }
-        .page-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-          flex-wrap: wrap;
-        }
-        .eyebrow {
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-size: 0.75rem;
-          margin: 0 0 4px 0;
-          color: #64748b;
-        }
-        h1 {
-          margin: 0 0 8px 0;
-        }
-        .btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.75rem 1.5rem;
-          border-radius: 999px;
-          border: none;
-          font-weight: 600;
-          cursor: pointer;
-          text-decoration: none;
-          background: #ff1f3d;
-          color: #fff;
-        }
-        .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .btn--outline {
-          background: transparent;
-          border: 1px solid #d4d7de;
-          color: #1f2937;
-        }
-        .btn--text {
-          background: transparent;
-          color: #2563eb;
-          padding: 0.75rem;
-        }
-        .orders-list {
-          display: grid;
-          gap: 24px;
-        }
-        .order-card {
-          background: #fff;
-          border: 1px solid #e2e8f0;
-          border-radius: 16px;
-          padding: 24px;
-          display: grid;
-          gap: 16px;
-        }
-        .order-card__header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 16px;
-        }
-        .status-group {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .status-badge {
-          padding: 6px 12px;
-          border-radius: 999px;
-          font-size: 0.85rem;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-        .status-pending {
-          background: rgba(245, 158, 11, 0.15);
-          color: #b45309;
-        }
-        .status-processing {
-          background: rgba(59, 130, 246, 0.15);
-          color: #1d4ed8;
-        }
-        .status-shipped {
-          background: rgba(16, 185, 129, 0.15);
-          color: #047857;
-        }
-        .status-delivered {
-          background: rgba(16, 185, 129, 0.2);
-          color: #065f46;
-        }
-        .status-cancelled,
-        .status-refunded {
-          background: rgba(239, 68, 68, 0.15);
-          color: #b91c1c;
-        }
-        .payment-completed {
-          background: rgba(16, 185, 129, 0.15);
-          color: #047857;
-        }
-        .payment-pending {
-          background: rgba(245, 158, 11, 0.15);
-          color: #b45309;
-        }
-        .payment-refunded,
-        .payment-failed {
-          background: rgba(239, 68, 68, 0.15);
-          color: #b91c1c;
-        }
-        .order-card__body {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-        .order-card__meta {
-          display: flex;
-          justify-content: space-between;
-          font-weight: 500;
-          color: #334155;
-        }
-        .order-total {
-          font-size: 1.1rem;
-          font-weight: 700;
-        }
-        .order-card__actions {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-        .empty-state {
-          padding: 48px;
-          background: #f1f5f9;
-          border-radius: 16px;
-          text-align: center;
-        }
-        .pagination {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          justify-content: center;
-        }
-        .pagination-btn {
-          padding: 0.6rem 1.2rem;
-          border-radius: 999px;
-          border: 1px solid #d4d7de;
-          background: #fff;
-          cursor: pointer;
-        }
-        .pagination-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        .error {
-          color: #b91c1c;
-        }
-        .filters-section {
-          padding: 20px;
-          background: #f8fafc;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
-          margin-bottom: 24px;
-        }
-        .filters-row {
-          display: grid;
-          grid-template-columns: 2fr 1fr 1fr 1fr;
-          gap: 16px;
-          align-items: end;
-        }
-        .filter-group {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .filter-group label {
-          font-size: 0.875rem;
-          font-weight: 600;
-          color: #475569;
-        }
-        .filter-input,
-        .filter-select {
-          padding: 10px 12px;
-          border: 1px solid #d4d7de;
-          border-radius: 8px;
-          font-size: 0.95rem;
-          background: #ffffff;
-        }
-        .filter-input:focus,
-        .filter-select:focus {
-          outline: none;
-          border-color: #2563eb;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        }
-        .search-results-info {
-          margin-top: 12px;
-          padding: 12px;
-          background: #ffffff;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          font-size: 0.875rem;
-          color: #475569;
-        }
-        .btn-clear-search {
-          padding: 4px 12px;
-          background: transparent;
-          border: 1px solid #d4d7de;
-          border-radius: 6px;
-          color: #475569;
-          font-size: 0.875rem;
-          cursor: pointer;
-        }
-        .btn-clear-search:hover {
-          background: #f1f5f9;
-        }
-        @media (max-width: 1024px) {
-          .filters-row {
-            grid-template-columns: 1fr 1fr;
-          }
-        }
-        @media (max-width: 768px) {
-          .filters-row {
-            grid-template-columns: 1fr;
-          }
-          .order-card__header {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-          .order-card__meta {
-            flex-direction: column;
-            gap: 8px;
-          }
-          .order-card__actions {
-            flex-direction: column;
-            align-items: stretch;
-          }
-        }
-      `}</style>
     </section>
   );
 }

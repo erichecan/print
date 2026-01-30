@@ -1,60 +1,37 @@
 /**
  * Order Detail Page
+ * [2026-01-27] 移除邮箱验证，改为需要登录认证
  */
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { ordersApi } from '@/lib/api';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
-  const searchParams = useSearchParams();
-const email = searchParams?.get('email') ?? ''; // 兼容返回 null 的情况，保持类型安全
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-const [downloading, setDownloading] = useState(false); // 控制发票下载状态
 
   useEffect(() => {
-    if (!email) {
-      setError('Email is required to view order');
-      setLoading(false);
-      return;
-    }
-
     ordersApi
-      .getByOrderNumber(orderNumber, email)
+      .getByOrderNumber(orderNumber)
       .then(setOrder)
       .catch((err) => {
-        setError(err.message || 'Failed to load order');
+        // 处理未登录错误
+        if (err.message?.includes('401') || err.message?.includes('Authentication')) {
+          setError('Please login to view this order');
+        } else if (err.message?.includes('403')) {
+          setError('You do not have permission to view this order');
+        } else {
+          setError(err.message || 'Failed to load order');
+        }
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [orderNumber, email]);
-
-  const handleInvoiceDownload = async () => {
-    if (!order) return;
-    try {
-      setDownloading(true);
-      const blob = await ordersApi.downloadInvoiceByOrderNumber(order.orderNumber, email);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `invoice-${order.orderNumber}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-console.error(' Guest invoice download failed', err);
-      alert('Unable to download the invoice right now. Please try again later.');
-    } finally {
-      setDownloading(false);
-    }
-  };
+  }, [orderNumber]);
 
   if (loading) {
     return (
@@ -93,14 +70,6 @@ console.error(' Guest invoice download failed', err);
             Payment: {order.paymentStatus}
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={handleInvoiceDownload}
-          disabled={downloading}
-        >
-          {downloading ? 'Downloading…' : 'Download invoice'}
-        </button>
       </div>
 
       <div className="order-grid">
@@ -201,11 +170,6 @@ console.error(' Guest invoice download failed', err);
         <Link href="/products" className="btn btn-primary">
           Continue Shopping
         </Link>
-        {order.trackingNumber && (
-          <Link href={`/orders/tracking/${order.orderNumber}`} className="btn btn-outline">
-            Track Order
-          </Link>
-        )}
       </div>
 
       <style jsx>{`

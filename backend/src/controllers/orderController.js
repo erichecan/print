@@ -202,6 +202,7 @@ exports.getOrderById = async (req, res) => {
       orderNumber: order.orderNumber,
       status: order.status.toLowerCase(),
       paymentStatus: order.paymentStatus.toLowerCase(),
+      email: order.email, // Expose email for frontend use
       currency: order.currency,
       subtotal: Number(order.subtotal),
       shippingCost: Number(order.shippingCost),
@@ -223,7 +224,7 @@ exports.getOrderById = async (req, res) => {
         quantity: item.quantity,
         unitPrice: Number(item.priceSnapshot),
         subtotal: Number(item.priceSnapshot) * item.quantity,
-        thumbnail: item.variant.imageUrl || item.variant.product.images[0]?.imageUrl || null,
+        thumbnail: item.variant.imageUrl || item.variant.product.images[0]?.url || null,
       })),
       shipment: order.shipments[0] ? {
         trackingNumber: order.shipments[0].trackingNumber,
@@ -239,15 +240,17 @@ exports.getOrderById = async (req, res) => {
 };
 
 /**
- * GET /api/orders/number/:orderNumber - Get order by order number (for guest access)
+ * GET /api/orders/number/:orderNumber - Get order by order number (auth required)
+ * [2026-01-27] 修改：移除邮箱验证，改为需要登录且仅订单所有者可访问
  */
 exports.getOrderByOrderNumber = async (req, res) => {
   try {
     const { orderNumber } = req.params;
-    const { email } = req.query;
+    const userId = req.user?.id;
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email query parameter is required' });
+    // 必须登录
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const order = await prisma.order.findUnique({
@@ -280,9 +283,8 @@ exports.getOrderByOrderNumber = async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    // Verify email matches
-// 修复：email 可能为 null，需要先检查
-    if (!order.email || !email || order.email.toLowerCase() !== email.toLowerCase()) {
+    // 验证是订单所有者
+    if (order.userId !== userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -307,12 +309,12 @@ exports.getOrderByOrderNumber = async (req, res) => {
       items: order.items.map((item) => ({
         id: item.id,
         variantId: item.variantId,
-        productName: item.variant.product.name,
-        variantDescription: `${item.variant.color || ''}${item.variant.color && item.variant.size ? ' • ' : ''}${item.variant.size || ''}`.trim(),
+        productName: item.variant?.product?.name || 'Product',
+        variantDescription: `${item.variant?.color || ''}${item.variant?.color && item.variant?.size ? ' • ' : ''}${item.variant?.size || ''}`.trim(),
         quantity: item.quantity,
         unitPrice: Number(item.priceSnapshot),
         subtotal: Number(item.priceSnapshot) * item.quantity,
-        thumbnail: item.variant.imageUrl || item.variant.product.images[0]?.imageUrl || null,
+        thumbnail: item.variant?.imageUrl || item.variant?.product?.images?.[0]?.url || null,
       })),
       shipment: order.shipments[0] ? {
         trackingNumber: order.shipments[0].trackingNumber,
@@ -345,7 +347,7 @@ const formatAddress = (address = {}) => {
  */
 const generateInvoicePdf = (order) => {
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
-  const stream = new Readable({ read() {} });
+  const stream = new Readable({ read() { } });
 
   doc.on('data', (chunk) => stream.push(chunk));
   doc.on('end', () => stream.push(null));
@@ -355,7 +357,7 @@ const generateInvoicePdf = (order) => {
   const margin = 50;
   const contentWidth = pageWidth - 2 * margin;
 
-// Header with company info and invoice title
+  // Header with company info and invoice title
   doc.rect(margin, margin, contentWidth, 80).fill('#1e293b');
   doc.fillColor('#ffffff')
     .fontSize(28)
@@ -386,7 +388,7 @@ const generateInvoicePdf = (order) => {
 
   let yPos = margin + 100;
 
-// Bill To and Ship To sections
+  // Bill To and Ship To sections
   doc.fillColor('#000000');
   const sectionWidth = (contentWidth - 20) / 2;
 
@@ -411,7 +413,7 @@ const generateInvoicePdf = (order) => {
 
   yPos = margin + 200;
 
-// Items table header
+  // Items table header
   doc.rect(margin, yPos, contentWidth, 30).fill('#f1f5f9');
   doc.fillColor('#1e293b')
     .font('Helvetica-Bold')
@@ -423,7 +425,7 @@ const generateInvoicePdf = (order) => {
 
   yPos += 35;
 
-// Items table rows
+  // Items table rows
   doc.font('Helvetica').fontSize(10);
   order.items.forEach((item) => {
     const itemHeight = 40;
@@ -452,7 +454,7 @@ const generateInvoicePdf = (order) => {
     yPos += itemHeight;
   });
 
-// Summary section
+  // Summary section
   const summaryY = yPos + 20;
   const summaryWidth = 200;
   const summaryX = pageWidth - margin - summaryWidth;
@@ -497,7 +499,7 @@ const generateInvoicePdf = (order) => {
     .text('Total:', summaryX + 10, summaryYPos + 5, { width: summaryWidth - 20, align: 'right' })
     .text(`${order.currency || 'CAD'} $${Number(order.total).toFixed(2)}`, summaryX + 10, summaryYPos + 5, { width: summaryWidth - 20, align: 'right' });
 
-// Payment status and footer
+  // Payment status and footer
   const footerY = pageHeight - margin - 60;
   doc.fillColor('#64748b')
     .font('Helvetica')
@@ -558,7 +560,7 @@ exports.downloadInvoice = async (req, res, next) => {
       return next(new UnauthorizedError('需要身份验证'));
     }
 
-// Generate invoice PDF
+    // Generate invoice PDF
     const pdfStream = generateInvoicePdf(order);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
@@ -607,12 +609,12 @@ exports.downloadInvoiceByOrderNumber = async (req, res, next) => {
       return next(new NotFoundError('订单不存在'));
     }
 
-// 修复：email 可能为 null，需要先检查
+    // 修复：email 可能为 null，需要先检查
     if (!order.email || !email || order.email.toLowerCase() !== String(email).toLowerCase()) {
       return next(new ForbiddenError('无权访问此订单的发票'));
     }
 
-// Generate invoice PDF
+    // Generate invoice PDF
     const pdfStream = generateInvoicePdf(order);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
@@ -807,7 +809,7 @@ exports.getOrderTracking = async (req, res, next) => {
       return next(new UnauthorizedError('需要身份验证'));
     }
 
-// Build tracking response with events
+    // Build tracking response with events
     const primaryShipment = order.shipments[0];
     const trackingEvents = [];
 

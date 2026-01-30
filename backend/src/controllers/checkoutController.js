@@ -5,15 +5,20 @@
 */
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
-// 延迟初始化 Stripe，确保环境变量已加载
-const getStripe = () => {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey || secretKey.trim() === '') {
-    throw new Error('STRIPE_SECRET_KEY is not configured');
-  }
-  return Stripe(secretKey);
-};
 const logger = require('../utils/logger');
+
+// Global Stripe Initialization (Fail Fast)
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey || stripeSecretKey.trim() === '') {
+  const errorMsg = 'STRIPE_SECRET_KEY is not configured. Payment features will not work.';
+  // In production, fail immediately to prevent silent crashes later
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(errorMsg);
+  } else {
+    logger.warn(errorMsg);
+  }
+}
+const stripe = stripeSecretKey ? Stripe(stripeSecretKey) : null;
 const { sendOrderConfirmation } = require('../services/emailService');
 const { checkMultipleStockAvailability, decreaseInventory } = require('../services/inventoryService');
 const { getSettingValue } = require('../services/settingService');
@@ -145,20 +150,82 @@ function calculateTax(subtotal, province) {
 /**
  * Calculate static shipping rates
  */
-function calculateShipping(country, province, shippingMethod = 'standard', settings = DEFAULT_SHIPPING_SETTINGS) {
+const { calculateShippingFromDb } = require('../utils/shippingEngine');
+
+// Kept for fallback/reference only - Phase 2 migration
+// DEFAULT_SHIPPING_SETTINGS is already defined at the top of the file
+
+/**
+ * Calculate dynamic shipping rates using database rules
+ */
+async function calculateShipping(country, province, postalCode, shippingMethod = 'standard', cartItems = []) {
+  try {
+    // Calculate total weight and amount
+    let orderAmount = 0;
+    let orderWeight = 0;
+    const productIds = [];
+
+    if (cartItems && cartItems.length > 0) {
+      cartItems.forEach(item => {
+        const qty = item.quantity;
+        const price = Number(item.priceSnapshot || 0);
+        orderAmount += price * qty;
+
+        // Add product ID for shipping rules
+        if (item.variant && item.variant.productId) {
+          productIds.push(item.variant.productId);
+        } else if (item.productId) { // Fallback if structure is different
+          productIds.push(item.productId);
+        }
+
+        // Calculate weight if available
+        if (item.variant && item.variant.product && item.variant.product.weight) {
+          orderWeight += Number(item.variant.product.weight) * qty;
+        }
+      });
+    }
+
+    // Use shipping engine to find matching rule
+    const result = await calculateShippingFromDb({
+      country,
+      province,
+      postalCode,
+      orderAmount,
+      orderWeight,
+      productIds,
+      shippingMethod
+    });
+
+    if (result) {
+      return {
+        cost: result.isFreeShipping ? 0 : result.cost,
+        estimatedDays: result.estimatedDays,
+        ruleId: result.ruleId,
+        templateName: result.templateName
+      };
+    }
+
+    // Fallback to static calculation if no rule matches
+    return calculateStaticFallback(country, shippingMethod);
+  } catch (error) {
+    logger.error('Error in calculateShipping:', error);
+    // Fallback on error
+    return calculateStaticFallback(country, shippingMethod);
+  }
+}
+
+function calculateStaticFallback(country, shippingMethod = 'standard') {
   const isCA = country?.toUpperCase() === 'CA' || country?.toUpperCase() === 'CAN';
   const isUS = country?.toUpperCase() === 'US' || country?.toUpperCase() === 'USA';
 
   const methodKey = shippingMethod === 'express' ? 'express' : 'standard';
-  const method = settings[methodKey];
+  // Use hardcoded defaults as ultimate fallback
+  const defaults = DEFAULT_SHIPPING_SETTINGS[methodKey] || DEFAULT_SHIPPING_SETTINGS.standard;
 
-  // If method is disabled, fallback to standard or return 0/error (here we allow it if provided)
-  if (!method) return 15.99; // Fallback safety
+  if (isCA) return { cost: defaults.cost, estimatedDays: defaults.estimatedDaysCA };
+  if (isUS) return { cost: defaults.costUS || defaults.cost, estimatedDays: defaults.estimatedDaysUS };
 
-  if (isCA) return Number(method.cost);
-  if (isUS) return Number(method.costUS || method.cost); // Fallback to base cost if US not defined
-
-  return Number(method.costIntl || 15.99);
+  return { cost: defaults.costIntl || 15.99, estimatedDays: 12 };
 }
 
 /**
@@ -429,12 +496,15 @@ exports.prepareCheckout = async (req, res) => {
 
     if (shippingAddress?.country && shippingAddress?.province) {
       // 当地址完整时返回运费与税费估算
-      shippingCost = calculateShipping(
+      const shippingResult = await calculateShipping(
         shippingAddress.country,
         shippingAddress.province,
+        shippingAddress.postalCode,
         shippingMethod,
-        shippingSettings
+        cart.items
       );
+      shippingCost = shippingResult.cost;
+
       // Tax is calculated on subtotal minus all discounts
       tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
     }
@@ -472,40 +542,45 @@ exports.prepareCheckout = async (req, res) => {
  */
 exports.getShippingRates = async (req, res) => {
   try {
-    const { address } = req.body;
-    const settings = await getSettingValue('site.shipping', DEFAULT_SHIPPING_SETTINGS);
+    const { address, cartItems } = req.body; // Expect cartItems for dynamic calculation
 
     if (!address || !address.country) {
       return res.status(400).json({ error: 'Address with country is required' });
     }
 
-    // Phase 1: Static rates (Now dynamic)
-    const isCA = address.country?.toUpperCase() === 'CA' || address.country?.toUpperCase() === 'CAN';
-    const isUS = address.country?.toUpperCase() === 'US' || address.country?.toUpperCase() === 'USA';
-
-    // Determine days based on location
-    const stdDays = isCA ? settings.standard.estimatedDaysCA : (isUS ? settings.standard.estimatedDaysUS : 12);
-    const expDays = isCA ? settings.express.estimatedDaysCA : (isUS ? settings.express.estimatedDaysUS : 7);
-
     const rates = [];
 
-    if (settings.standard.enabled) {
-      rates.push({
-        id: 'standard',
-        name: 'Standard Shipping',
-        cost: calculateShipping(address.country, address.province, 'standard', settings),
-        estimatedDays: stdDays,
-      });
-    }
+    // Calculate Standard
+    const standardResult = await calculateShipping(
+      address.country,
+      address.province,
+      address.postalCode,
+      'standard',
+      cartItems || []
+    );
 
-    if (settings.express.enabled) {
-      rates.push({
-        id: 'express',
-        name: 'Express Shipping',
-        cost: calculateShipping(address.country, address.province, 'express', settings),
-        estimatedDays: expDays,
-      });
-    }
+    rates.push({
+      id: 'standard',
+      name: standardResult.templateName ? `${standardResult.templateName} (Standard)` : 'Standard Shipping',
+      cost: standardResult.cost,
+      estimatedDays: standardResult.estimatedDays,
+    });
+
+    // Calculate Express
+    const expressResult = await calculateShipping(
+      address.country,
+      address.province,
+      address.postalCode,
+      'express',
+      cartItems || []
+    );
+
+    rates.push({
+      id: 'express',
+      name: expressResult.templateName ? `${expressResult.templateName} (Express)` : 'Express Shipping',
+      cost: expressResult.cost,
+      estimatedDays: expressResult.estimatedDays,
+    });
 
     res.json({ rates });
   } catch (error) {
@@ -516,9 +591,14 @@ exports.getShippingRates = async (req, res) => {
 
 /**
  * POST /api/checkout/create-payment-intent - Create Stripe PaymentIntent
-* Enhanced: Added idempotencyKey, amount validation, draftOrderId support, capture_method
+ * Enhanced: Added idempotencyKey, amount validation, draftOrderId support, capture_method
  */
 exports.createPaymentIntent = async (req, res) => {
+  const userId = req.user?.id || null;
+  const sessionId = req.sessionId || null;
+
+  logger.info('[createPaymentIntent] Starting request', { userId, sessionId, hasBody: !!req.body });
+
   try {
     const {
       shippingAddress,
@@ -530,20 +610,20 @@ exports.createPaymentIntent = async (req, res) => {
       customerEmail, // Customer email for receipt
       metadata: additionalMetadata = {}, // Additional metadata
     } = req.body;
-    const userId = req.user?.id || null;
-    const sessionId = req.sessionId || null;
-
-    const shippingSettings = await getSettingValue('site.shipping', DEFAULT_SHIPPING_SETTINGS);
 
     if (!shippingAddress) {
+      logger.warn('[createPaymentIntent] Missing shipping address');
       return res.status(400).json({ error: 'Shipping address is required', errorCode: 'MISSING_ADDRESS' });
     }
 
+    logger.info('[createPaymentIntent] Getting cart', { userId, sessionId });
     const cart = await getOrCreateCart(userId, sessionId);
 
     if (cart.items.length === 0) {
+      logger.warn('[createPaymentIntent] Empty cart');
       return res.status(400).json({ error: 'Cart is empty', errorCode: 'EMPTY_CART' });
     }
+    logger.info('[createPaymentIntent] Cart retrieved', { itemCount: cart.items.length, cartId: cart.id });
 
     // Calculate totals
     const subtotal = cart.items.reduce((sum, item) => {
@@ -563,7 +643,15 @@ exports.createPaymentIntent = async (req, res) => {
     const couponDiscount = couponResult.discount || 0;
     const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
 
-    const shippingCost = calculateShipping(shippingAddress.country, shippingAddress.province, shippingMethod, shippingSettings);
+    const shippingResult = await calculateShipping(
+      shippingAddress.country,
+      shippingAddress.province,
+      shippingAddress.postalCode,
+      shippingMethod,
+      cart.items
+    );
+    const shippingCost = shippingResult.cost;
+
     // Tax is calculated on subtotal minus all discounts
     const tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
     const calculatedTotal = subtotal - totalDiscount + shippingCost + tax;
@@ -594,8 +682,12 @@ exports.createPaymentIntent = async (req, res) => {
       return res.status(500).json({ error: 'Stripe is not configured', details: 'Please configure STRIPE_SECRET_KEY in environment variables' });
     }
 
-    // 延迟初始化 Stripe 客户端
-    const stripe = getStripe();
+    // Stripe is already initialized globally
+    if (!stripe) {
+      logger.error('Stripe not initialized');
+      return res.status(500).json({ error: 'Payment service unavailable', errorCode: 'STRIPE_NOT_INIT' });
+    }
+
 
     // Generate idempotency key for safe retries
     const idempotencyKey = `${userId || sessionId || 'guest'}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -779,13 +871,12 @@ exports.confirmOrder = async (req, res) => {
     }
 
     // Verify PaymentIntent with Stripe
-    // 检查 Stripe 配置并使用延迟初始化
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.trim() === '') {
+    // Verify Stripe is initialized
+    if (!stripe) {
       logger.error('Stripe Secret Key is missing in confirmOrder!');
-      return res.status(500).json({ error: 'Stripe is not configured', details: 'Please configure STRIPE_SECRET_KEY in environment variables' });
+      return res.status(500).json({ error: 'Payment service unavailable', errorCode: 'STRIPE_NOT_INIT' });
     }
 
-    const stripe = getStripe();
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.status !== 'succeeded') {
@@ -855,7 +946,17 @@ exports.confirmOrder = async (req, res) => {
 
     const couponDiscount = couponResult.discount || 0;
     const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
-    const shippingCost = calculateShipping(shippingAddress.country, shippingAddress.province, shippingMethod, shippingSettings);
+
+    // Calculate shipping cost again (to be safe)
+    const shippingResult = await calculateShipping(
+      shippingAddress.country,
+      shippingAddress.province,
+      shippingAddress.postalCode,
+      shippingMethod,
+      cart.items
+    );
+    const shippingCost = shippingResult.cost;
+
     // Tax is calculated on subtotal minus all discounts
     const tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
     const total = subtotal - totalDiscount + shippingCost + tax;

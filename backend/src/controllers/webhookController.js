@@ -5,8 +5,15 @@
  */
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
-const logger = require('../utils/logger');
+
+// Global Stripe Initialization to fail fast
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeSecretKey ? Stripe(stripeSecretKey) : null;
+
+if (!stripeSecretKey && process.env.NODE_ENV === 'production') {
+  logger.error('CRITICAL: STRIPE_SECRET_KEY is not set in webhookController. Webhooks will fail.');
+}
+
 const { sendOrderConfirmation } = require('../services/emailService');
 const { increaseInventory } = require('../services/inventoryService');
 
@@ -27,7 +34,13 @@ exports.handleStripeWebhook = async (req, res) => {
 
   try {
     // Verify webhook signature
+    // Verify Stripe is initialized
+    if (!stripe) {
+      logger.error('Stripe not initialized in webhook handler');
+      return res.status(500).json({ error: 'Stripe configuration error' });
+    }
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+
     logger.info('Stripe webhook received', {
       type: event.type,
       id: event.id,
@@ -41,7 +54,7 @@ exports.handleStripeWebhook = async (req, res) => {
   }
 
   try {
-// Check idempotency - prevent duplicate processing
+    // Check idempotency - prevent duplicate processing
     const existingEvent = await prisma.webhookEvent.findUnique({
       where: { stripeEventId: event.id },
     });
@@ -55,7 +68,7 @@ exports.handleStripeWebhook = async (req, res) => {
       return res.json({ received: true, message: 'Event already processed' });
     }
 
-// Create webhook event record for idempotency
+    // Create webhook event record for idempotency
     let webhookEventRecord;
     try {
       webhookEventRecord = await prisma.webhookEvent.create({
@@ -109,7 +122,7 @@ exports.handleStripeWebhook = async (req, res) => {
           break;
 
         case 'payment_intent.canceled':
-// Handle canceled payment intent
+          // Handle canceled payment intent
           const result4 = await handlePaymentIntentCanceled(event.data.object);
           orderId = result4?.orderId || null;
           paymentIntentId = event.data.object.id;
@@ -124,7 +137,7 @@ exports.handleStripeWebhook = async (req, res) => {
           handlerSuccess = true; // Not an error, just unhandled
       }
 
-// Update webhook event record with result
+      // Update webhook event record with result
       await prisma.webhookEvent.update({
         where: { id: webhookEventRecord.id },
         data: {
@@ -137,7 +150,7 @@ exports.handleStripeWebhook = async (req, res) => {
 
       res.json({ received: true });
     } catch (handlerError) {
-// Update webhook event record with error
+      // Update webhook event record with error
       await prisma.webhookEvent.update({
         where: { id: webhookEventRecord.id },
         data: {
@@ -196,7 +209,7 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
       return { orderId: null };
     }
 
-// Fetch charge details to get balance_transaction and fee
+    // Fetch charge details to get balance_transaction and fee
     let balanceTransactionId = null;
     let paymentFee = null;
 
@@ -204,8 +217,8 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
       try {
         const charge = await stripe.charges.retrieve(paymentIntent.latest_charge);
         balanceTransactionId = charge.balance_transaction;
-        
-// Get fee from balance transaction
+
+        // Get fee from balance transaction
         if (balanceTransactionId) {
           const balanceTransaction = await stripe.balanceTransactions.retrieve(balanceTransactionId);
           // Fee is in the smallest currency unit (cents), convert to CAD
@@ -227,7 +240,7 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
         status: 'PROCESSING',
       };
 
-// Add payment summary if available
+      // Add payment summary if available
       if (balanceTransactionId) {
         updateData.balanceTransactionId = balanceTransactionId;
       }
@@ -319,7 +332,7 @@ async function handlePaymentIntentFailed(paymentIntent) {
       return { orderId: null };
     }
 
-// Restore inventory if order was created and payment failed
+    // Restore inventory if order was created and payment failed
     // Only restore if order status is PENDING (order was created but payment failed)
     if (order.status === 'PENDING' && order.items && order.items.length > 0) {
       try {

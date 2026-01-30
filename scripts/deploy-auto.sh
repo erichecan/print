@@ -210,7 +210,7 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --cpu 1 \
   --timeout 300 \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars NODE_ENV=production \
+  --set-env-vars NODE_ENV=production,GCP_IMAGE_BUCKET=${PROJECT_ID}-images \
   --quiet
 
 BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')
@@ -227,11 +227,22 @@ gcloud secrets add-iam-policy-binding api-url \
   --role="roles/secretmanager.secretAccessor" \
   --quiet 2>/dev/null || true
 
+# 获取构建版本信息
+LOCAL_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+LOCAL_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+# 获取 Stripe Publishable Key (用于构建时注入)
+STRIPE_PUB=$(gcloud secrets versions access latest --secret=stripe-publishable-key 2>/dev/null || echo "")
+
 # 构建并推送前端
 echo ""
 echo -e "${BLUE}[前端] 构建 Docker 镜像 (linux/amd64)...${NC}"
-docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
-  -f apps/web/Dockerfile apps/web 2>&1 | grep -E "(Step|Successfully)" || true
+docker build --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_API_URL=${API_URL} \
+  --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUB} \
+  --build-arg NEXT_PUBLIC_BUILD_SHA=${LOCAL_SHA} \
+  --build-arg NEXT_PUBLIC_BUILD_TIME=${LOCAL_TIME} \
+  -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
+  -f apps/web/Dockerfile .
 
 echo -e "${BLUE}[前端] 推送镜像...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest

@@ -51,6 +51,7 @@ import { debugLog } from '@/utils/debugLogger'; // 调试日志工具
 import { calculateImageFit } from '@/design/utils/fit'; // 统一使用 calculateImageFit 确保商品主图尺寸和位置一致性
 // import { registerCornerControls, applyUploadCornerControlsToObject } from '../design-lab5/upload-controls/registerUploadCornerControls'; // Deprecated in favor of FloatingObjectControls
 import { FloatingObjectControls } from './components/FloatingObjectControls'; // New Floating Controls
+import { ImageCropper } from './components/ImageCropper';
 import './design-lab.css';
 
 
@@ -205,6 +206,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   const [canvasInitialized, setCanvasInitialized] = useState(false);
   // Canvas初始化错误状态
   const [canvasInitError, setCanvasInitError] = useState<Error | null>(null);
+
+  // Image Cropping State
+  const [isCropping, setIsCropping] = useState(false);
+  const [croppingImage, setCroppingImage] = useState<fabric.Image | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -2547,6 +2552,34 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     console.log('[DesignLab] Reset upload requested');
   }, []);
 
+  // Crop Handlers
+  const handleStartCrop = useCallback((object: fabric.Object) => {
+    console.log('[DesignLab] handleStartCrop called with:', object);
+    if (object && object.type === 'image') {
+      setCroppingImage(object as fabric.Image);
+      setIsCropping(true);
+    }
+  }, []);
+
+  // Debug log for checking if handlers are bound
+  useEffect(() => {
+    console.log('[DesignLab] handleStartCrop bound:', !!handleStartCrop);
+    console.log('[DesignLab] handleStartCrop type:', typeof handleStartCrop);
+  }, [handleStartCrop]);
+
+  const handleApplyCrop = useCallback((blob: Blob) => {
+    if (!croppingImage || !fabricCanvasRef.current) return;
+
+    const newUrl = URL.createObjectURL(blob);
+
+    // Fabric v6 setSrc returns a Promise
+    croppingImage.setSrc(newUrl).then(() => {
+      fabricCanvasRef.current?.renderAll();
+      setIsCropping(false);
+      setCroppingImage(null);
+    });
+  }, [croppingImage]);
+
   // Save Design 处理
   // 更新：打开Save & Share模态框
   const handleSaveDesign = useCallback(() => {
@@ -4272,6 +4305,7 @@ aria - pressed={ activeTool === 'colors' }
       onReset={handleResetUpload}
       onSave={handleSaveDesign}
       onClose={handleBackToHome}
+      onCrop={handleStartCrop}
       onOpenRatingModal={() => {
         // 打开上传体验评分模态框
         const uploadId = `upload_${Date.now()}`;
@@ -4440,7 +4474,21 @@ aria - pressed={ activeTool === 'colors' }
       {!canvasInitError && (
         <>
           <canvas ref={canvasRef} className="dl-canvas__fabric" />
-          <FloatingObjectControls canvas={fabricCanvasRef.current} fabricModule={fabricRef.current} />
+          <FloatingObjectControls
+            canvas={fabricCanvasRef.current}
+            fabricModule={fabricRef.current}
+            onCrop={handleStartCrop}
+          />
+          {isCropping && croppingImage && (
+            <ImageCropper
+              imageSrc={croppingImage.getSrc()}
+              onApply={handleApplyCrop}
+              onCancel={() => {
+                setIsCropping(false);
+                setCroppingImage(null);
+              }}
+            />
+          )}
         </>
       )}
     </div>

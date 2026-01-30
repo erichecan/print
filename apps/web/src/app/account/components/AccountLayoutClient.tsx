@@ -27,36 +27,31 @@ export function AccountLayoutClient({ children }: { children: ReactNode }) {
     );
   }
 
+  // Pro Max UI: Clean Layout with Tailwind
   return (
     <AccountProvider>
-      <div style={{
-        display: 'flex',
-        minHeight: 'calc(100vh - 200px)',
-        backgroundColor: '#f5f5f5',
-        paddingTop: '24px',
-        paddingBottom: '48px'
-      }}>
-        {/* 左侧导航栏 */}
-        <aside style={{
-          width: '240px',
-          backgroundColor: '#ffffff',
-          borderRight: '1px solid #e0e0e0',
-          padding: '24px 0',
-          flexShrink: 0,
-        }}>
-          <AccountSidebar />
-        </aside>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="flex-1 max-w-7xl mx-auto w-full flex items-start gap-8 pt-6 pb-12 px-4 sm:px-6 lg:px-8">
 
-        {/* 主内容区域 */}
-        <main style={{
-          flex: 1,
-          padding: '0 48px',
-          maxWidth: '1200px',
-          width: '100%',
-        }}>
-          <AccountBreadcrumb />
-          {children}
-        </main>
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:block w-64 flex-shrink-0">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
+              <div className="p-4">
+                <AccountSidebar />
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content Area */}
+          <main className="flex-1 min-w-0">
+            <div className="mb-6">
+              <AccountBreadcrumb />
+            </div>
+
+            {children}
+          </main>
+
+        </div>
       </div>
     </AccountProvider>
   );

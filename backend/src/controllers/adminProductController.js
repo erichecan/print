@@ -527,34 +527,12 @@ exports.createProduct = async (req, res) => {
     }
 
     // 类型转换：basePrice 需要转换为分（整数）
-    // basePrice 在 schema 中是 Int 类型（base_price_cents），前端可能发送美元金额
-    let basePriceCents;
-    if (typeof basePrice === 'number') {
-      // 假设如果数值小于 10000，可能是美元金额（例如 $10.00），转换为分
-      // 如果数值很大（> 10000），可能是以分为单位（例如 15000 = $150.00）
-      // 这是一个启发式判断，可能存在边缘情况，但在电商场景下 $100 以下的整数价格（1-100）作为分是不太可能的
-      // 如果前端明确发送分，应该确保数值是整数
-      if (Number.isInteger(basePrice) && basePrice >= 100) {
-        // 假设是分（前端已转换）或高价值商品
-        // 为了安全起见，我们信任前端通常发送 "美元金额"（带小数或不带），除非数值极其巨大
-        // 这里沿用之前的逻辑：
-        basePriceCents = basePrice < 10000 ? Math.round(basePrice * 100) : Math.round(basePrice);
-      } else {
-        basePriceCents = Math.round(basePrice * 100);
-      }
-    } else if (typeof basePrice === 'string') {
-      const parsed = parseFloat(basePrice);
-      if (isNaN(parsed)) {
-        return res.status(400).json({ error: 'Invalid basePrice format' });
-      }
-      basePriceCents = parsed < 10000 ? Math.round(parsed * 100) : Math.round(parsed);
-    } else {
-      const parsed = parseInt(basePrice, 10);
-      if (isNaN(parsed)) {
-        return res.status(400).json({ error: 'Invalid basePrice format' });
-      }
-      basePriceCents = parsed;
+    // Admin 接口统一接收以“元”为单位的金额，存入数据库前转换为“分”
+    const basePriceFloat = typeof basePrice === 'string' ? parseFloat(basePrice) : basePrice;
+    if (typeof basePriceFloat !== 'number' || isNaN(basePriceFloat)) {
+      return res.status(400).json({ error: 'Invalid basePrice format' });
     }
+    const basePriceCents = Math.round(basePriceFloat * 100);
 
     // 确保 basePriceCents 是有效的整数
     if (!Number.isInteger(basePriceCents) || basePriceCents < 0) {
@@ -916,13 +894,11 @@ exports.updateProduct = async (req, res) => {
       // - 其他价格字段：统一转换为 Prisma.Decimal，避免类型不一致
       let basePriceCents;
       if (basePrice !== undefined) {
-        if (typeof basePrice === 'number') {
-          basePriceCents = basePrice < 1000 ? Math.round(basePrice * 100) : Math.round(basePrice);
-        } else if (typeof basePrice === 'string') {
-          const parsed = parseFloat(basePrice);
-          if (!Number.isNaN(parsed)) {
-            basePriceCents = parsed < 1000 ? Math.round(parsed * 100) : Math.round(parsed);
-          }
+        const parsed = typeof basePrice === 'string' ? parseFloat(basePrice) : basePrice;
+        if (typeof parsed === 'number' && !Number.isNaN(parsed)) {
+          basePriceCents = Math.round(parsed * 100);
+        } else {
+          return res.status(400).json({ error: 'Invalid basePrice format' });
         }
       }
 

@@ -1226,20 +1226,33 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         if (formState.dueDate) {
           payload.append('deliveryDate', formState.dueDate);
         }
-        if (formState.contactName) {
-          payload.append('contactName', formState.contactName.trim());
-        }
-        if (formState.email) {
-          payload.append('email', formState.email.trim());
-        }
-        if (formState.phone) {
-          payload.append('phone', formState.phone.trim());
-        }
-        const companyValue = formState.requiresInvoice && formState.invoiceInfo.companyName
-          ? formState.invoiceInfo.companyName.trim()
-          : formState.company || '';
-        if (companyValue) {
+        // [2026-01-27] 修复：编辑模式下始终发送这些字段，即使为空，让后端能够将其更新为 null
+        if (isEditMode) {
+          // 编辑模式：始终发送，允许清空字段
+          payload.append('contactName', formState.contactName?.trim() || '');
+          payload.append('email', formState.email?.trim() || '');
+          payload.append('phone', formState.phone?.trim() || '');
+          const companyValue = formState.requiresInvoice && formState.invoiceInfo.companyName
+            ? formState.invoiceInfo.companyName.trim()
+            : formState.company?.trim() || '';
           payload.append('company', companyValue);
+        } else {
+          // 新建模式：只发送有值的字段
+          if (formState.contactName) {
+            payload.append('contactName', formState.contactName.trim());
+          }
+          if (formState.email) {
+            payload.append('email', formState.email.trim());
+          }
+          if (formState.phone) {
+            payload.append('phone', formState.phone.trim());
+          }
+          const companyValue = formState.requiresInvoice && formState.invoiceInfo.companyName
+            ? formState.invoiceInfo.companyName.trim()
+            : formState.company || '';
+          if (companyValue) {
+            payload.append('company', companyValue);
+          }
         }
 
         // PRD v2.0: 聚合印刷位置（全局 + 产品级别）
@@ -1345,6 +1358,9 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             ? `订单更新成功！订单编号：${finalOrderCode}。`
             : `订单提交成功！订单编号：${finalOrderCode}。订单已进入生产管理系统，我们会尽快处理。`,
         });
+
+        // [2026-01-27] 修复：提交成功后清除草稿，防止跨订单数据污染
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
 
         // 编辑模式下，跳转到订单详情页面
         if (isEditMode && editId) {

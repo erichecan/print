@@ -6,8 +6,16 @@
  */
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
 const logger = require('../utils/logger');
+
+// Global Stripe Initialization to fail fast
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeSecretKey ? Stripe(stripeSecretKey) : null;
+
+if (!stripeSecretKey && process.env.NODE_ENV === 'production') {
+  logger.warn('WARNING: STRIPE_SECRET_KEY is not set in adminOrderController. Refunds will fail.');
+}
+
 const { sendRefundConfirmation } = require('../services/emailService');
 const { updateOrderStatus, validateStatusTransition } = require('../services/orderService');
 const { BadRequestError, NotFoundError, InternalServerError } = require('../utils/errors');
@@ -250,7 +258,7 @@ exports.updateOrderStatus = async (req, res) => {
     const updateData = {};
     const changes = {};
 
-// Validate and update order status with state machine
+    // Validate and update order status with state machine
     // Use orderService.updateOrderStatus to ensure history recording and email notifications
     if (status) {
       const normalizedStatus = String(status).toUpperCase();
@@ -277,18 +285,18 @@ exports.updateOrderStatus = async (req, res) => {
         throw validationError;
       }
 
-// Use orderService.updateOrderStatus to handle status update
+      // Use orderService.updateOrderStatus to handle status update
       // This will automatically record history and send email notifications
       try {
         const actorId = req.user?.id || null;
         const actorName = req.user ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email : 'System';
-        
+
         await updateOrderStatus(id, normalizedStatus, {
           actorId,
           actorName,
           note: note || null,
         });
-        
+
         // Status update is handled by orderService, so we don't add it to updateData
         // But we still need to track it for the response
         logger.info('Order status updated via admin controller', {
@@ -324,7 +332,7 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     // Update tracking information
-// Enhanced tracking update with shipment creation
+    // Enhanced tracking update with shipment creation
     if (trackingNumber !== undefined || carrier !== undefined) {
       updateData.trackingNumber = trackingNumber !== undefined ? trackingNumber || null : undefined;
       updateData.carrier = carrier !== undefined ? carrier || null : undefined;
@@ -346,7 +354,7 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(400).json({ error: 'No update fields provided' });
     }
 
-// Update order and create/update shipment if tracking info provided
+    // Update order and create/update shipment if tracking info provided
     // Note: If status was updated, it's already handled by orderService.updateOrderStatus above
     // So we only update other fields here
     let shipmentUpdated = false;
@@ -368,7 +376,7 @@ exports.updateOrderStatus = async (req, res) => {
             updatedAt: true,
           },
         });
-        
+
         // If we have other fields to update, update them
         if (Object.keys(updateData).length > 0) {
           updatedOrder = await tx.order.update({
@@ -411,7 +419,7 @@ exports.updateOrderStatus = async (req, res) => {
         });
 
         if (existingShipment) {
-// Check if tracking info changed
+          // Check if tracking info changed
           const trackingChanged =
             existingShipment.trackingNumber !== trackingNumber || existingShipment.carrier !== carrier;
           shipmentUpdated = trackingChanged;
@@ -440,7 +448,7 @@ exports.updateOrderStatus = async (req, res) => {
       return updatedOrder;
     });
 
-// Send tracking update notification if tracking info was added or updated
+    // Send tracking update notification if tracking info was added or updated
     if (shipmentUpdated && trackingNumber && carrier) {
       try {
         // Fetch full order details for email
@@ -456,7 +464,7 @@ exports.updateOrderStatus = async (req, res) => {
                 },
               },
             },
-            shippingAddress: true,
+
           },
         });
 
@@ -481,7 +489,7 @@ exports.updateOrderStatus = async (req, res) => {
       }
     }
 
-// Audit Logs 功能已移除
+    // Audit Logs 功能已移除
 
     logger.info('Order status updated by admin', {
       orderId: order.id,
@@ -586,10 +594,14 @@ exports.recordRefund = async (req, res, next) => {
     let refundError = null;
 
     // Process Stripe refund if payment intent exists and refundToStripe is true
-    if (refundToStripe && order.paymentIntentId && process.env.STRIPE_SECRET_KEY) {
+    if (refundToStripe && order.paymentIntentId) {
+      if (!stripe) {
+        throw new Error('Stripe is not initialized');
+      }
       try {
         // Retrieve payment intent to get charge ID
         const paymentIntent = await stripe.paymentIntents.retrieve(order.paymentIntentId);
+
 
         if (paymentIntent.status === 'succeeded' && paymentIntent.latest_charge) {
           // Create refund in Stripe
@@ -662,7 +674,7 @@ exports.recordRefund = async (req, res, next) => {
       },
     });
 
-// Audit Logs 功能已移除
+    // Audit Logs 功能已移除
 
     // Send refund confirmation email (don't fail if email fails)
     try {
@@ -996,8 +1008,7 @@ exports.generateShippingLabel = async (req, res, next) => {
             },
           },
         },
-        shippingAddress: true,
-        billingAddress: true,
+
       },
     });
 
@@ -1024,7 +1035,7 @@ exports.generateShippingLabel = async (req, res, next) => {
       );
     }
 
-// Prepare shipment data for EasyShip
+    // Prepare shipment data for EasyShip
     const shipmentData = {
       orderId: order.id,
       orderNumber: order.orderNumber,
@@ -1041,10 +1052,27 @@ exports.generateShippingLabel = async (req, res, next) => {
       rateId: rateId || null,
     };
 
-// Create shipment via EasyShip API
+    // Create shipment via EasyShip API or Fallback to Manual
     let easyshipResult;
     try {
-      easyshipResult = await easyshipService.createShipment(shipmentData);
+      // Check if EasyShip is configured
+      if (!process.env.EASYSHIP_API_TOKEN) {
+        logger.warn('EasyShip API token not configured, using manual fallback', {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+        });
+
+        // Manual fallback: Create a dummy result
+        easyshipResult = {
+          trackingNumber: `MANUAL-${Date.now()}`,
+          carrier: 'Manual Fulfillment',
+          labelUrl: null, // No real label
+          labelPdfUrl: null,
+          status: 'LABEL_CREATED',
+        };
+      } else {
+        easyshipResult = await easyshipService.createShipment(shipmentData);
+      }
     } catch (easyshipError) {
       logger.error('EasyShip API error', {
         timestamp,
@@ -1060,7 +1088,7 @@ exports.generateShippingLabel = async (req, res, next) => {
       );
     }
 
-// Update or create shipment record
+    // Update or create shipment record
     const shipment = await prisma.$transaction(async (tx) => {
       if (existingShipment) {
         return await tx.shipment.update({
@@ -1068,7 +1096,7 @@ exports.generateShippingLabel = async (req, res, next) => {
           data: {
             trackingNumber: easyshipResult.trackingNumber,
             carrier: easyshipResult.carrier,
-            labelUrl: easyshipResult.labelUrl || easyshipResult.labelPdfUrl,
+            labelUrl: easyshipResult.labelUrl || easyshipResult.labelPdfUrl, // Might be null for manual
             status: 'LABEL_CREATED',
           },
         });
@@ -1078,14 +1106,14 @@ exports.generateShippingLabel = async (req, res, next) => {
             orderId: order.id,
             trackingNumber: easyshipResult.trackingNumber,
             carrier: easyshipResult.carrier,
-            labelUrl: easyshipResult.labelUrl || easyshipResult.labelPdfUrl,
+            labelUrl: easyshipResult.labelUrl || easyshipResult.labelPdfUrl, // Might be null for manual
             status: 'LABEL_CREATED',
           },
         });
       }
     });
 
-// Update order status to SHIPPED if not already
+    // Update order status to SHIPPED if not already
     if (order.status !== 'SHIPPED' && order.status !== 'DELIVERED') {
       try {
         await updateOrderStatus(order.id, 'SHIPPED', {
@@ -1132,6 +1160,12 @@ exports.generateShippingLabel = async (req, res, next) => {
       error: error.message,
       stack: error.stack,
     });
+
+    // Check for known configuration errors
+    if (error.message && (error.message.includes('token is not configured') || error.message.includes('EasyShip API error'))) {
+      return next(new BadRequestError(error.message));
+    }
+
     next(new InternalServerError('生成发货标签失败，请稍后重试'));
   }
 };
@@ -1158,7 +1192,7 @@ exports.getShippingRates = async (req, res, next) => {
             },
           },
         },
-        shippingAddress: true,
+
       },
     });
 
@@ -1166,7 +1200,7 @@ exports.getShippingRates = async (req, res, next) => {
       return next(new NotFoundError('订单不存在'));
     }
 
-// Get shipping rates from EasyShip
+    // Get shipping rates from EasyShip
     const rateData = {
       currency: order.currency || 'CAD',
       shippingAddress: order.shippingAddress,
@@ -1205,6 +1239,12 @@ exports.getShippingRates = async (req, res, next) => {
       error: error.message,
       stack: error.stack,
     });
+
+    // Check for known configuration errors
+    if (error.message && (error.message.includes('token is not configured') || error.message.includes('EasyShip API error'))) {
+      return next(new BadRequestError(error.message));
+    }
+
     next(new InternalServerError('获取运费报价失败，请稍后重试'));
   }
 };

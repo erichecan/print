@@ -31,6 +31,7 @@ const allowedOrigins = [
   'https://printm.netlify.app', // 添加生产环境前端域名
   'https://printngoplus.com', // 生产环境主域名
   'https://www.printngoplus.com', // 生产环境 www 域名
+  'https://print-main-frontend-5spbppmmza-uc.a.run.app', // Cloud Run Frontend
   process.env.FRONTEND_URL, // GCP Cloud Run 前端 URL
 ].filter(Boolean); // 移除 undefined 值
 // 允许任意 localhost / 127.0.0.1 端口，避免 Next.js dev server 改用 3001/3002 导致 CORS
@@ -250,6 +251,7 @@ app.use('/api/admin/content', require('./routes/adminContent')); // Admin CMS co
 app.use('/api/admin/designs', require('./routes/adminDesigns')); // Admin design review routes
 app.use('/api/admin/art-assets', require('./routes/adminArtAssets')); // Admin art assets management routes
 app.use('/api/admin/fonts', require('./routes/adminFonts')); // Admin fonts management routes
+app.use('/api/admin/shipping-templates', require('./routes/adminShippingTemplates')); // Admin shipping templates management routes
 app.use('/api/admin/fix-images', require('./routes/adminFixImages')); // 临时：修复商品图片记录
 app.use('/api/admin/analytics', require('./routes/adminAnalytics')); // Admin analytics routes for Issue #160
 app.use('/api/designs', require('./routes/designs')); // Design Lab public routes
