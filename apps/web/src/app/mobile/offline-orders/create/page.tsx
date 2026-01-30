@@ -505,6 +505,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         editId?: string;
       };
 
+      // [2026-01-29] User Request: Disable draft loading for new offline orders
+      // We return early to prevent loading any draft data from localStorage
+      return;
+
       // 检查草稿是否包含 editId，如果包含且当前 URL 没有 editId，则跳转
       if (draftData.editId && !editId) {
         console.log('[Draft] Redirecting to edit mode:', draftData.editId);
@@ -1476,279 +1480,281 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         </div>
 
         {/* 产品列表 - PRD v2.0: 产品卡片显示 */}
-        {formState.productItems.length > 0 ? (
-          <div className="space-y-6">
-            {formState.productItems.map((item, itemIndex) => {
-              // 获取该产品的可用颜色（如果是客户自带服装，显示"自带颜色"）
-              const availableColors = item.isCustomerOwned
-                ? [{ id: 'customer-owned', name: 'Own Color' }]
-                : orderConfig.colors;
+        {
+          formState.productItems.length > 0 ? (
+            <div className="space-y-6">
+              {formState.productItems.map((item, itemIndex) => {
+                // 获取该产品的可用颜色（如果是客户自带服装，显示"自带颜色"）
+                const availableColors = item.isCustomerOwned
+                  ? [{ id: 'customer-owned', name: 'Own Color' }]
+                  : orderConfig.colors;
 
-              return (
-                <div key={item.id} className="border border-gray-200 rounded-xl p-0 bg-white shadow-sm overflow-hidden animate-fade-in-up">
-                  {/* 产品卡片头部 */}
-                  <div className="bg-gray-50/80 p-4 border-b border-gray-100 flex items-center gap-4 relative">
-                    <div
-                      className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"
-                    />
-                    {(() => {
-                      const product = orderConfig.products.find(p => p.id === item.productId);
-                      return product?.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={product.imageUrl}
-                          alt={item.productName}
-                          className="w-14 h-14 object-cover rounded-lg shadow-sm border border-gray-200 bg-white"
-                        />
-                      ) : (
-                        <div className="w-14 h-14 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-300">
-                          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                        </div>
-                      );
-                    })()}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-bold text-gray-900 truncate">
-                        {item.productName}
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {item.isCustomerOwned ? 'Customer Owned' : 'Standard Product'}
-                      </p>
+                return (
+                  <div key={item.id} className="border border-gray-200 rounded-xl p-0 bg-white shadow-sm overflow-hidden animate-fade-in-up">
+                    {/* 产品卡片头部 */}
+                    <div className="bg-gray-50/80 p-4 border-b border-gray-100 flex items-center gap-4 relative">
+                      <div
+                        className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"
+                      />
+                      {(() => {
+                        const product = orderConfig.products.find(p => p.id === item.productId);
+                        return product?.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={product.imageUrl}
+                            alt={item.productName}
+                            className="w-14 h-14 object-cover rounded-lg shadow-sm border border-gray-200 bg-white"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-300">
+                            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          </div>
+                        );
+                      })()}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-bold text-gray-900 truncate">
+                          {item.productName}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {item.isCustomerOwned ? 'Customer Owned' : 'Standard Product'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-gray-400 hover:text-red-600 bg-white hover:bg-red-50 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 transition-all shadow-sm"
+                        onClick={() => removeProductItem(item.id)}
+                        title={t('delete')}
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      className="text-gray-400 hover:text-red-600 bg-white hover:bg-red-50 w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 transition-all shadow-sm"
-                      onClick={() => removeProductItem(item.id)}
-                      title={t('delete')}
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                  </div>
 
-                  {/* 颜色选择区域 */}
-                  <div className="p-4 space-y-5">
-                    {/* 如果没有颜色，显示颜色下拉菜单 */}
-                    {item.colors.length === 0 && (
-                      <div className="text-center py-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl">
-                        <div className="mx-auto w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-3">
-                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                    {/* 颜色选择区域 */}
+                    <div className="p-4 space-y-5">
+                      {/* 如果没有颜色，显示颜色下拉菜单 */}
+                      {item.colors.length === 0 && (
+                        <div className="text-center py-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl">
+                          <div className="mx-auto w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-3">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+                          </div>
+                          <h4 className="text-sm font-medium text-gray-900 mb-1">Start by adding a color</h4>
+                          <p className="text-xs text-gray-500 mb-4">Choose a color to configure sizes</p>
+
+                          <div className="max-w-xs mx-auto relative group">
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  const color = availableColors.find(c => c.id === e.target.value);
+                                  if (color) {
+                                    const isFirstColor = item.colors.length === 0;
+                                    if (isFirstColor) {
+                                      addColorToProduct(item.id, color.id, color.name, false);
+                                    } else {
+                                      setAddColorModal({
+                                        isOpen: true,
+                                        itemId: item.id,
+                                        colorId: color.id,
+                                        colorName: color.name
+                                      });
+                                    }
+                                    e.target.value = '';
+                                  }
+                                }
+                              }}
+                              className="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2.5 pl-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
+                            >
+                              <option value="">{t('selectColor') || 'Select Color'}</option>
+                              {availableColors.map((color) => (
+                                <option key={color.id} value={color.id}>
+                                  {color.name}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                            </div>
+                          </div>
                         </div>
-                        <h4 className="text-sm font-medium text-gray-900 mb-1">Start by adding a color</h4>
-                        <p className="text-xs text-gray-500 mb-4">Choose a color to configure sizes</p>
+                      )}
 
-                        <div className="max-w-xs mx-auto relative group">
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                const color = availableColors.find(c => c.id === e.target.value);
-                                if (color) {
-                                  const isFirstColor = item.colors.length === 0;
-                                  if (isFirstColor) {
-                                    addColorToProduct(item.id, color.id, color.name, false);
-                                  } else {
+                      {/* 颜色组卡片 */}
+                      {item.colors.map((color, colorIndex) => {
+                        const effectiveGroupId = color.groupId || color.colorId;
+                        const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+                        const colorGroup = colorGroups.find(g => g.id === effectiveGroupId);
+
+                        let group: OrderItemColorGroup;
+                        if (colorGroup) {
+                          group = colorGroup;
+                        } else {
+                          const quantities: Record<string, number> = {};
+                          color.sizes.forEach(sizeQty => {
+                            quantities[sizeQty.size] = sizeQty.quantity;
+                          });
+                          group = {
+                            id: effectiveGroupId,
+                            colorCode: color.colorId,
+                            colorName: color.colorName,
+                            quantities,
+                            positions: [],
+                            unitPrice: 0,
+                            inheritsFromColorId: null
+                          };
+                        }
+
+                        const previousGroup = colorIndex > 0
+                          ? colorGroups.find(g => g.id === (item.colors[colorIndex - 1].groupId || item.colors[colorIndex - 1].colorId))
+                          : null;
+
+                        const colorData = availableColors.find(c => c.id === color.colorId);
+                        const colorHex = (colorData as any)?.hexCode || '#CCCCCC';
+
+                        return (
+                          <ColorGroupCardIntegrated
+                            key={effectiveGroupId}
+                            group={group}
+                            productItemId={item.productId}
+                            availableSizes={color.availableSizes.length > 0 ? color.availableSizes : allSizes}
+                            sizeFeeMap={sizeFeeMap}
+                            youthSizes={youthSizes}
+                            adultSizes={adultSizes}
+                            largeSizes={largeSizes}
+                            isSizeAvailable={isSizeAvailable}
+                            colorHex={colorHex}
+                            locale={locale}
+                            onUpdate={(updated) => {
+                              setFormState(prev => {
+                                const groups = prev.colorGroupsByProduct[item.id] || [];
+                                const existingIndex = groups.findIndex(g => g.id === updated.id);
+                                let newGroups: OrderItemColorGroup[];
+                                if (existingIndex >= 0) {
+                                  newGroups = [...groups];
+                                  newGroups[existingIndex] = updated;
+                                } else {
+                                  newGroups = [...groups, updated];
+                                }
+
+                                const newItems = prev.productItems.map(productItem => {
+                                  if (productItem.id === item.id) {
+                                    const newColors = productItem.colors.map(c => {
+                                      if (c.groupId === color.groupId) {
+                                        const colorGroup = updated;
+                                        const unitPrice = colorGroup.unitPrice || 0;
+                                        const newSizes = Object.entries(updated.quantities)
+                                          .filter(([_, qty]) => qty > 0)
+                                          .map(([size, qty]) => ({
+                                            size,
+                                            quantity: qty,
+                                            unitPrice: unitPrice,
+                                            additionalFee: sizeFeeMap[size] || 0,
+                                            subtotal: qty * (unitPrice + (sizeFeeMap[size] || 0))
+                                          }));
+                                        const totalQuantity = Object.values(updated.quantities).reduce((sum, qty) => sum + qty, 0);
+                                        const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
+                                        return { ...c, sizes: newSizes, totalQuantity, totalPrice };
+                                      }
+                                      return c;
+                                    });
+                                    const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
+                                    const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
+                                    return { ...productItem, colors: newColors, totalQuantity, totalPrice };
+                                  }
+                                  return productItem;
+                                });
+
+                                return {
+                                  ...prev,
+                                  productItems: newItems,
+                                  colorGroupsByProduct: {
+                                    ...prev.colorGroupsByProduct,
+                                    [item.id]: newGroups
+                                  }
+                                };
+                              });
+                            }}
+                            onRemove={() => removeColorFromProduct(item.id, color.groupId)}
+                            onCopyToOthers={() => {
+                              const otherColors = item.colors.filter(c => c.groupId !== color.groupId);
+                              if (otherColors.length === 0) {
+                                alert('No other colors to copy to');
+                                return;
+                              }
+                              setFormState(prev => {
+                                const groups = prev.colorGroupsByProduct[item.id] || [];
+                                const sourceGroup = groups.find(g => g.id === color.groupId);
+                                if (!sourceGroup) return prev;
+                                const sourcePositions = sourceGroup.positions.map(pos => ({ ...pos, designAssetId: pos.designAssetId || null }));
+                                const newGroups = groups.map(g => {
+                                  if (otherColors.some(c => c.groupId === g.id)) {
+                                    return { ...g, positions: sourcePositions, inheritsFromColorId: sourceGroup.id };
+                                  }
+                                  return g;
+                                });
+                                return { ...prev, colorGroupsByProduct: { ...prev.colorGroupsByProduct, [item.id]: newGroups } };
+                              });
+                            }}
+                            previousGroup={previousGroup}
+                            onSizeQuantityChange={(size, quantity) => {
+                              updateSizeQuantity(item.id, color.groupId, size, quantity);
+                            }}
+                          />
+                        );
+                      })}
+
+                      {/* Add another color 按钮 */}
+                      {item.colors.length > 0 && (
+                        <div className="pt-2">
+                          <div className="relative">
+                            <select
+                              value=""
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  const color = availableColors.find(c => c.id === e.target.value);
+                                  if (color) {
+                                    // Logic to add color
                                     setAddColorModal({
                                       isOpen: true,
                                       itemId: item.id,
                                       colorId: color.id,
                                       colorName: color.name
                                     });
+                                    e.target.value = '';
                                   }
-                                  e.target.value = '';
                                 }
-                              }
-                            }}
-                            className="w-full appearance-none bg-white border border-gray-300 text-gray-700 py-2.5 pl-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
-                          >
-                            <option value="">{t('selectColor') || 'Select Color'}</option>
-                            {availableColors.map((color) => (
-                              <option key={color.id} value={color.id}>
-                                {color.name}
-                              </option>
-                            ))}
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                              }}
+                              className="w-full appearance-none bg-blue-50 border border-blue-200 text-blue-700 font-semibold py-3 pl-4 pr-10 rounded-lg hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-sm"
+                            >
+                              <option value="">+ {t('addAnotherColor') || 'Add another color'}</option>
+                              {availableColors
+                                .filter(c => !item.colors.some(ic => ic.colorId === c.id)) // Optional: allow duplicates or not
+                                .map((color) => (
+                                  <option key={color.id} value={color.id}>
+                                    {color.name}
+                                  </option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-blue-700">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-
-                    {/* 颜色组卡片 */}
-                    {item.colors.map((color, colorIndex) => {
-                      const effectiveGroupId = color.groupId || color.colorId;
-                      const colorGroups = formState.colorGroupsByProduct[item.id] || [];
-                      const colorGroup = colorGroups.find(g => g.id === effectiveGroupId);
-
-                      let group: OrderItemColorGroup;
-                      if (colorGroup) {
-                        group = colorGroup;
-                      } else {
-                        const quantities: Record<string, number> = {};
-                        color.sizes.forEach(sizeQty => {
-                          quantities[sizeQty.size] = sizeQty.quantity;
-                        });
-                        group = {
-                          id: effectiveGroupId,
-                          colorCode: color.colorId,
-                          colorName: color.colorName,
-                          quantities,
-                          positions: [],
-                          unitPrice: 0,
-                          inheritsFromColorId: null
-                        };
-                      }
-
-                      const previousGroup = colorIndex > 0
-                        ? colorGroups.find(g => g.id === (item.colors[colorIndex - 1].groupId || item.colors[colorIndex - 1].colorId))
-                        : null;
-
-                      const colorData = availableColors.find(c => c.id === color.colorId);
-                      const colorHex = (colorData as any)?.hexCode || '#CCCCCC';
-
-                      return (
-                        <ColorGroupCardIntegrated
-                          key={effectiveGroupId}
-                          group={group}
-                          productItemId={item.productId}
-                          availableSizes={color.availableSizes.length > 0 ? color.availableSizes : allSizes}
-                          sizeFeeMap={sizeFeeMap}
-                          youthSizes={youthSizes}
-                          adultSizes={adultSizes}
-                          largeSizes={largeSizes}
-                          isSizeAvailable={isSizeAvailable}
-                          colorHex={colorHex}
-                          locale={locale}
-                          onUpdate={(updated) => {
-                            setFormState(prev => {
-                              const groups = prev.colorGroupsByProduct[item.id] || [];
-                              const existingIndex = groups.findIndex(g => g.id === updated.id);
-                              let newGroups: OrderItemColorGroup[];
-                              if (existingIndex >= 0) {
-                                newGroups = [...groups];
-                                newGroups[existingIndex] = updated;
-                              } else {
-                                newGroups = [...groups, updated];
-                              }
-
-                              const newItems = prev.productItems.map(productItem => {
-                                if (productItem.id === item.id) {
-                                  const newColors = productItem.colors.map(c => {
-                                    if (c.groupId === color.groupId) {
-                                      const colorGroup = updated;
-                                      const unitPrice = colorGroup.unitPrice || 0;
-                                      const newSizes = Object.entries(updated.quantities)
-                                        .filter(([_, qty]) => qty > 0)
-                                        .map(([size, qty]) => ({
-                                          size,
-                                          quantity: qty,
-                                          unitPrice: unitPrice,
-                                          additionalFee: sizeFeeMap[size] || 0,
-                                          subtotal: qty * (unitPrice + (sizeFeeMap[size] || 0))
-                                        }));
-                                      const totalQuantity = Object.values(updated.quantities).reduce((sum, qty) => sum + qty, 0);
-                                      const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
-                                      return { ...c, sizes: newSizes, totalQuantity, totalPrice };
-                                    }
-                                    return c;
-                                  });
-                                  const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
-                                  const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
-                                  return { ...productItem, colors: newColors, totalQuantity, totalPrice };
-                                }
-                                return productItem;
-                              });
-
-                              return {
-                                ...prev,
-                                productItems: newItems,
-                                colorGroupsByProduct: {
-                                  ...prev.colorGroupsByProduct,
-                                  [item.id]: newGroups
-                                }
-                              };
-                            });
-                          }}
-                          onRemove={() => removeColorFromProduct(item.id, color.groupId)}
-                          onCopyToOthers={() => {
-                            const otherColors = item.colors.filter(c => c.groupId !== color.groupId);
-                            if (otherColors.length === 0) {
-                              alert('No other colors to copy to');
-                              return;
-                            }
-                            setFormState(prev => {
-                              const groups = prev.colorGroupsByProduct[item.id] || [];
-                              const sourceGroup = groups.find(g => g.id === color.groupId);
-                              if (!sourceGroup) return prev;
-                              const sourcePositions = sourceGroup.positions.map(pos => ({ ...pos, designAssetId: pos.designAssetId || null }));
-                              const newGroups = groups.map(g => {
-                                if (otherColors.some(c => c.groupId === g.id)) {
-                                  return { ...g, positions: sourcePositions, inheritsFromColorId: sourceGroup.id };
-                                }
-                                return g;
-                              });
-                              return { ...prev, colorGroupsByProduct: { ...prev.colorGroupsByProduct, [item.id]: newGroups } };
-                            });
-                          }}
-                          previousGroup={previousGroup}
-                          onSizeQuantityChange={(size, quantity) => {
-                            updateSizeQuantity(item.id, color.groupId, size, quantity);
-                          }}
-                        />
-                      );
-                    })}
-
-                    {/* Add another color 按钮 */}
-                    {item.colors.length > 0 && (
-                      <div className="pt-2">
-                        <div className="relative">
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                const color = availableColors.find(c => c.id === e.target.value);
-                                if (color) {
-                                  // Logic to add color
-                                  setAddColorModal({
-                                    isOpen: true,
-                                    itemId: item.id,
-                                    colorId: color.id,
-                                    colorName: color.name
-                                  });
-                                  e.target.value = '';
-                                }
-                              }
-                            }}
-                            className="w-full appearance-none bg-blue-50 border border-blue-200 text-blue-700 font-semibold py-3 pl-4 pr-10 rounded-lg hover:bg-blue-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer text-sm"
-                          >
-                            <option value="">+ {t('addAnotherColor') || 'Add another color'}</option>
-                            {availableColors
-                              .filter(c => !item.colors.some(ic => ic.colorId === c.id)) // Optional: allow duplicates or not
-                              .map((color) => (
-                                <option key={color.id} value={color.id}>
-                                  {color.name}
-                                </option>
-                              ))}
-                          </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-blue-700">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="py-12 px-4 text-center rounded-xl bg-gray-50 border border-dashed border-gray-200">
-            <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 mb-4">
-              <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                );
+              })}
             </div>
-            <h3 className="text-gray-900 font-medium">{t('pleaseAddProducts')}</h3>
-            <p className="text-gray-500 text-sm mt-1">Select a product above to start your order</p>
-          </div>
-        )}
+          ) : (
+            <div className="py-12 px-4 text-center rounded-xl bg-gray-50 border border-dashed border-gray-200">
+              <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 mb-4">
+                <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+              </div>
+              <h3 className="text-gray-900 font-medium">{t('pleaseAddProducts')}</h3>
+              <p className="text-gray-500 text-sm mt-1">Select a product above to start your order</p>
+            </div>
+          )
+        }
 
         {/* 订单备注 */}
         <div className="bg-white p-5 border border-gray-200 rounded-xl shadow-sm">
@@ -1768,33 +1774,35 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         </div>
 
         {/* 计费明细与总金额 - Step 1 */}
-        {calculateTotalQuantity > 0 && (
-          <div className="animate-fade-in-up space-y-4">
-            <BillingDetails
-              productItems={formState.productItems}
-              colorGroupsByProduct={formState.colorGroupsByProduct}
-              dstFileFee={calculateDstFileFee}
-              locale={locale}
-            />
+        {
+          calculateTotalQuantity > 0 && (
+            <div className="animate-fade-in-up space-y-4">
+              <BillingDetails
+                productItems={formState.productItems}
+                colorGroupsByProduct={formState.colorGroupsByProduct}
+                dstFileFee={calculateDstFileFee}
+                locale={locale}
+              />
 
-            <div className="p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl shadow-lg ring-1 ring-blue-500/50">
-              <div className="flex justify-between items-center text-blue-100 text-sm mb-1">
-                <span>{t('totalQuantity')}</span>
-                <span className="font-medium bg-white/20 px-2 py-0.5 rounded-full">{calculateTotalQuantity} {t('items')}</span>
-              </div>
-              <div className="flex justify-between items-end mt-2">
-                <span className="text-lg font-medium opacity-90">{t('totalAmount')}</span>
-                <span className="text-3xl font-bold tracking-tight">${(calculateSubtotal + calculateDstFileFee).toFixed(2)}</span>
-              </div>
-              {calculateDstFileFee > 0 && (
-                <div className="mt-2 pt-2 border-t border-white/20 text-xs text-blue-100">
-                  {t('containingDstFee', { amount: calculateDstFileFee.toFixed(2) })}
+              <div className="p-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl shadow-lg ring-1 ring-blue-500/50">
+                <div className="flex justify-between items-center text-blue-100 text-sm mb-1">
+                  <span>{t('totalQuantity')}</span>
+                  <span className="font-medium bg-white/20 px-2 py-0.5 rounded-full">{calculateTotalQuantity} {t('items')}</span>
                 </div>
-              )}
+                <div className="flex justify-between items-end mt-2">
+                  <span className="text-lg font-medium opacity-90">{t('totalAmount')}</span>
+                  <span className="text-3xl font-bold tracking-tight">${(calculateSubtotal + calculateDstFileFee).toFixed(2)}</span>
+                </div>
+                {calculateDstFileFee > 0 && (
+                  <div className="mt-2 pt-2 border-t border-white/20 text-xs text-blue-100">
+                    {t('containingDstFee', { amount: calculateDstFileFee.toFixed(2) })}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )
+        }
+      </div >
     );
   };
 

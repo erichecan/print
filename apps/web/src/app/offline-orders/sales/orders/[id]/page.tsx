@@ -647,10 +647,16 @@ export default function SalesOrderDetailPage() {
                         // PRD v2.0: 获取该产品的颜色组
                         const colorGroups = config.colorGroupsByProduct?.[item.id] || [];
 
+                        // [2026-01-29] User Request: Truncate product name to 100 chars
+                        const displayName = item.productName || item.categoryName || meta?.primaryProduct || t('unknownProduct');
+                        const truncatedName = displayName.length > 100 ? `${displayName.substring(0, 100)}...` : displayName;
+
                         return (
                           <div key={item.id} className="product-card">
                             <div className="product-header">
-                              <h3 className="product-name">{item.categoryName || meta?.primaryProduct || t('unknownProduct')}</h3>
+                              <h3 className="product-name" title={displayName} style={{ cursor: displayName.length > 100 ? 'help' : 'default' }}>
+                                {truncatedName}
+                              </h3>
                               <div className="product-summary">
                                 <span>{totals.quantity} {t('items')}</span>
                                 <span className="product-total">${totals.total.toFixed(2)} CAD</span>
