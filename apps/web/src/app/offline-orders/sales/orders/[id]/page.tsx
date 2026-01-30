@@ -651,6 +651,9 @@ export default function SalesOrderDetailPage() {
                         const displayName = item.productName || item.categoryName || meta?.primaryProduct || t('unknownProduct');
                         const truncatedName = displayName.length > 100 ? `${displayName.substring(0, 100)}...` : displayName;
 
+                        // [2026-01-29] User Request: Production-Centric View - Get Positions
+                        const positions = printPositionsByProduct[item.id] || [];
+
                         return (
                           <div key={item.id} className="product-card">
                             <div className="product-header">
@@ -662,6 +665,60 @@ export default function SalesOrderDetailPage() {
                                 <span className="product-total">${totals.total.toFixed(2)} CAD</span>
                               </div>
                             </div>
+
+                            {/* [2026-01-29] Production-Centric View: Embed Print Positions here */}
+                            {positions.length > 0 && (
+                              <div className="product-print-specs" style={{
+                                marginTop: '1rem',
+                                marginBottom: '1rem',
+                                padding: '1rem',
+                                backgroundColor: '#fefce8',
+                                border: '1px solid #fde047',
+                                borderRadius: '8px'
+                              }}>
+                                <h4 style={{
+                                  margin: '0 0 0.5rem 0',
+                                  fontSize: '0.875rem',
+                                  fontWeight: 600,
+                                  color: '#854d0e',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem'
+                                }}>
+                                  <span>🛠️ {t('printPositions') || 'Print Specs'}</span>
+                                </h4>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                  {positions.map((pos, idx) => (
+                                    <div key={idx} style={{
+                                      backgroundColor: '#fff',
+                                      padding: '0.5rem 0.75rem',
+                                      borderRadius: '6px',
+                                      border: '1px solid #fef08a',
+                                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                      fontSize: '0.875rem',
+                                      flex: '1 1 auto',
+                                      minWidth: '200px'
+                                    }}>
+                                      <div style={{ fontWeight: 600, color: '#422006', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>{pos.position}</span>
+                                        {pos.dstFileFee !== undefined && Number(pos.dstFileFee) > 0 && (
+                                          <span style={{ fontSize: '0.7rem', color: '#2563eb', backgroundColor: '#eff6ff', padding: '1px 4px', borderRadius: '4px' }}>DST Fee</span>
+                                        )}
+                                      </div>
+                                      <div style={{ color: '#713f12', fontSize: '0.8rem', marginTop: '4px', lineHeight: 1.4 }}>
+                                        <div style={{ fontWeight: 500 }}>{pos.method || (pos as any).printingStyle}</div>
+                                        {pos.width && pos.height && pos.width !== '0' && (
+                                          <div>{pos.width}" x {pos.height}"</div>
+                                        )}
+                                        {pos.notes && (
+                                          <div style={{ fontStyle: 'italic', marginTop: '2px', color: '#a16207' }}>"{pos.notes}"</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
                             {colorGroups.length > 0 ? (
                               <div className="color-groups">
@@ -744,61 +801,6 @@ export default function SalesOrderDetailPage() {
                       <p style={{ margin: 0, fontSize: '0.875rem' }}>{t('noProductInfoDesc')}</p>
                     </div>
                   )}
-                </section>
-              )}
-
-              {/* Print Positions Section */}
-              {config?.printPositions && config.printPositions.length > 0 && (!showPrintSettings || visibleSections.printPositions) && (
-                <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
-                  <h2 className="section-title">{t('printPositions')}</h2>
-                  <div className="print-positions-list">
-                    {(config.productItems || []).map((item) => {
-                      const positions = printPositionsByProduct[item.id] ||
-                        printPositionsByProduct[item.categoryName] || [];
-                      if (positions.length === 0) return null;
-                      return (
-                        <div key={item.id} className="print-group">
-                          <h3 className="print-group-title">{item.categoryName}</h3>
-                          <div className="print-positions">
-                            {positions.map((pos, idx) => (
-                              <div key={idx} className="print-position-item" style={{ display: 'block' }}>
-                                <div className="print-position-header" style={{ marginBottom: '8px' }}>
-                                  <span className="print-position-name" style={{ fontSize: '1.1rem', fontWeight: 600 }}>{pos.position}</span>
-                                  <span className="print-position-status" style={{
-                                    marginLeft: 'auto',
-                                    fontSize: '0.75rem',
-                                    color: '#10b981',
-                                    background: '#ecfdf5',
-                                    padding: '2px 8px',
-                                    borderRadius: '99px'
-                                  }}>{t('statusEnabled')}</span>
-                                </div>
-                                <div className="print-position-details" style={{ fontSize: '0.9rem', color: '#4b5563', lineHeight: 1.6 }}>
-                                  <div><span style={{ color: '#6b7280' }}>{t('method')}:</span> {pos.method || (pos as any).printingStyle || '未设置'}</div>
-                                  <div>
-                                    <span style={{ color: '#6b7280' }}>{t('dimension')}:</span> {
-                                      (() => {
-                                        const w = pos.width && pos.width !== '0' ? `${t('widthLabel')} ${pos.width}${t('unitInch')}` : '';
-                                        const h = pos.height && pos.height !== '0' ? `${t('heightLabel')} ${pos.height}${t('unitInch')}` : '';
-                                        if (w && h) return `${w} × ${h}`;
-                                        return w || h || '未设置';
-                                      })()
-                                    }
-                                  </div>
-                                  {pos.dstFileFee !== undefined && Number(pos.dstFileFee) > 0 && (
-                                    <div style={{ color: '#3b82f6', fontWeight: 500 }}>DST Fee: ${Number(pos.dstFileFee).toFixed(2)}</div>
-                                  )}
-                                  {pos.notes && (
-                                    <div style={{ marginTop: '4px', fontSize: '0.85rem', fontStyle: 'italic', color: '#9ca3af' }}>{t('notes')}: {pos.notes}</div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </section>
               )}
 
