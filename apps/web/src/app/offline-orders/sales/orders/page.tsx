@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 import { useCallback, useMemo } from 'react';
 import { FilterPanel, FilterOptions } from './components/FilterPanel';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 // 状态选择组件 - 参考 PillSelect 的单选版样式
 function StatusSelector({
@@ -311,7 +312,12 @@ export default function SalesOrdersPage() {
   const [stages, setStages] = useState<Array<{ key: string; label: string }>>([]);
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<{ id: string, name: string } | null>(null);
 
   // 语言环境状态
   const [locale, setLocale] = useState<OfflineOrdersLocale>('en');
@@ -756,25 +762,26 @@ export default function SalesOrdersPage() {
   };
 
   // 删除订单
-  const handleDeleteOrder = async (orderId: string, orderCode: string) => {
-    // confirmation removed as per user request to avoid cancellation issues
 
-    setDeletingOrder(orderId);
+  const handleDeleteOrder = (orderId: string, orderCode: string) => {
+    setOrderToDelete({ id: orderId, name: orderCode });
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+
+    setDeletingOrder(orderToDelete.id);
+    // Keep modal open while deleting or close it immediately? 
+    // Admin users page keeps it open but sets isDeleting=true.
+    // The modal supports isDeleting prop.
+
     try {
-      await salesOrdersApi.delete(orderId);
+      await salesOrdersApi.delete(orderToDelete.id);
       // 删除成功后刷新列表
-      setOrders(orders.filter(o => o.id !== orderId));
-      // alert('订单已删除'); // Alert might also be annoying or block, but user only complained about confirm dialog. Keeping alert for feedback or removing?
-      // User said "click delete button, also has a dialog, maybe inexplicably clicked cancel".
-      // Alert is technically a dialog but it's purely informational.
-      // However, usually toast is better. For now I'll check if I should keep alert.
-      // The user said "also remove all similar dialogs".
-      // I'll keep the logic simple: just do it. I'll verify if I should remove alert too.
-      // Standard practice: if no confirm, maybe show a toast or nothing.
-      // I'll leave the alert('订单已删除') if not explicitly asked to remove success feedback,
-      // but 'confirm' is blocking and requires choice.
-      // Actually, if I remove confirm, I should probably use a non-blocking toast.
-      // But let's just remove the confirm first.
+      setOrders(orders.filter(o => o.id !== orderToDelete.id));
+      setIsDeleteModalOpen(false);
+      setOrderToDelete(null);
     } catch (err: any) {
       alert(err.message || t('errorDeleteOrder'));
     } finally {
@@ -2258,7 +2265,17 @@ export default function SalesOrdersPage() {
           }
         }
       `}</style>
-    </div >
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        isDeleting={!!deletingOrder}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeleteOrder}
+        title={t('deleteOrderTitle') || 'Delete Order'}
+        itemName={orderToDelete?.name}
+        description={t('deleteOrderConfirm') || 'Are you sure you want to delete this order? This action cannot be undone.'}
+        confirmLabel={t('delete') || 'Delete'}
+      />
+    </div>
   );
 }
 

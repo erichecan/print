@@ -134,6 +134,8 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     perSizeOverridesTooltip: 'Set different print positions for specific sizes',
 
     // Alert & Messages
+    deleteOrderTitle: 'Delete Order',
+    deleteOrderConfirm: 'Are you sure you want to delete this order? This action cannot be undone.',
     deleteFailed: 'Delete failed',
     updateFailed: 'Update failed',
     createFailed: 'Create failed',
@@ -527,6 +529,8 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     perSizeOverridesTooltip: '为特定尺码设置不同的印刷位置',
 
     // Alert & Messages
+    deleteOrderTitle: '删除订单',
+    deleteOrderConfirm: '确定要删除此订单吗？此操作无法撤销。',
     deleteFailed: '删除失败',
     updateFailed: '更新失败',
     createFailed: '创建失败',
