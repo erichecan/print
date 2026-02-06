@@ -1055,6 +1055,8 @@ export interface OfflineOrderPrintPosition {
   method?: string; // DTF, Embroidery, etc.
   width: string;
   height: string;
+  widthMm?: number; // Added for precision
+  heightMm?: number; // Added for precision
   notes: string;
   dstFileFee?: number;
   index?: number;

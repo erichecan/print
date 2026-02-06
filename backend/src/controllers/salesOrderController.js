@@ -458,7 +458,7 @@ exports.updateSalesOrderStatus = async (req, res) => {
     });
 
     // 验证状态值
-    const validStatuses = ['ACTIVE', 'PRINTED', 'COMPLETED', 'CANCELLED'];
+    const validStatuses = ['ACTIVE', 'PRINTED', 'COMPLETED', 'CANCELLED', 'REMINDER'];
     const normalizedStatus = status ? String(status).toUpperCase() : null;
     if (!normalizedStatus || !validStatuses.includes(normalizedStatus)) {
       return res.status(400).json({

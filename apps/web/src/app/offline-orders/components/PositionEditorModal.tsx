@@ -60,7 +60,10 @@ export function PositionEditorModal({
   }, [locale]);
 
   const POSITION_LABELS: Record<PositionKey, string> = {
+    front_left_chest: t('positionFrontLeftChest'),
+    front_middle: t('positionFrontMiddle'),
     front: t('positionFront'),
+    back_middle: t('positionBackMiddle'),
     back: t('positionBack'),
     left_sleeve: t('positionLeftSleeve'),
     right_sleeve: t('positionRightSleeve'),
@@ -102,6 +105,7 @@ export function PositionEditorModal({
 
   const handleSave = () => {
     const config: PositionConfig = {
+      id: initialConfig?.id, // Preserve ID
       positionKey,
       enabled,
       method,

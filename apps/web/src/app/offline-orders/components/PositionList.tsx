@@ -36,7 +36,10 @@ export function PositionList({
   }, [locale]);
 
   const POSITION_LABELS: Record<PositionKey, string> = {
+    front_left_chest: t('positionFrontLeftChest'),
+    front_middle: t('positionFrontMiddle'),
     front: t('positionFront'),
+    back_middle: t('positionBackMiddle'),
     back: t('positionBack'),
     left_sleeve: t('positionLeftSleeve'),
     right_sleeve: t('positionRightSleeve'),
@@ -46,7 +49,14 @@ export function PositionList({
     custom: t('positionOther')
   };
 
-  const allPositionKeys: PositionKey[] = ['front', 'back', 'left_sleeve', 'right_sleeve', 'pocket', 'tag_inside', 'tag_outside', 'custom'];
+  const allPositionKeys: PositionKey[] = [
+    'front_left_chest', 'front_middle', 'front',
+    'back_middle', 'back',
+    'left_sleeve', 'right_sleeve',
+    'pocket',
+    'tag_inside', 'tag_outside',
+    'custom'
+  ];
 
   // 切换位置启用状态
   const handleTogglePosition = (positionKey: PositionKey) => {

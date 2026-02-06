@@ -74,6 +74,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     statusPrinted: 'Printed',
     statusCompleted: 'Completed',
     statusCancelled: 'Cancelled',
+    statusReminder: 'Reminder',
     thStage: 'Stage',
     thActions: 'Actions',
     tagRush: 'RUSH',
@@ -200,7 +201,11 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     positionLeftPocket: 'Left Upper Pocket',
     positionLeftSleeve: 'Left Arm',
     positionRightSleeve: 'Right Arm',
+    positionPocket: 'Pocket',
     positionOther: 'Other Position',
+    positionFrontLeftChest: 'Front Left Chest',
+    positionFrontMiddle: 'Front Middle',
+    positionBackMiddle: 'Back Middle',
 
     // Step 3
     step3Heading: 'Customer Information and Price Management',
@@ -462,6 +467,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     statusPrinted: '生产完成',
     statusCompleted: '全部完成',
     statusCancelled: '已取消',
+    statusReminder: '提醒',
     thStage: '阶段',
     thActions: '操作',
     tagRush: '加急',
@@ -590,7 +596,11 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     positionLeftPocket: '左上衣口袋',
     positionLeftSleeve: '左臂',
     positionRightSleeve: '右臂',
+    positionPocket: '口袋',
     positionOther: '其他位置',
+    positionFrontLeftChest: '前左胸 (Front Left Chest)',
+    positionFrontMiddle: '前中 (Front Middle)',
+    positionBackMiddle: '后中 (Back Middle)',
 
     // Step 3
     step3Heading: '客人信息和价格管理',

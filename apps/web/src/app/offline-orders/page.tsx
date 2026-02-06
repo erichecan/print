@@ -15,6 +15,7 @@ import { ColorGroupCardIntegrated } from './components/ColorGroupCardIntegrated'
 import { AddColorModal } from './components/AddColorModal'; // 导入添加颜色弹窗组件
 import { convertProductColorsToColorGroups, convertColorGroupToProductColor } from './components/utils/colorGroupConverter'; // 导入转换函数
 import { BillingDetails } from './components/BillingDetails'; // 导入计费明细组件
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
@@ -42,6 +43,8 @@ type PrintPosition = {
   dstFileFee?: number; // DST File Fee（仅Embroidery，订单级别）
   width?: string; // 宽度（inch），可选
   height?: string; // 高度（inch），可选（width和height至少一个）
+  widthMm?: number; // 宽度（mm）
+  heightMm?: number; // 高度（mm）
   notes: string; // 备注
 };
 
@@ -1478,6 +1481,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                   printingStyle: pos.method,
                   width: pos.widthMm ? (pos.widthMm / 25.4).toFixed(2) : '', // 转换为inch
                   height: pos.heightMm ? (pos.heightMm / 25.4).toFixed(2) : '', // 转换为inch
+                  widthMm: pos.widthMm,
+                  heightMm: pos.heightMm,
                   notes: pos.notes || '',
                   productItemId: item.id,
                   colorGroupId: group.id,
@@ -1640,34 +1645,24 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               </select>
             ) : (
               <>
-                <select
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      const product = orderConfig.products.find((p) => p.id === e.target.value);
-                      if (product) {
-                        addProductItem(product.id, product.name, product.isCustomerOwned);
-                        e.target.value = '';
-                      }
+                <SearchableSelect
+                  options={orderConfig.products.map((product) => ({
+                    value: product.id,
+                    label: `${product.name} ${product.isCustomerOwned ? '(客户自带服装)' : ''}`,
+                    isAdded: addedProductIds.includes(product.id),
+                  }))}
+                  onChange={(value) => {
+                    const product = orderConfig.products.find((p) => p.id === value);
+                    if (product) {
+                      addProductItem(product.id, product.name, product.isCustomerOwned);
                     }
                   }}
-                  className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  disabled={false} // PRD v2.1: 允许重复选择产品
-                >
-                  <option value="">
-                    {orderConfig.products.length === 0
-                      ? '暂无产品，请先在管理员后台添加产品'
-                      : t('selectProductType') || '选择产品'}
-                  </option>
-                  {orderConfig.products.map((product) => {
-                    const isAdded = addedProductIds.includes(product.id);
-                    return (
-                      <option key={product.id} value={product.id}>
-                        {product.name} {product.isCustomerOwned ? '(客户自带服装)' : ''} {isAdded ? (t('alreadyAdded') || '(已添加)') : ''}
-                      </option>
-                    );
-                  })}
-                </select>
+                  placeholder={orderConfig.products.length === 0
+                    ? '暂无产品，请先在管理员后台添加产品'
+                    : t('selectProductType') || 'Select/Search Product...'}
+                  className="w-full max-w-md"
+                  disabled={false}
+                />
                 {availableProducts.length === 0 && orderConfig.products.length > 0 && (
                   <p className="mt-2 text-xs text-gray-600">
                     所有产品已添加，如需添加更多，请先删除已添加的产品

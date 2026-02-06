@@ -1090,6 +1090,7 @@ enum OfflineOrderStatus {
   PRINTED
   COMPLETED
   CANCELLED
+  REMINDER
 }
 
 enum ProductionWorkOrderStatus {

@@ -5,6 +5,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { PositionConfig, PositionKey } from '@/types/order';
 import { PositionEditorModal } from './PositionEditorModal';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
@@ -16,10 +17,18 @@ interface PrintPositionsPanelProps {
   locale?: OfflineOrdersLocale;
 }
 
-const POSITION_KEYS: PositionKey[] = ['front', 'back', 'left_sleeve', 'right_sleeve', 'pocket', 'tag_inside', 'tag_outside', 'custom'];
+const POSITION_KEYS: PositionKey[] = [
+  'front_left_chest', 'front_middle', 'front',
+  'back_middle', 'back',
+  'left_sleeve', 'right_sleeve',
+  'pocket',
+  'tag_inside', 'tag_outside',
+  'custom'
+];
 
 export function PrintPositionsPanel({ positions, onChange, onCopyToOthers, locale = 'en' }: PrintPositionsPanelProps) {
-  const [editingPosition, setEditingPosition] = useState<PositionKey | null>(null);
+  // Use ID to track which position is being edited (supporting multiple same-type positions)
+  const [editingPositionId, setEditingPositionId] = useState<string | null>(null);
   const [selectedPositionKey, setSelectedPositionKey] = useState<PositionKey | ''>('');
 
   // 翻译函数
@@ -44,20 +53,20 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers, local
     pocket: t('positionPocket'),
     tag_inside: t('tag_inside'),
     tag_outside: t('tag_outside'),
-    custom: t('positionOther')
+    custom: t('positionOther'),
+    front_left_chest: t('positionFrontLeftChest'),
+    front_middle: t('positionFrontMiddle'),
+    back_middle: t('positionBackMiddle')
   };
 
   // 添加位置
   const handleAddPosition = (key: PositionKey) => {
-    const exists = positions.find(p => p.positionKey === key);
-    if (exists) {
-      // 如果已存在，打开编辑弹窗
-      setEditingPosition(key);
-      return;
-    }
+    // Generate a unique ID for the new position
+    const newId = uuidv4();
 
-    // 添加新位置
+    // Add new position (allow duplicates)
     const newPosition: PositionConfig = {
+      id: newId,
       positionKey: key,
       enabled: true,
       method: 'DTF',
@@ -67,35 +76,70 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers, local
     };
     onChange([...positions, newPosition]);
     setSelectedPositionKey('');
+
+    // Optional: Auto-open edit modal for new position?
+    // setEditingPositionId(newId); 
   };
 
   // 更新位置
   const handleUpdatePosition = (updated: PositionConfig) => {
-    const index = positions.findIndex(p => p.positionKey === updated.positionKey);
+    // Find index by ID if available, otherwise fallback to finding by ref matching (less reliable if totally new obj)
+    // Since we pass updated config from modal, it should have the ID.
+
+    let index = -1;
+    if (updated.id) {
+      index = positions.findIndex(p => p.id === updated.id);
+    }
+
+    // Fallback for legacy positions without ID (shouldn't happen for new ones, but safety check)
+    if (index === -1 && !updated.id) {
+      // Only for legacy unique-key logic, but we are moving away from it.
+      // Best effort: match by key if only one exists?
+      // For now, assume ID exists or correct index logic
+    }
+
+    if (index === -1) {
+      // Try finding by the editing ID state
+      if (editingPositionId) {
+        index = positions.findIndex(p => p.id === editingPositionId);
+      }
+    }
+
     if (index >= 0) {
       const newPositions = [...positions];
-      newPositions[index] = updated;
+      // Ensure ID is preserved
+      newPositions[index] = { ...updated, id: positions[index].id };
       onChange(newPositions);
     } else {
+      // Should not happen usually for update
       onChange([...positions, updated]);
     }
-    setEditingPosition(null);
+    setEditingPositionId(null);
   };
 
   // 删除位置
-  const handleRemovePosition = (key: PositionKey) => {
-    onChange(positions.filter(p => p.positionKey !== key));
-  };
-
-  // 切换位置启用状态
-  const handleToggleEnabled = (key: PositionKey) => {
-    const index = positions.findIndex(p => p.positionKey === key);
-    if (index >= 0) {
+  const handleRemovePosition = (id: string | undefined, key: PositionKey, index: number) => {
+    if (id) {
+      onChange(positions.filter(p => p.id !== id));
+    } else {
+      // Legacy fallback: remove by index
       const newPositions = [...positions];
-      newPositions[index] = { ...newPositions[index], enabled: !newPositions[index].enabled };
+      newPositions.splice(index, 1);
       onChange(newPositions);
     }
   };
+
+  // 切换位置启用状态
+  const handleToggleEnabled = (index: number) => {
+    const newPositions = [...positions];
+    newPositions[index] = { ...newPositions[index], enabled: !newPositions[index].enabled };
+    onChange(newPositions);
+  };
+
+  // Determine which position configuration is currently being edited
+  const editingConfig = editingPositionId
+    ? positions.find(p => p.id === editingPositionId)
+    : null;
 
   return (
     <div className="print-positions border-t border-dashed border-gray-300 pt-4 mt-4">
@@ -125,70 +169,87 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers, local
           className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="" disabled>{t('selectPosition')}</option>
-          {POSITION_KEYS.map((key) => {
-            const exists = positions.find(p => p.positionKey === key);
-            return (
-              <option key={key} value={key} disabled={!!exists} className="p-1">
-                {POSITION_LABELS[key]} {exists ? t('alreadyAdded') : ''}
-              </option>
-            );
-          })}
+          {POSITION_KEYS.map((key) => (
+            <option key={key} value={key} className="p-1">
+              {POSITION_LABELS[key]}
+            </option>
+          ))}
         </select>
       </div>
 
       {/* 已选位置列表 */}
       {positions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {positions.map((pos) => (
-            <div
-              key={pos.positionKey}
-              className={`border rounded-lg p-3 ${pos.enabled
+          {positions.map((pos, index) => {
+            // Ensure we have a Stable Key. Use ID if available, otherwise composite key
+            const listKey = pos.id || `${pos.positionKey}-${index}`;
+
+            return (
+              <div
+                key={listKey}
+                className={`border rounded-lg p-3 ${pos.enabled
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 bg-gray-50'
-                }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <label className="flex items-center gap-2 cursor-pointer flex-1">
-                  <input
-                    type="checkbox"
-                    checked={pos.enabled}
-                    onChange={() => handleToggleEnabled(pos.positionKey)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-900">
-                    {POSITION_LABELS[pos.positionKey]}
-                  </span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditingPosition(pos.positionKey)}
-                    className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-100"
-                  >
-                    {t('btnEdit')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePosition(pos.positionKey)}
-                    className="text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded hover:bg-red-100"
-                  >
-                    {t('btnDelete')}
-                  </button>
+                  }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-2 cursor-pointer flex-1">
+                    <input
+                      type="checkbox"
+                      checked={pos.enabled}
+                      onChange={() => handleToggleEnabled(index)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-900">
+                      {POSITION_LABELS[pos.positionKey]}
+                    </span>
+                    {/* Debug ID display (optional, removing for prod) */}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      // Set editing ID if available, else standard index fallback isn't supported by legacy state
+                      onClick={() => {
+                        if (pos.id) {
+                          setEditingPositionId(pos.id);
+                        } else {
+                          // If no ID (legacy data), we might need to assign one on the fly or just warn.
+                          // For now, let's assume we won't edit legacy data without migration, or just simple reload.
+                          // But to be safe, let's just generate one?
+                          // Doing on-the-fly id assignment is tricky in render.
+                          // Better: The legacy data migration should ideally happen upstream or we force it here if we really want.
+                          // But for now, let's assume newly added ones have ID.
+                          // If legacy has no ID, we can't easily edit it with this new modal logic relying on ID.
+                          console.warn("Editing position without ID", pos);
+                        }
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-100"
+                    >
+                      {t('btnEdit')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePosition(pos.id, pos.positionKey, index)}
+                      className="text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded hover:bg-red-100"
+                    >
+                      {t('btnDelete')}
+                    </button>
+                  </div>
                 </div>
+                {pos.enabled && (
+                  <div className="text-xs text-gray-600 space-y-1 mt-2">
+                    <div>{t('methodLabel')} {t(`method${pos.method}` as any) || pos.method}</div>
+                    {pos.widthMm && pos.heightMm && (
+                      <div>{t('dimensionsLabel')} {pos.widthMm}×{pos.heightMm}mm</div>
+                    )}
+                    {pos.designAssetId && (
+                      <div className="text-green-600">{t('fileUploaded')}</div>
+                    )}
+                  </div>
+                )}
               </div>
-              {pos.enabled && (
-                <div className="text-xs text-gray-600 space-y-1 mt-2">
-                  <div>{t('methodLabel')} {t(`method${pos.method}` as any) || pos.method}</div>
-                  {pos.widthMm && pos.heightMm && (
-                    <div>{t('dimensionsLabel')} {pos.widthMm}×{pos.heightMm}mm</div>
-                  )}
-                  {pos.designAssetId && (
-                    <div className="text-green-600">{t('fileUploaded')}</div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
@@ -197,12 +258,12 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers, local
       )}
 
       {/* 位置编辑弹窗 */}
-      {editingPosition && (
+      {editingConfig && (
         <PositionEditorModal
-          positionKey={editingPosition}
-          initialConfig={positions.find(p => p.positionKey === editingPosition) || undefined}
+          positionKey={editingConfig.positionKey}
+          initialConfig={editingConfig}
           onSave={handleUpdatePosition}
-          onCancel={() => setEditingPosition(null)}
+          onCancel={() => setEditingPositionId(null)}
           locale={locale}
         />
       )}

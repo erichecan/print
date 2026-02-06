@@ -1,21 +1,37 @@
 // 订单颜色级别印刷配置类型定义
 // 扩展：支持按颜色分组的印刷位管理和per-size overrides
 
-export type PrintPosition = 
-  | 'front' 
-  | 'back' 
-  | 'left_sleeve' 
-  | 'right_sleeve' 
-  | 'pocket' 
-  | 'tag_inside' 
-  | 'tag_outside' 
-  | 'custom';
+export type PrintPosition =
+  | 'front'
+  | 'back'
+  | 'left_sleeve'
+  | 'right_sleeve'
+  | 'pocket'
+  | 'tag_inside'
+  | 'tag_outside'
+  | 'custom'
+  | 'front_left_chest'
+  | 'front_middle'
+  | 'back_middle';
 
 // 印刷位置键类型（用于per-size overrides）
-export type PositionKey = 'front' | 'back' | 'left_sleeve' | 'right_sleeve' | 'pocket' | 'tag_inside' | 'tag_outside' | 'custom';
+export type PositionKey =
+  | 'front'
+  | 'back'
+  | 'left_sleeve'
+  | 'right_sleeve'
+  | 'pocket'
+  | 'tag_inside'
+  | 'tag_outside'
+  | 'custom'
+  // New positions
+  | 'front_left_chest'
+  | 'front_middle'
+  | 'back_middle';
 
 // 位置配置（支持新的按颜色分组模式）
 export type PositionConfig = {
+  id?: string; // 唯一标识符（用于支持同位置多实例）
   positionKey: PositionKey;
   enabled: boolean;
   method: 'DTF' | 'Screen' | 'Embroidery' | 'UV' | 'Vinyl' | '其他';
@@ -35,13 +51,13 @@ export type OrderItemColorGroup = {
   colorName: string; // 颜色名称
   quantities: Record<string, number>; // 尺码 -> 数量映射
   positions: PositionConfig[]; // 该颜色组的默认印刷位置配置
-unitPrice: number; // 颜色级别的单价（适用于该颜色的所有尺码）
+  unitPrice: number; // 颜色级别的单价（适用于该颜色的所有尺码）
   perSizeOverrides?: Array<{ // per-size overrides（可选）
     size: string; // 尺码：'XS'|'S'|'M'|'L'|'XL'|'2XL'|'3XL'|...
     overrides: PositionConfig[]; // 该尺码的覆盖配置
   }>;
-inheritFromPrevious?: boolean; // 是否继承上一个颜色的配置
-inheritsFromColorId?: string | null; // 继承自哪个颜色组ID
+  inheritFromPrevious?: boolean; // 是否继承上一个颜色的配置
+  inheritsFromColorId?: string | null; // 继承自哪个颜色组ID
 };
 
 export type PrintConfig = {
@@ -56,15 +72,15 @@ export type PrintConfig = {
   notes?: string;
 };
 
-export type SizeQty = { 
-  sizeCode: string; 
-  qty: number 
+export type SizeQty = {
+  sizeCode: string;
+  qty: number
 };
 
-export type SizeOverride = { 
-  sizeCode: string; 
-  overridePrintConfigs: PrintConfig[]; 
-  reason?: string 
+export type SizeOverride = {
+  sizeCode: string;
+  overridePrintConfigs: PrintConfig[];
+  reason?: string
 };
 
 export type OrderItemColorInput = {
@@ -76,29 +92,29 @@ export type OrderItemColorInput = {
   sizeOverrides?: SizeOverride[];
 };
 
-export type OrderItemPayload = { 
-  productId: string; 
-  printMethod: 'dtf' | 'screen' | 'embroidery'; 
-  colors: OrderItemColorInput[] 
+export type OrderItemPayload = {
+  productId: string;
+  printMethod: 'dtf' | 'screen' | 'embroidery';
+  colors: OrderItemColorInput[]
 };
 
-export type PricingBreakdown = { 
-  total: number; 
-  currency: 'USD' | 'CAD'; 
-  batches: Array<{ 
-    colorCode: string; 
-    positionsKey: string; 
-    totalQty: number; 
-    unitPrice: number; 
-    subtotal: number 
-  }> 
+export type PricingBreakdown = {
+  total: number;
+  currency: 'USD' | 'CAD';
+  batches: Array<{
+    colorCode: string;
+    positionsKey: string;
+    totalQty: number;
+    unitPrice: number;
+    subtotal: number
+  }>
 };
 
-export type ValidationResult = { 
-  level: 'error' | 'warn'; 
-  code: string; 
-  message: string; 
-  path?: string 
+export type ValidationResult = {
+  level: 'error' | 'warn';
+  code: string;
+  message: string;
+  path?: string
 };
 
 // 定价计算结果
@@ -115,7 +131,7 @@ export type PricingCalculationResult = {
 };
 
 // 颜色组更新操作
-export type ColorGroupUpdateAction = 
+export type ColorGroupUpdateAction =
   | { type: 'update'; groupId: string; updates: Partial<OrderItemColorGroup> }
   | { type: 'inherit'; fromGroupId: string; toGroupId: string }
   | { type: 'copy'; fromGroupId: string; toGroupIds: string[] }

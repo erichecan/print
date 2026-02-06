@@ -707,9 +707,33 @@ export default function SalesOrderDetailPage() {
                                       </div>
                                       <div style={{ color: '#713f12', fontSize: '0.8rem', marginTop: '4px', lineHeight: 1.4 }}>
                                         <div style={{ fontWeight: 500 }}>{pos.method || (pos as any).printingStyle}</div>
-                                        {pos.width && pos.height && pos.width !== '0' && (
-                                          <div>{pos.width}" x {pos.height}"</div>
-                                        )}
+                                        {/* Display Dimensions: Prefer mm if available (as requested), otherwise inch */}
+                                        {(() => {
+                                          // Prioritize mm if available
+                                          if (pos.widthMm || pos.heightMm) {
+                                            const parts = [];
+                                            if (pos.widthMm) parts.push(`W: ${pos.widthMm}mm`);
+                                            if (pos.heightMm) parts.push(`H: ${pos.heightMm}mm`);
+                                            return <div>{parts.join(' x ')}</div>;
+                                          }
+
+                                          // Fallback to inch string
+                                          let w = pos.width;
+                                          let h = pos.height;
+
+                                          // If converted values were calculated above (which we removed), we'd use them.
+                                          // But now we check mm first. So here we handle string fallback.
+
+                                          // Display logic: show whatever is available
+                                          if (w && h && w !== '0' && h !== '0') {
+                                            return <div>{w} inch x {h} inch</div>;
+                                          } else if (w && w !== '0') {
+                                            return <div>Width: {w} inch</div>;
+                                          } else if (h && h !== '0') {
+                                            return <div>Height: {h} inch</div>;
+                                          }
+                                          return null;
+                                        })()}
                                         {pos.notes && (
                                           <div style={{ fontStyle: 'italic', marginTop: '2px', color: '#a16207' }}>"{pos.notes}"</div>
                                         )}
