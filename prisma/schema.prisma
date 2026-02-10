@@ -454,6 +454,7 @@ model OfflineOrder {
   requiresMockups     Boolean                    @default(false) @map("requires_mockups")
   requiresProof       Boolean                    @default(false) @map("requires_proof")
   rushOrder           Boolean                    @default(false) @map("rush_order")
+  rush_fee            Decimal?                   @db.Decimal(10, 2)
   stageKey            String                     @map("stage_key")
   stageLabel          String                     @map("stage_label")
   stagePosition       Int?                       @map("stage_position")

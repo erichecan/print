@@ -180,6 +180,7 @@ const mapOrder = (order) => ({
   requiresMockups: order.requiresMockups,
   requiresProof: order.requiresProof,
   rushOrder: order.rushOrder,
+  rushFee: order.rush_fee ? parseFloat(order.rush_fee) : 0,
   stage: {
     key: order.stageKey,
     label: order.stageLabel,
@@ -255,6 +256,7 @@ exports.createOfflineOrder = async (req, res) => {
       requiresMockups,
       requiresProof,
       rushOrder,
+      rushFee,
       configuration,
       orderNotes, // PRD v2.0: 支持从orderNotes字段获取
       dstFileFee,
@@ -343,6 +345,7 @@ exports.createOfflineOrder = async (req, res) => {
       },
       // PRD v2.0: 显式保存新字段
       dst_file_fee: dstFileFee ? parseFloat(dstFileFee) : null,
+      rush_fee: rushFee ? parseFloat(rushFee) : null,
       order_notes: orderNotes?.trim() || null,
       payment_method: paymentMethod?.trim() || null,
       reference_number: referenceNumber?.trim() || null,
@@ -875,6 +878,7 @@ exports.updateOfflineOrder = async (req, res) => {
     if (requiresMockups !== undefined) data.requiresMockups = parseBoolean(requiresMockups);
     if (requiresProof !== undefined) data.requiresProof = parseBoolean(requiresProof);
     if (rushOrder !== undefined) data.rushOrder = parseBoolean(rushOrder);
+    if (req.body.rushFee !== undefined) data.rush_fee = req.body.rushFee ? parseFloat(req.body.rushFee) : null;
     // 修复：contactName 和 email 改为可选字段，允许为空或null
     if (contactName !== undefined) {
       const trimmedName = contactName?.toString().trim();

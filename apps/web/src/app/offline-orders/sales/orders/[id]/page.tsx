@@ -858,10 +858,16 @@ export default function SalesOrderDetailPage() {
                           <span>${Number(config.pricing.dstFileFee || meta?.dst_file_fee).toFixed(2)} CAD</span>
                         </div>
                       )}
+                      {Number(config.pricing.rushFee || meta?.rushFee || 0) > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#b45309' }}>
+                          <span>{t('rushFee') || 'Rush Fee'}:</span>
+                          <span>${Number(config.pricing.rushFee || meta?.rushFee).toFixed(2)} CAD</span>
+                        </div>
+                      )}
                       {Number(config.pricing.taxAmount || 0) > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', paddingTop: '0.5rem', borderTop: '1px dashed #bfdbfe' }}>
                           <span>{t('totalExcludingTax')}:</span>
-                          <span>${(Number(config.pricing.subtotal || 0) - Number(config.pricing.discountAmount || 0) + Number(config.pricing.dstFileFee || meta?.dst_file_fee || 0)).toFixed(2)} CAD</span>
+                          <span>${(Number(config.pricing.subtotal || 0) - Number(config.pricing.discountAmount || 0) + Number(config.pricing.dstFileFee || meta?.dst_file_fee || 0) + Number(config.pricing.rushFee || meta?.rushFee || 0)).toFixed(2)} CAD</span>
                         </div>
                       )}
                       {(Number(config.pricing.taxAmount || 0) > 0) ? (
@@ -871,7 +877,7 @@ export default function SalesOrderDetailPage() {
                         </div>
                       ) : (
                         (() => {
-                          const base = Number(config.pricing.subtotal || 0) - (Number(config.pricing.discountAmount || 0)) + (Number(config.pricing.dstFileFee ?? meta?.dst_file_fee ?? 0));
+                          const base = Number(config.pricing.subtotal || 0) - (Number(config.pricing.discountAmount || 0)) + (Number(config.pricing.dstFileFee ?? meta?.dst_file_fee ?? 0)) + (Number(config.pricing.rushFee ?? meta?.rushFee ?? 0));
                           const total = Number(config.pricing.total || 0);
                           const calculatedTax = total - base;
                           if (calculatedTax > 0.01) {

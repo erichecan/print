@@ -990,6 +990,7 @@ export interface SalesOfflineOrderSummary {
   deliveryDate: string | null;
   status: string;
   rushOrder: boolean;
+  rushFee?: number;
   stage: {
     key: string | null;
     label: string | null;
@@ -1067,6 +1068,7 @@ export interface OfflineOrderPricing {
   discount: number;
   discountAmount: number;
   dstFileFee?: number; // PRD v2.0
+  rushFee?: number; // Added
   taxRate?: number; // PRD v2.0
   taxAmount?: number; // PRD v2.0
   total: number;

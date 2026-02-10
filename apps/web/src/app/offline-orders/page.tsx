@@ -143,6 +143,8 @@ type FormState = {
   discountAmount: number; // 折扣金额
   taxRate: number; // 税率（0.13 for 13%）
   taxAmount: number; // 税额
+  rushOrder: boolean; // 是否加急
+  rushFee: number; // 加急费
   depositAmount: number; // 定金金额
   paymentMethod: string; // 支付方式
   referenceNumber: string; // 参考号
@@ -221,6 +223,8 @@ const initialFormState: FormState = {
   discountAmount: 0,
   taxRate: 0.13,
   taxAmount: 0,
+  rushOrder: false,
+  rushFee: 0,
   depositAmount: 0,
   paymentMethod: '',
   referenceNumber: '',
@@ -506,6 +510,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             taxRate: config.pricing?.taxRate || 0.13,
             taxAmount: config.pricing?.taxAmount || 0,
             total: config.pricing?.total || 0,
+            rushOrder: order.rushOrder || false,
+            rushFee: order.rushFee || config.pricing?.rushFee || 0,
           }));
         }
       } catch (err: any) {
@@ -731,9 +737,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
       if (draftData.formState) {
         // 恢复草稿时，如果没有订单编号则生成新的
-        const restoredState = draftData.formState.orderCode
-          ? draftData.formState
-          : { ...draftData.formState, orderCode: generateOrderCode() };
+        const savedState = draftData.formState as Partial<FormState>;
+        const restoredState = savedState.orderCode
+          ? savedState
+          : { ...savedState, orderCode: generateOrderCode() };
 
         // 合并状态，确保不会弄丢必要的字段
         setFormState((prev) => ({ ...prev, ...restoredState }));
@@ -746,8 +753,9 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           return prev;
         });
       }
-      if (draftData.currentStep) {
-        setCurrentStep(draftData.currentStep);
+      const savedStep = draftData.currentStep;
+      if (typeof savedStep === 'number') {
+        setCurrentStep(savedStep as number);
       }
       setStatus({ type: 'success', message: 'Draft restored. Please re-attach files before submitting.' });
     } catch (error) {
@@ -1020,16 +1028,16 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   // 计算税额（仅当需要Invoice时）
   const calculateTaxAmount = useMemo(() => {
     if (!formState.requiresInvoice) return 0;
-    // Tax base includes DST fee
-    const taxBase = calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
+    // Tax base includes DST fee and Rush fee
+    const taxBase = calculateSubtotal - calculateDiscountAmount + calculateDstFileFee + (formState.rushFee || 0);
     const taxRate = formState.taxRate || 0.13; // 默认13%安省HST
     return taxBase * taxRate;
-  }, [calculateSubtotal, calculateDiscountAmount, formState.requiresInvoice, formState.taxRate, calculateDstFileFee]);
+  }, [calculateSubtotal, calculateDiscountAmount, formState.requiresInvoice, formState.taxRate, calculateDstFileFee, formState.rushFee]);
 
   const calculateTotalBeforeTax = useMemo(() => {
-    // Total includes DST fee
-    return calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
-  }, [calculateSubtotal, calculateDiscountAmount, calculateDstFileFee]);
+    // Total includes DST fee and Rush fee
+    return calculateSubtotal - calculateDiscountAmount + calculateDstFileFee + (formState.rushFee || 0);
+  }, [calculateSubtotal, calculateDiscountAmount, calculateDstFileFee, formState.rushFee]);
 
   const calculateTotalWithTax = useMemo(() => {
     return calculateTotalBeforeTax + calculateTaxAmount;
@@ -1515,6 +1523,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               discount: formState.discount,
               discountAmount: calculateDiscountAmount,
               dstFileFee: calculateDstFileFee,
+              rushFee: formState.rushFee || 0,
               taxRate: formState.taxRate,
               taxAmount: calculateTaxAmount,
               total: calculateTotalWithTax,
@@ -1551,6 +1560,15 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         if (formState.dueDate) {
           // Also append explicit dueDate if needed by backend, though backend usually reads deliveryDate
           payload.append('dueDate', formState.dueDate);
+        }
+
+        if (formState.rushOrder) {
+          payload.append('rushOrder', 'true');
+        } else {
+          payload.append('rushOrder', 'false');
+        }
+        if (formState.rushFee > 0) {
+          payload.append('rushFee', formState.rushFee.toString());
         }
 
         // PRD v2.0: 添加文件到 payload（使用 files state，不是 formState.files）
@@ -2163,6 +2181,41 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                 <option value="DRAFT">Draft</option>
               </select>
             </label>
+
+            <div className="flex flex-col gap-2">
+              <label className="inline-flex items-center gap-2 cursor-pointer mt-1">
+                <input
+                  type="checkbox"
+                  name="rushOrder"
+                  checked={formState.rushOrder}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFormState(prev => ({
+                      ...prev,
+                      rushOrder: checked,
+                      // clear fee if unchecked? NO, keep it as draft
+                    }));
+                  }}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
+                />
+                <span className="text-sm font-medium text-gray-700 font-bold text-orange-600">{t('rushOrder') || 'Rush Order'}</span>
+              </label>
+
+              {formState.rushOrder && (
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formState.rushFee > 0 ? formState.rushFee : ''}
+                    onChange={(e) => setField('rushFee', parseFloat(e.target.value) || 0)}
+                    placeholder="Rush Fee Amount"
+                    className="w-full border border-orange-300 rounded-lg pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all bg-orange-50"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -2435,6 +2488,12 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                 <div className="flex justify-between items-center text-sm">
                   <span>DST File Fee：</span>
                   <span>${calculateDstFileFee.toFixed(2)} CAD</span>
+                </div>
+              )}
+              {formState.rushFee > 0 && (
+                <div className="flex justify-between items-center text-sm text-orange-600">
+                  <span>{t('rushFee') || 'Rush Fee'}：</span>
+                  <span>${formState.rushFee.toFixed(2)} CAD</span>
                 </div>
               )}
               {formState.requiresInvoice && (
