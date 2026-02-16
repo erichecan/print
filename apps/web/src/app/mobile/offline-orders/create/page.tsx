@@ -117,8 +117,8 @@ type FormState = {
   paymentMethod: string;
   referenceNumber: string;
   total: number;
-  referenceNumber: string;
-  total: number;
+  rushOrder: boolean;
+  rushFee: number;
   startDate: string; // New
   status: string; // New
   currentStep: number;
@@ -184,9 +184,8 @@ const initialFormState: FormState = {
   paymentMethod: '',
   referenceNumber: '',
   total: 0,
-  paymentMethod: '',
-  referenceNumber: '',
-  total: 0,
+  rushOrder: false,
+  rushFee: 0,
   startDate: '', // New
   status: 'ACTIVE', // New
   currentStep: 1,
@@ -1781,6 +1780,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                 productItems={formState.productItems}
                 colorGroupsByProduct={formState.colorGroupsByProduct}
                 dstFileFee={calculateDstFileFee}
+                rushFee={formState.rushFee}
                 locale={locale}
               />
 
@@ -1791,11 +1791,12 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                 </div>
                 <div className="flex justify-between items-end mt-2">
                   <span className="text-lg font-medium opacity-90">{t('totalAmount')}</span>
-                  <span className="text-3xl font-bold tracking-tight">${(calculateSubtotal + calculateDstFileFee).toFixed(2)}</span>
+                  <span className="text-3xl font-bold tracking-tight">${(calculateSubtotal + calculateDstFileFee + (formState.rushFee || 0)).toFixed(2)}</span>
                 </div>
-                {calculateDstFileFee > 0 && (
-                  <div className="mt-2 pt-2 border-t border-white/20 text-xs text-blue-100">
-                    {t('containingDstFee', { amount: calculateDstFileFee.toFixed(2) })}
+                {(calculateDstFileFee > 0 || (formState.rushFee || 0) > 0) && (
+                  <div className="mt-2 pt-2 border-t border-white/20 text-xs text-blue-100 flex flex-col items-end">
+                    {calculateDstFileFee > 0 && <span>{t('containingDstFee', { amount: calculateDstFileFee.toFixed(2) })}</span>}
+                    {(formState.rushFee || 0) > 0 && <span>{t('containingRushFee', { amount: (formState.rushFee || 0).toFixed(2) }) || `Containing Rush Fee: $${(formState.rushFee || 0).toFixed(2)}`}</span>}
                   </div>
                 )}
               </div>
@@ -1810,7 +1811,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const renderStep2 = () => {
     // 计算税（13%安省税率，仅当选择Invoice时）
     const taxRate = formState.taxRate || 0.13;
-    const taxBase = calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
+    const taxBase = calculateSubtotal - calculateDiscountAmount + calculateDstFileFee + (formState.rushFee || 0);
     const taxAmount = formState.requiresInvoice ? taxBase * taxRate : 0;
     const totalWithTax = taxBase + taxAmount;
 
@@ -2157,8 +2158,13 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             )}
             {calculateDstFileFee > 0 && (
               <div className="flex justify-between items-center text-sm text-blue-600">
-                <span>DST File Fee</span>
                 <span>${calculateDstFileFee.toFixed(2)}</span>
+              </div>
+            )}
+            {formState.rushFee > 0 && (
+              <div className="flex justify-between items-center text-sm text-orange-600">
+                <span>{t('rushFee') || 'Rush Fee'}</span>
+                <span>${formState.rushFee.toFixed(2)}</span>
               </div>
             )}
             {formState.requiresInvoice && (
@@ -2364,8 +2370,13 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               </div>
               {calculateDstFileFee > 0 && (
                 <div className="flex justify-between text-sm text-blue-600">
-                  <span>DST File Fee</span>
                   <span className="font-medium font-mono">${calculateDstFileFee.toFixed(2)}</span>
+                </div>
+              )}
+              {formState.rushFee > 0 && (
+                <div className="flex justify-between text-sm text-orange-600">
+                  <span>{t('rushFee') || 'Rush Fee'}</span>
+                  <span className="font-medium font-mono">${formState.rushFee.toFixed(2)}</span>
                 </div>
               )}
               {formState.discount > 0 && (

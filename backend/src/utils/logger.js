@@ -26,25 +26,32 @@ const consoleFormat = winston.format.combine(
 );
 
 // Create logger
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: logFormat,
-  defaultMeta: { service: 'suvernire-plus-api' },
-  transports: [
-    // Error logs
+const transports = [];
+
+// Only enable file logging if explicitly requested (avoids EPERM in read-only envs)
+if (process.env.ENABLE_FILE_LOGGING === 'true') {
+  transports.push(
     new winston.transports.File({
       filename: path.join(logDir, 'error.log'),
       level: 'error',
       maxsize: 5242880, // 5MB
       maxFiles: 5
-    }),
-    // Combined logs
+    })
+  );
+  transports.push(
     new winston.transports.File({
       filename: path.join(logDir, 'combined.log'),
       maxsize: 5242880, // 5MB
       maxFiles: 5
     })
-  ]
+  );
+}
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: logFormat,
+  defaultMeta: { service: 'suvernire-plus-api' },
+  transports: transports
 });
 
 // Console transport for development

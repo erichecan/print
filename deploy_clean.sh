@@ -84,6 +84,8 @@ echo "🧹 Ensuring environment is clean..."
 # Try to clear the variable first to resolve type conflicts
 # We capture the error but allow it to proceed if the service doesn't exist yet
 gcloud run services update $SERVICE_NAME --platform managed --region $REGION --remove-env-vars NEXT_PUBLIC_API_URL --project $PROJECT_ID || echo "Service may not exist or variable not present, continuing..."
+# Also try to remove it as a secret, in case it was previously set as one
+gcloud run services update $SERVICE_NAME --platform managed --region $REGION --remove-secrets NEXT_PUBLIC_API_URL --project $PROJECT_ID || echo "Service may not exist or secret not present, continuing..."
 
 echo "⏳ Waiting for env var cleanup..."
 sleep 5
@@ -114,6 +116,11 @@ echo "🌱 Seeding remote database configuration..."
 # Ensure the script is executable
 chmod +x backend/scripts/seed-remote-size-pricing.sh
 # Run the remote seeding script
-./backend/scripts/seed-remote-size-pricing.sh
+if [ -n "$AUTH_TOKEN" ]; then
+    ./backend/scripts/seed-remote-size-pricing.sh
+else
+    echo "⚠️  Skipping remote size pricing seeding (AUTH_TOKEN not set)."
+    echo "   If you need to seed size fees, run: AUTH_TOKEN=your_token ./backend/scripts/seed-remote-size-pricing.sh"
+fi
 
 echo "✅ Clean Deployment Complete!"

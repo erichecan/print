@@ -153,6 +153,21 @@ steps:
           --set-secrets NEXT_PUBLIC_API_URL=api-url:latest,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest
     waitFor: ['push-frontend']
 
+  # ---------------------------------------------------------------------------
+  # Automated Cleanup: Keep only 2 most recent versions
+  # ---------------------------------------------------------------------------
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'cleanup-old-versions'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "🧹 Starting automated post-deployment cleanup..."
+        chmod +x scripts/cleanup-gcp-old-versions.sh
+        # Run cleanup script (ignoring errors to not fail the build if cleanup fails)
+        ./scripts/cleanup-gcp-old-versions.sh || echo "⚠️ Cleanup warning (non-fatal)"
+    waitFor: ['deploy-frontend', 'deploy-backend']
+
 # Substitution variables (set via Cloud Build triggers or command line)
 substitutions:
   _REGION: 'us-central1'                    # GCP region

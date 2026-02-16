@@ -2046,6 +2046,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                 productItems={formState.productItems}
                 colorGroupsByProduct={formState.colorGroupsByProduct}
                 dstFileFee={calculateDstFileFee}
+                rushFee={formState.rushFee}
                 locale={locale}
               />
 
@@ -2056,11 +2057,12 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                 </div>
                 <div className="flex justify-between items-center text-base">
                   <span>{t('totalAmount')}：</span>
-                  <strong className="text-xl text-blue-700">${(calculateSubtotal + calculateDstFileFee).toFixed(2)} CAD</strong>
+                  <strong className="text-xl text-blue-700">${(calculateSubtotal + calculateDstFileFee + (formState.rushFee || 0)).toFixed(2)} CAD</strong>
                 </div>
-                {calculateDstFileFee > 0 && (
-                  <div className="flex justify-between items-center text-sm text-blue-600">
-                    <span>{t('containingDstFee', { amount: calculateDstFileFee.toFixed(2) })}</span>
+                {(calculateDstFileFee > 0 || (formState.rushFee || 0) > 0) && (
+                  <div className="flex flex-col gap-1 text-sm text-blue-600 items-end">
+                    {calculateDstFileFee > 0 && <span>{t('containingDstFee', { amount: calculateDstFileFee.toFixed(2) })}</span>}
+                    {(formState.rushFee || 0) > 0 && <span>{t('containingRushFee', { amount: (formState.rushFee || 0).toFixed(2) }) || `Containing Rush Fee: $${(formState.rushFee || 0).toFixed(2)}`}</span>}
                   </div>
                 )}
               </div>
@@ -2075,7 +2077,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const renderStep2 = () => {
     // 计算税（13%安省税率，仅当选择Invoice时）
     const taxRate = formState.taxRate || 0.13;
-    const taxBase = calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
+    const taxBase = calculateSubtotal - calculateDiscountAmount + calculateDstFileFee + (formState.rushFee || 0);
     const taxAmount = formState.requiresInvoice ? taxBase * taxRate : 0;
     const totalWithTax = taxBase + taxAmount;
 
@@ -2520,6 +2522,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             productItems={formState.productItems}
             colorGroupsByProduct={formState.colorGroupsByProduct}
             dstFileFee={calculateDstFileFee}
+            rushFee={formState.rushFee}
             locale={locale}
           />
         </section>
@@ -2742,6 +2745,12 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                     <span>${calculateDstFileFee.toFixed(2)} CAD</span>
                   </div>
                 )}
+                {formState.rushFee > 0 && (
+                  <div className="flex justify-between items-center text-sm text-orange-600">
+                    <span>{t('rushFee') || 'Rush Fee'}：</span>
+                    <span>${formState.rushFee.toFixed(2)} CAD</span>
+                  </div>
+                )}
 
                 {formState.requiresInvoice && (
                   <>
@@ -2787,6 +2796,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               productItems={formState.productItems}
               colorGroupsByProduct={formState.colorGroupsByProduct}
               dstFileFee={calculateDstFileFee}
+              rushFee={formState.rushFee}
               locale={locale}
             />
           </div>

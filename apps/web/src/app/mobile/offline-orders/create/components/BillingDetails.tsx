@@ -36,10 +36,11 @@ interface BillingDetailsProps {
   }>;
   colorGroupsByProduct: Record<string, OrderItemColorGroup[]>;
   dstFileFee?: number;
+  rushFee?: number;
   locale?: OfflineOrdersLocale;
 }
 
-export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee = 0, locale = 'en' }: BillingDetailsProps) {
+export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee = 0, rushFee = 0, locale = 'en' }: BillingDetailsProps) {
   // Use translations
   const t = useMemo(() => (key: string) => {
     const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
@@ -136,6 +137,18 @@ export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee 
                 <td className="py-2 px-3 text-right text-gray-700">-</td>
                 <td className="py-2 px-3 text-right font-medium text-gray-900">
                   ${dstFileFee.toFixed(2)}
+                </td>
+              </tr>
+            )}
+            {/* Rush Fee Row */}
+            {rushFee > 0 && (
+              <tr className="border-b border-gray-200 bg-orange-50/50">
+                <td className="py-2 px-3 text-orange-700 font-medium" colSpan={5}>
+                  {t('rushFee') || 'Rush Fee'}
+                </td>
+                <td className="py-2 px-3 text-right text-gray-700">-</td>
+                <td className="py-2 px-3 text-right font-medium text-orange-700">
+                  ${rushFee.toFixed(2)}
                 </td>
               </tr>
             )}

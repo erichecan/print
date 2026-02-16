@@ -138,3 +138,15 @@ echo -e "  2. ✅ Use external free database (Supabase/Neon) instead of Cloud SQ
 echo -e "  3. ✅ Monitor costs in GCP Console regularly"
 echo ""
 
+# ------------------------------------------------------------------------------
+# AUTOMATED CLEANUP (Keep 2 versions)
+# ------------------------------------------------------------------------------
+echo -e "${GREEN}🧹 Running automated cleanup (keeping 2 most recent versions)...${NC}"
+if [ -f "./scripts/cleanup-gcp-old-versions.sh" ]; then
+    chmod +x ./scripts/cleanup-gcp-old-versions.sh
+    ./scripts/cleanup-gcp-old-versions.sh || echo -e "${YELLOW}⚠️  Cleanup script failed but deployment was successful.${NC}"
+else
+    echo -e "${YELLOW}⚠️  Cleanup script not found. Skipping cleanup.${NC}"
+fi
+
+echo ""

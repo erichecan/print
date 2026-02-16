@@ -283,9 +283,10 @@ export default function SalesOrderDetailPage() {
     return {
       productItems: transformedItems,
       colorGroupsByProduct: (config.colorGroupsByProduct as Record<string, OrderItemColorGroup[]>) || {},
-      dstFileFee: Number(config.pricing?.dstFileFee || meta?.dst_file_fee || 0)
+      dstFileFee: Number(config.pricing?.dstFileFee || meta?.dst_file_fee || 0),
+      rushFee: Number(config.pricing?.rushFee || meta?.rushFee || 0)
     };
-  }, [config, meta?.dst_file_fee]);
+  }, [config, meta?.dst_file_fee, meta?.rushFee]);
 
   if (authChecking) {
     return (
@@ -914,6 +915,7 @@ export default function SalesOrderDetailPage() {
                         productItems={billingData.productItems}
                         colorGroupsByProduct={billingData.colorGroupsByProduct}
                         dstFileFee={billingData.dstFileFee}
+                        rushFee={billingData.rushFee}
                         locale={locale}
                       />
                     </div>

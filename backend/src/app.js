@@ -269,6 +269,9 @@ app.use('/api/design-lab/analytics', require('./routes/designLabAnalytics')); //
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));
 
+// Vapi AI Tools Routes
+app.use('/api/vapi', require('./vapi/index'));
+
 // Error handling middleware
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
