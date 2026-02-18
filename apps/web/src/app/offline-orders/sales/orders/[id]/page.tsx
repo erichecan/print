@@ -779,12 +779,24 @@ export default function SalesOrderDetailPage() {
                                         {Object.entries(group.quantities || {}).map(([size, qty], idx) => {
                                           const q = Number(qty) || 0;
                                           if (q === 0) return null;
-                                          const subtotal = q * (group.unitPrice || 0);
+
+                                          // Fix: Calculate price with size fee
+                                          const sizeFee = config?.sizeFees?.find((sf: any) => sf.size === size)?.additionalFee || 0;
+                                          const finalUnitPrice = (group.unitPrice || 0) + Number(sizeFee);
+                                          const subtotal = q * finalUnitPrice;
+
                                           return (
                                             <tr key={idx}>
                                               <td>{size}</td>
                                               <td>{q}</td>
-                                              <td>${(group.unitPrice || 0).toFixed(2)}</td>
+                                              <td>
+                                                ${finalUnitPrice.toFixed(2)}
+                                                {Number(sizeFee) > 0 && (
+                                                  <span style={{ fontSize: '0.75rem', color: '#666', marginLeft: '4px' }}>
+                                                    ({t('base')}: ${group.unitPrice?.toFixed(2)} + {t('size')}: ${Number(sizeFee).toFixed(2)})
+                                                  </span>
+                                                )}
+                                              </td>
                                               <td className="variant-total">${subtotal.toFixed(2)}</td>
                                             </tr>
                                           );
