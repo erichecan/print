@@ -62,9 +62,12 @@ exports.listSalesOrders = async (req, res) => {
   const timestamp = new Date().toISOString();
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 500);
     const search = req.query.search ? req.query.search.trim() : null;
     const creatorId = req.query.creatorId ? req.query.creatorId.trim() : null;
+    const statusFilter = req.query.status ? req.query.status.trim() : null;
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
     const skip = (page - 1) * limit;
 
     const roleRaw = req.user?.role || '';
@@ -100,16 +103,68 @@ exports.listSalesOrders = async (req, res) => {
       };
     }
 
-    // 2. 搜索过滤 (支持模糊搜索: 订单号, 项目名, 客户名, 公司名, 邮箱)
+    // 2. 状态过滤（服务端）
+    if (statusFilter) {
+      // 支持逗号分隔的多状态过滤，如 "ACTIVE,COMPLETED"
+      const statuses = statusFilter.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      if (statuses.length === 1) {
+        // 特殊处理 ACTIVE_RUSH: 实际上是 status=ACTIVE + rushOrder=true
+        if (statuses[0] === 'ACTIVE_RUSH') {
+          where.status = 'ACTIVE';
+          where.rushOrder = true;
+        } else {
+          where.status = statuses[0];
+        }
+      } else if (statuses.length > 1) {
+        where.status = { in: statuses };
+      }
+    }
+
+    // 3. 搜索过滤 (支持模糊搜索: 订单号, 项目名, 客户名, 公司名, 邮箱, 手机号, 描述, 备注, 配置JSON, 创建者)
     if (search) {
-      where.OR = [
+      // 先查找匹配的用户ID (Search by Creator)
+      const matchingUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { email: { contains: search, mode: 'insensitive' } },
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+          ]
+        },
+        select: { id: true }
+      });
+
+      const matchingUserIds = matchingUsers.map(u => u.id);
+
+      const orConditions = [
         { orderCode: { contains: search, mode: 'insensitive' } },
         { projectName: { contains: search, mode: 'insensitive' } },
         { contactName: { contains: search, mode: 'insensitive' } },
         { company: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { order_notes: { contains: search, mode: 'insensitive' } },
       ];
+
+      // Add conditions for matching creators
+      if (matchingUserIds.length > 0) {
+        matchingUserIds.forEach(id => {
+          orConditions.push({
+            metadata: {
+              path: ['submittedByUserId'],
+              equals: id
+            }
+          });
+        });
+      }
+
+      where.OR = orConditions;
     }
+
+    // 构建排序条件
+    const validSortFields = ['createdAt', 'updatedAt', 'orderCode', 'projectName', 'deliveryDate', 'status'];
+    const orderByField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
     // 查询订单时，同时获取创建者信息（用于销售主管查看）
     const [orders, total] = await prisma.$transaction([
@@ -118,11 +173,9 @@ exports.listSalesOrders = async (req, res) => {
         skip,
         take: limit,
         orderBy: [
-          { createdAt: 'desc' },
-          { orderCode: 'desc' },
+          { [orderByField]: sortOrder },
+          ...(orderByField !== 'orderCode' ? [{ orderCode: 'desc' }] : []),
         ],
-        // 通过 metadata.submittedByUserId 查找创建者
-        // 注意：这里需要手动查询用户信息，因为 Prisma 不支持通过 JSON 字段关联
       }),
       prisma.offlineOrder.count({ where }),
     ]);

@@ -1104,6 +1104,7 @@ export interface OfflineOrderConfiguration {
   paymentMethod?: string;
   referenceNumber?: string;
   depositAmount?: number;
+  sizeFees?: OfflineOrderSizeFee[];
 }
 
 export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
@@ -1140,12 +1141,13 @@ export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
 }
 
 export const salesOrdersApi = {
-  list: (params?: { page?: number; limit?: number; search?: string; creatorId?: string }) => {
+  list: (params?: { page?: number; limit?: number; search?: string; creatorId?: string; status?: string }) => {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
     if (params?.search) query.append('search', params.search);
     if (params?.creatorId) query.append('creatorId', params.creatorId);
+    if (params?.status) query.append('status', params.status);
     const qs = query.toString();
     return api<SalesOfflineOrderListResponse>(`/sales/orders${qs ? `?${qs}` : ''}`);
   },

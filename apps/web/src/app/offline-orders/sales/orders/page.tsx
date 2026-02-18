@@ -29,6 +29,7 @@ function StatusSelector({
   disabled: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState({});
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const id = `status-selector-${orderId}`;
@@ -41,7 +42,22 @@ function StatusSelector({
     triggerRef.current?.focus();
   };
 
+  // Update position when opening
+  useEffect(() => {
+    if (open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        top: `${rect.bottom + 4}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        zIndex: 9999,
+      });
+    }
+  }, [open]);
+
   // 关闭逻辑：点击外部或按下 Escape
+  // 滚动时也关闭下拉菜单
   useEffect(() => {
     if (!open) return;
 
@@ -52,15 +68,22 @@ function StatusSelector({
       setOpen(false);
     };
 
+    const onScroll = () => {
+      if (open) setOpen(false);
+    };
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
     };
 
     document.addEventListener('click', onDocClick);
     document.addEventListener('keydown', onKey);
+    document.addEventListener('scroll', onScroll, true); // capture phase to catch any scroll
+
     return () => {
       document.removeEventListener('click', onDocClick);
       document.removeEventListener('keydown', onKey);
+      document.removeEventListener('scroll', onScroll, true);
     };
   }, [open]);
 
@@ -155,8 +178,9 @@ function StatusSelector({
           id={`${id}-listbox`}
           role="listbox"
           tabIndex={-1}
+          style={dropdownStyle}
           className="
-            absolute z-20 mt-2 w-full min-w-[120px]
+            mt-1
             rounded-xl border border-slate-200 bg-white
             shadow-lg p-1
           "
@@ -360,6 +384,12 @@ export default function SalesOrdersPage() {
   const [selectedCreator, setSelectedCreator] = useState('');
   const [creators, setCreators] = useState<Array<{ id: string; name: string; email: string }>>([]);
 
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   // Filter states
   const [filters, setFilters] = useState<FilterOptions>({
     statuses: [],
@@ -367,7 +397,6 @@ export default function SalesOrdersPage() {
     printMethods: [],
     dateRange: { start: null, end: null }
   });
-  const [allOrders, setAllOrders] = useState<SalesOfflineOrderSummary[]>([]); // Store all orders for client-side filtering
   // 排序状态
   const [sortConfig, setSortConfig] = useState<SortConfig | null>({ key: 'dueDate', direction: 'desc' });
 
@@ -487,23 +516,34 @@ export default function SalesOrdersPage() {
     return () => { cancelled = true; };
   }, [currentUser]);
 
-  // Fetch Orders when status/filters change
+  // 当筛选条件变化时重置页码
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedCreator, filters.statuses]);
+
+  // Fetch Orders - 服务端分页
   useEffect(() => {
     let cancelled = false;
     const fetchOrders = async () => {
       if (authLoading || !currentUser) return;
 
       setLoading(true);
-      setError(''); // Clear error before fetch
+      setError('');
       try {
+        // 构建服务端状态过滤
+        const statusParam = filters.statuses.length > 0 ? filters.statuses.join(',') : undefined;
+
         const response = await salesOrdersApi.list({
-          page: 1,
-          limit: 200, // Fetch more for client-side filtering
+          page: currentPage,
+          limit: pageSize,
           search: debouncedSearch,
-          creatorId: selectedCreator || undefined
+          creatorId: selectedCreator || undefined,
+          status: statusParam,
         });
         if (!cancelled) {
-          setAllOrders(response.data); // Store all orders
+          setOrders(response.data);
+          setTotalOrders(response.pagination?.total || 0);
+          setTotalPages(response.pagination?.totalPages || 1);
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -520,7 +560,7 @@ export default function SalesOrdersPage() {
       fetchOrders();
     }
     return () => { cancelled = true; };
-  }, [currentUser, authLoading, activeTab, debouncedSearch, selectedCreator, t]);
+  }, [currentUser, authLoading, activeTab, debouncedSearch, selectedCreator, currentPage, pageSize, filters.statuses, t]);
 
   // Load filters from localStorage
   useEffect(() => {
@@ -605,10 +645,10 @@ export default function SalesOrdersPage() {
   }, []);
 
 
-  // Extract unique print methods from all orders
+  // Extract unique print methods from current page orders (for filter panel display)
   const availablePrintMethods = useMemo(() => {
     const methods = new Set<string>();
-    allOrders.forEach(order => {
+    orders.forEach(order => {
       const config = order.configuration || {};
       const colorGroupsByProduct = config.colorGroupsByProduct || {};
       Object.values(colorGroupsByProduct).forEach((groups: any) => {
@@ -623,30 +663,16 @@ export default function SalesOrdersPage() {
         }
       });
     });
+    // 添加常用印刷工艺作为固定选项
+    ['DTF', 'Embroidery', 'UV', 'Vinyl', 'Screen Print'].forEach(m => methods.add(m));
     return Array.from(methods).sort();
-  }, [allOrders]);
+  }, [orders]);
 
-  // Apply filters to orders
-  const filteredOrders = useMemo(() => {
-    let result = [...allOrders];
+  // 客户端过滤（仅对当前页数据应用 printMethod 和 paymentStatus 过滤）
+  const displayOrders = useMemo(() => {
+    let result = [...orders];
 
-    // Status filter
-    if (filters.statuses.length > 0) {
-      result = result.filter(order => {
-        const status = order.status;
-        const rushOrder = order.rushOrder;
-
-        // Handle ACTIVE_RUSH as a special case
-        if (filters.statuses.includes('ACTIVE_RUSH')) {
-          if (status === 'ACTIVE' && rushOrder) return true;
-        }
-
-        // Check regular statuses
-        return filters.statuses.includes(status);
-      });
-    }
-
-    // Payment status filter
+    // Payment status filter (客户端，因为需要计算)
     if (filters.paymentStatuses.length > 0) {
       result = result.filter(order => {
         const paymentStatus = calculatePaymentStatus(order);
@@ -654,7 +680,7 @@ export default function SalesOrdersPage() {
       });
     }
 
-    // Print method filter
+    // Print method filter (客户端，因为存在JSON中)
     if (filters.printMethods.length > 0) {
       result = result.filter(order => {
         const config = order.configuration || {};
@@ -677,7 +703,7 @@ export default function SalesOrdersPage() {
       });
     }
 
-    // Date range filter
+    // Date range filter (客户端)
     if (filters.dateRange.start || filters.dateRange.end) {
       result = result.filter(order => {
         if (!order.deliveryDate) return false;
@@ -701,9 +727,9 @@ export default function SalesOrdersPage() {
     }
 
     return result;
-  }, [allOrders, filters, calculatePaymentStatus]);
+  }, [orders, filters, calculatePaymentStatus]);
 
-  // 处理排序
+  // 处理排序（使用客户端排序，因为 server 只支持基础排序）
   const handleSort = (key: string, direction: 'asc' | 'desc' | null) => {
     if (!direction) {
       setSortConfig(null);
@@ -714,9 +740,9 @@ export default function SalesOrdersPage() {
 
   // 应用排序
   const sortedOrders = useMemo(() => {
-    if (!sortConfig) return filteredOrders;
+    if (!sortConfig) return displayOrders;
 
-    return [...filteredOrders].sort((a, b) => {
+    return [...displayOrders].sort((a, b) => {
       // 1. 优先级规则：COMPLETED 和 CANCELLED 始终沉底
       const isBottomA = ['COMPLETED', 'CANCELLED'].includes(a.status);
       const isBottomB = ['COMPLETED', 'CANCELLED'].includes(b.status);
@@ -734,7 +760,6 @@ export default function SalesOrdersPage() {
           valB = calculateOrderBalance(b);
           break;
         case 'dueDate':
-          // 处理空日期：放在最后
           valA = a.deliveryDate ? new Date(a.deliveryDate).getTime() : (sortConfig.direction === 'asc' ? Number.MAX_SAFE_INTEGER : -1);
           valB = b.deliveryDate ? new Date(b.deliveryDate).getTime() : (sortConfig.direction === 'asc' ? Number.MAX_SAFE_INTEGER : -1);
           break;
@@ -750,12 +775,21 @@ export default function SalesOrdersPage() {
       if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [filteredOrders, sortConfig, calculateOrderBalance]);
+  }, [displayOrders, sortConfig, calculateOrderBalance]);
 
-  // Update orders state when sorted orders change
-  useEffect(() => {
-    setOrders(sortedOrders);
-  }, [sortedOrders]);
+  // 分页控制
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      // 滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
 
   const handleViewDetail = (orderId: string) => {
     router.push(`/offline-orders/sales/orders/${orderId}`);
@@ -779,7 +813,8 @@ export default function SalesOrdersPage() {
     try {
       await salesOrdersApi.delete(orderToDelete.id);
       // 删除成功后刷新列表
-      setOrders(orders.filter(o => o.id !== orderToDelete.id));
+      setOrders(prev => prev.filter(o => o.id !== orderToDelete.id));
+      setTotalOrders(prev => prev - 1);
       setIsDeleteModalOpen(false);
       setOrderToDelete(null);
     } catch (err: any) {
@@ -868,9 +903,18 @@ export default function SalesOrdersPage() {
 
       await salesOrdersApi.updateStatus(orderId, actualStatus, rushOrder);
 
-      // 刷新订单列表
-      const response = await salesOrdersApi.list({ page: 1, limit: 50 });
+      // 刷新当前页订单列表
+      const statusParam = filters.statuses.length > 0 ? filters.statuses.join(',') : undefined;
+      const response = await salesOrdersApi.list({
+        page: currentPage,
+        limit: pageSize,
+        search: debouncedSearch,
+        creatorId: selectedCreator || undefined,
+        status: statusParam,
+      });
       setOrders(response.data);
+      setTotalOrders(response.pagination?.total || 0);
+      setTotalPages(response.pagination?.totalPages || 1);
     } catch (err: any) {
       setError(err.message || t('errorUpdateStatus'));
     } finally {
@@ -1277,7 +1321,7 @@ export default function SalesOrdersPage() {
 
             {loading ? (
               <p>{t('loadingOrders')}</p>
-            ) : orders.length === 0 ? (
+            ) : sortedOrders.length === 0 ? (
               <div className="text-center py-10 bg-slate-50 rounded-lg border border-dashed border-slate-300">
                 <p className="text-slate-500">
                   {(searchQuery || selectedCreator) ? t('noOrdersFound') : t('noOrdersYet')}
@@ -1292,89 +1336,90 @@ export default function SalesOrdersPage() {
                 )}
               </div>
             ) : (
-              <div className="sales-orders-table-wrapper">
-                <table className="sales-orders-table">
-                  <thead>
-                    <tr>
-                      <th>{t('thOrderCode')}</th>
-                      {/* <th>{t('thProjectName')}</th> */}
-                      <th>{t('thCustomer')}</th>
-                      {isManager && <th>{t('thCreator')}</th>}
-                      {/* <th>{t('thQuantity')}</th> */}
-                      <th>
-                        <SortDropdown
-                          label={t('balanceDue')}
-                          sortKey="balanceDue"
-                          currentSort={sortConfig}
-                          onSort={handleSort}
-                        />
-                      </th>
-                      <th>
-                        <SortDropdown
-                          label={t('thDueDate')}
-                          sortKey="dueDate"
-                          currentSort={sortConfig}
-                          onSort={handleSort}
-                        />
-                      </th>
-                      <th>
-                        <SortDropdown
-                          label={t('thStatus')}
-                          sortKey="status"
-                          currentSort={sortConfig}
-                          onSort={handleSort}
-                        />
-                      </th>
-                      {/* <th>{t('thStage')}</th> */}
-                      <th>{t('thActions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order) => (
-                      <tr key={order.id} className={order.status === 'REMINDER' ? 'bg-pink-50' : ''}>
-                        <td>{order.orderCode}</td>
-                        {/* <td>{order.projectName}</td> */}
-                        <td>
-                          <div className="sales-orders-contact">
-                            <span>{order.contact.name}</span>
-                            <span className="sales-orders-contact-sub">
-                              {order.contact.company || order.contact.email}
-                            </span>
-                          </div>
-                        </td>
-                        {isManager && (
+              <>
+                <div className="sales-orders-table-wrapper">
+                  <table className="sales-orders-table">
+                    <thead>
+                      <tr>
+                        <th>{t('thOrderCode')}</th>
+                        {/* <th>{t('thProjectName')}</th> */}
+                        <th>{t('thCustomer')}</th>
+                        {isManager && <th>{t('thCreator')}</th>}
+                        {/* <th>{t('thQuantity')}</th> */}
+                        <th>
+                          <SortDropdown
+                            label={t('balanceDue')}
+                            sortKey="balanceDue"
+                            currentSort={sortConfig}
+                            onSort={handleSort}
+                          />
+                        </th>
+                        <th>
+                          <SortDropdown
+                            label={t('thDueDate')}
+                            sortKey="dueDate"
+                            currentSort={sortConfig}
+                            onSort={handleSort}
+                          />
+                        </th>
+                        <th>
+                          <SortDropdown
+                            label={t('thStatus')}
+                            sortKey="status"
+                            currentSort={sortConfig}
+                            onSort={handleSort}
+                          />
+                        </th>
+                        {/* <th>{t('thStage')}</th> */}
+                        <th>{t('thActions')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedOrders.map((order) => (
+                        <tr key={order.id} className={order.status === 'REMINDER' ? 'bg-pink-50' : ''}>
+                          <td>{order.orderCode}</td>
+                          {/* <td>{order.projectName}</td> */}
                           <td>
-                            {order.creator ? (
-                              <div className="sales-orders-creator">
-                                <span>{order.creator.name}</span>
-                              </div>
-                            ) : (
-                              '—'
-                            )}
+                            <div className="sales-orders-contact">
+                              <span>{order.contact.name}</span>
+                              <span className="sales-orders-contact-sub">
+                                {order.contact.company || order.contact.email}
+                              </span>
+                            </div>
                           </td>
-                        )}
-                        {/* <td>{order.quantity ?? '—'}</td> */}
-                        <td>
-                          <span className="font-semibold text-blue-600">
-                            ${calculateOrderBalance(order).toFixed(2)}
-                          </span>
-                        </td>
-                        <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <StatusSelector
-                              orderId={order.id}
-                              currentValue={order.status}
-                              statusOptions={statusOptions}
-                              onUpdate={handleQuickUpdateStatus}
-                              disabled={updatingStatus === order.id}
-                            />
-                            {order.rushOrder && (
-                              <span className="tag tag-rush">{t('tagRush')}</span>
-                            )}
-                          </div>
-                        </td>
-                        {/* <td>
+                          {isManager && (
+                            <td>
+                              {order.creator ? (
+                                <div className="sales-orders-creator">
+                                  <span>{order.creator.name}</span>
+                                </div>
+                              ) : (
+                                '—'
+                              )}
+                            </td>
+                          )}
+                          {/* <td>{order.quantity ?? '—'}</td> */}
+                          <td>
+                            <span className="font-semibold text-blue-600">
+                              ${calculateOrderBalance(order).toFixed(2)}
+                            </span>
+                          </td>
+                          <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <StatusSelector
+                                orderId={order.id}
+                                currentValue={order.status}
+                                statusOptions={statusOptions}
+                                onUpdate={handleQuickUpdateStatus}
+                                disabled={updatingStatus === order.id}
+                              />
+                              {order.rushOrder && (
+                                <span className="tag tag-rush">{t('tagRush')}</span>
+                              )}
+                            </div>
+                          </td>
+                          {/* <td>
                           <div className="sales-orders-stage">
                             {stages.length > 0 ? (
                               <select
@@ -1395,39 +1440,142 @@ export default function SalesOrdersPage() {
                             )}
                           </div>
                         </td> */}
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <button
-                              type="button"
-                              className="sales-orders-detail-btn-small"
-                              onClick={() => handleViewDetail(order.id)}
-                            >
-                              {t('btnDetail')}
-                            </button>
-                            <button
-                              type="button"
-                              className="sales-orders-detail-btn-small"
-                              onClick={() => window.open(`/offline-orders/sales/orders/${order.id}?print=true`, '_blank')}
-                              title={t('btnPrint')}
-                            >
-                              🖨️
-                            </button>
-                            <button
-                              type="button"
-                              className="sales-orders-delete-btn"
-                              onClick={() => handleDeleteOrder(order.id, order.orderCode)}
-                              disabled={deletingOrder === order.id}
-                              title={t('btnDelete')}
-                            >
-                              {deletingOrder === order.id ? t('submitting') : '🗑️'}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <button
+                                type="button"
+                                className="sales-orders-detail-btn-small"
+                                onClick={() => handleViewDetail(order.id)}
+                              >
+                                {t('btnDetail')}
+                              </button>
+                              <button
+                                type="button"
+                                className="sales-orders-detail-btn-small"
+                                onClick={() => window.open(`/offline-orders/sales/orders/${order.id}?print=true`, '_blank')}
+                                title={t('btnPrint')}
+                              >
+                                🖨️
+                              </button>
+                              <button
+                                type="button"
+                                className="sales-orders-delete-btn"
+                                onClick={() => handleDeleteOrder(order.id, order.orderCode)}
+                                disabled={deletingOrder === order.id}
+                                title={t('btnDelete')}
+                              >
+                                {deletingOrder === order.id ? t('submitting') : '🗑️'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 分页控件 */}
+                {totalPages > 0 && (
+                  <div className="flex items-center justify-between px-4 py-3 mt-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                    {/* 左侧：总数和每页显示 */}
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <span>{locale === 'zh' ? `共 ${totalOrders} 个订单` : `${totalOrders} orders total`}</span>
+                      <select
+                        value={pageSize}
+                        onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                        className="rounded-md border-slate-300 text-sm py-1 pl-2 pr-7 focus:ring-indigo-500 focus:border-indigo-500"
+                      >
+                        {[10, 20, 50, 100].map(size => (
+                          <option key={size} value={size}>
+                            {size} / {locale === 'zh' ? '页' : 'page'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* 中间：页码导航 */}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handlePageChange(1)}
+                        disabled={currentPage === 1}
+                        className="px-2 py-1 text-sm rounded-md hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={locale === 'zh' ? '第一页' : 'First page'}
+                      >
+                        «
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 text-sm rounded-md hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {locale === 'zh' ? '上一页' : 'Prev'}
+                      </button>
+
+                      {/* 页码按钮 */}
+                      {(() => {
+                        const pages: number[] = [];
+                        const maxVisible = 5;
+                        let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                        let end = Math.min(totalPages, start + maxVisible - 1);
+                        if (end - start + 1 < maxVisible) {
+                          start = Math.max(1, end - maxVisible + 1);
+                        }
+                        for (let i = start; i <= end; i++) {
+                          pages.push(i);
+                        }
+
+                        return (
+                          <>
+                            {start > 1 && <span className="px-1 text-slate-400">…</span>}
+                            {pages.map(p => (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => handlePageChange(p)}
+                                className={`px-3 py-1 text-sm rounded-md ${p === currentPage
+                                  ? 'bg-indigo-600 text-white font-medium'
+                                  : 'hover:bg-slate-100 text-slate-700'
+                                  }`}
+                              >
+                                {p}
+                              </button>
+                            ))}
+                            {end < totalPages && <span className="px-1 text-slate-400">…</span>}
+                          </>
+                        );
+                      })()}
+
+                      <button
+                        type="button"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 text-sm rounded-md hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {locale === 'zh' ? '下一页' : 'Next'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handlePageChange(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className="px-2 py-1 text-sm rounded-md hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title={locale === 'zh' ? '最后一页' : 'Last page'}
+                      >
+                        »
+                      </button>
+                    </div>
+
+                    {/* 右侧：当前页信息 */}
+                    <div className="text-sm text-slate-500">
+                      {locale === 'zh'
+                        ? `第 ${currentPage} / ${totalPages} 页`
+                        : `Page ${currentPage} of ${totalPages}`
+                      }
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -2275,7 +2423,7 @@ export default function SalesOrdersPage() {
         description={t('deleteOrderConfirm') || 'Are you sure you want to delete this order? This action cannot be undone.'}
         confirmLabel={t('delete') || 'Delete'}
       />
-    </div>
+    </div >
   );
 }
 

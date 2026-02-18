@@ -207,9 +207,15 @@ export default function SalesOrderDetailPage() {
         let totalQty = 0;
         let totalAmount = 0;
         groups.forEach((group: any) => {
-          const qty = Object.values(group.quantities || {}).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
-          totalQty += qty;
-          totalAmount += qty * (group.unitPrice || 0);
+          Object.entries(group.quantities || {}).forEach(([size, qtyStr]) => {
+            const qty = Number(qtyStr) || 0;
+            if (qty > 0) {
+              totalQty += qty;
+              // Calculate price with size fee
+              const sizeFee = config.sizeFees?.find((sf: any) => sf.size === size)?.additionalFee || 0;
+              totalAmount += qty * ((group.unitPrice || 0) + Number(sizeFee));
+            }
+          });
         });
         totals[productId] = { quantity: totalQty, total: totalAmount };
       });
@@ -234,13 +240,19 @@ export default function SalesOrderDetailPage() {
 
       if (config.colorGroupsByProduct && config.colorGroupsByProduct[item.id]) {
         config.colorGroupsByProduct[item.id].forEach((group, idx) => {
-          const sizes = Object.entries(group.quantities || {}).map(([size, quantity]) => ({
-            size,
-            quantity: Number(quantity),
-            unitPrice: group.unitPrice || 0,
-            additionalFee: 0, // In this structure, unitPrice is often inclusive
-            subtotal: Number(quantity) * (group.unitPrice || 0)
-          })).filter(s => s.quantity > 0);
+          const sizes = Object.entries(group.quantities || {}).map(([size, quantity]) => {
+            const sizeFee = config.sizeFees?.find((sf: any) => sf.size === size)?.additionalFee || 0;
+            const unitPrice = group.unitPrice || 0;
+            const finalPrice = unitPrice + Number(sizeFee);
+
+            return {
+              size,
+              quantity: Number(quantity),
+              unitPrice: unitPrice,
+              additionalFee: Number(sizeFee),
+              subtotal: Number(quantity) * finalPrice
+            };
+          }).filter(s => s.quantity > 0);
 
           if (sizes.length > 0) {
             // Use unique key (group.id or index) to prevent overwriting same-color groups
