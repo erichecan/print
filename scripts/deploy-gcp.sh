@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_ID=${GCP_PROJECT_ID:-$(gcloud config get-value project)}
+PROJECT_ID=${GCP_PROJECT_ID:-print-482914}
 REGION=${GCP_REGION:-us-central1}
 REPOSITORY=${ARTIFACT_REGISTRY:-print-main}
 BACKEND_SERVICE=${BACKEND_SERVICE_NAME:-print-main-backend}
