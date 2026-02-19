@@ -6,6 +6,7 @@ const orderService = require('./tools/orderService');
 const pricingService = require('./tools/pricingService');
 const paymentService = require('./tools/paymentService');
 const quoteService = require('./tools/quoteService');
+const salesRouter = require('./tools/salesRouter');
 
 
 // Middleware to log Vapi requests and normalize payload
@@ -187,6 +188,24 @@ router.post('/tools/order/update', async (req, res) => {
         if (!orderCode) return res.status(400).json({ error: 'Order code is required' });
 
         const result = await orderService.updateOrder(orderCode, { status, notes });
+        res.json(result);
+    } catch (error) {
+        logger.error(error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * 9. Sales Router (Master Tool)
+ * POST /api/vapi/tools/sales_router
+ * Body: { userMessage: "...", conversationContext: "..." }
+ */
+router.post('/tools/sales_router', async (req, res) => {
+    try {
+        const { userMessage, conversationContext } = req.body;
+        if (!userMessage) return res.status(400).json({ error: 'userMessage is required' });
+
+        const result = await salesRouter.routeRequest(userMessage, conversationContext);
         res.json(result);
     } catch (error) {
         logger.error(error);
