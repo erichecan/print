@@ -5,10 +5,52 @@ const productService = require('./tools/productService');
 const orderService = require('./tools/orderService');
 const pricingService = require('./tools/pricingService');
 const paymentService = require('./tools/paymentService');
+const quoteService = require('./tools/quoteService');
 
-// Middleware to log Vapi requests
+
+// Middleware to log Vapi requests and normalize payload
 router.use((req, res, next) => {
     logger.info(`[Vapi API] ${req.method} ${req.path}`);
+
+    // Log incoming body for debugging
+    if (req.method === 'POST') {
+        logger.info('[Vapi Payload Raw]', JSON.stringify(req.body));
+    }
+
+    // Normalize Vapi Payload
+    // Vapi sometimes sends: { message: { toolCalls: [...] } } or { function: { arguments: ... } }
+    // We want to flatten it so req.body contains the actual arguments.
+
+    if (req.body && typeof req.body === 'object') {
+        // Case 1: Vapi "Server URL" payload (contains 'message')
+        if (req.body.message && req.body.message.toolCalls) {
+            const toolCall = req.body.message.toolCalls[0];
+            if (toolCall && toolCall.function && toolCall.function.arguments) {
+                try {
+                    const args = typeof toolCall.function.arguments === 'string'
+                        ? JSON.parse(toolCall.function.arguments)
+                        : toolCall.function.arguments;
+                    req.body = { ...req.body, ...args };
+                    logger.info('[Vapi Payload Normalized] Extracted from message.toolCalls', args);
+                } catch (e) {
+                    logger.error('[Vapi] Failed to parse tool arguments from message.toolCalls', e);
+                }
+            }
+        }
+        // Case 2: Vapi "Function" payload (direct tool call)
+        else if (req.body.function && req.body.function.arguments) {
+            try {
+                const args = typeof req.body.function.arguments === 'string'
+                    ? JSON.parse(req.body.function.arguments)
+                    : req.body.function.arguments;
+                req.body = { ...req.body, ...args };
+                logger.info('[Vapi Payload Normalized] Extracted from function.arguments', args);
+            } catch (e) {
+                logger.error('[Vapi] Failed to parse tool arguments from function.arguments', e);
+            }
+        }
+    }
+
     next();
 });
 
@@ -96,6 +138,22 @@ router.post('/tools/payment/link', async (req, res) => {
         const sent = await paymentService.sendPaymentLink(link, method, destination);
 
         res.json({ success: sent, link }); // Return link to Vapi too, just in case
+    } catch (error) {
+        logger.error(error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * 6. Get Quote and Policy
+ * POST /api/vapi/tools/quote_and_policy
+ * Body: { items, printDetails, isRush, address }
+ */
+router.post('/tools/quote_and_policy', async (req, res) => {
+    try {
+        const { items, printDetails, isRush, address } = req.body;
+        const result = await quoteService.getQuoteAndPolicy({ items, printDetails, isRush, address });
+        res.json(result);
     } catch (error) {
         logger.error(error);
         res.status(500).json({ error: error.message });

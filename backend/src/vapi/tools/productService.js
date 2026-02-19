@@ -34,30 +34,40 @@ exports.recommendProduct = async (query) => {
         // Perform search in DB
         // We'll search for products where the name contains any of the search terms
         // or the simplified alias terms.
-        // For Prisma, we can use OR condition with contains.
 
-        const whereConditions = searchTerms.map(term => ({
-            name: {
-                contains: term,
-                mode: 'insensitive',
-            },
-            is_active: true,
-        }));
+        let products = [];
+        try {
+            const whereConditions = searchTerms.map(term => ({
+                name: {
+                    contains: term,
+                    mode: 'insensitive',
+                },
+                is_active: true,
+            }));
 
-        const products = await prisma.offline_order_products.findMany({
-            where: {
-                OR: whereConditions,
-            },
-            take: 5, // Limit to 5 results
-            orderBy: {
-                display_order: 'asc',
-            },
-            select: {
-                id: true,
-                name: true,
-                image_url: true,
-            },
-        });
+            products = await prisma.offline_order_products.findMany({
+                where: {
+                    OR: whereConditions,
+                },
+                take: 5, // Limit to 5 results
+                orderBy: {
+                    display_order: 'asc',
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    image_url: true,
+                },
+            });
+        } catch (dbError) {
+            logger.warn('[Vapi] Failed to search products in DB, using fallback:', dbError.message);
+            // Fallback: If DB fails, return some generic products matching query roughly
+            if (normalizedQuery.includes('hoodie')) {
+                products = [{ id: 'fallback-hoodie', name: 'Gildan Heavy Blend Hoodie' }];
+            } else if (normalizedQuery.includes('t-shirt') || normalizedQuery.includes('tee')) {
+                products = [{ id: 'fallback-tee', name: 'Gildan Softstyle T-Shirt' }];
+            }
+        }
 
         // Post-process to simplify names for speech
         const simplifiedProducts = products.map(p => ({

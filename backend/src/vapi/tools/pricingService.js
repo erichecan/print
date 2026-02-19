@@ -29,10 +29,17 @@ exports.getPricing = async (items, printDetails, isRush = false) => {
         let sizeFeesTotal = 0;
         let printTotal = 0;
 
-        // Fetch size fees from DB
-        const sizeFees = await prisma.offline_order_size_fees.findMany({
-            where: { is_active: true },
-        });
+        // Fetch size fees from DB (with fallback)
+        let sizeFees = [];
+        try {
+            sizeFees = await prisma.offline_order_size_fees.findMany({
+                where: { is_active: true },
+            });
+        } catch (dbError) {
+            logger.warn('[Vapi] Failed to fetch size fees, using defaults:', dbError.message);
+            // Optional: fallback to some hardcoded defaults if critical
+            sizeFees = [];
+        }
 
         // Convert to map for easy lookup: { '2XL': 2.00, '3XL': 3.00 }
         const sizeFeeMap = sizeFees.reduce((acc, fee) => {
