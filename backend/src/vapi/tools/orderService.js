@@ -115,6 +115,111 @@ exports.createOrder = async (orderData) => {
     } catch (error) {
         console.error('CRITICAL VAPI ERROR (Order):', error);
         logger.error('[Vapi] Error creating order:', error);
-        throw new Error('Failed to create order');
+        throw new Error(`Failed to create order: ${error.message}`);
+    }
+};
+
+/**
+ * List orders matching search criteria
+ * @param {Object} params - Search filters
+ * @param {string} params.customerName - Filter by contact name
+ * @param {string} params.email - Filter by email
+ * @param {string} params.phone - Filter by phone number
+ * @param {number} params.limit - Max results (default 5)
+ * @returns {Promise<Array>} - List of matching order summaries
+ */
+exports.listOrders = async ({ customerName, email, phone, limit = 5 }) => {
+    try {
+        logger.info('[Vapi] Listing orders with params:', { customerName, email, phone });
+
+        const where = {};
+        const conditions = [];
+
+        if (customerName) {
+            conditions.push({ contactName: { contains: customerName, mode: 'insensitive' } });
+        }
+        if (email) {
+            conditions.push({ email: { contains: email, mode: 'insensitive' } });
+        }
+        if (phone) {
+            conditions.push({ phone: { contains: phone } });
+        }
+
+        if (conditions.length > 0) {
+            where.OR = conditions;
+        }
+
+        const orders = await prisma.offlineOrder.findMany({
+            where,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            select: {
+                orderCode: true,
+                contactName: true,
+                status: true,
+                createdAt: true,
+                configuration: true // To get total price roughly if stored
+            }
+        });
+
+        return orders.map(o => ({
+            orderCode: o.orderCode,
+            customer: o.contactName,
+            status: o.status,
+            date: o.createdAt.toISOString().split('T')[0],
+            total: o.configuration?.pricing?.total || 'N/A'
+        }));
+
+    } catch (error) {
+        logger.error('[Vapi] Error listing orders:', error);
+        throw new Error('Failed to list orders');
+    }
+};
+
+/**
+ * Update an existing order
+ * @param {string} orderCode - The order to update
+ * @param {Object} updates - Fields to update (status, notes)
+ * @returns {Promise<Object>} - Updated order details
+ */
+exports.updateOrder = async (orderCode, { status, notes }) => {
+    try {
+        logger.info(`[Vapi] Updating order ${orderCode}`, { status, notes });
+
+        const order = await prisma.offlineOrder.findUnique({ where: { orderCode } });
+        if (!order) {
+            throw new Error(`Order ${orderCode} not found`);
+        }
+
+        const data = {};
+        if (status) data.status = status;
+
+        // If notes provided, we might want to append or replace. 
+        // For simple Vapi use, let's append to existing internal notes or specific Vapi notes field if it existed.
+        // Schema check: OfflineOrder usually has 'notes' or we store in config.
+        // Let's assume there is a 'notes' field or we check schema.
+        // Re-checking schema via current knowledge: OfflineOrder has 'internalNotes'.
+        if (notes) {
+            data.internalNotes = order.internalNotes
+                ? `${order.internalNotes}\n[Vapi]: ${notes}`
+                : `[Vapi]: ${notes}`;
+        }
+
+        const updatedOrder = await prisma.offlineOrder.update({
+            where: { orderCode },
+            data,
+            select: { orderCode: true, status: true, internalNotes: true }
+        });
+
+        return {
+            success: true,
+            orderCode: updatedOrder.orderCode,
+            status: updatedOrder.status,
+            notes: updatedOrder.internalNotes
+        };
+
+    } catch (error) {
+        logger.error('[Vapi] Error updating order:', error);
+        throw new Error('Failed to update order');
     }
 };

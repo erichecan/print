@@ -160,4 +160,38 @@ router.post('/tools/quote_and_policy', async (req, res) => {
     }
 });
 
+/**
+ * 7. List Orders (Search)
+ * POST /api/vapi/tools/order/list
+ * Body: { customerName, email, phone, limit }
+ */
+router.post('/tools/order/list', async (req, res) => {
+    try {
+        const { customerName, email, phone, limit } = req.body;
+        const results = await orderService.listOrders({ customerName, email, phone, limit });
+        res.json(results);
+    } catch (error) {
+        logger.error(error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * 8. Update Order
+ * POST /api/vapi/tools/order/update
+ * Body: { orderCode, status, notes }
+ */
+router.post('/tools/order/update', async (req, res) => {
+    try {
+        const { orderCode, status, notes } = req.body;
+        if (!orderCode) return res.status(400).json({ error: 'Order code is required' });
+
+        const result = await orderService.updateOrder(orderCode, { status, notes });
+        res.json(result);
+    } catch (error) {
+        logger.error(error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;
