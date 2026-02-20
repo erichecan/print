@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 import { useCallback, useMemo } from 'react';
 import { FilterPanel, FilterOptions } from './components/FilterPanel';
+import { SalesDashboardTab } from './components/SalesDashboardTab';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 // 状态选择组件 - 参考 PillSelect 的单选版样式
@@ -439,8 +440,8 @@ export default function SalesOrdersPage() {
     });
   }, []);
 
-  // Tab状态管理
-  const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');
+  // Tab状态管理（2025-02-19: 增加销售看板）
+  const [activeTab, setActiveTab] = useState<'orders' | 'config' | 'dashboard'>('orders');
 
   // 配置管理状态
   const [configTab, setConfigTab] = useState<'colors' | 'products' | 'size-fees'>('colors');
@@ -1186,7 +1187,7 @@ export default function SalesOrdersPage() {
 
         </header>
 
-        {/* Tab切换 */}
+        {/* Tab切换（销售看板 2025-02-19） */}
         <div className="sales-orders-tabs">
           <button
             type="button"
@@ -1194,6 +1195,13 @@ export default function SalesOrdersPage() {
             onClick={() => setActiveTab('orders')}
           >
             {t('orderList')}
+          </button>
+          <button
+            type="button"
+            className={`sales-orders-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            {t('salesDashboard')}
           </button>
           {isManager && (
             <button
@@ -1208,6 +1216,13 @@ export default function SalesOrdersPage() {
 
 
         {error && <div className="sales-orders-error">{error}</div>}
+
+        {/* 销售看板 Tab 内容（2025-02-19） */}
+        {activeTab === 'dashboard' && (
+          <div className="sales-orders-tab-content">
+            <SalesDashboardTab locale={locale} isManager={isManager} />
+          </div>
+        )}
 
         {/* 订单列表Tab内容 */}
         {activeTab === 'orders' && (

@@ -2760,7 +2760,7 @@ export interface AdminOfflineOrderListResponse {
   stages: OfflineOrderStageMeta[];
 }
 
-// Metrics payload for offline operations dashboard
+// Metrics payload for offline operations dashboard (Phase 2 + 2025-02-20: revenue, topProducts, timeSeries, cost)
 export interface OfflineOrderMetricsResponse {
   summary: {
     total: number;
@@ -2774,6 +2774,14 @@ export interface OfflineOrderMetricsResponse {
       count: number;
     }
   >;
+  revenue?: {
+    revenueTotal: number;
+    revenueActive: number;
+    revenueCompleted: number;
+  };
+  topProducts?: Array<{ productName: string; orderCount: number; revenue: number }>;
+  timeSeries?: Array<{ date: string; orderCount: number; revenue: number }>;
+  cost?: { costTotal: number; marginTotal: number; marginPercent: number };
 }
 
 export type OfflineOrderStage = OfflineOrderStageMeta;
@@ -2818,7 +2826,14 @@ export const adminOfflineOrdersApi = {
     );
   },
   get: (id: string) => api<{ order: AdminOfflineOrderDetail }>(`/admin/offline-orders/${id}`),
-  getMetrics: () => api<OfflineOrderMetricsResponse>('/admin/offline-orders/metrics/summary'),
+  getMetrics: (params?: { scope?: 'all' | 'mine'; startDate?: string; endDate?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.scope) query.append('scope', params.scope);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const qs = query.toString();
+    return api<OfflineOrderMetricsResponse>(`/admin/offline-orders/metrics/summary${qs ? `?${qs}` : ''}`);
+  },
   updateStage: (id: string, payload: { stageKey: string; note?: string }) =>
     api(`/admin/offline-orders/${id}/stage`, { method: 'PATCH', body: payload }),
   addNote: (id: string, note: string) =>

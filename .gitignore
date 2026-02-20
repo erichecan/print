@@ -57,3 +57,6 @@ prisma/migrations/dev.db*
 tmp/
 temp/
 
+# GCP local config (do not commit)
+.gcloud_config/
+
