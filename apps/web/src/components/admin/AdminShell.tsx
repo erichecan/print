@@ -144,6 +144,7 @@ const NAV_LINKS = [
   { href: '/admin/offline-order-size-fees', label: 'Size Fees', icon: 'costs', i18n: 'sizeFees' }, // Added Size Fees configuration
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
   { href: '/admin/promotions', label: 'Promotions', icon: 'promotions', i18n: 'promotions' },
+  { href: '/admin/referral-settings', label: 'Referral', icon: 'promotions', i18n: 'promotions' }, // 推广活动配置
   { href: '/admin/analytics', label: 'Analytics', icon: 'analytics', i18n: 'analytics' }, // Analytics and Reports for Issue #160
   { href: '/admin/suppliers', label: 'Suppliers', icon: 'suppliers', i18n: 'suppliers' }, // Supplier management for Issue #89
   { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // Design Lab art assets CMS

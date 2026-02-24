@@ -19,6 +19,8 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const isMobile = pathname?.startsWith('/mobile');
   // Design Lab 是全屏应用，不显示全局 header/footer
   const isDesignLab = pathname === '/design-lab' || pathname?.startsWith('/design-lab/');
+  // Referral 阶梯裂变推广独立流程，不显示主站 header/footer
+  const isReferral = pathname?.startsWith('/referral');
 
   // 在客户端 console 中打印当前前端构建版本信息，辅助排查线上是否为最新部署
   // 增强版本信息显示，添加更详细的日志
@@ -85,7 +87,8 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
   // Admin 路径不显示前端页面的 header 和 footer
   // Offline orders 流程同样不显示站点全局 header/footer
   // Design Lab 是全屏应用，不显示全局 header/footer
-  if (isAdmin || isOfflineOrdersFlow || isDesignLab) {
+  // Referral 阶梯裂变推广使用独立布局
+  if (isAdmin || isOfflineOrdersFlow || isDesignLab || isReferral) {
     return <>{children}</>;
   }
 
