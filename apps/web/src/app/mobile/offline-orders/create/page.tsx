@@ -1301,6 +1301,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             paymentMethod: formState.paymentMethod || (formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : null),
             referenceNumber: formState.referenceNumber || (formState.requiresInvoice ? formState.invoiceInfo.referenceNumber : null),
             depositAmount: formState.depositAmount,
+            sizeFees: orderConfig.sizeFees, // [2026-02-18] Persist size fees with order
             pricing: {
               subtotal: calculateSubtotal,
               discount: formState.discount,

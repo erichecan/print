@@ -118,21 +118,27 @@ const generateWorkOrderCode = () => {
   return `WO-${datePart}-${randomPart}`;
 };
 
+/**
+ * 上传单个文件到 GCS，返回 asset 载荷。若 GCS 未配置或失败则抛出，由调用方统一处理。
+ */
 const processAssetUpload = async (file) => {
   const timestamp = Date.now();
-  const safeName = file.originalname.replace(/[^a-z0-9.\-_]+/gi, '_');
+  const safeName = (file.originalname || 'file').replace(/[^a-z0-9.\-_]+/gi, '_');
   const filename = `${timestamp}-${safeName}`;
   const storageKey = `offline-orders/${filename}`;
 
-  // Upload to GCS
+  if (!file.buffer) {
+    throw new Error('File buffer is missing. Use multer.memoryStorage() for uploads.');
+  }
+
   const url = await uploadBufferToGcs(file.buffer, storageKey, {
-    contentType: file.mimetype
+    contentType: file.mimetype || 'application/octet-stream'
   });
 
   return {
-    fileName: file.originalname,
-    fileSize: file.size,
-    contentType: file.mimetype,
+    fileName: file.originalname || filename,
+    fileSize: file.size || 0,
+    contentType: file.mimetype || 'application/octet-stream',
     storageKey,
     url
   };
@@ -355,8 +361,22 @@ exports.createOfflineOrder = async (req, res) => {
 
     const files = Array.isArray(req.files) ? req.files : [];
 
-    // Upload files to GCS
-    const assetPayloads = await Promise.all(files.map(processAssetUpload));
+    let assetPayloads = [];
+    if (files.length > 0) {
+      try {
+        assetPayloads = await Promise.all(files.map(processAssetUpload));
+      } catch (uploadErr) {
+        logger.error('[offlineOrderController] Asset upload failed:', uploadErr);
+        const msg = uploadErr.code === 'P2002' || uploadErr.code === 'P2003'
+          ? uploadErr.message
+          : (process.env.GCP_IMAGE_BUCKET ? 'File upload failed. Please try again or contact support.' : 'File storage is not configured (GCP_IMAGE_BUCKET). Contact administrator.');
+        return res.status(400).json({
+          error: 'Upload Error',
+          message: msg,
+          details: process.env.NODE_ENV !== 'production' ? uploadErr.message : undefined
+        });
+      }
+    }
 
     const orderDate = startDate ? parseDate(startDate) : new Date();
 
@@ -1058,6 +1078,23 @@ exports.updateOfflineOrder = async (req, res) => {
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Admin';
 
+    const files = Array.isArray(req.files) ? req.files : [];
+    let newAssetPayloads = [];
+    if (files.length > 0) {
+      try {
+        newAssetPayloads = await Promise.all(files.map(processAssetUpload));
+      } catch (uploadErr) {
+        logger.error('[updateOfflineOrder] Asset upload failed:', uploadErr);
+        // 2025-02-20: 400 响应增加 details 便于非生产环境排查
+        const msg = process.env.GCP_IMAGE_BUCKET ? 'File upload failed.' : 'File storage is not configured (GCP_IMAGE_BUCKET).';
+        return res.status(400).json({
+          error: 'Upload Error',
+          message: msg,
+          details: process.env.NODE_ENV !== 'production' ? uploadErr?.message : undefined
+        });
+      }
+    }
+
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const existing = await tx.offlineOrder.findUnique({
         where: { id },
@@ -1082,6 +1119,20 @@ exports.updateOfflineOrder = async (req, res) => {
         where: { id },
         data: {
           ...data,
+          ...(newAssetPayloads.length > 0
+            ? {
+              assets: {
+                create: newAssetPayloads.map((asset) => ({
+                  fileName: asset.fileName,
+                  fileSize: asset.fileSize,
+                  contentType: asset.contentType,
+                  storageKey: asset.storageKey,
+                  url: asset.url,
+                  uploadedBy: req.user?.id || null
+                }))
+              }
+            }
+            : {}),
           histories: note
             ? {
               create: {
@@ -1228,6 +1279,20 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
       });
     }
 
+    let assetPayloads;
+    try {
+      assetPayloads = await Promise.all(files.map(processAssetUpload));
+    } catch (uploadErr) {
+      logger.error('[uploadOfflineOrderAssets] Upload failed:', uploadErr);
+      // 2025-02-20: 400 响应增加 details 便于非生产环境排查
+      const msg = process.env.GCP_IMAGE_BUCKET ? 'File upload failed.' : 'File storage is not configured (GCP_IMAGE_BUCKET).';
+      return res.status(400).json({
+        error: 'Upload Error',
+        message: msg,
+        details: process.env.NODE_ENV !== 'production' ? uploadErr?.message : undefined
+      });
+    }
+
     const actorName = req.user
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Admin';
@@ -1241,8 +1306,6 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
       if (!existing) {
         return null;
       }
-
-      const assetPayloads = files.map(buildAssetPayload);
 
       await tx.offlineOrder.update({
         where: { id },

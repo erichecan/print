@@ -6,7 +6,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { authApi, salesOrdersApi, SalesOfflineOrderDetail, OfflineOrderConfiguration, authenticatedFetch } from '@/lib/api';
+import useSWR from 'swr';
+import { authApi, salesOrdersApi, SalesOfflineOrderDetail, OfflineOrderConfiguration, authenticatedFetch, offlineOrderProductApi, OfflineOrderConfig } from '@/lib/api';
 import { BillingDetails } from '@/app/offline-orders/components/BillingDetails';
 import { OrderItemColorGroup } from '@/types/order';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
@@ -38,6 +39,16 @@ export default function SalesOrderDetailPage() {
     history: false, // Default hidden for print
     attachments: true
   });
+
+  // PRD v2.1: Fetch global configuration for fallback (Legacy orders mostly)
+  const { data: globalConfigData } = useSWR(
+    'offline-order-config',
+    () => offlineOrderProductApi.getOrderConfig(),
+    {
+      revalidateOnFocus: false,
+    }
+  );
+  const globalConfig: OfflineOrderConfig | undefined = globalConfigData?.data;
 
   // 语言环境状态
   const [locale, setLocale] = useState<OfflineOrdersLocale>('en');
@@ -211,8 +222,9 @@ export default function SalesOrderDetailPage() {
             const qty = Number(qtyStr) || 0;
             if (qty > 0) {
               totalQty += qty;
-              // Calculate price with size fee
-              const sizeFee = config.sizeFees?.find((sf: any) => sf.size === size)?.additionalFee || 0;
+              // Calculate price with size fee (Case-insensitive) - Fallback to global config
+              const sizeFees = config.sizeFees || globalConfig?.sizeFees;
+              const sizeFee = sizeFees?.find((sf: any) => sf.size?.toLowerCase() === size?.toLowerCase())?.additionalFee || 0;
               totalAmount += qty * ((group.unitPrice || 0) + Number(sizeFee));
             }
           });
@@ -241,7 +253,9 @@ export default function SalesOrderDetailPage() {
       if (config.colorGroupsByProduct && config.colorGroupsByProduct[item.id]) {
         config.colorGroupsByProduct[item.id].forEach((group, idx) => {
           const sizes = Object.entries(group.quantities || {}).map(([size, quantity]) => {
-            const sizeFee = config.sizeFees?.find((sf: any) => sf.size === size)?.additionalFee || 0;
+            // Fix: Case-insensitive size lookup - Fallback to global config
+            const sizeFees = config.sizeFees || globalConfig?.sizeFees;
+            const sizeFee = sizeFees?.find((sf: any) => sf.size?.toLowerCase() === size?.toLowerCase())?.additionalFee || 0;
             const unitPrice = group.unitPrice || 0;
             const finalPrice = unitPrice + Number(sizeFee);
 
@@ -780,8 +794,9 @@ export default function SalesOrderDetailPage() {
                                           const q = Number(qty) || 0;
                                           if (q === 0) return null;
 
-                                          // Fix: Calculate price with size fee
-                                          const sizeFee = config?.sizeFees?.find((sf: any) => sf.size === size)?.additionalFee || 0;
+                                          // Fix: Calculate price with size fee (Case-insensitive) - Fallback to global config
+                                          const sizeFees = config?.sizeFees || globalConfig?.sizeFees;
+                                          const sizeFee = sizeFees?.find((sf: any) => sf.size?.toLowerCase() === size?.toLowerCase())?.additionalFee || 0;
                                           const finalUnitPrice = (group.unitPrice || 0) + Number(sizeFee);
                                           const subtotal = q * finalUnitPrice;
 
@@ -796,6 +811,10 @@ export default function SalesOrderDetailPage() {
                                                     ({t('base')}: ${group.unitPrice?.toFixed(2)} + {t('size')}: ${Number(sizeFee).toFixed(2)})
                                                   </span>
                                                 )}
+                                                {/* Debug Info */}
+                                                <div style={{ display: 'none' }}>
+                                                  Debug: Size={size}, Base={group.unitPrice}, Fee={sizeFee}, Final={finalUnitPrice}
+                                                </div>
                                               </td>
                                               <td className="variant-total">${subtotal.toFixed(2)}</td>
                                             </tr>

@@ -50,8 +50,11 @@ spec:
           value: "https://FRONTEND_SERVICE_URL"
         - name: CORS_ORIGINS
           value: "https://FRONTEND_SERVICE_URL"
+        # 线下订单等图片上传必须配置；Cloud Run 服务账号需对该 bucket 有写权限（如 Storage Object Admin）
         - name: GCP_IMAGE_BUCKET
-          value: "print-main-product-images"
+          value: "print-482914-images"
+        - name: GCP_IMAGE_BASE_URL
+          value: "https://storage.googleapis.com/print-482914-images"
         resources:
           limits:
             cpu: "1000m"
