@@ -248,7 +248,10 @@ interface Product {
 interface SizeFee {
   id: string;
   size: string;
+  sizeType?: 'Youth' | 'Adult' | 'Other';
   additionalFee: number;
+  displayOrder?: number;
+  isActive?: boolean;
 }
 
 // 排序配置类型
@@ -481,6 +484,12 @@ export default function SalesOrdersPage() {
   const [sizeFees, setSizeFees] = useState<SizeFee[]>([]);
   const [editingSizeFeeId, setEditingSizeFeeId] = useState<string | null>(null);
   const [editSizeFeeValue, setEditSizeFeeValue] = useState<string>('');
+  const [newSizeName, setNewSizeName] = useState('');
+  const [newSizeFeeValue, setNewSizeFeeValue] = useState('');
+  const [newSizeType, setNewSizeType] = useState<'Youth' | 'Adult' | 'Other'>('Adult');
+  const [showAddSizeForm, setShowAddSizeForm] = useState(false);
+  const [draggedSizeId, setDraggedSizeId] = useState<string | null>(null);
+  const [dragOverSizeId, setDragOverSizeId] = useState<string | null>(null);
 
   // 订单状态选项
   // 添加 ACTIVE_RUSH 状态
@@ -938,7 +947,7 @@ export default function SalesOrdersPage() {
     }
   };
 
-  const isManager = currentUser?.role && ['SALES_MANAGER', 'ADMIN'].includes(String(currentUser.role).toUpperCase());
+  const isManager = !!(currentUser?.role && ['SALES_MANAGER', 'ADMIN'].includes(String(currentUser.role).toUpperCase()));
 
   // 配置管理数据获取
   // 修复：使用 authenticatedFetch 确保 token 正确传递
@@ -1098,25 +1107,128 @@ export default function SalesOrdersPage() {
   const handleUpdateSizeFee = async (id: string, size: string) => {
     const fee = parseFloat(editSizeFeeValue);
     if (isNaN(fee) || fee < 0) {
-      alert(t('errorInvalidAmount'));
+      alert(t('errorInvalidAmount') || 'Invalid amount');
       return;
     }
 
     try {
-      // Using bulk update for single item for simplicity as per API design, or creating specific endpoint if needed.
-      // Based on controller, it accepts array of sizeFees.
-      const response = await authenticatedFetch('/api/proxy/admin/offline-order-size-fees', {
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-size-fees/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sizeFees: [{ size, additionalFee: fee }]
-        })
+        body: JSON.stringify({ additionalFee: fee })
       });
       if (!response.ok) throw new Error('Failed to update size fee');
       setEditingSizeFeeId(null);
       mutateSizeFees();
     } catch (err: any) {
-      alert(err.message || t('errorUpdateFailed'));
+      alert(err.message || t('errorUpdateFailed') || 'Update failed');
+    }
+  };
+
+  const handleCreateSizeFee = async () => {
+    if (!newSizeName.trim()) {
+      alert(t('errorInvalidAmount') || 'Size name required');
+      return;
+    }
+    const fee = parseFloat(newSizeFeeValue) || 0;
+
+    // Default display order to max + 1
+    const maxOrder = sizeFees.reduce((max, sf) => Math.max(max, sf.displayOrder || 0), 0);
+
+    try {
+      const response = await authenticatedFetch('/api/proxy/admin/offline-order-size-fees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          size: newSizeName.trim(),
+          sizeType: newSizeType,
+          additionalFee: fee,
+          displayOrder: maxOrder + 1,
+          isActive: true
+        })
+      });
+      if (!response.ok) throw new Error('Failed to create size fee');
+      setNewSizeName('');
+      setNewSizeFeeValue('');
+      setNewSizeType('Adult');
+      setShowAddSizeForm(false);
+      mutateSizeFees();
+    } catch (err: any) {
+      alert(err.message || 'Error occurred');
+    }
+  };
+
+  const handleDeleteSizeFee = async (id: string, size: string) => {
+    if (!confirm(t('deleteSizeConfirm')?.replace('{size}', size) || `Delete ${size}?`)) return;
+    try {
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-size-fees/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Delete failed');
+      mutateSizeFees();
+    } catch (err: any) {
+      alert(err.message || 'Delete failed');
+    }
+  };
+
+  const handleDragStartSizeFee = (id: string, e: React.DragEvent) => {
+    setDraggedSizeId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleDragOverSizeFee = (id: string, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverSizeId !== id) {
+      setDragOverSizeId(id);
+    }
+  };
+
+  const handleDropSizeFee = async (targetId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverSizeId(null);
+    if (!draggedSizeId || draggedSizeId === targetId) {
+      setDraggedSizeId(null);
+      return;
+    }
+
+    // Sort array locally first
+    const sortedFees = [...sizeFees].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+    const sourceIdx = sortedFees.findIndex(sf => sf.id === draggedSizeId);
+    const targetIdx = sortedFees.findIndex(sf => sf.id === targetId);
+    if (sourceIdx === -1 || targetIdx === -1) {
+      setDraggedSizeId(null);
+      return;
+    }
+
+    const [movedItem] = sortedFees.splice(sourceIdx, 1);
+    sortedFees.splice(targetIdx, 0, movedItem);
+
+    // Update display orders
+    const updatedFees = sortedFees.map((sf, index) => ({
+      ...sf,
+      displayOrder: index + 1
+    }));
+
+    setSizeFees(updatedFees); // Optimistic UI update
+
+    try {
+      const changes = updatedFees.filter((sf, i) => sf.displayOrder !== sizeFees.find(o => o.id === sf.id)?.displayOrder);
+
+      await Promise.all(changes.map(sf =>
+        authenticatedFetch(`/api/proxy/admin/offline-order-size-fees/${sf.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ displayOrder: sf.displayOrder })
+        })
+      ));
+
+      mutateSizeFees();
+    } catch (err: any) {
+      alert(err.message || 'Failed to reorder');
+      mutateSizeFees(); // Revert on failure
+    } finally {
+      setDraggedSizeId(null);
     }
   };
 
@@ -1931,22 +2043,96 @@ export default function SalesOrdersPage() {
 
             {configTab === 'size-fees' && (
               <div className="config-tab-panel">
-                <h2>{t('sizePriceTitle')}</h2>
-                <p className="config-desc">{t('sizePriceDesc')}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  <div>
+                    <h2>{t('sizePriceTitle')}</h2>
+                    <p className="config-desc">
+                      {t('sizePriceDesc')}
+                      <span style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '6px', fontSize: '13px', color: '#6366f1', background: '#e0e7ff', padding: '2px 6px', borderRadius: '4px' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px' }}>
+                          <path d="M4 9h16M4 15h16M10 3L8 5l2 2m4 14l2-2-2-2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Drag to reorder
+                      </span>
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAddSizeForm(!showAddSizeForm)}
+                    className="config-btn config-btn-primary"
+                  >
+                    {showAddSizeForm ? t('btnCancel') || 'Cancel' : t('btnAdd') || 'Add Size'}
+                  </button>
+                </div>
+
+                {showAddSizeForm && (
+                  <div className="config-form" style={{ marginBottom: '1.5rem', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <h3>{t('addNewSize') || 'Add New Size'}</h3>
+                    <div className="config-form-row">
+                      <input
+                        type="text"
+                        placeholder={t('sizeName') || 'Size Name (e.g. YXS)'}
+                        value={newSizeName}
+                        onChange={(e) => setNewSizeName(e.target.value)}
+                        className="config-input"
+                      />
+                      <select
+                        value={newSizeType}
+                        onChange={(e) => setNewSizeType(e.target.value as any)}
+                        className="config-input"
+                        style={{ maxWidth: '150px' }}
+                      >
+                        <option value="Adult">Adult</option>
+                        <option value="Youth">Youth</option>
+                        <option value="Other">Other</option>
+                      </select>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder={t('additionalFee') || 'Additional Fee ($)'}
+                        value={newSizeFeeValue}
+                        onChange={(e) => setNewSizeFeeValue(e.target.value)}
+                        className="config-input"
+                        style={{ maxWidth: '150px' }}
+                      />
+                      <button onClick={handleCreateSizeFee} className="config-btn config-btn-success">
+                        {t('btnSave') || 'Save'}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="config-table-wrapper">
                   <table className="config-table">
                     <thead>
                       <tr>
+                        <th style={{ width: '40px' }}></th>
                         <th>{t('thSize')}</th>
+                        <th>{t('thType') || 'Type'}</th>
                         <th>{t('thAdditionalFee')}</th>
                         <th>{t('thActions')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {sizeFees.map((fee) => (
-                        <tr key={fee.id}>
+                      {[...sizeFees].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map((fee) => (
+                        <tr
+                          key={fee.id}
+                          draggable={!editingSizeFeeId}
+                          onDragStart={(e) => handleDragStartSizeFee(fee.id, e)}
+                          onDragOver={(e) => handleDragOverSizeFee(fee.id, e)}
+                          onDrop={(e) => handleDropSizeFee(fee.id, e)}
+                          style={{
+                            opacity: draggedSizeId === fee.id ? 0.4 : 1,
+                            backgroundColor: dragOverSizeId === fee.id ? '#f1f5f9' : 'transparent',
+                            transition: 'background-color 0.2s, opacity 0.2s',
+                          }}
+                        >
+                          <td style={{ cursor: editingSizeFeeId ? 'default' : 'grab', color: '#94a3b8', textAlign: 'center' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" />
+                            </svg>
+                          </td>
                           <td style={{ fontWeight: 'bold' }}>{fee.size}</td>
+                          <td style={{ color: '#64748b' }}>{fee.sizeType || 'Adult'}</td>
                           <td>
                             {editingSizeFeeId === fee.id ? (
                               <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -1982,21 +2168,29 @@ export default function SalesOrdersPage() {
                                 </button>
                               </div>
                             ) : (
-                              <button
-                                onClick={() => {
-                                  setEditingSizeFeeId(fee.id);
-                                  setEditSizeFeeValue(fee.additionalFee.toString());
-                                }}
-                                className="config-btn config-btn-secondary"
-                              >
-                                {t('btnEdit')}
-                              </button>
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => {
+                                    setEditingSizeFeeId(fee.id);
+                                    setEditSizeFeeValue(fee.additionalFee.toString());
+                                  }}
+                                  className="config-btn config-btn-secondary"
+                                >
+                                  {t('btnEdit')}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSizeFee(fee.id, fee.size)}
+                                  className="config-btn config-btn-danger"
+                                >
+                                  {t('btnDelete') || 'Delete'}
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>
                       ))}
                       {sizeFees.length === 0 && (
-                        <tr><td colSpan={3} style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>{t('noSizeFeesConfigured')}</td></tr>
+                        <tr><td colSpan={5} style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>{t('noSizeFeesConfigured')}</td></tr>
                       )}
                     </tbody>
                   </table>
