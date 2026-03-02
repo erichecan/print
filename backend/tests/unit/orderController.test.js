@@ -37,6 +37,7 @@ const baseOrder = {
   id: 'order_123',
   orderNumber: 'ORD-UNIT-001',
   email: 'guest@example.com',
+  userId: 'user_123', // [2026-03-02 05:57:10] 新逻辑基于 userId 校验订单归属
   status: 'PENDING',
   paymentStatus: 'COMPLETED',
   currency: 'CAD',
@@ -77,12 +78,13 @@ describe(' orderController.getOrderByOrderNumber', () => {
     jest.clearAllMocks();
   });
 
-  it('returns order details when email matches', async () => {
+  it('returns order details when authenticated user owns the order', async () => {
     prisma.order.findUnique.mockResolvedValueOnce(baseOrder);
 
     const req = {
       params: { orderNumber: 'ORD-UNIT-001' },
       query: { email: 'guest@example.com' },
+      user: { id: 'user_123' },
     };
     const res = createMockResponse();
 
@@ -102,12 +104,13 @@ describe(' orderController.getOrderByOrderNumber', () => {
     );
   });
 
-  it('returns 403 when email does not match', async () => {
+  it('returns 403 when authenticated user does not own the order', async () => {
     prisma.order.findUnique.mockResolvedValueOnce(baseOrder);
 
     const req = {
       params: { orderNumber: 'ORD-UNIT-001' },
       query: { email: 'intruder@example.com' },
+      user: { id: 'another_user' },
     };
     const res = createMockResponse();
 
@@ -117,7 +120,7 @@ describe(' orderController.getOrderByOrderNumber', () => {
     expect(res.json).toHaveBeenCalledWith({ error: 'Access denied' });
   });
 
-  it('returns 400 when email query parameter is missing', async () => {
+  it('returns 401 when unauthenticated', async () => {
     const req = {
       params: { orderNumber: 'ORD-UNIT-001' },
       query: {},
@@ -126,9 +129,9 @@ describe(' orderController.getOrderByOrderNumber', () => {
 
     await orderController.getOrderByOrderNumber(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({
-      error: 'Email query parameter is required',
+      error: 'Authentication required',
     });
   });
 
@@ -138,6 +141,7 @@ describe(' orderController.getOrderByOrderNumber', () => {
     const req = {
       params: { orderNumber: 'ORD-NOT-FOUND' },
       query: { email: 'test@example.com' },
+      user: { id: 'user_123' },
     };
     const res = createMockResponse();
 

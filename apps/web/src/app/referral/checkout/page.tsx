@@ -78,17 +78,17 @@ function CheckoutContent() {
 
   if (authLoading || !user) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <p className="text-slate-500">加载中...</p>
+      <div className="container mx-auto px-8 py-10">
+        <p className="text-[#7A7A7A]">加载中...</p>
       </div>
     );
   }
 
   if (total <= 0) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl text-center">
-        <p className="text-slate-600 mb-4">购物车为空，请先选商品</p>
-        <Link href="/referral/shop" className="text-indigo-600 hover:text-indigo-700">
+      <div className="container mx-auto px-8 py-10 max-w-2xl text-center">
+        <p className="text-[#7A7A7A] mb-4">购物车为空，请先选商品</p>
+        <Link href="/referral/shop" className="text-[#E42313] hover:text-[#c51f11]">
           去选商品
         </Link>
       </div>
@@ -96,22 +96,23 @@ function CheckoutContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">确认支付</h1>
-      <div className="rounded-xl bg-slate-50 p-6 mb-6">
-        <p className="text-2xl font-bold text-slate-800">应付金额：${total.toLocaleString()}</p>
+    <div className="container mx-auto px-8 py-10 max-w-2xl">
+      <h1 className="text-lg font-bold text-[#0D0D0D] mb-6">确认支付</h1>
+      <div className="bg-[#FAFAFA] p-6 mb-6 border border-[#E8E8E8]">
+        <p className="text-sm text-[#7A7A7A] mb-2">应付金额</p>
+        <p className="text-2xl font-bold text-[#0D0D0D]">${total.toLocaleString()}</p>
       </div>
-      <p className="text-sm text-slate-500 mb-6">此为模拟支付，点击按钮即可完成</p>
+      <p className="text-xs text-[#7A7A7A] mb-6">此为模拟支付，点击按钮即可完成</p>
       <button
         type="button"
         onClick={handlePay}
         disabled={paying}
-        className="w-full rounded-lg bg-green-600 px-4 py-4 font-semibold text-white hover:bg-green-700 disabled:opacity-70"
+        className="w-full bg-[#E42313] px-4 py-4 font-medium text-white hover:bg-[#c51f11] disabled:opacity-70"
       >
         {paying ? '处理中...' : `支付 $${total.toLocaleString()}`}
       </button>
       <div className="mt-6">
-        <Link href="/referral/shop" className="text-indigo-600 hover:text-indigo-700">
+        <Link href="/referral/shop" className="text-[#E42313] hover:text-[#c51f11]">
           ← 返回商品页
         </Link>
       </div>
@@ -123,8 +124,8 @@ export default function ReferralCheckoutPage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-slate-500">加载中...</p>
+        <div className="container mx-auto px-8 py-10">
+          <p className="text-[#7A7A7A]">加载中...</p>
         </div>
       }
     >

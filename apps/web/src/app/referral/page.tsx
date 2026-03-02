@@ -36,10 +36,10 @@ function ReferralHomeContent() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-2xl">
-      <h1 className="text-xl font-bold text-slate-800 mb-4 text-center">邀请好友 · 一起赚</h1>
+    <div className="container mx-auto px-8 py-10 max-w-2xl">
+      <h1 className="text-lg font-bold text-[#0D0D0D] mb-8 text-center">邀请好友 · 一起赚</h1>
 
-      <div className="mb-6">
+      <div className="mb-8">
         <SocialPosterTabs />
       </div>
 
@@ -47,14 +47,14 @@ function ReferralHomeContent() {
         <button
           type="button"
           onClick={() => setEarnModalOpen(true)}
-          className="w-full rounded-xl bg-amber-500 px-4 py-4 text-white font-semibold hover:bg-amber-600"
+          className="w-full bg-[#E42313] px-4 py-4 text-white font-medium hover:bg-[#c51f11]"
         >
           我要赚钱
         </button>
         <button
           type="button"
           onClick={handleJoin}
-          className="w-full rounded-xl bg-indigo-600 px-4 py-4 text-white font-semibold hover:bg-indigo-700"
+          className="w-full bg-[#E42313] px-4 py-4 text-white font-medium hover:bg-[#c51f11]"
         >
           我要加入
         </button>
@@ -70,7 +70,7 @@ export default function ReferralPage() {
     <Suspense
       fallback={
         <div className="flex min-h-[200px] items-center justify-center">
-          <p className="text-slate-500">加载中...</p>
+          <p className="text-[#7A7A7A]">加载中...</p>
         </div>
       }
     >

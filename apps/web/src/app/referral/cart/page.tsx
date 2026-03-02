@@ -7,6 +7,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { ReferralCartItem } from '../shop/page';
 
 const CART_STORAGE_KEY = 'referral_cart';
@@ -36,11 +37,11 @@ function CartContent() {
 
   if (cart.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl text-center">
-        <p className="text-slate-600 mb-4">购物车是空的</p>
+      <div className="container mx-auto px-8 py-10 max-w-2xl text-center">
+        <p className="text-[#7A7A7A] mb-4">购物车是空的</p>
         <Link
           href={ref ? `/referral/shop?ref=${encodeURIComponent(ref)}` : '/referral/shop'}
-          className="text-indigo-600 hover:text-indigo-700"
+          className="text-[#E42313] hover:text-[#c51f11]"
         >
           去选商品
         </Link>
@@ -49,26 +50,34 @@ function CartContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-2xl">
-      <h1 className="text-xl font-bold text-slate-800 mb-4">购物车</h1>
-      <ul className="space-y-2 mb-6">
+    <div className="container mx-auto px-8 py-10 max-w-2xl">
+      <h1 className="text-lg font-bold text-[#0D0D0D] mb-6">购物车</h1>
+      <ul className="space-y-3 mb-6">
         {cart.map((item, i) => (
-          <li key={`${item.id}-${i}`} className="flex justify-between text-slate-700">
-            <span>{item.name}</span>
-            <span>${item.price}</span>
+          <li key={`${item.id}-${i}`} className="flex gap-4 items-center border border-[#E8E8E8] p-4 bg-[#FAFAFA]">
+            {item.imageUrl && (
+              <div className="relative w-16 h-16 shrink-0 overflow-hidden bg-[#E8E8E8]">
+                <Image src={item.imageUrl} alt={item.name} fill className="object-cover" sizes="64px" />
+              </div>
+            )}
+            <span className="flex-1 text-[#0D0D0D] line-clamp-2">{item.name}</span>
+            <span className="font-semibold text-[#E42313]">${item.price}</span>
           </li>
         ))}
       </ul>
-      <p className="text-lg font-bold text-slate-800 mb-4">合计：${total}</p>
+      <div className="flex justify-between items-center mb-6">
+        <span className="text-[#7A7A7A]">合计</span>
+        <span className="text-xl font-bold text-[#0D0D0D]">${total}</span>
+      </div>
       <button
         type="button"
         onClick={goCheckout}
-        className="w-full rounded-xl bg-indigo-600 py-3 text-white font-semibold hover:bg-indigo-700"
+        className="w-full bg-[#E42313] py-3 text-white font-medium hover:bg-[#c51f11]"
       >
         去结算
       </button>
       <div className="mt-4">
-        <Link href="/referral/shop" className="text-indigo-600 hover:text-indigo-700 text-sm">
+        <Link href="/referral/shop" className="text-[#E42313] hover:text-[#c51f11] text-sm">
           ← 继续选商品
         </Link>
       </div>
@@ -78,7 +87,7 @@ function CartContent() {
 
 export default function ReferralCartPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-slate-500">加载中...</div>}>
+    <Suspense fallback={<div className="p-8 text-[#7A7A7A]">加载中...</div>}>
       <CartContent />
     </Suspense>
   );

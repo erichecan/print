@@ -190,6 +190,28 @@ const remotePatterns = [
     port: '',
     pathname: '/**',
   },
+  // [2026-03-02] Referral 商品图：Tavily 搜索返回的外部图源
+  { protocol: 'https', hostname: 'pisces.bbystatic.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'manuals.plus', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'm.media-amazon.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'fantech.id', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'img.freepik.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'store.runmefit.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'skgwatches.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'img2.tradewheel.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'liliputing.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'down-my.img.susercontent.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'static.wixstatic.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'thumbs.dreamstime.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'ergoage.net', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'cdn.shopify.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'www.belkin.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'aiwit.app', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'www.mytrendyphone.co.uk', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'www.bhphotovideo.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'media.tatacroma.com', port: '', pathname: '/**' },
+  { protocol: 'https', hostname: 'www.bigw.com.au', port: '', pathname: '/**' },
+  { protocol: 'http', hostname: 'www.honeywellconsumerstore.com', port: '', pathname: '/**' },
 ];
 
 // [2025-11-15 23:09:50] Allow image optimizer to proxy the configured API host

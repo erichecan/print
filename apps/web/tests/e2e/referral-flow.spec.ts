@@ -5,11 +5,12 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Referral Flow', () => {
-  test('should redirect /referral to dashboard when no ref param', async ({ page }) => {
+  test('should show referral home at /referral', async ({ page }) => {
     await page.goto('/referral');
     await page.waitForLoadState('networkidle');
-    // 无 ref 时应重定向到 dashboard（未登录会再被重定向到 login）
-    await expect(page).toHaveURL(/\/referral\/(dashboard|login)/);
+    // 当前行为：/referral 为活动首页，不重定向
+    await expect(page).toHaveURL(/\/referral\/?$/);
+    await expect(page.getByRole('heading', { name: /邀请|一起赚/ })).toBeVisible();
   });
 
   test('should show invite page when visiting /referral/invite?ref=xxx', async ({ page }) => {
@@ -42,14 +43,22 @@ test.describe('Referral Flow', () => {
   test('should show referral header and nav on referral pages', async ({ page }) => {
     await page.goto('/referral/invite?ref=test123');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByRole('link', { name: /推广中心|控制台/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /分享/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /钱包/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /控制台|推广/ }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /分享/ }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /钱包/ }).first()).toBeVisible();
   });
 
   test('should show $1000 product on invite page', async ({ page }) => {
     await page.goto('/referral/invite?ref=test123');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByText(/1000|1,000/)).toBeVisible();
+    await expect(page.getByText(/1000|1,000/).first()).toBeVisible();
+  });
+
+  test('should load shop page with product images without hostname error', async ({ page }) => {
+    await page.goto('/referral/shop');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/referral\/shop/);
+    // 商品列表应渲染，且无 next/image 未配置 hostname 报错
+    await expect(page.getByRole('button', { name: /加入购物车|直接购买/i }).first()).toBeVisible({ timeout: 10000 });
   });
 });

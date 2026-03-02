@@ -27,10 +27,13 @@ exports.listCategories = async (req, res) => {
       where.parentId = parentId;
     }
 
+    // 默认（all 或未传）只显示未归档的，避免“删除”后仍出现在列表
     if (status === 'active') {
       where.isActive = true;
     } else if (status === 'inactive') {
       where.isActive = false;
+    } else {
+      where.isActive = true;
     }
 
     const [categories, total] = await prisma.$transaction([

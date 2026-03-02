@@ -3,6 +3,7 @@
 * Enhanced with email notifications and better error handling
 * Enhanced with idempotency, payment summary recording
  */
+const logger = require('../utils/logger'); // [2026-03-02 05:54:50] 补充 webhookController 日志依赖
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
 

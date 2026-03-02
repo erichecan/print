@@ -18,7 +18,8 @@
     "ingest:db": "ts-node scripts/ingest/import-artworks.ts",
     "db:seed:pricing": "node backend/scripts/seed-size-pricing.js",
     "db:seed:fees": "node backend/scripts/seed-offline-order-fees.js",
-    "check:art-assets": "node scripts/check-art-assets.js"
+    "check:art-assets": "node scripts/check-art-assets.js",
+    "referral:fetch-images": "node backend/scripts/fetch-product-images-tavily.js"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",

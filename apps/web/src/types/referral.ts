@@ -34,12 +34,14 @@ export const DEFAULT_REFERRAL_CONFIG: ReferralConfig = {
   tierAmounts: [200, 400, 800],
 };
 
-/** 社交平台海报：平台名、文案、图片占位 */
+/** 社交平台海报：平台名、文案、图片（导出后放入 public/referral-posters/） */
 export type SocialPlatform = 'ins' | 'facebook' | 'xiaohongshu';
 
 export interface SocialPoster {
   platform: SocialPlatform;
   title: string;
   copy: string;
+  /** 海报图路径，如 /referral-posters/ins.png；未设置时显示 imagePlaceholder */
+  imageUrl?: string;
   imagePlaceholder?: string;
 }

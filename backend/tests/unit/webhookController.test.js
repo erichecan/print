@@ -2,6 +2,7 @@
  * Webhook Controller Tests
 * Tests for Stripe webhook handling
  */
+// [2026-03-02 05:57:40] 使用 Stripe mock，并在加载 controller 前设置测试用密钥
 jest.mock('stripe', () => {
   const mStripe = {
     webhooks: {
@@ -32,6 +33,9 @@ jest.mock('../../src/lib/prisma', () => ({
 jest.mock('../../src/services/emailService', () => ({
   sendOrderConfirmation: jest.fn(),
 }));
+
+// 确保在加载 webhookController 前设置 STRIPE_SECRET_KEY，让控制器初始化 Stripe 实例
+process.env.STRIPE_SECRET_KEY = 'sk_test_unit';
 
 const Stripe = require('stripe');
 const prisma = require('../../src/lib/prisma');

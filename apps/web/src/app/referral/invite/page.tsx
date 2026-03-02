@@ -41,9 +41,9 @@ function InviteContent() {
 
   if (!ref) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-2xl text-center">
-        <p className="text-slate-600 mb-4">邀请链接无效，缺少推荐人信息</p>
-        <Link href="/referral/dashboard" className="text-indigo-600 hover:text-indigo-700">
+      <div className="container mx-auto px-8 py-10 max-w-2xl text-center">
+        <p className="text-[#7A7A7A] mb-4">邀请链接无效，缺少推荐人信息</p>
+        <Link href="/referral/dashboard" className="text-[#E42313] hover:text-[#c51f11]">
           前往推广中心
         </Link>
       </div>
@@ -51,22 +51,22 @@ function InviteContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-4 mb-6 text-center">
-        <p className="text-indigo-800 font-medium">
+    <div className="container mx-auto px-8 py-10 max-w-2xl">
+      <div className="bg-[#FAFAFA] border border-[#E8E8E8] p-4 mb-6 text-center">
+        <p className="text-[#0D0D0D] font-medium">
           你的好友送你一份专属体验
         </p>
       </div>
       <div className="mb-6">
         <ProductHero />
       </div>
-      <p className="text-slate-600 mb-6 text-center">
+      <p className="text-sm text-[#7A7A7A] mb-6 text-center">
         $1000 高端服务套餐，高级牙齿美白套餐、餐厅 VIP 黑卡等本地服务
       </p>
       <button
         type="button"
         onClick={handleBuyNow}
-        className="w-full rounded-lg bg-indigo-600 px-4 py-4 font-semibold text-white hover:bg-indigo-700"
+        className="w-full bg-[#E42313] px-4 py-4 font-medium text-white hover:bg-[#c51f11]"
       >
         立即购买 ${PRODUCT_PRICE.toLocaleString()}
       </button>
@@ -78,8 +78,8 @@ export default function ReferralInvitePage() {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-slate-500">加载中...</p>
+        <div className="container mx-auto px-8 py-10">
+          <p className="text-[#7A7A7A]">加载中...</p>
         </div>
       }
     >

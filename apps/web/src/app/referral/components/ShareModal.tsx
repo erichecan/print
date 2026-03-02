@@ -19,15 +19,15 @@ export function ShareModal({ open, onClose, title = '分享到社交平台' }: S
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
       <div
-        className="bg-slate-50 rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto"
+        className="bg-white max-w-lg w-full max-h-[90vh] overflow-auto border border-[#E8E8E8]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-slate-50">
-          <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+        <div className="p-4 border-b border-[#E8E8E8] flex items-center justify-between sticky top-0 bg-white">
+          <h3 className="text-lg font-bold text-[#0D0D0D]">{title}</h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-200 text-slate-600"
+            className="p-2 hover:bg-[#FAFAFA] text-[#7A7A7A]"
             aria-label="关闭"
           >
             ✕

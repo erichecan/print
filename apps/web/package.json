@@ -13,7 +13,8 @@
     "test:e2e": "playwright test",
     "test:gcp": "playwright test --config=playwright.gcp.config.ts",
     "check:env": "node ../../scripts/check-env.mjs",
-    "check:hardcoded-urls": "bash ../../scripts/grep-hardcoded-urls.sh"
+    "check:hardcoded-urls": "bash ../../scripts/grep-hardcoded-urls.sh",
+    "posters:generate": "node scripts/generate-referral-posters.mjs"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^5.3.0",
@@ -33,6 +34,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/react": "19.2.7",
     "@types/scheduler": "^0.26.0",
     "autoprefixer": "^10.4.22",

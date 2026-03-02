@@ -26,8 +26,8 @@ export default function ReferralSharePage() {
 
   if (authLoading || !user) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <p className="text-slate-500">加载中...</p>
+      <div className="container mx-auto px-8 py-10">
+        <p className="text-[#7A7A7A]">加载中...</p>
       </div>
     );
   }
@@ -48,25 +48,25 @@ export default function ReferralSharePage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">分享邀请链接</h1>
-      <p className="text-slate-600 mb-4">
+    <div className="container mx-auto px-8 py-10 max-w-2xl">
+      <h1 className="text-lg font-bold text-[#0D0D0D] mb-6">分享邀请链接</h1>
+      <p className="text-sm text-[#7A7A7A] mb-4">
         复制下方链接发给好友，好友通过链接购买后您将获得阶梯佣金。
       </p>
-      <div className="rounded-lg bg-slate-100 p-4 mb-4 break-all text-sm text-slate-700">
+      <div className="bg-[#FAFAFA] p-4 mb-4 break-all text-xs text-[#0D0D0D] border border-[#E8E8E8]">
         {inviteUrl}
       </div>
       <button
         type="button"
         onClick={handleCopy}
-        className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-medium text-white hover:bg-indigo-700 disabled:opacity-70"
+        className="w-full bg-[#E42313] px-4 py-3 font-medium text-white hover:bg-[#c51f11] disabled:opacity-70"
       >
         {copied ? '已复制！' : '复制链接'}
       </button>
       <div className="mt-6">
         <Link
           href="/referral/dashboard"
-          className="text-indigo-600 hover:text-indigo-700"
+          className="text-[#E42313] hover:text-[#c51f11]"
         >
           ← 返回控制台
         </Link>

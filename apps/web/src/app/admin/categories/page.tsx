@@ -87,7 +87,7 @@ export default function AdminCategoriesPage() {
       await adminCategoriesApi.archive(categoryToDelete.id);
       setIsDeleteModalOpen(false);
       setCategoryToDelete(null);
-      mutate();
+      await mutate(undefined, { revalidate: true });
     } catch (error) {
       console.error('Delete failed:', error);
       alert('Delete failed. Please try again.');

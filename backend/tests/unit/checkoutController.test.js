@@ -10,6 +10,7 @@ jest.mock('stripe', () =>
   }))
 );
 
+// [2026-03-02 05:55:40] 单元测试中只关心 totals 结果，避免命中真实 shippingEngine / Prisma
 jest.mock('../../src/lib/prisma', () => ({
   cart: {
     findUnique: jest.fn(),
@@ -28,6 +29,16 @@ jest.mock('../../src/lib/prisma', () => ({
     count: jest.fn(),
   },
   $transaction: jest.fn(),
+}));
+
+jest.mock('../../src/utils/shippingEngine', () => ({
+  calculateShippingFromDb: jest.fn().mockResolvedValue({
+    cost: 10,
+    estimatedDays: 3,
+    ruleId: 'rule_1',
+    templateName: null,
+    isFreeShipping: false,
+  }),
 }));
 
 process.env.STRIPE_SECRET_KEY = 'sk_test_unit';
