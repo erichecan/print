@@ -52,7 +52,7 @@ function PosterImage({
       src={src}
       alt={alt}
       fill
-      className="object-contain"
+      className="object-contain pointer-events-none" // [2026-03-02 06:29:45] 防止海报层拦截点击，保证 Tab 可切换
       sizes="(max-width: 640px) 100vw, 400px"
       unoptimized
       onError={onError}
@@ -83,7 +83,8 @@ export function SocialPosterTabs() {
         ))}
       </div>
       <div className="p-6">
-        <div className="aspect-[4/3] bg-[#FAFAFA] flex items-center justify-center text-[#7A7A7A] text-center px-4 mb-4 border border-[#E8E8E8] overflow-hidden relative">
+        {/* [2026-03-02 06:25:30] 限制海报最大高度，避免图片按原始尺寸撑满整个页面 */}
+        <div className="relative mx-auto mb-4 aspect-[4/3] max-h-[420px] w-full bg-[#FAFAFA] flex items-center justify-center text-[#7A7A7A] text-center px-4 border border-[#E8E8E8] overflow-hidden">
           {current.imageUrl ? (
             <PosterImage
               src={current.imageUrl}
