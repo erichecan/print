@@ -1,0 +1,50 @@
+# [2026-03-03 12:00:00] Neon 恢复分支 → restore 流水线 → export 快照
+# 需在仓库 Settings > Secrets and variables > Actions 中配置 NEON_API_KEY、NEON_PROJECT_ID
+name: Neon Restore Branch and Export
+
+on:
+  workflow_dispatch:
+  push:
+    branches: []
+    tags: []
+  # 可选：按 cron 每日跑（取消注释并改 cron 即可）
+  # schedule:
+  #   - cron: '0 2 * * *'
+
+env:
+  NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+  NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+
+jobs:
+  restore-and-export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema=../prisma/schema.prisma
+        working-directory: backend
+
+      - name: Neon 恢复分支 → restore → export
+        run: node scripts/neon-restore-branch-and-run.js
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
+          NEON_RESTORE_BRANCH_NAME: restore-${{ github.run_id }}
+
+      - name: Upload catalog snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-snapshot-${{ github.run_id }}
+          path: snapshots/
+          if-no-files-found: ignore

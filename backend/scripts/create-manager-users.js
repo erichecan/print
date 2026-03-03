@@ -1,27 +1,53 @@
+// [2026-03-03 13:25:00] 单独运行此脚本时需指定「生产后端」使用的 DATABASE_URL，否则登录仍会 401
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+// [2026-03-03 13:20:00] 使用最新提供的管理员账号列表（printngoplus 域名 + eric/yoyo/mia）
 const USERS = [
     {
-        email: 'Thea@souvenirplus.com',
+        email: 'thea@printngoplus.com',
         password: 'manager@1600Print',
         firstName: 'Thea',
         lastName: 'Admin',
-        role: 'ADMIN' // Role from UserRole enum
+        role: 'ADMIN',
     },
     {
-        email: 'Patrick@souvenirplus.com',
+        email: 'patrick@printngoplus.com',
         password: 'manager@1600Print',
         firstName: 'Patrick',
         lastName: 'Admin',
-        role: 'ADMIN'
-    }
+        role: 'ADMIN',
+    },
+    {
+        email: 'erichecan@gmail.com',
+        password: '511511',
+        firstName: 'Eric',
+        lastName: 'Admin',
+        role: 'ADMIN',
+    },
+    {
+        email: 'yoyo@printngoplus.com',
+        password: 'yoyo1600',
+        firstName: 'Yoyo',
+        lastName: 'Admin',
+        role: 'ADMIN',
+    },
+    {
+        email: 'mia@printngoplus.com',
+        password: 'mia1600',
+        firstName: 'Mia',
+        lastName: 'Admin',
+        role: 'ADMIN',
+    },
 ];
 
 async function main() {
-    console.log('🌱 Creating manager users (Thea & Patrick)...');
+    console.log('🌱 Creating manager users (printngoplus admins)...');
 
     for (const userConfig of USERS) {
         const hashedPassword = await bcrypt.hash(userConfig.password, 10);

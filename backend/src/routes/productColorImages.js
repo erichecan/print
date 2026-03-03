@@ -10,8 +10,11 @@ const { authenticateOptional } = require('../middleware/auth');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-// 获取产品颜色图片映射
+// 获取产品颜色图片映射（表为空时回退到 settings.site.colorMappings）
 router.get('/', authenticateOptional, controller.getProductColorImages);
+
+// [2026-03-03 14:18:00] 颜色预览：仅从 settings 读取，供 admin 多视角图
+router.get('/preview-from-settings', authenticateOptional, controller.getColorPreviewFromSettings);
 
 // 根据颜色名称获取图片 URL
 router.get('/by-color/:productId/:colorName', authenticateOptional, controller.getImageUrlByColor);

@@ -1,9 +1,11 @@
 /**
  * Product Color Image Controller
-* 提供产品颜色图片映射的 API 端点
+ * 提供产品颜色图片映射的 API 端点
+ * [2026-03-03 14:15:00] 当 product_color_images 表为空时回退到 settings.site.colorMappings，供 Design Lab 使用
  */
 const { ProductColorImage, Product, Variant } = require('../models');
 const logger = require('../utils/logger');
+const settingService = require('../services/settingService');
 const { uploadBufferToGcs } = require('../utils/gcsStorage');
 const { slugify } = require('../utils/productUpload'); // Assuming slugify exists here or I'll define it locally
 
@@ -45,18 +47,40 @@ exports.getProductColorImages = async (req, res) => {
       order: [['colorName', 'ASC']]
     });
 
+    // [2026-03-03 14:15:00] 表为空且未按 productId 筛选时，回退到 settings.site.colorMappings（Design Lab 与 admin 颜色一致）
+    let data = colorImages.map(ci => ({
+      id: ci.id,
+      name: ci.colorName,
+      hex: ci.colorHex,
+      externalColorId: ci.customInkColorId,
+      imageUrls: ci.imageUrls,
+      isVerified: ci.isVerified,
+      isActive: ci.isActive
+    }));
+
+    if (data.length === 0 && !productId && !colorName && !colorId) {
+      const mappings = await settingService.getSettingValue('site.colorMappings', []);
+      if (Array.isArray(mappings) && mappings.length > 0) {
+        data = mappings.map((m, idx) => ({
+          id: m.id || `mapping-${idx}`,
+          name: m.productColor || m.name || '',
+          hex: (m.values && m.values[0]) || m.hex || '#cccccc',
+          externalColorId: m.id || m.externalColorId,
+          imageUrls: Array.isArray(m.images) && m.images.length >= 4
+            ? { front: m.images[0], back: m.images[1], left_sleeve: m.images[2], right_sleeve: m.images[3] }
+            : (m.images || {}),
+          isVerified: false,
+          isActive: true
+        }));
+        data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        logger.info('[getProductColorImages] Fallback to site.colorMappings', { count: data.length });
+      }
+    }
+
     res.json({
       success: true,
-      data: colorImages.map(ci => ({
-        id: ci.id,
-        name: ci.colorName,
-        hex: ci.colorHex,
-        externalColorId: ci.customInkColorId,
-        imageUrls: ci.imageUrls,
-        isVerified: ci.isVerified,
-        isActive: ci.isActive
-      })),
-      count: colorImages.length
+      data,
+      count: data.length
     });
   } catch (error) {
     logger.error('Error fetching product color images:', error);
@@ -64,6 +88,35 @@ exports.getProductColorImages = async (req, res) => {
       success: false,
       error: 'Failed to fetch product color images'
     });
+  }
+};
+
+/**
+ * [2026-03-03 14:18:00] 颜色预览：仅从 settings.site.colorMappings 读取，供 admin 多视角图展示
+ * GET /api/product-color-images/preview-from-settings
+ */
+exports.getColorPreviewFromSettings = async (req, res) => {
+  try {
+    const mappings = await settingService.getSettingValue('site.colorMappings', []);
+    if (!Array.isArray(mappings)) {
+      return res.json({ success: true, data: [], count: 0, source: 'settings' });
+    }
+    const data = mappings.map((m, idx) => ({
+      id: m.id || `mapping-${idx}`,
+      name: m.productColor || m.name || '',
+      hex: (m.values && m.values[0]) || m.hex || '#cccccc',
+      externalColorId: m.id || m.externalColorId,
+      imageUrls: Array.isArray(m.images) && m.images.length >= 4
+        ? { front: m.images[0], back: m.images[1], left_sleeve: m.images[2], right_sleeve: m.images[3] }
+        : (m.images || {}),
+      isVerified: false,
+      isActive: true
+    }));
+    data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    res.json({ success: true, data, count: data.length, source: 'settings' });
+  } catch (error) {
+    logger.error('Error fetching color preview from settings:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch color preview' });
   }
 };
 

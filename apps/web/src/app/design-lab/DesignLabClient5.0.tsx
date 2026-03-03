@@ -484,6 +484,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 5.0 Version: Dynamic Color Mapping State
   const [dynamicColors, setDynamicColors] = useState<any[]>([]);
 
+  // [2026-03-03 14:22:00] 优先读 product-color-images；表为空时后端回退到 settings.site.colorMappings，保证 Design Lab 与 admin 颜色一致
   useEffect(() => {
     fetch('/api/proxy/product-color-images')
       .then(res => res.json())
@@ -491,15 +492,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         const data = res.data || [];
         if (Array.isArray(data)) {
           const mapped = data.map((d: any) => ({
-            name: d.name,
-            hex: d.hex,
+            name: d.name ?? d.colorName,
+            hex: d.hex ?? '#cccccc',
             externalColorId: d.externalColorId,
             availableSizes: ["S", "M", "L", "XL", "2XL", "3XL"],
-            isAvailable: d.isActive,
+            isAvailable: d.isActive !== false,
             imageUrls: d.imageUrls
           }));
-          // Sort alphabetically
-          mapped.sort((a: any, b: any) => a.name.localeCompare(b.name));
+          mapped.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
           console.log('[DesignLab 5.0] Loaded dynamic colors from mapping API:', mapped.length);
           setDynamicColors(mapped);
         }

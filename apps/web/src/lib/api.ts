@@ -2390,13 +2390,17 @@ export interface UpdateDesignDraftPayload {
 }
 
 // Product Color Image API
+// [2026-03-03 14:20:00] getAll 在表为空时后端会回退到 settings.site.colorMappings，Design Lab 与 admin 颜色一致
 export const productColorImageApi = {
   getColorMapping: (productId: string) =>
     api<{ data: { productId: string; mapping: Record<string, string>; colors: Array<{ colorId: string; colorName: string; colorHex: string | null; imageUrls: { front: string; back: string; sleeve: string } }> } }>(`/product-color-images/mapping/${productId}`),
   getImageUrlByColor: (productId: string, colorName: string, view: 'front' | 'back' | 'sleeve' = 'front') =>
     api<{ data: { colorId: string; colorName: string; colorHex: string | null; imageUrl: string; view: string; allViews: { front: string; back: string; sleeve: string } } }>(`/product-color-images/by-color/${productId}/${encodeURIComponent(colorName)}?view=${view}`),
   getAll: (productId?: string) =>
-    api<{ data: Array<{ id: string; productId: string; colorName: string; imageUrl: string;[key: string]: unknown }>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`), // Issue #105 - Replace any[] with proper type
+    api<{ data: Array<{ id: string; productId?: string; colorName?: string; name?: string; hex?: string; externalColorId?: string; imageUrls?: Record<string, string>; imageUrl?: string;[key: string]: unknown }>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`), // Issue #105 - Replace any[] with proper type
+  /** 仅从 settings.site.colorMappings 读取，供 admin 多视角图等使用 */
+  getPreviewFromSettings: () =>
+    api<{ success: boolean; data: Array<{ id: string; name: string; hex: string; externalColorId?: string; imageUrls?: Record<string, string> }>; count: number; source: string }>('/product-color-images/preview-from-settings'),
 };
 
 // Design Lab API - Public size fees API

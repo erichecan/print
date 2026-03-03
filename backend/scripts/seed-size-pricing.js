@@ -5,6 +5,11 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// [2026-03-03 12:55:00] 正则转义，避免 size 含特殊字符导致 replace 异常
+function escapeRegExp(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 const SIZE_PRICING = [
     { size: '2XL', adjustment: 200 }, // +$2.00
     { size: '3XL', adjustment: 300 }, // +$3.00
@@ -42,29 +47,35 @@ async function main() {
             continue;
         }
 
-        // Identify unique colors existing for this product
-        const existingColors = [...new Set(product.variants.map(v => v.color))];
+        // [2026-03-03 12:55:00] 只从「标准尺码」变体取颜色，避免 seed-variants 的 UNSET/ONE 导致 SKU 重复
+        const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
+        const variantsWithStandardSize = product.variants.filter((v) =>
+            STANDARD_SIZES.includes(v.size) && v.color && v.color !== 'UNSET'
+        );
+        const existingColors = [...new Set(variantsWithStandardSize.map((v) => v.color))];
 
         for (const color of existingColors) {
-            // Find the base variant for this specific color to get the correct SKU prefix/colorHex
-            const colorBaseVariant = product.variants.find(v => v.color === color);
+            // Find the base variant for this specific color to get the correct SKU prefix/colorHex（优先 L/M）
+            const colorBaseVariant =
+                product.variants.find((v) => v.color === color && (v.size === 'L' || v.size === 'M')) ||
+                product.variants.find((v) => v.color === color && STANDARD_SIZES.includes(v.size));
             if (!colorBaseVariant) continue;
 
             for (const pricing of SIZE_PRICING) {
-                // Check if this specific variant (Product + Color + Size) already exists
-                const exists = product.variants.find(v => v.color === color && v.size === pricing.size);
-
+                const exists = product.variants.find((v) => v.color === color && v.size === pricing.size);
                 if (exists) {
-                    // Optional: Update price if needed, but for now we skip to avoid overwriting manual changes
-                    // await prisma.variant.update({ where: { id: exists.id }, data: { priceAdjustment: pricing.adjustment } });
                     skippedCount++;
                     continue;
                 }
 
-                // Create the new variant
-                // SKU format assumption: matching existing pattern or appending size
-                // If existing SKU is "TS-CLASSIC-BLACK-L", replacing L with 2XL -> "TS-CLASSIC-BLACK-2XL"
-                const newSku = colorBaseVariant.sku.replace(new RegExp(`-${colorBaseVariant.size}$`), `-${pricing.size}`);
+                // SKU：用末尾尺码替换；若替换无效（如 xxx-VAR1 无 -ONE 后缀）则用 原SKU-尺码 保证唯一
+                let newSku = colorBaseVariant.sku.replace(
+                    new RegExp(`-${escapeRegExp(colorBaseVariant.size)}$`),
+                    `-${pricing.size}`
+                );
+                if (newSku === colorBaseVariant.sku) {
+                    newSku = `${colorBaseVariant.sku}-${pricing.size}`;
+                }
 
                 await prisma.variant.create({
                     data: {

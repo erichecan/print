@@ -63,24 +63,18 @@ async function main() {
     // Let's use `multi_replace_file_content` for safety.
 
 
-    // 2. Ensure Category Exists
-    // The crawler used "e2dbb0c4-8cf8-4b03-b8a1-3a0d6b64490a" for T-Shirts
-    const CATEGORY_ID = 'e2dbb0c4-8cf8-4b03-b8a1-3a0d6b64490a';
-    await prisma.category.upsert({
-        where: { id: CATEGORY_ID },
-        update: {},
-        create: {
-            id: CATEGORY_ID,
-            name: 'T-Shirts',
-            slug: 't-shirts-v2',
-            description: 'Imported by V2 Crawler'
-        }
-    });
+    // [2026-03-03 13:10:00] 使用 seed-categories 的 t-shirts 类目，不再依赖爬虫旧 UUID
+    const tShirtsCategory = await prisma.category.findUnique({ where: { slug: 't-shirts' } });
+    const CATEGORY_ID = tShirtsCategory
+        ? tShirtsCategory.id
+        : (await prisma.category.create({
+            data: { name: 'T-Shirts', slug: 't-shirts', description: 'CustomInk import', sortOrder: 1, isActive: true }
+        })).id;
+    console.log(`Using category id: ${CATEGORY_ID} (t-shirts)`);
 
     // 3. Import Products
     console.log('Importing Products...');
     for (const p of products) {
-        // Map CSV fields to Prisma model
         try {
             await prisma.product.create({
                 data: {
@@ -95,8 +89,9 @@ async function main() {
                     weight: p.weight ? parseFloat(p.weight) : 0.5,
                     dimensions: p.dimensions || "12x10x1",
                     printableAreas: p.printable_areas ? JSON.parse(p.printable_areas) : undefined,
-                    categoryId: p.category_id,
+                    categoryId: CATEGORY_ID,
                     sku: p.sku,
+                    stockQuantity: 0,
                     isActive: p.is_active === 'true',
                     isCustomizable: true
                 }
