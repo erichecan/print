@@ -42,39 +42,61 @@ exports.getProductColorImages = async (req, res) => {
       where.customInkColorId = colorId;
     }
 
+    // [2026-03-03 14:45:30] 从 settings.site.colorMappings 回填缺失 hex，保证 Design Lab 色块不再都是灰色
+    const mappings = await settingService.getSettingValue('site.colorMappings', []);
+    const mapByExternalId = new Map();
+    const mapByName = new Map();
+    if (Array.isArray(mappings)) {
+      for (const m of mappings) {
+        const extId = m.id || m.externalColorId;
+        const nameKey = (m.productColor || m.name || '').toLowerCase();
+        if (extId) {
+          mapByExternalId.set(String(extId), m);
+        }
+        if (nameKey) {
+          mapByName.set(nameKey, m);
+        }
+      }
+    }
+
     const colorImages = await ProductColorImage.findAll({
       where,
       order: [['colorName', 'ASC']]
     });
 
     // [2026-03-03 14:15:00] 表为空且未按 productId 筛选时，回退到 settings.site.colorMappings（Design Lab 与 admin 颜色一致）
-    let data = colorImages.map(ci => ({
-      id: ci.id,
-      name: ci.colorName,
-      hex: ci.colorHex,
-      externalColorId: ci.customInkColorId,
-      imageUrls: ci.imageUrls,
-      isVerified: ci.isVerified,
-      isActive: ci.isActive
-    }));
+    let data = colorImages.map(ci => {
+      const mapping =
+        mapByExternalId.get(String(ci.customInkColorId || '')) ||
+        mapByName.get((ci.colorName || '').toLowerCase());
+      const mappedHex =
+        mapping && ((mapping.values && mapping.values[0]) || mapping.hex);
 
-    if (data.length === 0 && !productId && !colorName && !colorId) {
-      const mappings = await settingService.getSettingValue('site.colorMappings', []);
-      if (Array.isArray(mappings) && mappings.length > 0) {
-        data = mappings.map((m, idx) => ({
-          id: m.id || `mapping-${idx}`,
-          name: m.productColor || m.name || '',
-          hex: (m.values && m.values[0]) || m.hex || '#cccccc',
-          externalColorId: m.id || m.externalColorId,
-          imageUrls: Array.isArray(m.images) && m.images.length >= 4
-            ? { front: m.images[0], back: m.images[1], left_sleeve: m.images[2], right_sleeve: m.images[3] }
-            : (m.images || {}),
-          isVerified: false,
-          isActive: true
-        }));
-        data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        logger.info('[getProductColorImages] Fallback to site.colorMappings', { count: data.length });
-      }
+      return {
+        id: ci.id,
+        name: ci.colorName,
+        hex: ci.colorHex || mappedHex || '#cccccc',
+        externalColorId: ci.customInkColorId,
+        imageUrls: ci.imageUrls,
+        isVerified: ci.isVerified,
+        isActive: ci.isActive
+      };
+    });
+
+    if (data.length === 0 && !productId && !colorName && !colorId && Array.isArray(mappings) && mappings.length > 0) {
+      data = mappings.map((m, idx) => ({
+        id: m.id || `mapping-${idx}`,
+        name: m.productColor || m.name || '',
+        hex: (m.values && m.values[0]) || m.hex || '#cccccc',
+        externalColorId: m.id || m.externalColorId,
+        imageUrls: Array.isArray(m.images) && m.images.length >= 4
+          ? { front: m.images[0], back: m.images[1], left_sleeve: m.images[2], right_sleeve: m.images[3] }
+          : (m.images || {}),
+        isVerified: false,
+        isActive: true
+      }));
+      data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      logger.info('[getProductColorImages] Fallback to site.colorMappings', { count: data.length });
     }
 
     res.json({
