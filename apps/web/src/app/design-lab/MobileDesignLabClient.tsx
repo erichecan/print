@@ -490,9 +490,9 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
   // 5.0 Version: Dynamic Color Mapping State
   const [dynamicColors, setDynamicColors] = useState<any[]>([]);
 
-  // [2026-03-03 14:22:00] 优先读 product-color-images；表为空时后端回退到 settings.site.colorMappings，保证 Design Lab 与 admin 颜色一致
+  // [2026-03-03 14:55:00] 使用 preview-from-settings：直接读取 settings.site.colorMappings，保证 Product & Color 与 admin Color Mapping 一致
   useEffect(() => {
-    fetch('/api/proxy/product-color-images')
+    fetch('/api/proxy/product-color-images/preview-from-settings')
       .then(res => res.json())
       .then(res => {
         const data = res.data || [];
