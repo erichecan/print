@@ -117,6 +117,13 @@ Usage notes:
 <location>project</location>
 </skill>
 
+<!-- [2026-03-02 07:05:45] DB_SAFETY: 严禁在生产数据库上执行 reset/migrate reset 等破坏性命令。
+  规则：
+  1. Playwright / CI 闭环测试只能连独立的测试库，禁止复用 Neon 生产 DATABASE_URL。
+  2. 任何脚本在检测到 DATABASE_URL 包含 .neon.tech、run.app、amazonaws.com 等生产/共享域名时，必须拒绝执行 reset / drop schema / migrate reset。
+  3. 如需初始化测试数据，必须通过专用的 E2E_DB_RESET_CMD 和独立测试数据库完成，且默认配置应为「不做 reset」。
+-->
+
 <skill>
 <name>xlsx</name>
 <description>"Comprehensive spreadsheet creation, editing, and analysis with support for formulas, formatting, data analysis, and visualization. When Claude needs to work with spreadsheets (.xlsx, .xlsm, .csv, .tsv, etc) for: (1) Creating new spreadsheets with formulas and formatting, (2) Reading or analyzing data, (3) Modify existing spreadsheets while preserving formulas, (4) Data analysis and visualization in spreadsheets, or (5) Recalculating formulas"</description>

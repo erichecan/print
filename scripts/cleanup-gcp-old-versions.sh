@@ -55,17 +55,22 @@ for IMAGE in "${IMAGES[@]}"; do
     echo "✅ Finished processing $IMAGE."
 done
 
-# 2. Cleanup Secret Manager Versions
+# 2. Cleanup Secret Manager Versions（保留最新 2 个，按版本号数字排序避免误删 latest）
 for SECRET in "${SECRETS[@]}"; do
     echo "🔐 Checking versions for secret: $SECRET..."
     
-    # Filter out already destroyed versions to prevent errors
-    # Still using variable here as versions are usually few (<1000)
+    # 按版本号数字降序排列，保留前 2 个，只销毁更旧的（避免 ~name 按字符串排序把最新版误删）
     VERSIONS_TO_DESTROY=$(gcloud secrets versions list "$SECRET" \
         --project="$PROJECT_ID" \
         --filter="state!=DESTROYED" \
         --format="value(name)" \
-        --sort-by=~name | tail -n +3)
+        | while read -r name; do
+            vid=$(basename "$name")
+            printf "%d\t%s\n" "$vid" "$name"
+          done \
+        | sort -rn \
+        | tail -n +3 \
+        | cut -f2-)
     
     if [ -n "$VERSIONS_TO_DESTROY" ]; then
         echo "$VERSIONS_TO_DESTROY" | while read -r VERSION_NAME; do

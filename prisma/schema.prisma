@@ -105,6 +105,7 @@ model Category {
   designTemplates     DesignTemplate[]
   productCategories   ProductCategory[]
   products            Product[]
+  offlineProducts     offline_order_products[]
   promotionCategories PromotionCategory[]
 
   @@index([slug])
@@ -1004,8 +1005,17 @@ model offline_order_products {
   is_active                         Boolean                             @default(true)
   created_at                        DateTime                            @default(now())
   updated_at                        DateTime                            @updatedAt
+  categoryId                        String?                             @map("category_id")
+  supplierId                        String?                             @map("supplier_id")
+  sku                               String?                             @db.VarChar(255)
+  stockQuantity                     Int                                 @default(0) @map("stock_quantity")
   offline_order_product_color_sizes offline_order_product_color_sizes[]
+  category                          Category?                           @relation(fields: [categoryId], references: [id])
+  supplier                          supplier?                           @relation(fields: [supplierId], references: [id])
 
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([sku])
   @@map("offline_order_products")
 }
 
@@ -1032,6 +1042,43 @@ model settings {
   updated_at DateTime @default(now()) @db.Timestamp(6)
 
   @@index([key], map: "idx_settings_key")
+}
+
+model supplier {
+  id             String             @id @default(uuid())
+  name           String
+  apiUrl         String             @map("api_url")
+  apiKey         String             @map("api_key")
+  apiSecret      String?            @map("api_secret")
+  syncInterval   Int                @default(3600) @map("sync_interval")
+  isActive       Boolean            @default(true) @map("is_active")
+  lastSyncAt     DateTime?          @map("last_sync_at")
+  lastSyncStatus String?            @map("last_sync_status")
+  config         Json?              @map("config")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  inventorySyncs inventory_sync[]
+  offlineProducts offline_order_products[]
+
+  @@map("suppliers")
+}
+
+model inventory_sync {
+  id             String    @id @default(uuid())
+  supplierId     String    @map("supplier_id")
+  status         String
+  startedAt      DateTime  @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+  itemsProcessed Int       @default(0) @map("items_processed")
+  itemsUpdated   Int       @default(0) @map("items_updated")
+  itemsFailed    Int       @default(0) @map("items_failed")
+  errorMessage   String?   @map("error_message")
+  metadata       Json?     @map("metadata")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  supplier       supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+  @@map("inventory_sync")
 }
 
 model GuestMessage {

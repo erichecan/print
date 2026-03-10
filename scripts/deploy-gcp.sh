@@ -21,6 +21,7 @@ DB_INSTANCE=${DB_INSTANCE_NAME:-print-main-db}
 echo -e "${GREEN}🚀 Starting GCP deployment (FREE TIER OPTIMIZED)...${NC}"
 echo -e "Project ID: ${YELLOW}${PROJECT_ID}${NC}"
 echo -e "Region: ${YELLOW}${REGION}${NC}"
+echo -e "${YELLOW}⚠️  部署前请确认上述 Project ID 正确，避免部署到错误项目（见 docs/backup-restore.md）${NC}"
 echo -e "${YELLOW}⚠️  Using FREE tier configuration (minScale: 0 = scales to zero when idle)${NC}"
 echo -e "${YELLOW}⚠️  Expected cost: $0/month if < 2M requests${NC}"
 echo ""
@@ -62,7 +63,7 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --allow-unauthenticated \
   --add-cloudsql-instances ${PROJECT_ID}:${REGION}:${DB_INSTANCE} \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars NODE_ENV=production,AUTO_MIGRATE=true,GCP_IMAGE_BUCKET=print-482914-images \
+  --set-env-vars NODE_ENV=production,AUTO_MIGRATE=true,GCP_IMAGE_BUCKET=print-482914-images,PGSSLMODE=disable \
   --memory 512Mi \
   --cpu 1 \
   --min-instances 1 \
@@ -102,9 +103,9 @@ docker build --no-cache --platform linux/amd64 \
 echo -e "${GREEN}📤 Pushing frontend image...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest
 
-# Deploy frontend - FREE TIER CONFIGURATION
-echo -e "${GREEN}🚀 Deploying frontend to Cloud Run (FREE TIER)...${NC}"
-echo -e "${YELLOW}⚠️  minScale: 0 (scales to zero when idle = FREE)${NC}"
+# Deploy frontend（min-instances 1 避免冷启动 503，2026-03-06）
+echo -e "${GREEN}🚀 Deploying frontend to Cloud Run...${NC}"
+echo -e "${YELLOW}⚠️  min-instances: 1（常驻 1 实例，避免 /api/proxy/cart 等 503）${NC}"
 gcloud run deploy ${FRONTEND_SERVICE} \
   --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
   --region ${REGION} \
@@ -114,7 +115,7 @@ gcloud run deploy ${FRONTEND_SERVICE} \
   --set-env-vars NODE_ENV=production \
   --memory 1Gi \
   --cpu 1 \
-  --min-instances 0 \
+  --min-instances 1 \
   --max-instances 5 \
   --timeout 300
 
@@ -128,9 +129,8 @@ echo -e "Backend URL: ${YELLOW}${BACKEND_URL}${NC}"
 echo -e "Frontend URL: ${YELLOW}${FRONTEND_URL}${NC}"
 echo ""
 echo -e "${YELLOW}💰 Cost Information:${NC}"
-echo -e "  - Cloud Run: ${GREEN}FREE${NC} (minScale: 0, scales to zero when idle)"
-echo -e "  - Expected monthly cost: ${GREEN}$0${NC} (if < 2M requests/month)"
-echo -e "  - First request will have cold start: ${YELLOW}2-5 seconds${NC}"
+echo -e "  - Frontend/Backend: ${YELLOW}min-instances 1${NC}（常驻 1 实例，减少 503）"
+echo -e "  - 预期月费: 按 Cloud Run 计费（1 实例常驻会产生少量费用）"
 echo ""
 echo -e "${YELLOW}⚠️  Important reminders:${NC}"
 echo -e "  1. ✅ Set up billing alerts: https://console.cloud.google.com/billing"

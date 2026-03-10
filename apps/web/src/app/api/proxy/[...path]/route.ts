@@ -45,11 +45,10 @@ const AUTH_REQUIRED_PATHS = [
   '/sales', // Sales API 需要认证
 ];
 
-// 代理配置：超时和重试
-// 修复：增加超时时间以覆盖 Cloud Run 冷启动（2-5秒）
-const PROXY_TIMEOUT_MS = 15000; // 15秒超时（覆盖冷启动 + 处理时间）
-const MAX_RETRIES = 2; // 最多重试2次（给冷启动更多机会）
-const RETRY_DELAY_MS = 1000; // 重试间隔1秒（给冷启动时间）
+// 代理配置：超时和重试（2026-03-06：提高以减轻 /api/proxy/cart 等 503）
+const PROXY_TIMEOUT_MS = 25000; // 25秒超时（覆盖前后端冷启动）
+const MAX_RETRIES = 3; // 最多重试3次（共4次请求，给冷启动更多机会）
+const RETRY_DELAY_MS = 2000; // 重试间隔基数 2s（1次 2s、2次 4s、3次 6s）
 
 /**
  * 检查路径是否需要认证

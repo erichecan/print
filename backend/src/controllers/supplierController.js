@@ -56,17 +56,17 @@ exports.createSupplier = async (req, res) => {
   try {
     const { name, apiUrl, apiKey, apiSecret, syncInterval, isActive, config } = req.body || {};
 
-    if (!name || !apiUrl || !apiKey) {
+    if (!name) {
       return res.status(400).json({
         error: 'Missing required fields',
-        required: ['name', 'apiUrl', 'apiKey'],
+        required: ['name'],
       });
     }
 
     const supplier = await supplierService.upsertSupplier({
       name,
-      apiUrl,
-      apiKey,
+      apiUrl: apiUrl || '',
+      apiKey: apiKey || '',
       apiSecret,
       syncInterval,
       isActive,
@@ -100,8 +100,8 @@ exports.updateSupplier = async (req, res) => {
     const supplier = await supplierService.upsertSupplier({
       id,
       name,
-      apiUrl,
-      apiKey,
+      apiUrl: apiUrl !== undefined ? apiUrl : '',
+      apiKey: apiKey !== undefined ? apiKey : '',
       apiSecret,
       syncInterval,
       isActive,
@@ -132,15 +132,18 @@ exports.deleteSupplier = async (req, res) => {
     const { id } = req.params;
     const prisma = require('../lib/prisma');
 
-    // Verify supplier exists
-    await supplierService.getSupplierById(id);
+    // 2026-03-06 09:50:00: 供应商一律软删除，UI 隐藏
+    const supplier = await supplierService.getSupplierById(id);
 
-    // Delete supplier (cascade will delete syncs)
-    await prisma.supplier.delete({
-      where: { id },
+    await prisma.supplier.update({
+      where: { id: supplier.id },
+      data: {
+        isActive: false,
+        updatedAt: new Date(),
+      },
     });
 
-    logger.info('Supplier deleted', {
+    logger.info('Supplier archived (soft delete)', {
       supplierId: id,
       actorId: req.user?.id,
     });
@@ -223,7 +226,7 @@ exports.getSyncStatus = async (req, res) => {
     const status = await inventorySyncService.getAllSuppliersSyncStatus();
     res.json({ suppliers: status });
   } catch (error) {
-// 增强错误日志
+    // 增强错误日志
     logger.error('[Admin] Error getting sync status:', {
       error: error.message,
       stack: error.stack,

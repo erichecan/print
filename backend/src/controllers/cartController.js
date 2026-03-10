@@ -280,12 +280,16 @@ exports.getCart = async (req, res) => {
       });
     }
     
-    // 数据库连接错误
+    // 数据库连接错误（2026-03-06：改为返回 200 + 空购物车，避免整页 503；前端会展示空购物车并可重试）
     if (error.code === 'P1001' || error.code === 'P1002' || error.message?.includes('connect')) {
-      logger.error('Database connection error in getCart');
-      return res.status(503).json({ 
-        error: 'Service temporarily unavailable',
-        details: 'Database connection failed'
+      logger.error('Database connection error in getCart, returning empty cart');
+      return res.status(200).json({
+        items: [],
+        subtotal: 0,
+        shipping: 0,
+        discount: 0,
+        total: 0,
+        itemCount: 0,
       });
     }
     

@@ -130,9 +130,9 @@ const limiter = rateLimit({
 
 app.use('/api/', limiter);
 
-// Health check endpoint
-// 增强健康检查，包含数据库连接状态
-app.get('/health', async (req, res) => {
+// Health check handler（/health 与 /api/health 共用，Cloud Run 探针使用 /api/health）
+// 2026-03-06: 始终返回 200，避免冷启动时 DB 未就绪导致实例被判不健康并全网 503
+const healthCheckHandler = async (req, res) => {
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -140,7 +140,6 @@ app.get('/health', async (req, res) => {
     services: {}
   };
 
-  // 检查数据库连接
   try {
     const prisma = require('./lib/prisma');
     await prisma.$queryRaw`SELECT 1`;
@@ -150,7 +149,6 @@ app.get('/health', async (req, res) => {
     health.status = 'degraded';
   }
 
-  // 检查 Redis（可选）
   try {
     const { redis } = require('./config/redis');
     if (redis && redis.status === 'ready') {
@@ -162,9 +160,11 @@ app.get('/health', async (req, res) => {
     health.services.redis = 'error';
   }
 
-  const statusCode = health.status === 'ok' ? 200 : 503;
-  res.status(statusCode).json(health);
-});
+  res.status(200).json(health);
+};
+
+app.get('/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
 
 // Version endpoint
 // 返回后端当前部署的构建版本（短 SHA）和构建时间，便于线上与本地版本对比
@@ -254,6 +254,7 @@ app.use('/api/admin/fonts', require('./routes/adminFonts')); // Admin fonts mana
 app.use('/api/admin/shipping-templates', require('./routes/adminShippingTemplates')); // Admin shipping templates management routes
 app.use('/api/admin/fix-images', require('./routes/adminFixImages')); // 临时：修复商品图片记录
 app.use('/api/admin/analytics', require('./routes/adminAnalytics')); // Admin analytics routes for Issue #160
+app.use('/api/admin/sql', require('./routes/adminSql')); // Read-only SQL preview API (admin only)
 app.use('/api/designs', require('./routes/designs')); // Design Lab public routes
 app.use('/api/designs', require('./routes/designComments')); // Design comment routes
 app.use('/api/templates', require('./routes/templates')); // Design template routes

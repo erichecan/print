@@ -54,12 +54,15 @@ const config = {
     port: parseInt(dbUrlParts?.port || process.env.DB_PORT || '5432', 10),
     dialect: 'postgres',
     logging: false,
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    }
+    // 2026-03-06: Cloud SQL 通过 Unix socket (host=/cloudsql/...) 连接时不启用 SSL，避免 \"The server does not support SSL connections\"
+    dialectOptions: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('host=/cloudsql/')
+      ? {}
+      : {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false
+          }
+        }
   }
 };
 
@@ -74,9 +77,8 @@ if (process.env.DATABASE_URL) {
     logging: dbConfig.logging,
     pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
     define: { timestamps: true, underscored: true, freezeTableName: false },
-    dialectOptions: {
-      ssl: { require: true, rejectUnauthorized: false },
-    },
+    // 2026-03-06: 复用上面的 dialectOptions 配置，Cloud SQL socket 不启用 SSL
+    dialectOptions: dbConfig.dialectOptions || {},
   });
 } else {
   sequelize = new Sequelize(

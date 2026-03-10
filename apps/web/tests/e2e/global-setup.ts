@@ -24,7 +24,24 @@ async function globalSetup(_config: FullConfig) {
     return;
   }
 
-  const resetCommand = process.env.E2E_DB_RESET_CMD || 'npx prisma migrate reset --force --skip-generate';
+  // [2026-03-02 07:05:30] 安全保护：默认禁止在任何环境自动执行 reset，除非显式设置 E2E_DB_RESET_CMD
+  if (!process.env.E2E_DB_RESET_CMD) {
+    console.log('[E2E setup] No E2E_DB_RESET_CMD specified, skipping destructive database reset by default');
+    return;
+  }
+
+  // [2026-03-02 07:05:30] 双重保护：检测到疑似生产连接时，强制禁止执行 reset
+  const dbUrl = process.env.DATABASE_URL || '';
+  const isNeonOrProd =
+    dbUrl.includes('.neon.tech') ||
+    dbUrl.includes('run.app') ||
+    dbUrl.includes('amazonaws.com');
+  if (isNeonOrProd) {
+    console.warn('[E2E setup] 🚫 DATABASE_URL looks like a shared/production database, refusing to run reset');
+    return;
+  }
+
+  const resetCommand = process.env.E2E_DB_RESET_CMD;
   console.log(`[E2E setup] Running "${resetCommand}"`);
   try {
     execSync(resetCommand, {

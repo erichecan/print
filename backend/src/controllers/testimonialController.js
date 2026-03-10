@@ -1,5 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+// 2026-03-06: 使用共享 prisma 实例（与 lib/prisma 一致，确保 Cloud SQL 连接串修复生效）
+const prisma = require('../lib/prisma');
+const logger = require('../utils/logger');
 
 const testimonialController = {
     // Get all active testimonials (for public view)
@@ -11,7 +12,7 @@ const testimonialController = {
             });
             res.json(testimonials);
         } catch (error) {
-            console.error('Error fetching active testimonials:', error);
+            logger.error('[Testimonial] getActiveTestimonials error:', { message: error.message, code: error.code, meta: error.meta });
             res.status(500).json({ error: 'Failed to fetch testimonials' });
         }
     },
@@ -24,7 +25,7 @@ const testimonialController = {
             });
             res.json(testimonials);
         } catch (error) {
-            console.error('Error fetching all testimonials:', error);
+            logger.error('[Testimonial] getAllTestimonials error:', { message: error.message, code: error.code, meta: error.meta });
             res.status(500).json({ error: 'Failed to fetch testimonials' });
         }
     },
@@ -46,7 +47,7 @@ const testimonialController = {
             });
             res.status(201).json(testimonial);
         } catch (error) {
-            console.error('Error creating testimonial:', error);
+            logger.error('[Testimonial] createTestimonial error:', { message: error.message, code: error.code });
             res.status(500).json({ error: 'Failed to create testimonial' });
         }
     },
@@ -70,7 +71,7 @@ const testimonialController = {
             });
             res.json(testimonial);
         } catch (error) {
-            console.error('Error updating testimonial:', error);
+            logger.error('[Testimonial] updateTestimonial error:', { message: error.message, code: error.code });
             res.status(500).json({ error: 'Failed to update testimonial' });
         }
     },
@@ -84,7 +85,7 @@ const testimonialController = {
             });
             res.json({ message: 'Testimonial deleted successfully' });
         } catch (error) {
-            console.error('Error deleting testimonial:', error);
+            logger.error('[Testimonial] deleteTestimonial error:', { message: error.message, code: error.code });
             res.status(500).json({ error: 'Failed to delete testimonial' });
         }
     },

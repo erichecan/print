@@ -1248,6 +1248,13 @@ export interface SimpleOfflineOrderProduct {
   isCustomerOwned: boolean;
   displayOrder?: number;
   isActive?: boolean;
+  unitCost?: number;
+  categoryId?: string | null;
+  categoryName?: string | null;
+  supplierId?: string | null;
+  supplierName?: string | null;
+  sku?: string | null;
+  stockQuantity?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -1257,12 +1264,36 @@ export const simpleOfflineOrderProductApi = {
   list: () => sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct[] }>('/api/offline-orders/products'),
   // 管理接口
   listAll: () => sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct[] }>('/api/proxy/admin/offline-orders/products'),
-  create: (product: { name: string; imageUrl?: string; isCustomerOwned?: boolean; displayOrder?: number }) =>
+  create: (product: {
+    name: string;
+    imageUrl?: string;
+    isCustomerOwned?: boolean;
+    displayOrder?: number;
+    unitCost?: number;
+    categoryId: string;
+    supplierId?: string;
+    sku?: string;
+    stockQuantity?: number;
+  }) =>
     sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct }>('/api/proxy/admin/offline-orders/products', {
       method: 'POST',
       body: product,
     }),
-  update: (id: string, product: { name?: string; imageUrl?: string; isCustomerOwned?: boolean; displayOrder?: number; isActive?: boolean }) =>
+  update: (
+    id: string,
+    product: {
+      name?: string;
+      imageUrl?: string;
+      isCustomerOwned?: boolean;
+      displayOrder?: number;
+      isActive?: boolean;
+      unitCost?: number;
+      categoryId?: string;
+      supplierId?: string | null;
+      sku?: string | null;
+      stockQuantity?: number;
+    }
+  ) =>
     sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct }>(`/api/proxy/admin/offline-orders/products/${id}`, {
       method: 'PATCH',
       body: product,
@@ -2764,28 +2795,24 @@ export interface AdminOfflineOrderListResponse {
   stages: OfflineOrderStageMeta[];
 }
 
-// Metrics payload for offline operations dashboard (Phase 2 + 2025-02-20: revenue, topProducts, timeSeries, cost)
+// Metrics payload for sales/business dashboard only (no order status or stage dimension) — 2026-03-10
 export interface OfflineOrderMetricsResponse {
-  summary: {
-    total: number;
-    active: number;
-    completed: number;
-    cancelled: number;
-    rushActive: number;
-  };
-  stages: Array<
-    OfflineOrderStageMeta & {
-      count: number;
-    }
-  >;
-  revenue?: {
+  sales: {
+    orderCount: number;
     revenueTotal: number;
-    revenueActive: number;
-    revenueCompleted: number;
+    averageOrderValue: number;
+    inventoryConsumed?: number;
+    averageUnitPrice?: number;
   };
-  topProducts?: Array<{ productName: string; orderCount: number; revenue: number }>;
-  timeSeries?: Array<{ date: string; orderCount: number; revenue: number }>;
-  cost?: { costTotal: number; marginTotal: number; marginPercent: number };
+  cost: { costTotal: number; marginTotal: number; marginPercent: number };
+  topProducts: Array<{
+    productName: string;
+    orderCount: number;
+    revenue: number;
+    category?: string;
+    supplier?: string;
+  }>;
+  timeSeries: Array<{ date: string; orderCount: number; revenue: number }>;
 }
 
 export type OfflineOrderStage = OfflineOrderStageMeta;
@@ -2830,11 +2857,19 @@ export const adminOfflineOrdersApi = {
     );
   },
   get: (id: string) => api<{ order: AdminOfflineOrderDetail }>(`/admin/offline-orders/${id}`),
-  getMetrics: (params?: { scope?: 'all' | 'mine'; startDate?: string; endDate?: string }) => {
+  getMetrics: (params?: {
+    scope?: 'all' | 'mine';
+    startDate?: string;
+    endDate?: string;
+    primaryProduct?: string;
+    creatorId?: string;
+  }) => {
     const query = new URLSearchParams();
     if (params?.scope) query.append('scope', params.scope);
     if (params?.startDate) query.append('startDate', params.startDate);
     if (params?.endDate) query.append('endDate', params.endDate);
+    if (params?.primaryProduct) query.append('primaryProduct', params.primaryProduct);
+    if (params?.creatorId) query.append('creatorId', params.creatorId);
     const qs = query.toString();
     return api<OfflineOrderMetricsResponse>(`/admin/offline-orders/metrics/summary${qs ? `?${qs}` : ''}`);
   },

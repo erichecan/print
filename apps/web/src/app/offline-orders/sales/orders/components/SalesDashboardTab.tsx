@@ -1,13 +1,13 @@
 /**
- * Sales Dashboard Tab — 销售数字看板
- * 配色增强、自定义时间段、多维度统计（最受欢迎产品、趋势、成本/毛利）
- * 2025-02-19, 2025-02-20
+ * Sales Dashboard Tab — 销售与经营分析看板
+ * 仅从销售角度、经营角度展示数据，不包含任何订单状态/阶段维度
+ * 2026-03-10 重构
  */
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
 import useSWR from 'swr';
-import { adminOfflineOrdersApi, OfflineOrderMetricsResponse } from '@/lib/api';
+import { adminOfflineOrdersApi, salesOrdersApi, OfflineOrderMetricsResponse } from '@/lib/api';
 import type { OfflineOrdersLocale } from '@/translations/offlineOrders';
 import { OFFLINE_ORDERS_TRANSLATIONS } from '@/translations/offlineOrders';
 
@@ -51,17 +51,6 @@ function getTimeRangeBounds(
   };
 }
 
-// 阶段条形图配色（渐变感）
-const STAGE_COLORS = [
-  'bg-violet-500',
-  'bg-indigo-500',
-  'bg-blue-500',
-  'bg-cyan-500',
-  'bg-teal-500',
-  'bg-emerald-500',
-  'bg-amber-500',
-];
-
 const Icons = {
   chart: (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
@@ -71,11 +60,6 @@ const Icons = {
   refresh: (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-    </svg>
-  ),
-  funnel: (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
     </svg>
   ),
   currency: (
@@ -109,29 +93,48 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
   const [timeRange, setTimeRange] = useState<TimeRangeKey>('all');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [topProductFilter, setTopProductFilter] = useState('');
   const [scope, setScope] = useState<'all' | 'mine'>('all');
+  const [primaryProductFilter, setPrimaryProductFilter] = useState('');
+  const [creatorFilter, setCreatorFilter] = useState('');
 
   const params = useMemo(() => {
     const bounds = getTimeRangeBounds(timeRange, customStart, customEnd);
     return {
-      scope: scope === 'mine' ? 'mine' : undefined,
+      scope: scope === 'mine' ? ('mine' as const) : undefined,
       startDate: bounds?.startDate,
       endDate: bounds?.endDate,
+      primaryProduct: primaryProductFilter.trim() || undefined,
+      creatorId: creatorFilter || undefined,
     };
-  }, [timeRange, scope, customStart, customEnd]);
+  }, [timeRange, scope, customStart, customEnd, primaryProductFilter, creatorFilter]);
+
+  const { data: creatorsData } = useSWR(
+    isManager ? 'sales-orders-creators' : null,
+    () => salesOrdersApi.getCreators().then((r) => r.data)
+  );
+  const creators = creatorsData ?? [];
 
   const { data, error, isLoading, mutate } = useSWR<OfflineOrderMetricsResponse>(
-    ['sales-dashboard-metrics', params.scope, params.startDate, params.endDate],
+    ['sales-dashboard-metrics', params.scope, params.startDate, params.endDate, params.primaryProduct, params.creatorId],
     () => adminOfflineOrdersApi.getMetrics(params)
   );
 
-  const summary = data?.summary ?? null;
-  const stages = data?.stages ?? [];
-  const revenue = data?.revenue;
-  const topProducts = data?.topProducts ?? [];
+  const sales = data?.sales ?? {
+    orderCount: 0,
+    revenueTotal: 0,
+    averageOrderValue: 0,
+    inventoryConsumed: 0,
+    averageUnitPrice: 0,
+  };
+  const cost = data?.cost ?? { costTotal: 0, marginTotal: 0, marginPercent: 0 };
+  const topProductsRaw = data?.topProducts ?? [];
   const timeSeries = data?.timeSeries ?? [];
-  const cost = data?.cost;
-  const maxStageCount = useMemo(() => Math.max(1, ...stages.map((s) => s.count)), [stages]);
+  const topProducts = useMemo(() => {
+    if (!topProductFilter) return topProductsRaw;
+    const q = topProductFilter.toLowerCase();
+    return topProductsRaw.filter((p) => p.productName.toLowerCase().includes(q));
+  }, [topProductsRaw, topProductFilter]);
   const maxTimeSeriesCount = useMemo(() => Math.max(1, ...timeSeries.map((ts) => ts.orderCount)), [timeSeries]);
 
   if (error) {
@@ -150,12 +153,15 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
     );
   }
 
+  // 销售与经营 KPI：销售笔数、总营收、客单价、总成本、毛利、库存消耗、件均价
   const kpiCards = [
-    { key: 'total', value: summary?.total ?? 0, label: t('totalOrders'), border: 'border-l-violet-500', bg: 'bg-violet-50', labelClr: 'text-violet-700', valueClr: 'text-violet-900' },
-    { key: 'active', value: summary?.active ?? 0, label: t('active'), border: 'border-l-emerald-500', bg: 'bg-emerald-50', labelClr: 'text-emerald-700', valueClr: 'text-emerald-900' },
-    { key: 'completed', value: summary?.completed ?? 0, label: t('completed'), border: 'border-l-blue-500', bg: 'bg-blue-50', labelClr: 'text-blue-700', valueClr: 'text-blue-900' },
-    { key: 'cancelled', value: summary?.cancelled ?? 0, label: t('cancelled'), border: 'border-l-red-500', bg: 'bg-red-50', labelClr: 'text-red-700', valueClr: 'text-red-900' },
-    { key: 'rush', value: summary?.rushActive ?? 0, label: t('rushOrders'), border: 'border-l-amber-500', bg: 'bg-amber-50', labelClr: 'text-amber-700', valueClr: 'text-amber-900' },
+    { key: 'orders', value: sales.orderCount, label: t('salesCount'), border: 'border-l-violet-500', bg: 'bg-violet-50', labelClr: 'text-violet-700', valueClr: 'text-violet-900' },
+    { key: 'revenue', value: `$${sales.revenueTotal.toFixed(2)}`, label: t('revenueTotal'), border: 'border-l-emerald-500', bg: 'bg-emerald-50', labelClr: 'text-emerald-700', valueClr: 'text-emerald-900' },
+    { key: 'aov', value: `$${sales.averageOrderValue.toFixed(2)}`, label: t('averageOrderValue'), border: 'border-l-blue-500', bg: 'bg-blue-50', labelClr: 'text-blue-700', valueClr: 'text-blue-900' },
+    { key: 'cost', value: `$${cost.costTotal.toFixed(2)}`, label: t('costTotal'), border: 'border-l-amber-500', bg: 'bg-amber-50', labelClr: 'text-amber-700', valueClr: 'text-amber-900' },
+    { key: 'margin', value: `$${cost.marginTotal.toFixed(2)} (${cost.marginPercent.toFixed(0)}%)`, label: t('marginTotal'), border: 'border-l-teal-500', bg: 'bg-teal-50', labelClr: 'text-teal-700', valueClr: 'text-teal-900' },
+    { key: 'inventory', value: sales.inventoryConsumed ?? 0, label: t('inventoryConsumed') || 'Inventory Consumed', border: 'border-l-rose-500', bg: 'bg-rose-50', labelClr: 'text-rose-700', valueClr: 'text-rose-900' },
+    { key: 'avgUnitPrice', value: `$${(sales.averageUnitPrice ?? 0).toFixed(2)}`, label: t('averageUnitPrice') || 'Avg Unit Price', border: 'border-l-indigo-500', bg: 'bg-indigo-50', labelClr: 'text-indigo-700', valueClr: 'text-indigo-900' },
   ];
 
   return (
@@ -201,15 +207,42 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
         )}
         {isManager && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700">{t('allOrders')}</span>
+            <span className="text-sm font-medium text-slate-700">{t('scope')}</span>
             <select
               value={scope}
               onChange={(e) => setScope(e.target.value as 'all' | 'mine')}
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
-              aria-label={t('myPerformance')}
             >
               <option value="all">{t('allOrders')}</option>
               <option value="mine">{t('myPerformance')}</option>
+            </select>
+          </div>
+        )}
+
+        {/* 2026-03-10: 增加产品筛选与创建人筛选 */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-700">{t('filterByProduct') || 'Product'}</span>
+          <input
+            type="text"
+            value={primaryProductFilter}
+            onChange={(e) => setPrimaryProductFilter(e.target.value)}
+            placeholder="按主产品名称筛选…"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32"
+          />
+        </div>
+
+        {isManager && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-700">{t('filterByCreator') || 'Creator'}</span>
+            <select
+              value={creatorFilter}
+              onChange={(e) => setCreatorFilter(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+            >
+              <option value="">{t('allCreators') || 'All Creators'}</option>
+              {creators.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name || c.email}</option>
+              ))}
             </select>
           </div>
         )}
@@ -229,74 +262,76 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
         <p className="text-slate-600">{t('loadingDashboard')}</p>
       ) : (
         <>
-          {/* KPI 卡片：配色区分 */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {/* 核心指标：销售笔数、总营收、客单价、总成本、毛利、库存消耗、件均价 */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
             {kpiCards.map((item) => (
               <div
                 key={item.key}
                 className={`rounded-xl border-l-4 border bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md cursor-default ${item.border} ${item.bg} border-slate-200`}
               >
                 <div className={`flex items-center gap-2 text-sm font-medium ${item.labelClr}`}>
-                  {Icons.chart}
+                  {item.key === 'revenue' || item.key === 'aov' || item.key === 'cost' || item.key === 'margin' ? Icons.currency : Icons.chart}
                   {item.label}
                 </div>
-                <p className={`mt-2 text-2xl font-bold tabular-nums ${item.valueClr}`}>{item.value}</p>
+                <p className={`mt-2 text-xl font-bold tabular-nums ${item.valueClr}`}>{item.value}</p>
               </div>
             ))}
           </div>
 
-          {/* 营收 + 成本/毛利 同一行 */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {revenue && (revenue.revenueTotal > 0 || revenue.revenueActive > 0 || revenue.revenueCompleted > 0) && (
-              <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-800">
-                  {Icons.currency}
-                  {t('revenueTotal')} / {t('revenueActive')} / {t('revenueCompleted')}
-                </h3>
-                <div className="flex flex-wrap gap-4">
-                  <span className="text-lg font-semibold text-emerald-900 tabular-nums">
-                    ${(revenue.revenueTotal ?? 0).toFixed(2)} CAD
-                  </span>
-                  <span className="text-sm text-emerald-700">
-                    Active: ${(revenue.revenueActive ?? 0).toFixed(2)} · Done: ${(revenue.revenueCompleted ?? 0).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            )}
-            {cost && (
-              <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm">
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  {Icons.currency}
-                  {t('costTotal')} / {t('margin')}
-                </h3>
-                <div className="flex flex-wrap gap-4 text-slate-900">
-                  <span className="tabular-nums">Cost: ${(cost.costTotal ?? 0).toFixed(2)}</span>
-                  <span className="font-semibold tabular-nums">{t('marginTotal')}: ${(cost.marginTotal ?? 0).toFixed(2)} CAD</span>
-                  <span className="text-sm text-slate-600">{t('marginPercent')}: {(cost.marginPercent ?? 0).toFixed(0)}%</span>
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* 最受欢迎产品 + 订单趋势 两列 */}
+          {/* 最受欢迎产品 + 销售趋势 两列 */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <section className="rounded-xl border border-indigo-100 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-indigo-900">
-                {Icons.cube}
-                {t('topProducts')}
-              </h2>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="flex items-center gap-2 text-base font-semibold text-indigo-900">
+                  {Icons.cube}
+                  {t('topProducts')}
+                </h2>
+                <input
+                  type="text"
+                  value={topProductFilter}
+                  onChange={(e) => setTopProductFilter(e.target.value)}
+                  placeholder="按产品名称筛选…"
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:w-48"
+                />
+              </div>
               {topProducts.length === 0 ? (
-                <p className="text-sm text-slate-500">{t('noData')}</p>
+                <p className="text-sm text-slate-500">{topProductFilter ? '没有匹配的产品' : t('noData')}</p>
               ) : (
-                <ul className="space-y-2">
-                  {topProducts.slice(0, 8).map((row, i) => (
-                    <li key={row.productName + i} className="flex items-center gap-3 rounded-lg bg-slate-50 py-2 px-3">
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">{row.productName}</span>
-                      <span className="shrink-0 text-sm tabular-nums text-slate-600">{row.orderCount} {t('orderCount')}</span>
-                      <span className="shrink-0 text-sm font-medium tabular-nums text-emerald-700">${row.revenue.toFixed(2)}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-slate-600">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-slate-700">
+                      <tr>
+                        <th className="py-3 px-4 font-semibold">{t('productName')}</th>
+                        <th className="py-3 px-4 font-semibold">{t('category')}</th>
+                        <th className="py-3 px-4 font-semibold">{t('supplier')}</th>
+                        <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('orderCount')}</th>
+                        <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('revenueTotal')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {topProducts.slice(0, 8).map((row, i) => (
+                        <tr key={row.productName + i} className="transition-colors hover:bg-slate-50">
+                          <td className="py-3 px-4 font-medium text-slate-900">{row.productName}</td>
+                          <td className="py-3 px-4">
+                            {row.category ? (
+                              <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-700/10 ring-inset">
+                                {row.category}
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-slate-500">{row.supplier || '—'}</td>
+                          <td className="py-3 px-4 text-right tabular-nums font-medium text-slate-700">{row.orderCount}</td>
+                          <td className="py-3 px-4 text-right tabular-nums font-semibold text-emerald-700">
+                            ${row.revenue.toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </section>
 
@@ -329,30 +364,6 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
               )}
             </section>
           </div>
-
-          {/* 阶段漏斗：多色条形 */}
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
-              {Icons.funnel}
-              {t('stageFunnel')}
-            </h2>
-            <ul className="space-y-3">
-              {stages.map((stage, i) => (
-                <li key={stage.key} className="flex items-center gap-3">
-                  <span className="w-32 shrink-0 text-sm font-medium text-slate-700">{stage.label}</span>
-                  <div className="min-w-0 flex-1">
-                    <div
-                      className={`h-8 rounded-lg transition-all duration-300 ${STAGE_COLORS[i % STAGE_COLORS.length]}`}
-                      style={{ width: `${Math.max(4, (stage.count / maxStageCount) * 100)}%` }}
-                      role="presentation"
-                    />
-                  </div>
-                  <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums text-slate-900">{stage.count}</span>
-                </li>
-              ))}
-            </ul>
-            {stages.length === 0 && <p className="text-sm text-slate-500">{t('noOrdersYet')}</p>}
-          </section>
         </>
       )}
     </div>

@@ -36,6 +36,8 @@ npm run dev --workspace backend
 
 ## 🚀 GCP 部署（免费层优化）
 
+**部署前请确认 GCP 项目 ID**（`GCP_PROJECT_ID` 或 `gcloud config get-value project`），避免部署到错误项目。数据库与备份说明见 [docs/backup-restore.md](docs/backup-restore.md)。
+
 ### 超简单一键部署
 
 ```bash

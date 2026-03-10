@@ -1,0 +1,9 @@
+{
+  "name": "db-export",
+  "description": "Trigger Cloud SQL export to GCS for daily backup (30-day hot, then Coldline). 2026-03-05.",
+  "main": "index.js",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}

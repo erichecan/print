@@ -64,6 +64,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 // 修复：使用稳定的 SWR key，避免重复初始化
   const SWR_KEY = '/cart';
+
+  // 2026-03-06: 503 时多轮重试、较长间隔，减轻前端冷启动导致的 Service Unavailable
+  const swrCartOptions = {
+    errorRetryCount: 5,
+    errorRetryInterval: 3000,
+    revalidateOnFocus: true,
+  };
   
 // 使用更安全的错误处理方式
 // Hooks 必须在组件顶层调用，不能在 try-catch 内
@@ -99,7 +106,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return result;
         } catch (err: any) {
 // 记录详细错误信息
-// 优化：如果是后端服务错误（500/503），静默处理，减少控制台噪音
+// 优化：如果是后端服务错误（500/503），静默处理；SWR 会按 errorRetryCount/errorRetryInterval 自动重试
           const isServerError = err?.message?.includes('500') || 
                                err?.message?.includes('503') ||
                                err?.message?.includes('Service Unavailable') ||
@@ -140,11 +147,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       },
       {
-revalidateOnFocus: false, // 禁用自动重新验证，避免频繁调用
-revalidateOnReconnect: false, // 禁用重连时自动验证
+        ...swrCartOptions,
+        revalidateOnReconnect: true,
         refreshInterval: 0,
-        shouldRetryOnError: false, // 不自动重试
-fallbackData: EMPTY_CART, // 提供默认值，避免 undefined
+        fallbackData: EMPTY_CART, // 提供默认值，避免 undefined
+        // 2026-03-06: 启用 503 重试（errorRetryCount/errorRetryInterval 见 swrCartOptions）
         onError: (err) => {
 // 记录详细的 SWR 错误
 // 修复：使用 try-catch 包装 console.error，防止格式化错误
@@ -167,16 +174,7 @@ fallbackData: EMPTY_CART, // 提供默认值，避免 undefined
             }
           }
         },
-        onErrorRetry: () => {
-// 禁用错误重试
-// 修复：使用 try-catch 包装 console.log，防止格式化错误
-          try {
-            console.log('[CartProvider] Error retry disabled');
-          } catch (e) {
-            // 如果 console.log 失败，静默忽略
-          }
-          return;
-        },
+        // 2026-03-06: 不设置 onErrorRetry，使用 SWR 默认重试（errorRetryCount: 5, errorRetryInterval: 3000）
       }
   );
 

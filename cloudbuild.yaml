@@ -122,6 +122,7 @@ steps:
           --region ${_REGION} \
           --platform managed \
           --allow-unauthenticated \
+          --add-cloudsql-instances ${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME} \
           --set-env-vars NODE_ENV=production,AUTO_MIGRATE=true,FRONTEND_URL=https://print-main-frontend-651538279084.us-central1.run.app,GCP_IMAGE_BUCKET=print-482914-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-482914-images,APP_BUILD_SHA=$$BUILD_SHA,APP_BUILD_TIME=$$BUILD_TIME \
           --memory 512Mi \
           --cpu 1 \
@@ -169,11 +170,13 @@ steps:
     waitFor: ['deploy-frontend', 'deploy-backend']
 
 # Substitution variables (set via Cloud Build triggers or command line)
+# 2026-03-05: 后端挂载 Cloud SQL，部署前请确认 PROJECT_ID 与 _DB_INSTANCE_NAME
 substitutions:
   _REGION: 'us-central1'                    # GCP region
   _ARTIFACT_REGISTRY: 'print-main'           # Artifact Registry repository name
   _BACKEND_SERVICE_NAME: 'print-main-backend'
   _FRONTEND_SERVICE_NAME: 'print-main-frontend'
+  _DB_INSTANCE_NAME: 'print-main-db'         # Cloud SQL instance for DATABASE_URL
 
 # Build timeout (optional, in seconds)
 timeout: '1200s'  # 20 minutes

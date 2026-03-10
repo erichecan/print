@@ -4,13 +4,21 @@
  */
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi, salesOrdersApi, SalesOfflineOrderSummary, authenticatedFetch } from '@/lib/api';
+import {
+  authApi,
+  salesOrdersApi,
+  SalesOfflineOrderSummary,
+  authenticatedFetch,
+  adminCategoriesApi,
+  AdminCategorySummary,
+  suppliersApi,
+  Supplier,
+} from '@/lib/api';
 import useSWR from 'swr';
 import { useAuth } from '@/contexts/AuthContext';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
-import { useCallback, useMemo } from 'react';
 import { FilterPanel, FilterOptions } from './components/FilterPanel';
 import { SalesDashboardTab } from './components/SalesDashboardTab';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
@@ -474,11 +482,37 @@ export default function SalesOrdersPage() {
   const [newProductImageUrl, setNewProductImageUrl] = useState('');
   const [newProductIsCustomerOwned, setNewProductIsCustomerOwned] = useState(false);
   const [newProductUnitCost, setNewProductUnitCost] = useState('');
+  const [newProductCategoryId, setNewProductCategoryId] = useState('');
+  const [newProductSupplierId, setNewProductSupplierId] = useState('');
+  const [newProductSku, setNewProductSku] = useState('');
+  const [newProductStockQuantity, setNewProductStockQuantity] = useState('');
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editProductName, setEditProductName] = useState('');
   const [editProductImageUrl, setEditProductImageUrl] = useState('');
   const [editProductIsCustomerOwned, setEditProductIsCustomerOwned] = useState(false);
   const [editProductUnitCost, setEditProductUnitCost] = useState('');
+  const [editProductCategoryId, setEditProductCategoryId] = useState('');
+  const [editProductSupplierId, setEditProductSupplierId] = useState('');
+  const [editProductSku, setEditProductSku] = useState('');
+  const [editProductStockQuantity, setEditProductStockQuantity] = useState('');
+  const [productCategoryFilterId, setProductCategoryFilterId] = useState('');
+
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string; slug: string }>({
+    id: undefined,
+    name: '',
+    slug: '',
+  });
+
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  const [supplierForm, setSupplierForm] = useState<Partial<Supplier>>({
+    name: '',
+    apiUrl: '',
+    apiKey: '',
+    apiSecret: '',
+    isActive: true,
+    syncInterval: 3600,
+  });
 
   // 尺码费用状态
   const [sizeFees, setSizeFees] = useState<SizeFee[]>([]);
@@ -972,6 +1006,18 @@ export default function SalesOrdersPage() {
     }
   );
 
+  const { data: categoriesData, mutate: mutateCategories } = useSWR(
+    activeTab === 'config' && configTab === 'products' ? 'offline-products-categories' : null,
+    () => adminCategoriesApi.list({ status: 'active', limit: 200, page: 1 }),
+  );
+  const categories: AdminCategorySummary[] = categoriesData?.data || [];
+
+  const { data: suppliersData, mutate: mutateSuppliers } = useSWR(
+    activeTab === 'config' && configTab === 'products' ? 'offline-products-suppliers' : null,
+    () => suppliersApi.list(),
+  );
+  const suppliers: Supplier[] = suppliersData?.suppliers || [];
+
   useEffect(() => {
     if (colorsData?.data) {
       setColors(colorsData.data);
@@ -983,6 +1029,11 @@ export default function SalesOrdersPage() {
       setProducts(productsData.data);
     }
   }, [productsData]);
+
+  const filteredProducts = useMemo(() => {
+    if (!productCategoryFilterId) return products;
+    return products.filter((p) => (p as any).categoryId === productCategoryFilterId);
+  }, [products, productCategoryFilterId]);
 
   // 尺码费用SWR
   const { data: sizeFeesData, mutate: mutateSizeFees } = useSWR(
@@ -1049,6 +1100,10 @@ export default function SalesOrdersPage() {
   // 产品管理函数
   const handleCreateProduct = async () => {
     if (!newProductName.trim()) return;
+    if (!newProductCategoryId) {
+      alert(t('selectCategory') || 'Please select a category');
+      return;
+    }
     try {
       const response = await authenticatedFetch('/api/proxy/admin/offline-order-products', {
         method: 'POST',
@@ -1058,6 +1113,10 @@ export default function SalesOrdersPage() {
           imageUrl: newProductImageUrl.trim() || null,
           isCustomerOwned: newProductIsCustomerOwned,
           unitCost: newProductUnitCost,
+          categoryId: newProductCategoryId,
+          supplierId: newProductSupplierId || null,
+          sku: newProductSku.trim() || null,
+          stockQuantity: newProductStockQuantity ? Number.parseInt(newProductStockQuantity, 10) : undefined,
         }),
       });
       if (!response.ok) throw new Error('Failed to create product');
@@ -1065,6 +1124,10 @@ export default function SalesOrdersPage() {
       setNewProductImageUrl('');
       setNewProductUnitCost('');
       setNewProductIsCustomerOwned(false);
+      setNewProductCategoryId('');
+      setNewProductSupplierId('');
+      setNewProductSku('');
+      setNewProductStockQuantity('');
       mutateProducts();
     } catch (err: any) {
       alert(err.message || t('errorCreateFailed'));
@@ -1082,6 +1145,10 @@ export default function SalesOrdersPage() {
           imageUrl: editProductImageUrl.trim() || null,
           isCustomerOwned: editProductIsCustomerOwned,
           unitCost: editProductUnitCost,
+          categoryId: editProductCategoryId || undefined,
+          supplierId: editProductSupplierId || null,
+          sku: editProductSku.trim() || null,
+          stockQuantity: editProductStockQuantity ? Number.parseInt(editProductStockQuantity, 10) : undefined,
         }),
       });
       if (!response.ok) throw new Error('Failed to update product');
@@ -1881,58 +1948,202 @@ export default function SalesOrdersPage() {
                 <p className="config-desc">{t('productManagementDesc')}</p>
 
                 <div className="config-form">
-                  <h3>{t('addNewProduct')}</h3>
-                  <div className="config-form-row">
-                    <input
-                      type="text"
-                      placeholder={t('productName')}
-                      value={newProductName}
-                      onChange={(e) => setNewProductName(e.target.value)}
-                      className="config-input"
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('imageUrl')}
-                      value={newProductImageUrl}
-                      onChange={(e) => setNewProductImageUrl(e.target.value)}
-                      className="config-input"
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder={t('unitCost')}
-                      value={newProductUnitCost}
-                      onChange={(e) => setNewProductUnitCost(e.target.value)}
-                      className="config-input"
-                      style={{ width: '120px' }}
-                    />
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
+                  <div className="mb-3">
+                    <h3>{t('addNewProduct')}</h3>
+                  </div>
+                  {/* ── Row 1: Product Name, Image URL, Cost, Category, Supplier ── */}
+                  <div className="config-form-fieldset">
+                    <div className="config-form-row">
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="config-label">{t('productName')}</label>
+                        <input
+                          type="text"
+                          placeholder={t('productName')}
+                          value={newProductName}
+                          onChange={(e) => setNewProductName(e.target.value)}
+                          className="config-input w-full"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="config-label">{t('imageUrl')}</label>
+                        <input
+                          type="text"
+                          placeholder={t('imageUrl')}
+                          value={newProductImageUrl}
+                          onChange={(e) => setNewProductImageUrl(e.target.value)}
+                          className="config-input w-full"
+                        />
+                      </div>
+                      <div className="w-40 min-w-0">
+                        <label className="config-label">{t('unitCost')}</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder={t('unitCost')}
+                          value={newProductUnitCost}
+                          onChange={(e) => setNewProductUnitCost(e.target.value)}
+                          className="config-input w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="config-form-row mt-4">
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="config-label">{t('selectCategory') || 'Category'}</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={newProductCategoryId}
+                            onChange={(e) => setNewProductCategoryId(e.target.value)}
+                            className="config-input flex-1 min-w-0"
+                          >
+                            <option value="">{t('selectCategory') || 'Select Category'}</option>
+                            {categories && categories
+                              .filter((c: any) => c.isActive)
+                              .map((category: any) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCategoryForm({ id: undefined, name: '', slug: '' });
+                              setIsCategoryModalOpen(true);
+                            }}
+                            className="config-btn config-btn-secondary whitespace-nowrap"
+                          >
+                            {t('manageCategories') || 'Categories'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-[200px]">
+                        <label className="config-label">{t('noSupplier') || 'Supplier'}</label>
+                        <div className="flex gap-2">
+                          <select
+                            value={newProductSupplierId}
+                            onChange={(e) => setNewProductSupplierId(e.target.value)}
+                            className="config-input flex-1 min-w-0"
+                          >
+                            <option value="">{t('noSupplier') || 'No Supplier'}</option>
+                            {suppliers && suppliers
+                              .filter((s: any) => s.isActive)
+                              .map((supplier: any) => (
+                                <option key={supplier.id} value={supplier.id}>
+                                  {supplier.name}
+                                </option>
+                              ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSupplierForm({
+                                name: '',
+                                apiUrl: '',
+                                apiKey: '',
+                                apiSecret: '',
+                                isActive: true,
+                                syncInterval: 3600,
+                              });
+                              setIsSupplierModalOpen(true);
+                            }}
+                            className="config-btn config-btn-secondary whitespace-nowrap"
+                          >
+                            {t('manageSuppliers') || 'Suppliers'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 第二行：SKU、库存、客户自带 */}
+                  <div className="config-form-row pt-4 border-t border-slate-200">
+                    <div className="flex-1 min-w-[150px]">
+                      <label className="config-label">SKU</label>
                       <input
-                        type="checkbox"
-                        checked={newProductIsCustomerOwned}
-                        onChange={(e) => setNewProductIsCustomerOwned(e.target.checked)}
+                        type="text"
+                        placeholder={t('skuOptional') || 'SKU (Optional)'}
+                        value={newProductSku}
+                        onChange={(e) => setNewProductSku(e.target.value)}
+                        className="config-input w-full"
                       />
-                      {t('customerOwnedProduct')}
-                    </label>
-                    <button onClick={handleCreateProduct} className="config-btn config-btn-primary">
+                    </div>
+                    <div className="w-32">
+                      <label className="config-label">{t('initialStock') || 'Initial Stock'}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder={t('initialStock') || 'Initial Stock'}
+                        value={newProductStockQuantity}
+                        onChange={(e) => setNewProductStockQuantity(e.target.value)}
+                        className="config-input w-full"
+                      />
+                    </div>
+                    <div className="flex items-center pt-6 px-4">
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          whiteSpace: 'nowrap',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={newProductIsCustomerOwned}
+                          onChange={(e) => setNewProductIsCustomerOwned(e.target.checked)}
+                          className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">{t('customerOwnedProduct')}</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 第三行：添加按钮 */}
+                  <div className="pt-4 border-t border-slate-200 flex justify-end">
+                    <button
+                      onClick={handleCreateProduct}
+                      className="config-btn config-btn-primary px-8 py-2.5 shadow-sm text-sm"
+                    >
                       {t('btnAdd')}
                     </button>
                   </div>
                 </div>
 
                 <div className="config-table-wrapper">
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
+                      <span>{t('filterByCategory') || 'Filter by Category'}:</span>
+                      <select
+                        value={productCategoryFilterId}
+                        onChange={(e) => setProductCategoryFilterId(e.target.value)}
+                        className="config-input"
+                        style={{ width: '200px' }}
+                      >
+                        <option value="">{t('allCategories') || 'All Categories'}</option>
+                        {categories
+                          .filter((c) => c.isActive)
+                          .map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  </div>
                   <table className="config-table">
                     <thead>
                       <tr>
                         <th>{t('productName')}</th>
                         <th>{t('thImage')}</th>
                         <th>{t('unitCost')}</th>
-                        <th>{t('thType')}</th>
+                        <th>{t('thCategory') || 'Category'}</th>
                         <th>{t('thActions')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {products.map((product) => (
+                      {filteredProducts.map((product: any) => (
                         <tr key={product.id}>
                           <td>
                             {editingProductId === product.id ? (
@@ -1943,7 +2154,23 @@ export default function SalesOrdersPage() {
                                 className="config-input-inline"
                               />
                             ) : (
-                              product.name
+                              <>
+                                <div>{product.name}</div>
+                                <div style={{ marginTop: '4px', fontSize: '11px', color: '#4b5563' }}>
+                                  <span
+                                    className={`tag ${product.isCustomerOwned ? 'tag-rush' : 'tag-active'}`}
+                                    style={{ marginRight: '6px' }}
+                                  >
+                                    {product.isCustomerOwned ? t('isCustomerOwned') : t('standardProduct')}
+                                  </span>
+                                  {product.supplierName && (
+                                    <span style={{ marginRight: '6px' }}>
+                                      {t('labelSupplier') || 'Supplier'}: {product.supplierName}
+                                    </span>
+                                  )}
+                                  {product.sku && <span>SKU: {product.sku}</span>}
+                                </div>
+                              </>
                             )}
                           </td>
                           <td>
@@ -1964,31 +2191,52 @@ export default function SalesOrdersPage() {
                           </td>
                           <td>
                             {editingProductId === product.id ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={editProductUnitCost}
-                                onChange={(e) => setEditProductUnitCost(e.target.value)}
-                                className="config-input-inline"
-                              />
+                              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={editProductUnitCost}
+                                  onChange={(e) => setEditProductUnitCost(e.target.value)}
+                                  className="config-input-inline"
+                                  style={{ width: '80px' }}
+                                />
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={editProductStockQuantity}
+                                  onChange={(e) => setEditProductStockQuantity(e.target.value)}
+                                  className="config-input-inline"
+                                  style={{ width: '70px' }}
+                                  placeholder={t('stock') || 'Stock'}
+                                />
+                              </div>
                             ) : (
-                              `$${Number(product.unitCost || 0).toFixed(2)}`
+                              <>
+                                <div>{`$${Number(product.unitCost || 0).toFixed(2)}`}</div>
+                                <div style={{ fontSize: '11px', color: '#4b5563' }}>
+                                  {t('stock') || 'Stock'}: {product.stockQuantity ?? 0}
+                                </div>
+                              </>
                             )}
                           </td>
                           <td>
                             {editingProductId === product.id ? (
-                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <input
-                                  type="checkbox"
-                                  checked={editProductIsCustomerOwned}
-                                  onChange={(e) => setEditProductIsCustomerOwned(e.target.checked)}
-                                />
-                                {t('isCustomerOwned')}
-                              </label>
+                              <select
+                                value={editProductCategoryId}
+                                onChange={(e) => setEditProductCategoryId(e.target.value)}
+                                className="config-input-inline"
+                              >
+                                <option value="">{t('selectCategory') || 'Select Category'}</option>
+                                {categories
+                                  .filter((c) => c.isActive)
+                                  .map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                      {category.name}
+                                    </option>
+                                  ))}
+                              </select>
                             ) : (
-                              <span className={`tag ${product.isCustomerOwned ? 'tag-rush' : 'tag-active'}`}>
-                                {product.isCustomerOwned ? t('isCustomerOwned') : t('standardProduct')}
-                              </span>
+                              <span>{product.categoryName || '—'}</span>
                             )}
                           </td>
                           <td>
@@ -2016,6 +2264,12 @@ export default function SalesOrdersPage() {
                                     setEditProductImageUrl(product.imageUrl || '');
                                     setEditProductIsCustomerOwned(product.isCustomerOwned);
                                     setEditProductUnitCost(String(product.unitCost || ''));
+                                    setEditProductCategoryId(product.categoryId || '');
+                                    setEditProductSupplierId(product.supplierId || '');
+                                    setEditProductSku(product.sku || '');
+                                    setEditProductStockQuantity(
+                                      product.stockQuantity != null ? String(product.stockQuantity) : '',
+                                    );
                                   }}
                                   className="config-btn config-btn-secondary"
                                 >
@@ -2034,7 +2288,7 @@ export default function SalesOrdersPage() {
                       ))}
                     </tbody>
                   </table>
-                  {products.length === 0 && (
+                  {filteredProducts.length === 0 && (
                     <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>{t('noProductsConfigured')}</p>
                   )}
                 </div>
@@ -2337,6 +2591,9 @@ export default function SalesOrdersPage() {
           padding: 1.5rem;
           border-radius: 12px;
           margin-bottom: 2rem;
+          border: 1px solid #e2e8f0;
+          max-width: 100%;
+          overflow-x: auto;
         }
         .config-form h3 {
           margin: 0 0 1rem;
@@ -2344,19 +2601,32 @@ export default function SalesOrdersPage() {
           font-weight: 600;
           color: #111827;
         }
+        .config-form-fieldset {
+          display: flex;
+          flex-direction: column;
+        }
         .config-form-row {
           display: flex;
-          gap: 0.5rem;
+          gap: 1.25rem;
           align-items: flex-end;
           flex-wrap: wrap;
+          max-width: 100%;
+        }
+        .config-label {
+          display: block;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #475569;
+          margin-bottom: 0.375rem;
         }
         .config-input {
-          padding: 0.5rem;
+          padding: 0.625rem 0.875rem;
           border: 1px solid #d1d5db;
-          border-radius: 6px;
+          border-radius: 8px;
           font-size: 0.95rem;
           flex: 1;
-          min-width: 200px;
+          min-width: 0;
+          background: #ffffff;
         }
         .config-input:focus {
           outline: none;
@@ -2647,6 +2917,202 @@ export default function SalesOrdersPage() {
         description={t('deleteOrderConfirm') || 'Are you sure you want to delete this order? This action cannot be undone.'}
         confirmLabel={t('delete') || 'Delete'}
       />
+
+      {/* 分类管理弹窗 */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {categoryForm.id ? t('editCategory') || '编辑分类' : t('addCategory') || '新增分类'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('categoryName') || '名称'}</label>
+                <input
+                  type="text"
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {/* 移除 Slug 输入，改为自动生成 */}
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="px-3 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                  {t('btnCancel') || '取消'}
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!categoryForm.name.trim()) {
+                      setError(t('categoryNameSlugRequired') || '分类名称不能为空');
+                      return;
+                    }
+                    try {
+                      const autoSlug = categoryForm.slug?.trim() || `cat-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+                      if (categoryForm.id) {
+                        await adminCategoriesApi.update(categoryForm.id, {
+                          name: categoryForm.name.trim(),
+                          slug: autoSlug,
+                        });
+                      } else {
+                        await adminCategoriesApi.create({
+                          name: categoryForm.name.trim(),
+                          slug: autoSlug,
+                        });
+                      }
+                      await mutateCategories();
+                      setIsCategoryModalOpen(false);
+                      setCategoryForm({ id: undefined, name: '', slug: '' });
+                    } catch (err: any) {
+                      alert(`保存分类失败: ${err.message}`);
+                      setError(err.message || t('saveCategoryFailed') || '保存分类失败');
+                    }
+                  }}
+                  className="px-3 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  {t('btnSave') || '保存'}
+                </button>
+              </div>
+              <div className="mt-4 border-t pt-3">
+                <p className="text-xs text-gray-500 mb-2">{t('activeCategoriesInfo') || '当前有效分类（点击名称编辑，点击停用按钮进行软删除）：'}</p>
+                <div className="max-h-[50vh] min-h-[10rem] overflow-y-auto space-y-1 text-sm pr-2">
+                  {categories && categories
+                    .filter((c: any) => c.isActive)
+                    .map((category: any) => (
+                      <div key={category.id} className="flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCategoryForm({ id: category.id, name: category.name, slug: category.slug });
+                          }}
+                          className="text-left text-gray-800 hover:underline"
+                        >
+                          {category.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await adminCategoriesApi.archive(category.id);
+                              await mutateCategories();
+                            } catch (err: any) {
+                              setError(err.message || t('archiveCategoryFailed') || '停用分类失败');
+                            }
+                          }}
+                          className="text-xs text-red-600 hover:underline"
+                        >
+                          {t('btnDeactivate') || '停用'}
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 供应商管理简易弹窗 */}
+      {isSupplierModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {supplierForm.id ? t('editSupplier') || '编辑供应商' : t('addSupplier') || '新增供应商'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('supplierName') || '名称'}</label>
+                <input
+                  type="text"
+                  value={supplierForm.name || ''}
+                  onChange={(e) => setSupplierForm((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {/* API 字段对服装供应商来说无用，直接隐藏并清理表单界面 */}
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSupplierModalOpen(false)}
+                  className="px-3 py-2 text-sm rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+                >
+                  {t('btnCancel') || '取消'}
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!supplierForm.name?.trim()) {
+                      setError(t('supplierFieldsRequired') || '供应商名称不能为空');
+                      return;
+                    }
+                    try {
+                      if (supplierForm.id) {
+                        await suppliersApi.update(supplierForm.id, supplierForm as Required<Supplier>);
+                      } else {
+                        await suppliersApi.create(supplierForm as unknown as Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>);
+                      }
+                      await mutateSuppliers();
+                      setIsSupplierModalOpen(false);
+                      setSupplierForm({
+                        name: '',
+                        apiUrl: '',
+                        apiKey: '',
+                        apiSecret: '',
+                        isActive: true,
+                        syncInterval: 3600,
+                      });
+                    } catch (err: any) {
+                      alert(`保存供应商失败: ${err.message}`);
+                      setError(err.message || t('saveSupplierFailed') || '保存供应商失败');
+                    }
+                  }}
+                  className="px-3 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  {t('btnSave') || '保存'}
+                </button>
+              </div>
+              <div className="mt-4 border-t pt-3">
+                <p className="text-xs text-gray-500 mb-2">{t('activeSuppliersInfo') || '当前有效供应商（点击名称编辑，点击停用按钮进行软删除）：'}</p>
+                <div className="max-h-[50vh] min-h-[10rem] overflow-y-auto space-y-1 text-sm pr-2">
+                  {suppliers && suppliers
+                    .filter((s: any) => s.isActive)
+                    .map((supplier: any) => (
+                      <div key={supplier.id} className="flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSupplierForm(supplier);
+                          }}
+                          className="text-left text-gray-800 hover:underline"
+                        >
+                          {supplier.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await suppliersApi.update(supplier.id, { isActive: false } as Required<Supplier>);
+                              await mutateSuppliers();
+                            } catch (err: any) {
+                              setError(err.message || t('archiveSupplierFailed') || '停用供应商失败');
+                            }
+                          }}
+                          className="text-xs text-red-600 hover:underline"
+                        >
+                          {t('btnDeactivate') || '停用'}
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 }

@@ -1,5 +1,6 @@
 # Cloud Run service configuration for backend
 # Backend service definition for GCP Cloud Run
+# 2026-03-05: 启用 Cloud SQL，DATABASE_URL 使用 Unix socket（见 docs/backup-restore.md）
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
@@ -16,8 +17,7 @@ spec:
         run.googleapis.com/cpu-throttling: "false"
         run.googleapis.com/memory: "512Mi"  # ✅ FREE TIER: Minimum memory
         run.googleapis.com/cpu: "1"
-        # ⚠️ REMOVED Cloud SQL - use external free database (Supabase/Neon) instead
-        # run.googleapis.com/cloudsql-instances: "PROJECT_ID:REGION:DB_INSTANCE_NAME"
+        run.googleapis.com/cloudsql-instances: "PROJECT_ID:REGION:print-main-db"
     spec:
       containerConcurrency: 80
       timeoutSeconds: 300
