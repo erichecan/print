@@ -16,7 +16,7 @@ REGION=${GCP_REGION:-us-central1}
 REPOSITORY=${ARTIFACT_REGISTRY:-print-main}
 BACKEND_SERVICE=${BACKEND_SERVICE_NAME:-print-main-backend}
 FRONTEND_SERVICE=${FRONTEND_SERVICE_NAME:-print-main-frontend}
-DB_INSTANCE=${DB_INSTANCE_NAME:-print-main-db}
+DB_INSTANCE=${DB_INSTANCE_NAME:-print1600}
 
 echo -e "${GREEN}🚀 Starting GCP deployment (FREE TIER OPTIMIZED)...${NC}"
 echo -e "Project ID: ${YELLOW}${PROJECT_ID}${NC}"

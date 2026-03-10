@@ -191,26 +191,38 @@ exports.listProducts = async (req, res, next) => {
  */
 exports.listAllProducts = async (req, res, next) => {
   try {
-    const products = await prisma.offline_order_products.findMany({
-      orderBy: [
-        { display_order: 'asc' },
-        { name: 'asc' },
-      ],
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
+    let products;
+    try {
+      products = await prisma.offline_order_products.findMany({
+        orderBy: [
+          { display_order: 'asc' },
+          { name: 'asc' },
+        ],
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          supplier: {
+            select: {
+              id: true,
+              name: true,
+            },
           },
         },
-        supplier: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    });
+      });
+    } catch (includeError) {
+      logger.warn('[offlineOrderProductController] Prisma include failed, falling back to basic query:', includeError.message);
+      // Fallback: exclude relations if client is out of sync
+      products = await prisma.offline_order_products.findMany({
+        orderBy: [
+          { display_order: 'asc' },
+          { name: 'asc' },
+        ],
+      });
+    }
 
     res.json({
       success: true,

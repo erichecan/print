@@ -9,7 +9,7 @@ PROJECT_ID=${GCP_PROJECT_ID:-$(gcloud config get-value project)}
 REGION=${GCP_REGION:-us-central1}
 REPOSITORY=${ARTIFACT_REGISTRY:-print-main}
 JOB_NAME="migrate-db-job"
-DB_INSTANCE=${DB_INSTANCE_NAME:-print-main-db}
+DB_INSTANCE=${DB_INSTANCE_NAME:-print1600}
 BACKEND_IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest"
 
 echo "🚀 Setting up Cloud Run Job for DB Migration..."
@@ -25,7 +25,7 @@ gcloud run jobs deploy $JOB_NAME \
   --image $BACKEND_IMAGE \
   --region $REGION \
   --command "npx" \
-  --args "prisma,migrate,deploy" \
+  --args "prisma,db,push,--schema=prisma/schema.prisma,--accept-data-loss" \
   --set-secrets DATABASE_URL=database-url:latest \
   --set-env-vars NODE_ENV=production \
   --max-retries 0 \
