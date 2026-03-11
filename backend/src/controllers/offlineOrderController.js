@@ -1,6 +1,7 @@
 // Offline POD order controller
 // Enhanced with unified error handling
 const path = require('path');
+const fs = require('fs');
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const {
@@ -10,6 +11,7 @@ const {
   getInitialStage
 } = require('../services/offlineWorkflowService');
 const { uploadBufferToGcs } = require('../utils/gcsStorage');
+const { ensureOfflineUploadRoot } = require('../utils/offlineUpload');
 const { InternalServerError } = require('../utils/errors');
 const settingService = require('../services/settingService');
 
@@ -131,16 +133,33 @@ const processAssetUpload = async (file) => {
     throw new Error('File buffer is missing. Use multer.memoryStorage() for uploads.');
   }
 
-  const url = await uploadBufferToGcs(file.buffer, storageKey, {
-    contentType: file.mimetype || 'application/octet-stream'
-  });
+  let url;
+
+  // 优先尝试上传到 GCS，失败则自动回退到本地磁盘存储，避免前端 400 Upload Error
+  try {
+    if (process.env.GCP_IMAGE_BUCKET) {
+      url = await uploadBufferToGcs(file.buffer, storageKey, {
+        contentType: file.mimetype || 'application/octet-stream',
+      });
+    } else {
+      throw new Error('GCP_IMAGE_BUCKET is not configured');
+    }
+  } catch (gcsError) {
+    logger.warn('[offlineOrderController] GCS upload failed, falling back to local storage.', {
+      message: gcsError.message,
+    });
+    const root = ensureOfflineUploadRoot();
+    const localPath = path.join(root, filename);
+    await fs.promises.writeFile(localPath, file.buffer);
+    url = `/uploads/offline-orders/${filename}`;
+  }
 
   return {
     fileName: file.originalname || filename,
     fileSize: file.size || 0,
     contentType: file.mimetype || 'application/octet-stream',
     storageKey,
-    url
+    url,
   };
 };
 
