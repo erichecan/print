@@ -177,13 +177,13 @@ export default function SalesOrderDetailPage() {
   }, [orderId, router]);
 
   // Handle Print Mode
+  const isPrintMode = searchParams?.get('print') === 'true';
+
   useEffect(() => {
-    const isPrintMode = searchParams?.get('print') === 'true';
     if (isPrintMode && !loading && order && !error) {
-      setShowPrintSettings(true);
-      // Auto-print is now optional, user triggers it from settings
+      setShowPrintSettings(false); // 直接使用紧凑布局，不显示设置面板
     }
-  }, [searchParams, loading, order, error]);
+  }, [isPrintMode, loading, order, error]);
 
   const handlePrint = () => {
     window.print();
@@ -349,9 +349,9 @@ export default function SalesOrderDetailPage() {
   };
 
   return (
-    <div className={`order-detail-shell ${compactMode && showPrintSettings ? 'print-compact-mode' : ''}`}>
-      {/* Print Settings Panel */}
-      {showPrintSettings && (
+    <div className={`order-detail-shell ${isPrintMode || (compactMode && showPrintSettings) ? 'print-compact-mode' : ''}`}>
+      {/* Print Settings Panel（仅非 print=true 时显示） */}
+      {!isPrintMode && showPrintSettings && (
         <div className="print:hidden bg-blue-50 border-b border-blue-200 p-4 sticky top-0 z-50 shadow-md mb-4">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -1299,6 +1299,88 @@ export default function SalesOrderDetailPage() {
           display: flex;
           justify-content: center;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+        }
+
+        /* 紧凑打印模式：在 print=true 或开启 Compact Layout 时生效 */
+        .order-detail-shell.print-compact-mode {
+          padding: 0.5rem;
+          background: #ffffff;
+          font-size: 9pt;
+          line-height: 1.25;
+        }
+
+        .order-detail-shell.print-compact-mode .order-detail-card {
+          max-width: none;
+          border-radius: 0;
+          box-shadow: none;
+        }
+
+        .order-detail-shell.print-compact-mode .order-detail-header {
+          padding: 0.75rem 1rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .order-detail-shell.print-compact-mode .order-detail-content {
+          padding: 0.75rem 1rem 1rem 1rem;
+          gap: 0.5rem;
+        }
+
+        .order-detail-shell.print-compact-mode .order-section {
+          padding: 0.5rem 0.75rem;
+          margin-bottom: 0.4rem;
+        }
+
+        .order-detail-shell.print-compact-mode .order-section-header h2 {
+          font-size: 0.9rem;
+        }
+
+        .order-detail-shell.print-compact-mode .info-grid {
+          gap: 0.25rem;
+        }
+
+        .order-detail-shell.print-compact-mode .info-label {
+          font-size: 0.7rem;
+        }
+
+        .order-detail-shell.print-compact-mode .info-value {
+          font-size: 0.75rem;
+        }
+
+        .order-detail-shell.print-compact-mode .product-card {
+          padding: 0.4rem 0.6rem;
+          margin-bottom: 0.35rem;
+        }
+
+        .order-detail-shell.print-compact-mode .product-header {
+          margin-bottom: 0.2rem;
+        }
+
+        .order-detail-shell.print-compact-mode .product-meta {
+          font-size: 0.7rem;
+        }
+
+        .order-detail-shell.print-compact-mode .billing-summary-card {
+          padding: 0.5rem 0.75rem;
+        }
+
+        .order-detail-shell.print-compact-mode .billing-summary-card .summary-row {
+          margin-bottom: 0.1rem;
+        }
+
+        .order-detail-shell.print-compact-mode .billing-summary-card .summary-total {
+          padding-top: 0.15rem;
+          margin-top: 0.2rem;
+        }
+
+        @media print {
+          .order-detail-shell.print-compact-mode {
+            padding: 0;
+            background: #ffffff;
+          }
+
+          .order-detail-shell.print-compact-mode .order-detail-card {
+            box-shadow: none;
+          }
         }
 
         .order-detail-card {
