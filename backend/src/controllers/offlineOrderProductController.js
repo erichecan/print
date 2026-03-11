@@ -194,8 +194,14 @@ exports.listProducts = async (req, res, next) => {
 exports.listAllProducts = async (req, res, next) => {
   try {
     let products;
+    const where = {
+      // 管理列表默认只展示启用的产品；已“删除”的产品是 is_active=false
+      is_active: true,
+    };
+
     try {
       products = await prisma.offline_order_products.findMany({
+        where,
         orderBy: [
           { display_order: 'asc' },
           { name: 'asc' },
@@ -219,6 +225,7 @@ exports.listAllProducts = async (req, res, next) => {
       logger.warn('[offlineOrderProductController] Prisma include failed, falling back to basic query:', includeError.message);
       try {
         products = await prisma.offline_order_products.findMany({
+          where,
           orderBy: [
             { display_order: 'asc' },
             { name: 'asc' },
