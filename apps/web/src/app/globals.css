@@ -11431,27 +11431,247 @@ select {
   /* Align with text line-height */
 }
 
-/* Print styles moved from offline-orders page due to SWC panic */
+/* 线下订单紧凑打印排版 - 省纸、少留白 2026-03-10 */
+/* 屏幕预览时也应用紧凑版（与打印一致） */
+.print-compact-mode .order-detail-content {
+  gap: 4px;
+}
+.print-compact-mode .compact-print-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.print-compact-mode .order-section.mb-2 {
+  margin-bottom: 6px;
+}
+.print-compact-mode .section-title {
+  font-size: 10pt;
+  margin-bottom: 4px;
+}
+.print-compact-mode .order-pricing-box {
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.print-compact-mode .billing-details-compact {
+  padding: 8px 10px;
+}
+.print-compact-mode .billing-details-compact table {
+  font-size: 11px;
+}
+.print-compact-mode .billing-details-compact th,
+.print-compact-mode .billing-details-compact td {
+  padding: 2px 4px;
+}
+
 @media print {
+  @page {
+    margin: 6mm;
+    size: A4;
+  }
+
   .print-compact-mode .order-detail-card {
-    padding: 0.5rem !important;
+    padding: 5mm !important;
     border: none !important;
     box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .print-compact-mode .order-detail-content {
+    padding: 0 2px 0 0 !important;
+    gap: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* 两列：项目信息 | 客户信息 */
+  .print-compact-mode .compact-print-two-col {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .print-compact-mode .order-section {
+    padding: 4px 6px !important;
+    margin-bottom: 4px !important;
+    border-radius: 0 !important;
+    border: 1px solid #e0e0e0 !important;
+    background: #fff !important;
+  }
+
+  .print-compact-mode .section-title {
+    font-size: 9pt !important;
+    margin: 0 0 2px 0 !important;
+    padding-bottom: 1px !important;
+    border-bottom: 1px solid #ccc !important;
+  }
+
+  .print-compact-mode .info-grid {
+    gap: 2px !important;
+  }
+
+  .print-compact-mode .info-item {
+    margin-bottom: 0 !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+  }
+
+  .print-compact-mode .info-label {
+    font-size: 7pt !important;
+    min-width: 52px;
+  }
+
+  .print-compact-mode .info-value {
+    font-size: 9pt !important;
+  }
+
+  .print-compact-mode .info-text {
+    padding: 2px 4px !important;
+    font-size: 8pt !important;
+    border-radius: 0 !important;
+  }
+
+  .print-compact-mode .info-tags .info-tag {
+    padding: 1px 4px !important;
+    font-size: 7pt !important;
+  }
+
+  /* 产品卡片紧凑 */
+  .print-compact-mode .products-list {
+    gap: 4px !important;
+  }
+
+  .print-compact-mode .product-card {
+    padding: 4px 6px !important;
+    margin-bottom: 4px !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .print-compact-mode .product-header {
+    margin-bottom: 2px !important;
+    padding-bottom: 2px !important;
+    border-bottom: 1px solid #e5e5e5 !important;
+  }
+
+  .print-compact-mode .product-name {
+    font-size: 9pt !important;
+  }
+
+  .print-compact-mode .product-summary,
+  .print-compact-mode .product-total {
+    font-size: 8pt !important;
+  }
+
+  .print-compact-mode .product-print-specs {
+    margin: 2px 0 !important;
+    padding: 2px 4px !important;
+    border-radius: 2px !important;
+    font-size: 7pt !important;
+  }
+
+  .print-compact-mode .product-print-specs h4 {
+    font-size: 7pt !important;
+    margin: 0 !important;
+  }
+
+  .print-compact-mode .product-print-specs > div {
+    gap: 4px !important;
+  }
+
+  .print-compact-mode .product-print-specs > div > div {
+    padding: 2px 4px !important;
+    min-width: 0 !important;
+    font-size: 7pt !important;
+  }
+
+  .print-compact-mode .color-group-box {
+    margin-bottom: 4px !important;
+    padding: 4px 6px !important;
+    border-radius: 0 !important;
+    border: 1px solid #eee !important;
+  }
+
+  .print-compact-mode .color-group-box > div:first-child {
+    margin-bottom: 2px !important;
+    font-size: 8pt !important;
+  }
+
+  .print-compact-mode .variants-table th,
+  .print-compact-mode .variants-table td {
+    padding: 1px 4px !important;
+    font-size: 8pt !important;
+  }
+
+  .print-compact-mode .variants-table th {
+    font-size: 7pt !important;
+  }
+
+  /* 价格区紧凑 */
+  .print-compact-mode .order-pricing-box {
+    padding: 4px 6px !important;
+    margin-bottom: 4px !important;
+    border-radius: 0 !important;
+  }
+
+  .print-compact-mode .order-pricing-box h3 {
+    font-size: 9pt !important;
+    margin: 0 0 2px 0 !important;
+  }
+
+  .print-compact-mode .order-pricing-box > div {
+    gap: 1px !important;
+  }
+
+  .print-compact-mode .order-pricing-box > div > div {
+    font-size: 8pt !important;
+  }
+
+  /* 计费明细表紧凑 */
+  .print-compact-mode .billing-details-compact {
+    margin-top: 4px !important;
+    padding: 4px 6px !important;
+    border-radius: 0 !important;
+  }
+
+  .print-compact-mode .billing-details-compact h4 {
+    font-size: 9pt !important;
+    margin: 0 0 2px 0 !important;
+  }
+
+  .print-compact-mode .billing-details-compact table {
+    font-size: 7pt !important;
+  }
+
+  .print-compact-mode .billing-details-compact th,
+  .print-compact-mode .billing-details-compact td {
+    padding: 1px 3px !important;
   }
 
   .print-compact-mode h1 {
-    font-size: 1.25rem !important;
+    font-size: 1.1rem !important;
   }
 
   .print-compact-mode h2 {
-    font-size: 1.1rem !important;
-    margin-bottom: 0.25rem !important;
+    font-size: 9pt !important;
+    margin-bottom: 2px !important;
   }
 
   .print-compact-mode .py-2,
   .print-compact-mode .mb-4 {
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
-    margin-bottom: 0.5rem !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .print-compact-mode .order-code {
+    font-size: 9pt !important;
+    padding: 1px 4px !important;
+  }
+
+  .print-compact-mode .status-badge {
+    padding: 1px 4px !important;
+    font-size: 7pt !important;
   }
 }

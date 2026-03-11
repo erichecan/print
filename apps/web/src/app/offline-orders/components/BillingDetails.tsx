@@ -38,9 +38,11 @@ interface BillingDetailsProps {
   dstFileFee?: number;
   rushFee?: number;
   locale?: OfflineOrdersLocale;
+  /** 紧凑打印时传入 billing-details-compact 2026-03-10 */
+  className?: string;
 }
 
-export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee = 0, rushFee = 0, locale = 'en' }: BillingDetailsProps) {
+export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee = 0, rushFee = 0, locale = 'en', className }: BillingDetailsProps) {
   // Use translations
   const t = useMemo(() => (key: string) => {
     const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
@@ -99,7 +101,7 @@ export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee 
   }
 
   return (
-    <div className="mt-4 p-5 bg-white border border-gray-200 rounded-lg">
+    <div className={`mt-4 p-5 bg-white border border-gray-200 rounded-lg ${className ?? ''}`}>
       <h4 className="text-base font-semibold text-gray-900 m-0 mb-4">{t('billingDetails')}</h4>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">

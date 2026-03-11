@@ -123,6 +123,8 @@ function mapSupplierItemToInventory(supplierItem, supplier) {
 
 /**
  * Get all active suppliers
+ * 容错：生产环境若未执行 schema 同步（suppliers 表不存在）则返回空数组，避免 500
+ * 2026-03-10 根因修复：/api/admin/suppliers 500
  */
 async function getActiveSuppliers() {
   try {
@@ -133,6 +135,19 @@ async function getActiveSuppliers() {
 
     return suppliers;
   } catch (error) {
+    const msg = (error && error.message) ? String(error.message) : '';
+    const code = error && error.code;
+    const isMissingTable =
+      code === 'P2021' ||
+      /relation.*does not exist|table.*suppliers.*does not exist|relation "suppliers" does not exist/i.test(msg);
+
+    if (isMissingTable) {
+      logger.warn('Suppliers table or relation missing (schema sync required). Returning empty list.', {
+        hint: 'Set AUTO_MIGRATE=true and redeploy, or run: npx prisma db push',
+      });
+      return [];
+    }
+
     logger.error('Error fetching active suppliers', {
       error: error.message,
       stack: error.stack,

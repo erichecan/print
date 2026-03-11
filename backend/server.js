@@ -149,35 +149,48 @@ const runMigrationsIfEnabled = () => {
   }
 };
 
-// 优化启动流程：先启动服务器，再测试数据库连接
-// 这样可以更快响应 Cloud Run 的健康检查
+// 2026-03-11 修复：在 listen 之前先跑 DB 连接 + 迁移，避免 Cloud Run 在迁移完成前 SIGTERM 导致 schema 从未同步
 const http = require('http');
 const httpServer = http.createServer(app);
 
-// Initialize Socket.IO chat server
 const { initializeChatServer } = require('./src/socket/chatServer');
 const io = initializeChatServer(httpServer);
 logger.info('✅ Socket.IO chat server initialized');
 
-// 立即启动服务器监听，不等待数据库连接测试
-
-// Start Server
-const server = httpServer.listen(PORT, () => {
-  logger.info(`🚀 Server running on port ${PORT}`);
-  logger.info(`📡 API available at http://localhost:${PORT}/api`);
-  logger.info(`💬 WebSocket available at ws://localhost:${PORT}/socket.io`);
-  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-
-  // 服务器启动后，异步测试数据库连接和运行迁移
-  testConnection().then(() => {
-    logger.info('✅ Database connection verified');
-    runMigrationsIfEnabled();
-  }).catch((error) => {
-    logger.error('⚠️  Database connection test failed, but server is running:', error);
-    logger.warn('   某些需要数据库的功能可能不可用，但服务器会继续运行');
-    // 不退出进程，让服务器继续运行
+function startListening() {
+  httpServer.listen(PORT, () => {
+    logger.info(`🚀 Server running on port ${PORT}`);
+    logger.info(`📡 API available at http://localhost:${PORT}/api`);
+    logger.info(`💬 WebSocket available at ws://localhost:${PORT}/socket.io`);
+    logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
-});
+}
+
+// 先验证 DB 连接；若开启 AUTO_MIGRATE 则同步执行迁移后再 listen
+testConnection()
+  .then(() => {
+    logger.info('✅ Database connection verified');
+    if (process.env.AUTO_MIGRATE === 'true') {
+      logger.info('🔧 AUTO_MIGRATE=true: running migrations before starting HTTP server...');
+      try {
+        require('child_process').execSync('node scripts/run-migrations.js', {
+          stdio: 'inherit',
+          timeout: 120000,
+          cwd: path.join(__dirname),
+        });
+        logger.info('✅ Migrations completed.');
+      } catch (e) {
+        logger.warn('⚠️  Migrations failed (server will start anyway):', e.message);
+      }
+    } else {
+      runMigrationsIfEnabled();
+    }
+    startListening();
+  })
+  .catch((err) => {
+    logger.error('⚠️  Database connection test failed, but server will start:', err.message);
+    startListening();
+  });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

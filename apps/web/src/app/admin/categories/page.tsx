@@ -185,7 +185,9 @@ export default function AdminCategoriesPage() {
                   )}
                 </div>
                 <div>
-                  <div className="category-name">{category.name}</div>
+                  <div className="category-name">
+                    {category.parent ? `${category.parent.name} / ${category.name}` : category.name}
+                  </div>
                   <div className="category-slug">/{category.slug}</div>
                   <div className="category-stats">
                     {(category._count?.products ?? 0).toLocaleString()} products • Sort{' '}

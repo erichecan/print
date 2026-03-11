@@ -408,6 +408,20 @@ export default function SalesOrderDetailPage() {
       )}
 
       <div className="order-detail-card">
+        {/* 紧凑打印：仅打印时显示的页眉（订单号+状态）2026-03-10 */}
+        {meta && compactMode && showPrintSettings && (
+          <div className="hidden print:flex order-detail-print-header" style={{ justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333', paddingBottom: '2px', marginBottom: '4px', padding: '0 6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 className="order-detail-print-title" style={{ margin: 0, fontSize: '11pt', fontWeight: 700 }}>{t('orderDetail')}</h1>
+              <span className="order-code">{meta.orderCode}</span>
+            </div>
+            <div className="order-status-badges">
+              <span className={`status-badge status-${meta.status.toLowerCase()}`}>{meta.status}</span>
+              {meta.rushOrder && <span className="status-badge status-rush">{t('tagRush')}</span>}
+              {meta.stage?.label && <span className="status-badge status-stage">{meta.stage.label}</span>}
+            </div>
+          </div>
+        )}
         <header className="order-detail-header print:hidden">
           <button type="button" className="order-detail-back" onClick={handleBack}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -579,88 +593,172 @@ export default function SalesOrderDetailPage() {
             </div>
           ) : (
             <div className="order-detail-content">
-              {/* 项目信息 */}
-              {(!showPrintSettings || visibleSections.projectInfo) && (
-                <section className={`order-section ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
-                  <h2 className="section-title">{t('projectInfo')}</h2>
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <span className="info-label">{t('projectName')}</span>
-                      <span className="info-value">{meta.projectName}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">{t('primaryProduct')}</span>
-                      <span className="info-value">{meta.primaryProduct || '—'}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">{t('quantity')}</span>
-                      <span className="info-value">{meta.quantity ?? '—'}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">{t('deliveryDate')}</span>
-                      <span className="info-value">
-                        {meta.deliveryDate ? new Date(meta.deliveryDate).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        }) : '—'}
-                      </span>
-                    </div>
-                    {meta!.dst_file_fee && Number(meta!.dst_file_fee) > 0 && (
-                      <div className="info-item">
-                        <span className="info-label">DST File Fee</span>
-                        <span className="info-value">${Number(meta!.dst_file_fee).toFixed(2)} CAD</span>
+              {/* 紧凑打印：项目信息 + 客户信息 两列并排 2026-03-10 */}
+              {compactMode && showPrintSettings ? (
+                (visibleSections.projectInfo && (
+                  <div className="compact-print-two-col">
+                    <section className="order-section mb-2">
+                      <h2 className="section-title">{t('projectInfo')}</h2>
+                      <div className="info-grid">
+                        <div className="info-item">
+                          <span className="info-label">{t('projectName')}</span>
+                          <span className="info-value">{meta.projectName}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('primaryProduct')}</span>
+                          <span className="info-value">{meta.primaryProduct || '—'}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('quantity')}</span>
+                          <span className="info-value">{meta.quantity ?? '—'}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('deliveryDate')}</span>
+                          <span className="info-value">
+                            {meta.deliveryDate ? new Date(meta.deliveryDate).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            }) : '—'}
+                          </span>
+                        </div>
+                        {meta!.dst_file_fee && Number(meta!.dst_file_fee) > 0 && (
+                          <div className="info-item">
+                            <span className="info-label">DST File Fee</span>
+                            <span className="info-value">${Number(meta!.dst_file_fee).toFixed(2)} CAD</span>
+                          </div>
+                        )}
+                        {(meta.requiresMockups || meta.requiresProof || meta.rushOrder) && (
+                          <div className="info-item info-item-full">
+                            <span className="info-label">{t('specialRequirements')}</span>
+                            <div className="info-tags">
+                              {meta.requiresMockups && <span className="info-tag tag-mockups">{t('requiresMockups')}</span>}
+                              {meta.requiresProof && <span className="info-tag tag-proof">{t('requiresProof')}</span>}
+                              {meta.rushOrder && <span className="info-tag tag-rush">{t('rushOrder')}</span>}
+                            </div>
+                          </div>
+                        )}
+                        {(config?.artworkNotes || meta.description) && (
+                          <div className="info-item info-item-full">
+                            <span className="info-label">{t('designNotes')}</span>
+                            <div className="info-text">
+                              {config?.artworkNotes || meta.description || '—'}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {(meta.requiresMockups || meta.requiresProof || meta.rushOrder) && (
-                      <div className="info-item info-item-full">
-                        <span className="info-label">{t('specialRequirements')}</span>
-                        <div className="info-tags">
-                          {meta.requiresMockups && <span className="info-tag tag-mockups">{t('requiresMockups')}</span>}
-                          {meta.requiresProof && <span className="info-tag tag-proof">{t('requiresProof')}</span>}
-                          {meta.rushOrder && <span className="info-tag tag-rush">{t('rushOrder')}</span>}
+                    </section>
+                    <section className="order-section mb-2">
+                      <h2 className="section-title">{t('customerInfo')}</h2>
+                      <div className="info-grid">
+                        <div className="info-item">
+                          <span className="info-label">{t('contactName')}</span>
+                          <span className="info-value">{meta.contact.name}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('company')}</span>
+                          <span className="info-value">{meta.contact.company || '—'}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('email')}</span>
+                          <a href={`mailto:${meta.contact.email}`} className="info-value info-link">
+                            {meta.contact.email}
+                          </a>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('phone')}</span>
+                          <a href={`tel:${meta.contact.phone}`} className="info-value info-link">
+                            {meta.contact.phone || '—'}
+                          </a>
                         </div>
                       </div>
-                    )}
-                    {(config?.artworkNotes || meta.description) && (
-                      <div className="info-item info-item-full">
-                        <span className="info-label">{t('designNotes')}</span>
-                        <div className="info-text">
-                          {config?.artworkNotes || meta.description || '—'}
-                        </div>
-                      </div>
-                    )}
+                    </section>
                   </div>
-                </section>
-              )}
+                ))
+              ) : (
+                <>
+                  {(!showPrintSettings || visibleSections.projectInfo) && (
+                    <section className={`order-section ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
+                      <h2 className="section-title">{t('projectInfo')}</h2>
+                      <div className="info-grid">
+                        <div className="info-item">
+                          <span className="info-label">{t('projectName')}</span>
+                          <span className="info-value">{meta.projectName}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('primaryProduct')}</span>
+                          <span className="info-value">{meta.primaryProduct || '—'}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('quantity')}</span>
+                          <span className="info-value">{meta.quantity ?? '—'}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('deliveryDate')}</span>
+                          <span className="info-value">
+                            {meta.deliveryDate ? new Date(meta.deliveryDate).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            }) : '—'}
+                          </span>
+                        </div>
+                        {meta!.dst_file_fee && Number(meta!.dst_file_fee) > 0 && (
+                          <div className="info-item">
+                            <span className="info-label">DST File Fee</span>
+                            <span className="info-value">${Number(meta!.dst_file_fee).toFixed(2)} CAD</span>
+                          </div>
+                        )}
+                        {(meta.requiresMockups || meta.requiresProof || meta.rushOrder) && (
+                          <div className="info-item info-item-full">
+                            <span className="info-label">{t('specialRequirements')}</span>
+                            <div className="info-tags">
+                              {meta.requiresMockups && <span className="info-tag tag-mockups">{t('requiresMockups')}</span>}
+                              {meta.requiresProof && <span className="info-tag tag-proof">{t('requiresProof')}</span>}
+                              {meta.rushOrder && <span className="info-tag tag-rush">{t('rushOrder')}</span>}
+                            </div>
+                          </div>
+                        )}
+                        {(config?.artworkNotes || meta.description) && (
+                          <div className="info-item info-item-full">
+                            <span className="info-label">{t('designNotes')}</span>
+                            <div className="info-text">
+                              {config?.artworkNotes || meta.description || '—'}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  )}
 
-              {/* 客户信息 */}
-              {(!showPrintSettings || visibleSections.projectInfo) && (
-                <section className={`order-section ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
-                  <h2 className="section-title">{t('customerInfo')}</h2>
-                  <div className="info-grid">
-                    <div className="info-item">
-                      <span className="info-label">{t('contactName')}</span>
-                      <span className="info-value">{meta.contact.name}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">{t('company')}</span>
-                      <span className="info-value">{meta.contact.company || '—'}</span>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">{t('email')}</span>
-                      <a href={`mailto:${meta.contact.email}`} className="info-value info-link">
-                        {meta.contact.email}
-                      </a>
-                    </div>
-                    <div className="info-item">
-                      <span className="info-label">{t('phone')}</span>
-                      <a href={`tel:${meta.contact.phone}`} className="info-value info-link">
-                        {meta.contact.phone || '—'}
-                      </a>
-                    </div>
-                  </div>
-                </section>
+                  {(!showPrintSettings || visibleSections.projectInfo) && (
+                    <section className={`order-section ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
+                      <h2 className="section-title">{t('customerInfo')}</h2>
+                      <div className="info-grid">
+                        <div className="info-item">
+                          <span className="info-label">{t('contactName')}</span>
+                          <span className="info-value">{meta.contact.name}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('company')}</span>
+                          <span className="info-value">{meta.contact.company || '—'}</span>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('email')}</span>
+                          <a href={`mailto:${meta.contact.email}`} className="info-value info-link">
+                            {meta.contact.email}
+                          </a>
+                        </div>
+                        <div className="info-item">
+                          <span className="info-label">{t('phone')}</span>
+                          <a href={`tel:${meta.contact.phone}`} className="info-value info-link">
+                            {meta.contact.phone || '—'}
+                          </a>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+                </>
               )}
 
               {/* Product List Section */}
@@ -875,13 +973,16 @@ export default function SalesOrderDetailPage() {
               {/* Pricing Section */}
               {config?.pricing && (!showPrintSettings || visibleSections.pricing) && (
                 <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
-                  <div style={{
-                    padding: '1.5rem',
-                    backgroundColor: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    borderRadius: '0.75rem',
-                    marginBottom: '2rem'
-                  }}>
+                  <div
+                    className="order-pricing-box"
+                    style={{
+                      padding: '1.5rem',
+                      backgroundColor: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: '0.75rem',
+                      marginBottom: '2rem'
+                    }}
+                  >
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', margin: '0 0 1rem 0' }}>
                       {t('pricingDetail')}{Number(config.pricing.taxAmount || 0) > 0 ? ` ${t('includingTax')}` : ''}
                     </h3>
@@ -951,7 +1052,7 @@ export default function SalesOrderDetailPage() {
                     </div>
                   </div>
 
-                  {/* 计费明细 Table */}
+                  {/* 计费明细 Table - 紧凑打印时使用 billing-details-compact 2026-03-10 */}
                   {billingData && (!showPrintSettings || visibleSections.billing) && (
                     <div style={{ marginBottom: '2rem' }} className={compactMode && showPrintSettings ? 'mt-2' : ''}>
                       <BillingDetails
@@ -960,6 +1061,7 @@ export default function SalesOrderDetailPage() {
                         dstFileFee={billingData.dstFileFee}
                         rushFee={billingData.rushFee}
                         locale={locale}
+                        className={compactMode && showPrintSettings ? 'billing-details-compact' : undefined}
                       />
                     </div>
                   )}

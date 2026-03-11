@@ -496,13 +496,18 @@ export default function SalesOrdersPage() {
   const [editProductSku, setEditProductSku] = useState('');
   const [editProductStockQuantity, setEditProductStockQuantity] = useState('');
   const [productCategoryFilterId, setProductCategoryFilterId] = useState('');
+  const [productCategoryFilterL1Id, setProductCategoryFilterL1Id] = useState('');
+  const [newProductCategoryL1Id, setNewProductCategoryL1Id] = useState('');
+  const [editProductCategoryL1Id, setEditProductCategoryL1Id] = useState('');
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string; slug: string }>({
+  const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string; slug: string; parentId?: string }>({
     id: undefined,
     name: '',
     slug: '',
+    parentId: undefined,
   });
+  const [expandedCatIds, setExpandedCatIds] = useState<string[]>([]);
 
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [supplierForm, setSupplierForm] = useState<Partial<Supplier>>({
@@ -1031,9 +1036,16 @@ export default function SalesOrdersPage() {
   }, [productsData]);
 
   const filteredProducts = useMemo(() => {
-    if (!productCategoryFilterId) return products;
-    return products.filter((p) => (p as any).categoryId === productCategoryFilterId);
-  }, [products, productCategoryFilterId]);
+    let result = products;
+    if (productCategoryFilterL1Id && !productCategoryFilterId) {
+      // Filter by Level 1 category by checking if the product's category parent is the L1 category.
+      const l2CategoryIds = categories?.filter((c: any) => c.parent?.id === productCategoryFilterL1Id || c.id === productCategoryFilterL1Id).map((c: any) => c.id) || [];
+      result = result.filter(p => l2CategoryIds.includes((p as any).categoryId));
+    } else if (productCategoryFilterId) {
+      result = result.filter((p) => (p as any).categoryId === productCategoryFilterId);
+    }
+    return result;
+  }, [products, productCategoryFilterL1Id, productCategoryFilterId, categories]);
 
   // 尺码费用SWR
   const { data: sizeFeesData, mutate: mutateSizeFees } = useSWR(
@@ -1992,13 +2004,31 @@ export default function SalesOrdersPage() {
                         <label className="config-label">{t('selectCategory') || 'Category'}</label>
                         <div className="flex gap-2">
                           <select
-                            value={newProductCategoryId}
-                            onChange={(e) => setNewProductCategoryId(e.target.value)}
+                            value={newProductCategoryL1Id}
+                            onChange={(e) => {
+                              setNewProductCategoryL1Id(e.target.value);
+                              setNewProductCategoryId('');
+                            }}
                             className="config-input flex-1 min-w-0"
                           >
-                            <option value="">{t('selectCategory') || 'Select Category'}</option>
+                            <option value="">{t('selectCategory') || 'Select Level 1'}</option>
                             {categories && categories
-                              .filter((c: any) => c.isActive)
+                              .filter((c: any) => c.isActive && !c.parent)
+                              .map((category: any) => (
+                                <option key={category.id} value={category.id}>
+                                  {category.name}
+                                </option>
+                              ))}
+                          </select>
+                          <select
+                            value={newProductCategoryId}
+                            onChange={(e) => setNewProductCategoryId(e.target.value)}
+                            disabled={!newProductCategoryL1Id}
+                            className="config-input flex-1 min-w-0"
+                          >
+                            <option value="">{t('selectCategory') || 'Select Level 2'}</option>
+                            {categories && categories
+                              .filter((c: any) => c.isActive && c.parent?.id === newProductCategoryL1Id)
                               .map((category: any) => (
                                 <option key={category.id} value={category.id}>
                                   {category.name}
@@ -2116,14 +2146,33 @@ export default function SalesOrdersPage() {
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
                       <span>{t('filterByCategory') || 'Filter by Category'}:</span>
                       <select
+                        value={productCategoryFilterL1Id}
+                        onChange={(e) => {
+                          setProductCategoryFilterL1Id(e.target.value);
+                          setProductCategoryFilterId('');
+                        }}
+                        className="config-input"
+                        style={{ width: '120px' }}
+                      >
+                        <option value="">{t('allCategories') || 'All Categories'} L1</option>
+                        {categories
+                          .filter((c) => c.isActive && !c.parent)
+                          .map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                      </select>
+                      <select
                         value={productCategoryFilterId}
                         onChange={(e) => setProductCategoryFilterId(e.target.value)}
+                        disabled={!productCategoryFilterL1Id}
                         className="config-input"
-                        style={{ width: '200px' }}
+                        style={{ width: '130px' }}
                       >
-                        <option value="">{t('allCategories') || 'All Categories'}</option>
+                        <option value="">{t('allCategories') || 'All L2'} L2</option>
                         {categories
-                          .filter((c) => c.isActive)
+                          .filter((c) => c.isActive && c.parent?.id === productCategoryFilterL1Id)
                           .map((category) => (
                             <option key={category.id} value={category.id}>
                               {category.name}
@@ -2221,22 +2270,51 @@ export default function SalesOrdersPage() {
                           </td>
                           <td>
                             {editingProductId === product.id ? (
-                              <select
-                                value={editProductCategoryId}
-                                onChange={(e) => setEditProductCategoryId(e.target.value)}
-                                className="config-input-inline"
-                              >
-                                <option value="">{t('selectCategory') || 'Select Category'}</option>
-                                {categories
-                                  .filter((c) => c.isActive)
-                                  .map((category) => (
-                                    <option key={category.id} value={category.id}>
-                                      {category.name}
-                                    </option>
-                                  ))}
-                              </select>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <select
+                                  value={editProductCategoryL1Id}
+                                  onChange={(e) => {
+                                    setEditProductCategoryL1Id(e.target.value);
+                                    setEditProductCategoryId('');
+                                  }}
+                                  className="config-input-inline"
+                                >
+                                  <option value="">L1</option>
+                                  {categories
+                                    .filter((c) => c.isActive && !c.parent)
+                                    .map((category) => (
+                                      <option key={category.id} value={category.id}>
+                                        {category.name}
+                                      </option>
+                                    ))}
+                                </select>
+                                <select
+                                  value={editProductCategoryId}
+                                  onChange={(e) => setEditProductCategoryId(e.target.value)}
+                                  disabled={!editProductCategoryL1Id}
+                                  className="config-input-inline"
+                                >
+                                  <option value="">L2</option>
+                                  {categories
+                                    .filter((c) => c.isActive && c.parent?.id === editProductCategoryL1Id)
+                                    .map((category) => (
+                                      <option key={category.id} value={category.id}>
+                                        {category.name}
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
                             ) : (
-                              <span>{product.categoryName || '—'}</span>
+                              <span>
+                                {(() => {
+                                  if (!product.categoryId) return product.categoryName || '—';
+                                  const cat = categories.find((c: any) => c.id === product.categoryId);
+                                  if (cat?.parent) {
+                                    return `${cat.parent.name} / ${cat.name}`;
+                                  }
+                                  return product.categoryName || cat?.name || '—';
+                                })()}
+                              </span>
                             )}
                           </td>
                           <td>
@@ -2265,6 +2343,14 @@ export default function SalesOrdersPage() {
                                     setEditProductIsCustomerOwned(product.isCustomerOwned);
                                     setEditProductUnitCost(String(product.unitCost || ''));
                                     setEditProductCategoryId(product.categoryId || '');
+                                    const cat = categories.find((c: any) => c.id === product.categoryId);
+                                    if (cat?.parent?.id) {
+                                      setEditProductCategoryL1Id(cat.parent.id);
+                                    } else if (cat && !cat.parent) {
+                                      setEditProductCategoryL1Id(cat.id);
+                                    } else {
+                                      setEditProductCategoryL1Id('');
+                                    }
                                     setEditProductSupplierId(product.supplierId || '');
                                     setEditProductSku(product.sku || '');
                                     setEditProductStockQuantity(
@@ -2935,6 +3021,21 @@ export default function SalesOrdersPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">父级分类 (可选)</label>
+                <select
+                  value={categoryForm.parentId || ''}
+                  onChange={(e) => setCategoryForm((prev) => ({ ...prev, parentId: e.target.value || undefined }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">(无 - 作为 L1 分类)</option>
+                  {categories
+                    .filter((c: any) => c.isActive && !c.parent && c.id !== categoryForm.id)
+                    .map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                </select>
+              </div>
               {/* 移除 Slug 输入，改为自动生成 */}
               <div className="flex justify-end gap-2 pt-2">
                 <button
@@ -2957,16 +3058,18 @@ export default function SalesOrdersPage() {
                         await adminCategoriesApi.update(categoryForm.id, {
                           name: categoryForm.name.trim(),
                           slug: autoSlug,
+                          parentId: categoryForm.parentId || null,
                         });
                       } else {
                         await adminCategoriesApi.create({
                           name: categoryForm.name.trim(),
                           slug: autoSlug,
+                          parentId: categoryForm.parentId || null,
                         });
                       }
                       await mutateCategories();
                       setIsCategoryModalOpen(false);
-                      setCategoryForm({ id: undefined, name: '', slug: '' });
+                      setCategoryForm({ id: undefined, name: '', slug: '', parentId: undefined });
                     } catch (err: any) {
                       alert(`保存分类失败: ${err.message}`);
                       setError(err.message || t('saveCategoryFailed') || '保存分类失败');
@@ -2981,34 +3084,89 @@ export default function SalesOrdersPage() {
                 <p className="text-xs text-gray-500 mb-2">{t('activeCategoriesInfo') || '当前有效分类（点击名称编辑，点击停用按钮进行软删除）：'}</p>
                 <div className="max-h-[50vh] min-h-[10rem] overflow-y-auto space-y-1 text-sm pr-2">
                   {categories && categories
-                    .filter((c: any) => c.isActive)
-                    .map((category: any) => (
-                      <div key={category.id} className="flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCategoryForm({ id: category.id, name: category.name, slug: category.slug });
-                          }}
-                          className="text-left text-gray-800 hover:underline"
-                        >
-                          {category.name}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await adminCategoriesApi.archive(category.id);
-                              await mutateCategories();
-                            } catch (err: any) {
-                              setError(err.message || t('archiveCategoryFailed') || '停用分类失败');
-                            }
-                          }}
-                          className="text-xs text-red-600 hover:underline"
-                        >
-                          {t('btnDeactivate') || '停用'}
-                        </button>
-                      </div>
-                    ))}
+                    .filter((c: any) => c.isActive && !c.parent)
+                    .map((category: any) => {
+                      const isExpanded = expandedCatIds.includes(category.id);
+                      const children = categories.filter((c: any) => c.isActive && c.parent?.id === category.id);
+                      return (
+                        <div key={category.id} className="mb-2 border rounded-md overflow-hidden">
+                          <div className="flex items-center justify-between p-2 bg-gray-50 border-b">
+                            <div className="flex items-center gap-2 flex-1">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedCatIds((prev) =>
+                                  isExpanded ? prev.filter((id) => id !== category.id) : [...prev, category.id]
+                                )}
+                                className="p-1 hover:bg-gray-200 rounded text-gray-500"
+                              >
+                                <svg
+                                  className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCategoryForm({ id: category.id, name: category.name, slug: category.slug, parentId: undefined });
+                                }}
+                                className="text-left font-medium text-gray-800 hover:underline flex-1"
+                              >
+                                {category.name} <span className="text-xs font-normal text-gray-500 ml-1">({children.length} 子分类)</span>
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await adminCategoriesApi.archive(category.id);
+                                  await mutateCategories();
+                                } catch (err: any) {
+                                  setError(err.message || t('archiveCategoryFailed') || '停用分类失败');
+                                }
+                              }}
+                              className="text-xs text-red-600 hover:text-red-800 px-2"
+                            >
+                              {t('btnDeactivate') || '停用'}
+                            </button>
+                          </div>
+                          {isExpanded && (
+                            <div className="p-2 space-y-1 bg-white">
+                              {children.length === 0 ? (
+                                <div className="text-xs text-gray-400 py-1 pl-8">无子分类</div>
+                              ) : (
+                                children.map((child: any) => (
+                                  <div key={child.id} className="flex items-center justify-between pl-8 py-1 hover:bg-gray-50 rounded">
+                                    <button
+                                      type="button"
+                                      onClick={() => setCategoryForm({ id: child.id, name: child.name, slug: child.slug, parentId: category.id })}
+                                      className="text-left text-sm text-gray-700 hover:underline"
+                                    >
+                                      {child.name}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        try {
+                                          await adminCategoriesApi.archive(child.id);
+                                          await mutateCategories();
+                                        } catch (err: any) {
+                                          setError(err.message || t('archiveCategoryFailed') || '停用分类失败');
+                                        }
+                                      }}
+                                      className="text-xs text-red-500 hover:text-red-700 pr-2"
+                                    >
+                                      {t('btnDeactivate') || '停用'}
+                                    </button>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             </div>

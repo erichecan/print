@@ -53,6 +53,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   const fileRefs = useRef<{ [key: number]: File }>({});
   const abortControllerRef = useRef<AbortController | null>(null); // 用于取消请求
   const isUploadingAny = useMemo(() => Object.values(uploadingImages).some(Boolean), [uploadingImages]);
+  const [selectedL1Id, setSelectedL1Id] = useState<string>('');
 
   // 自动关闭成功提示
   useEffect(() => {
@@ -83,6 +84,18 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
 
     return list;
   }, [categoryResponse, product]);
+
+  // Set initial L1 category based on product.category
+  useEffect(() => {
+    if (product?.category && categories.length > 0 && !selectedL1Id) {
+      const cat = categories.find(c => c.id === product?.category?.id);
+      if (cat?.parent?.id) {
+        setSelectedL1Id(cat.parent.id);
+      } else if (cat && !cat.parent) {
+        setSelectedL1Id(cat.id);
+      }
+    }
+  }, [product, categories, selectedL1Id]);
 
   const {
     register,
@@ -881,10 +894,26 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
             <h3>Product organization</h3>
 
             <div className="form-field">
-              <label>Category</label>
-              <select {...register('categoryId', { required: true })}>
-                <option value="">Select Category</option>
-                {categories.map(c => (
+              <label>Level 1 Category</label>
+              <select 
+                value={selectedL1Id}
+                onChange={(e) => {
+                  setSelectedL1Id(e.target.value);
+                  setValue('categoryId', ''); // reset Level 2 when Level 1 changes
+                }}
+              >
+                <option value="">Select Level 1</option>
+                {categories.filter(c => !c.parent).map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Level 2 Category</label>
+              <select {...register('categoryId', { required: true })} disabled={!selectedL1Id}>
+                <option value="">Select Level 2</option>
+                {categories.filter(c => c.parent?.id === selectedL1Id).map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>

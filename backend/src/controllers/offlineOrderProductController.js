@@ -188,6 +188,8 @@ exports.listProducts = async (req, res, next) => {
 /**
  * 获取产品列表（管理接口，包含所有产品）
  * GET /api/admin/offline-order-products
+ * 容错：若 DB 未同步 schema（缺 supplier_id 等）则返回 503 提示执行迁移，避免 500
+ * 2026-03-10 根因修复：/api/admin/offline-order-products 500
  */
 exports.listAllProducts = async (req, res, next) => {
   try {
@@ -215,13 +217,30 @@ exports.listAllProducts = async (req, res, next) => {
       });
     } catch (includeError) {
       logger.warn('[offlineOrderProductController] Prisma include failed, falling back to basic query:', includeError.message);
-      // Fallback: exclude relations if client is out of sync
-      products = await prisma.offline_order_products.findMany({
-        orderBy: [
-          { display_order: 'asc' },
-          { name: 'asc' },
-        ],
-      });
+      try {
+        products = await prisma.offline_order_products.findMany({
+          orderBy: [
+            { display_order: 'asc' },
+            { name: 'asc' },
+          ],
+        });
+      } catch (fallbackError) {
+        const msg = (fallbackError && fallbackError.message) ? String(fallbackError.message) : '';
+        const code = fallbackError && fallbackError.code;
+        const isSchemaBehind =
+          code === 'P2021' ||
+          /column.*does not exist|table.*does not exist|relation.*does not exist/i.test(msg);
+        if (isSchemaBehind) {
+          logger.warn('[offlineOrderProductController] Schema behind (migration required).', { message: msg });
+          return res.status(503).json({
+            success: false,
+            error: 'Database schema sync required',
+            code: 'MIGRATION_REQUIRED',
+            detail: 'Set AUTO_MIGRATE=true and redeploy once, or run: npx prisma db push --schema=../prisma/schema.prisma',
+          });
+        }
+        throw fallbackError;
+      }
     }
 
     res.json({
@@ -234,12 +253,12 @@ exports.listAllProducts = async (req, res, next) => {
         displayOrder: p.display_order,
         isActive: p.is_active,
         unitCost: Number(p.unit_cost || 0),
-        categoryId: p.category?.id || null,
-        categoryName: p.category?.name || null,
-        supplierId: p.supplier?.id || null,
-        supplierName: p.supplier?.name || null,
+        categoryId: (p.category && p.category.id) || p.categoryId || null,
+        categoryName: (p.category && p.category.name) || null,
+        supplierId: (p.supplier && p.supplier.id) || p.supplierId || null,
+        supplierName: (p.supplier && p.supplier.name) || null,
         sku: p.sku || null,
-        stockQuantity: typeof p.stockQuantity === 'number' ? p.stockQuantity : 0,
+        stockQuantity: typeof p.stockQuantity === 'number' ? p.stockQuantity : (p.stock_quantity ?? 0),
         createdAt: p.created_at,
         updatedAt: p.updated_at,
       })),
@@ -286,13 +305,25 @@ exports.createProduct = async (req, res, next) => {
       return next(new BadRequestError('Invalid categoryId'));
     }
 
+    let resolvedSupplierId = null;
     if (supplierId) {
-      const supplier = await prisma.supplier.findUnique({
-        where: { id: supplierId },
-        select: { id: true },
-      });
-      if (!supplier) {
-        return next(new BadRequestError('Invalid supplierId'));
+      try {
+        const supplier = await prisma.supplier.findUnique({
+          where: { id: supplierId },
+          select: { id: true },
+        });
+        if (!supplier) {
+          return next(new BadRequestError('Invalid supplierId'));
+        }
+        resolvedSupplierId = supplierId;
+      } catch (supplierErr) {
+        const msg = (supplierErr && supplierErr.message) ? String(supplierErr.message) : '';
+        if (/relation.*does not exist|table.*suppliers.*does not exist/i.test(msg)) {
+          logger.warn('[offlineOrderProductController] Suppliers table missing, creating product without supplier.');
+          resolvedSupplierId = null;
+        } else {
+          throw supplierErr;
+        }
       }
     }
 
@@ -302,7 +333,7 @@ exports.createProduct = async (req, res, next) => {
       select: { display_order: true },
     });
 
-    // 创建产品
+    // 创建产品（Prisma 使用 schema 中的 camelCase 字段名）
     const product = await prisma.offline_order_products.create({
       data: {
         id: uuidv4(),
@@ -312,10 +343,10 @@ exports.createProduct = async (req, res, next) => {
         display_order: displayOrder !== undefined ? displayOrder : (maxOrder?.display_order || 0) + 1,
         is_active: true,
         unit_cost: parseDecimal(unitCost) || 0,
-        category_id: categoryId,
-        supplier_id: supplierId || null,
+        categoryId,
+        supplierId: resolvedSupplierId,
         sku: sku?.trim() || null,
-        stock_quantity: typeof stockQuantity === 'number' ? stockQuantity : 0,
+        stockQuantity: typeof stockQuantity === 'number' ? stockQuantity : 0,
       },
     });
 
@@ -337,8 +368,8 @@ exports.createProduct = async (req, res, next) => {
         displayOrder: product.display_order,
         isActive: product.is_active,
         unitCost: Number(product.unit_cost || 0),
-        categoryId: product.category_id,
-        supplierId: product.supplier_id,
+        categoryId: product.categoryId ?? product.category_id,
+        supplierId: product.supplierId ?? product.supplier_id,
         sku: product.sku,
         stockQuantity: product.stock_quantity,
         createdAt: product.created_at,
@@ -415,27 +446,37 @@ exports.updateProduct = async (req, res, next) => {
       if (!category) {
         return next(new BadRequestError('Invalid categoryId'));
       }
-      updateData.category_id = categoryId;
+      updateData.categoryId = categoryId;
     }
     if (supplierId !== undefined) {
       if (supplierId) {
-        const supplier = await prisma.supplier.findUnique({
-          where: { id: supplierId },
-          select: { id: true },
-        });
-        if (!supplier) {
-          return next(new BadRequestError('Invalid supplierId'));
+        try {
+          const supplier = await prisma.supplier.findUnique({
+            where: { id: supplierId },
+            select: { id: true },
+          });
+          if (!supplier) {
+            return next(new BadRequestError('Invalid supplierId'));
+          }
+          updateData.supplierId = supplierId;
+        } catch (supplierErr) {
+          const msg = (supplierErr && supplierErr.message) ? String(supplierErr.message) : '';
+          if (/relation.*does not exist|table.*suppliers.*does not exist/i.test(msg)) {
+            logger.warn('[offlineOrderProductController] Suppliers table missing, clearing supplier.');
+            updateData.supplierId = null;
+          } else {
+            throw supplierErr;
+          }
         }
-        updateData.supplier_id = supplierId;
       } else {
-        updateData.supplier_id = null;
+        updateData.supplierId = null;
       }
     }
     if (sku !== undefined) {
       updateData.sku = sku?.trim() || null;
     }
     if (stockQuantity !== undefined) {
-      updateData.stock_quantity = typeof stockQuantity === 'number' ? stockQuantity : existing.stock_quantity || 0;
+      updateData.stockQuantity = typeof stockQuantity === 'number' ? stockQuantity : (existing.stockQuantity ?? existing.stock_quantity ?? 0);
     }
 
     const product = await prisma.offline_order_products.update({
@@ -445,10 +486,10 @@ exports.updateProduct = async (req, res, next) => {
 
     await syncOfflineProductToCatalog({
       name: product.name,
-      categoryId: product.category_id,
+      categoryId: product.categoryId ?? product.category_id,
       sku: product.sku,
       unitCost: product.unit_cost || 0,
-      stockQuantity: product.stock_quantity,
+      stockQuantity: product.stockQuantity ?? product.stock_quantity ?? 0,
     });
 
     res.json({
@@ -461,10 +502,10 @@ exports.updateProduct = async (req, res, next) => {
         displayOrder: product.display_order,
         isActive: product.is_active,
         unitCost: Number(product.unit_cost || 0),
-        categoryId: product.category_id,
-        supplierId: product.supplier_id,
+        categoryId: product.categoryId ?? product.category_id,
+        supplierId: product.supplierId ?? product.supplier_id,
         sku: product.sku,
-        stockQuantity: product.stock_quantity,
+        stockQuantity: product.stockQuantity ?? product.stock_quantity ?? 0,
         createdAt: product.created_at,
         updatedAt: product.updated_at,
       },

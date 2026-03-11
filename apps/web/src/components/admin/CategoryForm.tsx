@@ -172,7 +172,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
               <select {...register('parentId')}>
                 <option value="">None (Top Level)</option>
                 {categories
-                  .filter((item) => item.id !== category?.id)
+                  .filter((item) => item.id !== category?.id && !item.parent)
                   .map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}

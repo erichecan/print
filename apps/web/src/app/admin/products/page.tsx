@@ -15,6 +15,7 @@ export default function AdminProductsPage() {
   const [limit] = useState(20);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilterL1, setCategoryFilterL1] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
   // Debounce search
@@ -174,14 +175,31 @@ export default function AdminProductsPage() {
           </div>
 
           <select
+            value={categoryFilterL1}
+            onChange={(e) => {
+              setCategoryFilterL1(e.target.value);
+              setCategoryFilter('');
+            }}
+            className="filter-select"
+          >
+            <option value="">L1</option>
+            {categoriesData?.data?.filter((c: any) => !c.parent).map((cat: any) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
+            disabled={!categoryFilterL1}
             className="filter-select"
           >
             <option value="" data-i18n="allCategories">
-              {t('allCategories')}
+              {t('allCategories')} L2
             </option>
-            {categoriesData?.data?.map((cat: any) => (
+            {categoriesData?.data?.filter((c: any) => c.parent?.id === categoryFilterL1).map((cat: any) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>
@@ -305,7 +323,15 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="font-mono text-sm">{product.sku || '-'}</td>
                   <td>
-                    {product.category?.name || <span data-i18n="categoryUnassigned">{t('categoryUnassigned')}</span>}
+                    {product.category ? (
+                      (() => {
+                        const cat = categoriesData?.data?.find((c: any) => c.id === product.category?.id);
+                        if (cat?.parent) {
+                          return `${cat.parent.name} / ${cat.name}`;
+                        }
+                        return product.category.name;
+                      })()
+                    ) : <span data-i18n="categoryUnassigned">{t('categoryUnassigned')}</span>}
                   </td>
                   <td>${product.basePrice.toFixed(2)}</td>
                   <td>

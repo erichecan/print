@@ -41,13 +41,19 @@ export default function SimpleOfflineOrderProductsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [categoryFilterId, setCategoryFilterId] = useState<string>('');
+  const [categoryFilterL1Id, setCategoryFilterL1Id] = useState<string>('');
+  const [newProductCategoryL1Id, setNewProductCategoryL1Id] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string; slug: string }>({
+  const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string; slug: string; parentId?: string }>({
     id: undefined,
     name: '',
     slug: '',
+    parentId: undefined,
   });
+  const [expandedCatIds, setExpandedCatIds] = useState<string[]>([]);
 
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [supplierForm, setSupplierForm] = useState<Partial<Supplier>>({
@@ -106,9 +112,36 @@ export default function SimpleOfflineOrderProductsPage() {
   const suppliers: Supplier[] = suppliersData?.suppliers || [];
 
   const filteredProducts = useMemo(() => {
-    if (!categoryFilterId) return products;
-    return products.filter((p) => p.categoryId === categoryFilterId);
-  }, [products, categoryFilterId]);
+    let result = products;
+    if (categoryFilterL1Id && !categoryFilterId) {
+      const l2Ids = categories.filter((c) => c.parent?.id === categoryFilterL1Id || c.id === categoryFilterL1Id).map((c) => c.id);
+      result = result.filter((p) => p.categoryId && l2Ids.includes(p.categoryId));
+    } else if (categoryFilterId) {
+      result = result.filter((p) => p.categoryId === categoryFilterId);
+    }
+    
+    // Sort by newest first (assuming higher id or creation date)
+    result = [...result].sort((a, b) => {
+      // If we have createdAt, use it, otherwise fall back to id string comparison (which might loosely correlate to time for cuid/uuid v7)
+      if ((a as any).createdAt && (b as any).createdAt) {
+          return new Date((b as any).createdAt).getTime() - new Date((a as any).createdAt).getTime();
+      }
+      return b.id.localeCompare(a.id);
+    });
+
+    return result;
+  }, [products, categoryFilterL1Id, categoryFilterId, categories]);
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredProducts.slice(start, start + itemsPerPage);
+  }, [filteredProducts, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilterL1Id, categoryFilterId]);
 
   // 添加产品
   const handleAddProduct = async (e: React.FormEvent) => {
@@ -147,6 +180,7 @@ export default function SimpleOfflineOrderProductsPage() {
       setNewProductUnitCost('');
       setNewProductSku('');
       setNewProductStockQuantity('');
+      setNewProductCategoryL1Id('');
       setNewProductCategoryId('');
       setNewProductSupplierId('');
       mutateProducts();
@@ -264,13 +298,31 @@ export default function SimpleOfflineOrderProductsPage() {
                     </label>
                     <div className="flex gap-2">
                       <select
-                        value={newProductCategoryId}
-                        onChange={(e) => setNewProductCategoryId(e.target.value)}
+                        value={newProductCategoryL1Id}
+                        onChange={(e) => {
+                          setNewProductCategoryL1Id(e.target.value);
+                          setNewProductCategoryId('');
+                        }}
                         className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="">请选择分类</option>
+                        <option value="">请选择 L1 分类</option>
                         {categories
-                          .filter((c) => c.isActive)
+                          .filter((c) => c.isActive && !c.parent)
+                          .map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                      </select>
+                      <select
+                        value={newProductCategoryId}
+                        onChange={(e) => setNewProductCategoryId(e.target.value)}
+                        disabled={!newProductCategoryL1Id}
+                        className="min-w-0 flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">请选择 L2 分类</option>
+                        {categories
+                          .filter((c) => c.isActive && c.parent?.id === newProductCategoryL1Id)
                           .map((category) => (
                             <option key={category.id} value={category.id}>
                               {category.name}
@@ -387,13 +439,35 @@ export default function SimpleOfflineOrderProductsPage() {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">按分类筛选：</span>
                 <select
-                  value={categoryFilterId}
-                  onChange={(e) => setCategoryFilterId(e.target.value)}
+                  value={categoryFilterL1Id}
+                  onChange={(e) => {
+                    setCategoryFilterL1Id(e.target.value);
+                    setCategoryFilterId('');
+                    setCurrentPage(1);
+                  }}
                   className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">全部分类</option>
+                  <option value="">全部 L1 分类</option>
                   {categories
-                    .filter((c) => c.isActive)
+                    .filter((c) => c.isActive && !c.parent)
+                    .map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                </select>
+                <select
+                  value={categoryFilterId}
+                  onChange={(e) => {
+                    setCategoryFilterId(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  disabled={!categoryFilterL1Id}
+                  className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">全部 L2 分类</option>
+                  {categories
+                    .filter((c) => c.isActive && c.parent?.id === categoryFilterL1Id)
                     .map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
@@ -412,7 +486,7 @@ export default function SimpleOfflineOrderProductsPage() {
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredProducts.map((product) => (
+                {paginatedProducts.map((product) => (
                   <div
                     key={product.id}
                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -435,7 +509,18 @@ export default function SimpleOfflineOrderProductsPage() {
                           )}
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                          {product.categoryName && <span>分类：{product.categoryName}</span>}
+                          {product.categoryName && (
+                            <span>
+                              分类：
+                              {(() => {
+                                const cat = categories.find((c) => c.id === product.categoryId);
+                                if (cat?.parent) {
+                                  return `${cat.parent.name} / ${cat.name}`;
+                                }
+                                return product.categoryName;
+                              })()}
+                            </span>
+                          )}
                           {product.supplierName && <span>供应商：{product.supplierName}</span>}
                           {product.sku && <span>SKU：{product.sku}</span>}
                           {typeof product.unitCost === 'number' && (
@@ -476,6 +561,80 @@ export default function SimpleOfflineOrderProductsPage() {
                 ))}
               </div>
             )}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
+                <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      第 <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> 到 <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredProducts.length)}</span> 条，共 <span className="font-medium">{filteredProducts.length}</span> 条
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                      <button
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Previous</span>
+                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      
+                      {/* Page Numbers */}
+                      {Array.from({ length: totalPages }).map((_, idx) => {
+                        const page = idx + 1;
+                        // Show first, last, current, and +/- 1 from current
+                        if (
+                          page === 1 || 
+                          page === totalPages || 
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => setCurrentPage(page)}
+                              aria-current={currentPage === page ? 'page' : undefined}
+                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                currentPage === page
+                                  ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                  : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (
+                          page === currentPage - 2 || 
+                          page === currentPage + 2
+                        ) {
+                          return (
+                            <span key={`ellipsis-${page}`} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                              ...
+                            </span>
+                          );
+                        }
+                        return null;
+                      })}
+
+                      <button
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="sr-only">Next</span>
+                        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <DeleteConfirmationModal
             isOpen={isDeleteModalOpen}
@@ -503,6 +662,21 @@ export default function SimpleOfflineOrderProductsPage() {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">父级分类 (可选)</label>
+                    <select
+                      value={categoryForm.parentId || ''}
+                      onChange={(e) => setCategoryForm((prev) => ({ ...prev, parentId: e.target.value || undefined }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">(无 - 作为 L1 分类)</option>
+                      {categories
+                        .filter((c) => c.isActive && !c.parent && c.id !== categoryForm.id)
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                  </div>
                   {/* 移除 Slug 输入，改为自动生成 */}
                   <div className="flex justify-end gap-2 pt-2">
                     <button
@@ -525,16 +699,18 @@ export default function SimpleOfflineOrderProductsPage() {
                             await adminCategoriesApi.update(categoryForm.id, {
                               name: categoryForm.name.trim(),
                               slug: autoSlug,
+                              parentId: categoryForm.parentId || null,
                             });
                           } else {
                             await adminCategoriesApi.create({
                               name: categoryForm.name.trim(),
                               slug: autoSlug,
+                              parentId: categoryForm.parentId || null,
                             });
                           }
                           await mutateCategories();
                           setIsCategoryModalOpen(false);
-                          setCategoryForm({ id: undefined, name: '', slug: '' });
+                          setCategoryForm({ id: undefined, name: '', slug: '', parentId: undefined });
                         } catch (err: any) {
                           alert(`保存分类失败: ${err.message}`);
                           setError(err.message || '保存分类失败');
@@ -549,34 +725,87 @@ export default function SimpleOfflineOrderProductsPage() {
                     <p className="text-xs text-gray-500 mb-2">当前有效分类（点击名称编辑，点击停用按钮进行软删除）：</p>
                     <div className="max-h-[50vh] min-h-[10rem] overflow-y-auto space-y-1 text-sm pr-2">
                       {categories
-                        .filter((c) => c.isActive)
-                        .map((category) => (
-                          <div key={category.id} className="flex items-center justify-between">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCategoryForm({ id: category.id, name: category.name, slug: category.slug });
-                              }}
-                              className="text-left text-gray-800 hover:underline"
-                            >
-                              {category.name}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                try {
-                                  await adminCategoriesApi.archive(category.id);
-                                  await mutateCategories();
-                                } catch (err: any) {
-                                  setError(err.message || '停用分类失败');
-                                }
-                              }}
-                              className="text-xs text-red-600 hover:underline"
-                            >
-                              停用
-                            </button>
-                          </div>
-                        ))}
+                        .filter((c) => c.isActive && !c.parent)
+                        .map((category) => {
+                          const isExpanded = expandedCatIds.includes(category.id);
+                          const children = categories.filter((c) => c.isActive && c.parent?.id === category.id);
+                          return (
+                            <div key={category.id} className="mb-2 border rounded-md overflow-hidden">
+                              <div className="flex items-center justify-between p-2 bg-gray-50 border-b">
+                                <div className="flex items-center gap-2 flex-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setExpandedCatIds((prev) =>
+                                      isExpanded ? prev.filter((id) => id !== category.id) : [...prev, category.id]
+                                    )}
+                                    className="p-1 hover:bg-gray-200 rounded text-gray-500"
+                                  >
+                                    <svg
+                                      className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                                      fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setCategoryForm({ id: category.id, name: category.name, slug: category.slug, parentId: undefined })}
+                                    className="text-left font-medium text-gray-800 hover:underline flex-1"
+                                  >
+                                    {category.name} <span className="text-xs font-normal text-gray-500 ml-1">({children.length} 子分类)</span>
+                                  </button>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      await adminCategoriesApi.archive(category.id);
+                                      await mutateCategories();
+                                    } catch (err: any) {
+                                      setError(err.message || '停用分类失败');
+                                    }
+                                  }}
+                                  className="text-xs text-red-600 hover:text-red-800 px-2"
+                                >
+                                  停用
+                                </button>
+                              </div>
+                              {isExpanded && (
+                                <div className="p-2 space-y-1 bg-white">
+                                  {children.length === 0 ? (
+                                    <div className="text-xs text-gray-400 py-1 pl-8">无子分类</div>
+                                  ) : (
+                                    children.map((child) => (
+                                      <div key={child.id} className="flex items-center justify-between pl-8 py-1 hover:bg-gray-50 rounded">
+                                        <button
+                                          type="button"
+                                          onClick={() => setCategoryForm({ id: child.id, name: child.name, slug: child.slug, parentId: category.id })}
+                                          className="text-left text-sm text-gray-700 hover:underline"
+                                        >
+                                          {child.name}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={async () => {
+                                            try {
+                                              await adminCategoriesApi.archive(child.id);
+                                              await mutateCategories();
+                                            } catch (err: any) {
+                                              setError(err.message || '停用分类失败');
+                                            }
+                                          }}
+                                          className="text-xs text-red-500 hover:text-red-700 pr-2"
+                                        >
+                                          停用
+                                        </button>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 </div>

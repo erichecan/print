@@ -49,6 +49,16 @@ export GCP_REGION=us-central1
 - `stripe-publishable-key` - Stripe 公钥
 - `api-url` - 后端 API URL
 
+## 🔧 故障排查：Product Management / Suppliers 返回 500
+
+若管理后台「产品管理」无数据或「保存供应商失败」、接口 `/api/proxy/admin/offline-order-products` 或 `/api/proxy/admin/suppliers` 返回 500，多为生产库未同步最新 schema（缺 `suppliers` 表或 `offline_order_products` 新列）。处理方式：
+
+1. 在 Cloud Run 后端服务中临时添加环境变量 `AUTO_MIGRATE=true`
+2. 重新部署或重启该服务一次（启动时会执行 `prisma db push` 同步 schema）
+3. 同步完成后将 `AUTO_MIGRATE` 改回 `false` 或删除，避免每次启动都执行迁移
+
+或本地对生产库执行一次：`npx prisma db push --schema=prisma/schema.prisma`（需配置生产 `DATABASE_URL`）。
+
 ## 📖 更多信息
 
 - [GCP 部署文档](./docs/GCP-DEPLOYMENT.md)

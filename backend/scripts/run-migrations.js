@@ -51,8 +51,14 @@ try {
   // 这通常是由于容器环境缺少某些根证书或 SSL 库兼容性问题
   const env = { ...process.env, NODE_TLS_REJECT_UNAUTHORIZED: '0' };
 
+  // 容器内 __dirname=/app/scripts，prisma 在 /app/prisma；本地 __dirname=backend/scripts，prisma 在 repo/prisma
+  const path = require('path');
+  const fs = require('fs');
+  const schemaInParent = path.resolve(__dirname, '..', 'prisma', 'schema.prisma');
+  const schemaInRepo = path.resolve(__dirname, '..', '..', 'prisma', 'schema.prisma');
+  const schemaPath = fs.existsSync(schemaInParent) ? schemaInParent : schemaInRepo;
   const prismaSuccess = run(
-    'npx prisma db push --schema=../prisma/schema.prisma --accept-data-loss',
+    `npx prisma db push --schema=${schemaPath} --accept-data-loss`,
     'Prisma db push',
     { timeout: 120000, allowFailure: false, env } // 增加超时时间，不允许失败
   );

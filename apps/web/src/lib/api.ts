@@ -1263,7 +1263,7 @@ export const simpleOfflineOrderProductApi = {
   // 获取产品列表（用于下拉菜单）
   list: () => sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct[] }>('/api/offline-orders/products'),
   // 管理接口
-  listAll: () => sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct[] }>('/api/proxy/admin/offline-orders/products'),
+  listAll: () => sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct[] }>('/api/proxy/admin/offline-order-products'),
   create: (product: {
     name: string;
     imageUrl?: string;
@@ -1275,7 +1275,7 @@ export const simpleOfflineOrderProductApi = {
     sku?: string;
     stockQuantity?: number;
   }) =>
-    sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct }>('/api/proxy/admin/offline-orders/products', {
+    sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct }>('/api/proxy/admin/offline-order-products', {
       method: 'POST',
       body: product,
     }),
@@ -1294,12 +1294,12 @@ export const simpleOfflineOrderProductApi = {
       stockQuantity?: number;
     }
   ) =>
-    sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct }>(`/api/proxy/admin/offline-orders/products/${id}`, {
+    sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct }>(`/api/proxy/admin/offline-order-products/${id}`, {
       method: 'PATCH',
       body: product,
     }),
   delete: (id: string) =>
-    sameOriginApi<{ success: boolean; message: string }>(`/api/proxy/admin/offline-orders/products/${id}`, {
+    sameOriginApi<{ success: boolean; message: string }>(`/api/proxy/admin/offline-order-products/${id}`, {
       method: 'DELETE',
     }),
 };
