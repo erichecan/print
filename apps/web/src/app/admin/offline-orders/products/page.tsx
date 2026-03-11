@@ -5,6 +5,7 @@
 'use client';
 
 // 2026-03-06 09:55:00: 增加分类/供应商绑定与筛选
+// 2026-03-11 07:45:30: 调整分页始终可见 + 新增产品后回到第一页，确保最新产品排在最前
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -184,6 +185,7 @@ export default function SimpleOfflineOrderProductsPage() {
       setNewProductCategoryId('');
       setNewProductSupplierId('');
       mutateProducts();
+      setCurrentPage(1);
     } catch (err: any) {
       setError(err.message || '添加产品失败');
     } finally {
@@ -563,7 +565,7 @@ export default function SimpleOfflineOrderProductsPage() {
             )}
             
             {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {filteredProducts.length > 0 && (
               <div className="mt-6 flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-b-lg">
                 <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                   <div>
