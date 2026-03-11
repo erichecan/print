@@ -499,6 +499,10 @@ export default function SalesOrdersPage() {
   const [productCategoryFilterL1Id, setProductCategoryFilterL1Id] = useState('');
   const [newProductCategoryL1Id, setNewProductCategoryL1Id] = useState('');
   const [editProductCategoryL1Id, setEditProductCategoryL1Id] = useState('');
+  const [productPage, setProductPage] = useState(1);
+  const productPageSize = 20;
+  const [productToDeleteId, setProductToDeleteId] = useState<string | null>(null);
+  const [isDeleteProductModalOpen, setIsDeleteProductModalOpen] = useState(false);
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [categoryForm, setCategoryForm] = useState<{ id?: string; name: string; slug: string; parentId?: string }>({
@@ -1035,17 +1039,39 @@ export default function SalesOrdersPage() {
     }
   }, [productsData]);
 
-  const filteredProducts = useMemo(() => {
+  const sortedFilteredProducts = useMemo(() => {
     let result = products;
     if (productCategoryFilterL1Id && !productCategoryFilterId) {
       // Filter by Level 1 category by checking if the product's category parent is the L1 category.
-      const l2CategoryIds = categories?.filter((c: any) => c.parent?.id === productCategoryFilterL1Id || c.id === productCategoryFilterL1Id).map((c: any) => c.id) || [];
-      result = result.filter(p => l2CategoryIds.includes((p as any).categoryId));
+      const l2CategoryIds =
+        categories?.filter(
+          (c: any) => c.parent?.id === productCategoryFilterL1Id || c.id === productCategoryFilterL1Id,
+        ).map((c: any) => c.id) || [];
+      result = result.filter((p) => l2CategoryIds.includes((p as any).categoryId));
     } else if (productCategoryFilterId) {
       result = result.filter((p) => (p as any).categoryId === productCategoryFilterId);
     }
-    return result;
+
+    // 新产品排在最前：按 createdAt 降序；如果没有则按 id 倒序
+    const withOrder = [...result].sort((a: any, b: any) => {
+      if (a.createdAt && b.createdAt) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return String(b.id).localeCompare(String(a.id));
+    });
+
+    return withOrder;
   }, [products, productCategoryFilterL1Id, productCategoryFilterId, categories]);
+
+  const totalProductPages = useMemo(
+    () => Math.max(1, Math.ceil(sortedFilteredProducts.length / productPageSize)),
+    [sortedFilteredProducts.length],
+  );
+
+  const paginatedProducts = useMemo(() => {
+    const start = (productPage - 1) * productPageSize;
+    return sortedFilteredProducts.slice(start, start + productPageSize);
+  }, [sortedFilteredProducts, productPage]);
 
   // 尺码费用SWR
   const { data: sizeFeesData, mutate: mutateSizeFees } = useSWR(
@@ -1141,6 +1167,7 @@ export default function SalesOrdersPage() {
       setNewProductSku('');
       setNewProductStockQuantity('');
       mutateProducts();
+      setProductPage(1);
     } catch (err: any) {
       alert(err.message || t('errorCreateFailed'));
     }
@@ -1171,11 +1198,20 @@ export default function SalesOrdersPage() {
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    // confirmation removed
+  const handleDeleteProduct = (id: string) => {
+    setProductToDeleteId(id);
+    setIsDeleteProductModalOpen(true);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDeleteId) return;
     try {
-      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-products/${id}`, { method: 'DELETE' });
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-products/${productToDeleteId}`, {
+        method: 'DELETE',
+      });
       if (!response.ok) throw new Error('Failed to delete product');
+      setIsDeleteProductModalOpen(false);
+      setProductToDeleteId(null);
       mutateProducts();
     } catch (err: any) {
       alert(err.message || t('errorDeleteFailed'));
@@ -2192,7 +2228,7 @@ export default function SalesOrdersPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredProducts.map((product: any) => (
+                      {paginatedProducts.map((product: any) => (
                         <tr key={product.id}>
                           <td>
                             {editingProductId === product.id ? (
@@ -2374,8 +2410,76 @@ export default function SalesOrdersPage() {
                       ))}
                     </tbody>
                   </table>
-                  {filteredProducts.length === 0 && (
+                  {sortedFilteredProducts.length === 0 && (
                     <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>{t('noProductsConfigured')}</p>
+                  )}
+                  {sortedFilteredProducts.length > 0 && (
+                    <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3 text-sm text-slate-600">
+                      <div>
+                        第{' '}
+                        <span className="font-medium">
+                          {(productPage - 1) * productPageSize + 1}
+                        </span>{' '}
+                        到{' '}
+                        <span className="font-medium">
+                          {Math.min(productPage * productPageSize, sortedFilteredProducts.length)}
+                        </span>{' '}
+                        条，共{' '}
+                        <span className="font-medium">
+                          {sortedFilteredProducts.length}
+                        </span>{' '}
+                        条
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setProductPage(p => Math.max(1, p - 1))}
+                          disabled={productPage === 1}
+                          className="px-2 py-1 rounded border border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                        >
+                          上一页
+                        </button>
+                        {Array.from({ length: totalProductPages }).map((_, idx) => {
+                          const page = idx + 1;
+                          if (
+                            page === 1 ||
+                            page === totalProductPages ||
+                            (page >= productPage - 1 && page <= productPage + 1)
+                          ) {
+                            return (
+                              <button
+                                key={page}
+                                type="button"
+                                onClick={() => setProductPage(page)}
+                                className={`px-3 py-1 rounded text-xs ${
+                                  productPage === page
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'border border-slate-300 text-slate-700'
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            );
+                          }
+                          if (page === productPage - 2 || page === productPage + 2) {
+                            return (
+                              <span key={`ellipsis-${page}`} className="px-2 text-xs text-slate-500">
+                                …
+                              </span>
+                            );
+                          }
+                          return null;
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => setProductPage(p => Math.min(totalProductPages, p + 1))}
+                          disabled={productPage === totalProductPages}
+                          className="px-2 py-1 rounded border border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                        >
+                          下一页
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
