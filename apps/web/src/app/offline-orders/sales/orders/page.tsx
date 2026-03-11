@@ -2645,6 +2645,19 @@ export default function SalesOrdersPage() {
         )}
       </div>
 
+      {/* 删除产品确认弹窗 */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteProductModalOpen}
+        isDeleting={false}
+        onClose={() => {
+          setIsDeleteProductModalOpen(false);
+          setProductToDeleteId(null);
+        }}
+        onConfirm={confirmDeleteProduct}
+        title={t('deleteOrderTitle') || 'Delete Product'}
+        description={t('deleteOrderConfirm') || 'Are you sure you want to delete this product?'}
+      />
+
       <style jsx>{`
         .sales-orders-shell {
           min-height: 100vh;
