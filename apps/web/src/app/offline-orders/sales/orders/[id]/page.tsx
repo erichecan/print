@@ -181,7 +181,14 @@ export default function SalesOrderDetailPage() {
 
   useEffect(() => {
     if (isPrintMode && !loading && order && !error) {
-      setShowPrintSettings(false); // 直接使用紧凑布局，不显示设置面板
+      // 直接使用紧凑布局，不显示设置面板
+      setShowPrintSettings(false);
+      // 自动触发浏览器打印对话框（仅在 print=true 时）
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.print();
+        }
+      }, 300);
     }
   }, [isPrintMode, loading, order, error]);
 
