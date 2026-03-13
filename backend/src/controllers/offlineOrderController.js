@@ -816,7 +816,7 @@ function buildMetricsWhere(req) {
   return where;
 }
 
-/** 为 raw SQL 生成 WHERE 条件与参数（与 buildMetricsWhere 一致） */
+  /** 为 raw SQL 生成 WHERE 条件与参数（与 buildMetricsWhere 一致） */
 function buildRawWhereConditions(baseWhere, req) {
   const conditions = [];
   const params = [];
@@ -891,72 +891,119 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
     }
     const averageUnitPrice = inventoryConsumed > 0 ? revenueTotal / inventoryConsumed : 0;
 
-    // 最受欢迎产品（按 primary_product 聚合，2025-02-20）
-    let topProducts = [];
+    // [2026-03-13 05:40:00] 经营维度：按负责人聚合（submittedByUserId）
+    let byCreator = [];
     try {
-      const productWhere = ["primary_product IS NOT NULL", "TRIM(primary_product) != ''", ...rawConditions].join(' AND ');
-      const productParams = rawParams.slice();
-      // 取出前10产品并计算 revenue
+      const creatorWhere = rawConditions.length ? rawConditions.join(' AND ') : '1=1';
+      const creatorResult = await prisma.$queryRawUnsafe(
+        `SELECT 
+           COALESCE(metadata->>'submittedByUserId', 'unknown') AS creator_id,
+           COUNT(*)::int AS order_count,
+           COALESCE(SUM(
+             CASE 
+               WHEN (configuration->'pricing'->>'total') IS NOT NULL 
+                    AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
+               THEN (configuration->'pricing'->>'total')::numeric 
+               ELSE 0 
+             END
+           ), 0)::float AS revenue,
+           COALESCE(SUM(
+             CASE 
+               WHEN (configuration->'pricing'->>'costTotal') IS NOT NULL 
+                    AND (configuration->'pricing'->>'costTotal') ~ '^-?[0-9]+\\.?[0-9]*$'
+               THEN (configuration->'pricing'->>'costTotal')::numeric 
+               ELSE 0 
+             END
+           ), 0)::float AS cost
+         FROM offline_orders
+         WHERE ${creatorWhere}
+         GROUP BY COALESCE(metadata->>'submittedByUserId', 'unknown')
+         ORDER BY revenue DESC`,
+        ...rawParams
+      );
+
+      if (creatorResult && creatorResult.length) {
+        byCreator = creatorResult.map((row) => {
+          const revenueNum = Number(row.revenue) || 0;
+          const costNum = Number(row.cost) || 0;
+          const margin = revenueNum - costNum;
+          const marginPercent = revenueNum > 0 ? (margin / revenueNum) * 100 : 0;
+          return {
+            creatorId: row.creator_id || 'unknown',
+            orderCount: Number(row.order_count) || 0,
+            revenue: revenueNum,
+            cost: costNum,
+            margin,
+            marginPercent,
+          };
+        });
+      }
+    } catch (creatorErr) {
+      logger.warn('Offline order byCreator aggregation skipped', creatorErr.message);
+    }
+
+    // [2026-03-13 05:40:00] 按主产品/类目聚合（primary_product + offline_order_products.category）
+    let byProductLine = [];
+    try {
+      const productWhere = rawConditions.length
+        ? ["primary_product IS NOT NULL", "TRIM(primary_product) != ''", ...rawConditions].join(' AND ')
+        : "primary_product IS NOT NULL AND TRIM(primary_product) != ''";
       const productResult = await prisma.$queryRawUnsafe(
         `SELECT 
-           sub.product_name, 
-           sub.order_count, 
+           sub.product_name,
+           sub.order_count,
            sub.revenue,
-           p.category,
-           p.supplier
+           sub.cost,
+           p.category
          FROM (
            SELECT 
-             primary_product as product_name, 
-             COUNT(*)::int as order_count,
-             COALESCE(SUM(CASE WHEN (configuration->'pricing'->>'total') IS NOT NULL AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
-               THEN (configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float as revenue
-           FROM offline_orders 
+             primary_product AS product_name,
+             COUNT(*)::int AS order_count,
+             COALESCE(SUM(
+               CASE 
+                 WHEN (configuration->'pricing'->>'total') IS NOT NULL 
+                      AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
+                 THEN (configuration->'pricing'->>'total')::numeric 
+                 ELSE 0 
+               END
+             ), 0)::float AS revenue,
+             COALESCE(SUM(
+               CASE 
+                 WHEN (configuration->'pricing'->>'costTotal') IS NOT NULL 
+                      AND (configuration->'pricing'->>'costTotal') ~ '^-?[0-9]+\\.?[0-9]*$'
+                 THEN (configuration->'pricing'->>'costTotal')::numeric 
+                 ELSE 0 
+               END
+             ), 0)::float AS cost
+           FROM offline_orders
            WHERE ${productWhere}
-           GROUP BY primary_product 
-           ORDER BY order_count DESC 
-           LIMIT 10
+           GROUP BY primary_product
          ) sub
          LEFT JOIN offline_order_products p ON sub.product_name = p.name
+         ORDER BY sub.revenue DESC
         `,
-        ...productParams
+        ...rawParams
       );
 
       if (productResult && productResult.length) {
-        topProducts = productResult.map((row) => ({
-          productName: row.product_name || '—',
-          orderCount: Number(row.order_count) || 0,
-          revenue: Number(row.revenue) || 0,
-          category: row.category || '',
-          supplier: row.supplier || ''
-        }));
-      }
-    } catch (topErr) {
-      logger.warn('Offline order topProducts aggregation skipped', topErr.message);
-    }
-
-    // 趋势：按日统计（仅当有日期范围时，2025-02-20）
-    let timeSeries = [];
-    if (baseWhere.createdAt?.gte && baseWhere.createdAt?.lte) {
-      try {
-        const tsWhere = rawConditions.join(' AND ');
-        const tsResult = await prisma.$queryRawUnsafe(
-          `SELECT date(created_at) as day, COUNT(*)::int as order_count,
-           COALESCE(SUM(CASE WHEN (configuration->'pricing'->>'total') IS NOT NULL AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\\.?[0-9]*$'
-             THEN (configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float as revenue
-           FROM offline_orders WHERE ${tsWhere}
-           GROUP BY date(created_at) ORDER BY day`,
-          ...rawParams
-        );
-        if (tsResult && tsResult.length) {
-          timeSeries = tsResult.map((row) => ({
-            date: row.day ? String(row.day).slice(0, 10) : '',
+        byProductLine = productResult.map((row) => {
+          const revenueNum = Number(row.revenue) || 0;
+          const costNum = Number(row.cost) || 0;
+          const margin = revenueNum - costNum;
+          const marginPercent = revenueNum > 0 ? (margin / revenueNum) * 100 : 0;
+          return {
+            productName: row.product_name || '—',
+            category: row.category || '',
             orderCount: Number(row.order_count) || 0,
-            revenue: Number(row.revenue) || 0
-          }));
-        }
-      } catch (tsErr) {
-        logger.warn('Offline order timeSeries aggregation skipped', tsErr.message);
+            revenue: revenueNum,
+            cost: costNum,
+            margin,
+            marginPercent,
+          };
+        });
       }
+    } catch (productErr) {
+      logger.warn('Offline order byProductLine aggregation skipped', productErr.message);
     }
 
     // 2026-03-06 10:05:00: 基于 configuration.pricing.costTotal 计算成本/毛利（若存在）
@@ -995,8 +1042,8 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
         averageUnitPrice
       },
       cost: { costTotal, marginTotal, marginPercent },
-      topProducts,
-      timeSeries
+      byCreator,
+      byProductLine
     });
   } catch (error) {
     logger.error('Failed to fetch offline order metrics', error);

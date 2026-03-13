@@ -128,14 +128,13 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
     averageUnitPrice: 0,
   };
   const cost = data?.cost ?? { costTotal: 0, marginTotal: 0, marginPercent: 0 };
-  const topProductsRaw = data?.topProducts ?? [];
-  const timeSeries = data?.timeSeries ?? [];
-  const topProducts = useMemo(() => {
-    if (!topProductFilter) return topProductsRaw;
+  const byCreator = data?.byCreator ?? [];
+  const byProductLineRaw = data?.byProductLine ?? [];
+  const byProductLine = useMemo(() => {
+    if (!topProductFilter) return byProductLineRaw;
     const q = topProductFilter.toLowerCase();
-    return topProductsRaw.filter((p) => p.productName.toLowerCase().includes(q));
-  }, [topProductsRaw, topProductFilter]);
-  const maxTimeSeriesCount = useMemo(() => Math.max(1, ...timeSeries.map((ts) => ts.orderCount)), [timeSeries]);
+    return byProductLineRaw.filter((p: any) => (p.productName || '').toLowerCase().includes(q));
+  }, [byProductLineRaw, topProductFilter]);
 
   if (error) {
     return (
@@ -219,17 +218,8 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
           </div>
         )}
 
-        {/* 2026-03-10: 增加产品筛选与创建人筛选 */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-slate-700">{t('filterByProduct') || 'Product'}</span>
-          <input
-            type="text"
-            value={primaryProductFilter}
-            onChange={(e) => setPrimaryProductFilter(e.target.value)}
-            placeholder="按主产品名称筛选…"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-32"
-          />
-        </div>
+        {/* 2026-03-13: 保留 API 层面的产品筛选，但默认不强调 UI 文案 */}
+        {/* 如后续主产品字段使用更规范，可再强化这个筛选 */}
 
         {isManager && (
           <div className="flex items-center gap-2">
@@ -279,24 +269,65 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
           </div>
 
 
-          {/* 最受欢迎产品 + 销售趋势 两列 */}
+          {/* 经营视角：按负责人 + 按产品线 */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* 按负责人 */}
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
+                {Icons.chart}
+                {t('byCreator') || 'By Creator'}
+              </h2>
+              {byCreator.length === 0 ? (
+                <p className="text-sm text-slate-500">{t('noData')}</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm text-slate-600">
+                    <thead className="border-b border-slate-200 bg-slate-50 text-slate-700">
+                      <tr>
+                        <th className="py-3 px-4 font-semibold">{t('creator') || 'Creator'}</th>
+                        <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('orderCount')}</th>
+                        <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('revenueTotal')}</th>
+                        <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('costTotal')}</th>
+                        <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('marginTotal')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {byCreator.map((row: any) => (
+                        <tr key={row.creatorId} className="transition-colors hover:bg-slate-50">
+                          <td className="py-3 px-4 font-medium text-slate-900">
+                            {row.creatorId === 'unknown' ? t('unknownCreator') || 'Unknown' : row.creatorId}
+                          </td>
+                          <td className="py-3 px-4 text-right tabular-nums text-slate-700">{row.orderCount}</td>
+                          <td className="py-3 px-4 text-right tabular-nums text-emerald-700">${row.revenue.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right tabular-nums text-amber-700">${row.cost.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right tabular-nums text-teal-700">
+                            ${row.margin.toFixed(2)} ({row.marginPercent.toFixed(0)}%)
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            {/* 按产品线 / 主产品 */}
             <section className="rounded-xl border border-indigo-100 bg-white p-5 shadow-sm">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="flex items-center gap-2 text-base font-semibold text-indigo-900">
                   {Icons.cube}
-                  {t('topProducts')}
+                  {t('byProductLine') || 'By Product Line'}
                 </h2>
                 <input
                   type="text"
                   value={topProductFilter}
                   onChange={(e) => setTopProductFilter(e.target.value)}
-                  placeholder="按产品名称筛选…"
+                  placeholder="按主产品名称筛选…"
                   className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:w-48"
                 />
               </div>
-              {topProducts.length === 0 ? (
-                <p className="text-sm text-slate-500">{topProductFilter ? '没有匹配的产品' : t('noData')}</p>
+              {byProductLine.length === 0 ? (
+                <p className="text-sm text-slate-500">{topProductFilter ? '没有匹配的产品线' : t('noData')}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-slate-600">
@@ -304,13 +335,14 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
                       <tr>
                         <th className="py-3 px-4 font-semibold">{t('productName')}</th>
                         <th className="py-3 px-4 font-semibold">{t('category')}</th>
-                        <th className="py-3 px-4 font-semibold">{t('supplier')}</th>
                         <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('orderCount')}</th>
                         <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('revenueTotal')}</th>
+                        <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('costTotal')}</th>
+                        <th className="py-3 px-4 font-semibold tabular-nums text-right">{t('marginTotal')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {topProducts.slice(0, 8).map((row, i) => (
+                      {byProductLine.slice(0, 12).map((row: any, i: number) => (
                         <tr key={row.productName + i} className="transition-colors hover:bg-slate-50">
                           <td className="py-3 px-4 font-medium text-slate-900">{row.productName}</td>
                           <td className="py-3 px-4">
@@ -322,45 +354,17 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
                               <span className="text-slate-400">—</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-slate-500">{row.supplier || '—'}</td>
-                          <td className="py-3 px-4 text-right tabular-nums font-medium text-slate-700">{row.orderCount}</td>
-                          <td className="py-3 px-4 text-right tabular-nums font-semibold text-emerald-700">
-                            ${row.revenue.toFixed(2)}
+                          <td className="py-3 px-4 text-right tabular-nums text-slate-700">{row.orderCount}</td>
+                          <td className="py-3 px-4 text-right tabular-nums text-emerald-700">${row.revenue.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right tabular-nums text-amber-700">${row.cost.toFixed(2)}</td>
+                          <td className="py-3 px-4 text-right tabular-nums text-teal-700">
+                            ${row.margin.toFixed(2)} ({row.marginPercent.toFixed(0)}%)
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              )}
-            </section>
-
-            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
-                {Icons.trending}
-                {t('ordersTrend')}
-              </h2>
-              {timeSeries.length === 0 ? (
-                <p className="text-sm text-slate-500">
-                  {params.startDate && params.endDate ? t('noData') : t('timeRange') + ' → ' + t('customRange') + ' / ' + t('thisWeek') + ' / ' + t('thisMonth')}
-                </p>
-              ) : (
-                <ul className="space-y-2 max-h-64 overflow-y-auto">
-                  {timeSeries.map((row) => (
-                    <li key={row.date} className="flex items-center gap-3">
-                      <span className="w-24 shrink-0 text-sm text-slate-600">{row.date}</span>
-                      <div className="min-w-0 flex-1">
-                        <div
-                          className="h-6 rounded bg-indigo-200 transition-all duration-300"
-                          style={{ width: `${Math.max(8, (row.orderCount / maxTimeSeriesCount) * 100)}%` }}
-                          role="presentation"
-                        />
-                      </div>
-                      <span className="w-16 shrink-0 text-right text-sm font-medium tabular-nums text-slate-900">{row.orderCount}</span>
-                      <span className="w-20 shrink-0 text-right text-xs tabular-nums text-slate-500">${row.revenue.toFixed(0)}</span>
-                    </li>
-                  ))}
-                </ul>
               )}
             </section>
           </div>
