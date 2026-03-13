@@ -476,6 +476,8 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     clickCellNotice: '• Click on a cell to edit the configuration for that size × position',
     inheritDefaultNotice: '• Uncovered cells inherit the default configuration of the color group',
     configValidationFailed: 'Configuration validation failed:',
+    // [2026-03-13 04:20:00] Color mapping notice
+    colorMappingManagedInAdmin: 'Color mapping is managed in Admin > Settings > Color Mapping. This page only shows name and hex.',
   },
   zh: {
     // Header
@@ -946,6 +948,8 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     clickCellNotice: '• 点击单元格可编辑该尺码×位置的配置',
     inheritDefaultNotice: '• 未覆盖的单元格继承颜色组的默认配置',
     configValidationFailed: '配置验证失败：',
+    // [2026-03-13 04:20:00] 颜色配置提示
+    colorMappingManagedInAdmin: '颜色配置由 Admin 后台的 Color Mapping 统一管理，这里只展示名称和颜色值。',
   },
 };
 

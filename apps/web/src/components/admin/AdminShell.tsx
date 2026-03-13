@@ -135,18 +135,13 @@ const NAV_LINKS = [
   { href: '/admin/products', label: 'Products', icon: 'products', i18n: 'products' },
   { href: '/admin/categories', label: 'Categories', icon: 'categories', i18n: 'categories' },
   { href: '/admin/orders', label: 'Orders', icon: 'orders', i18n: 'orders' },
-  { href: '/admin/notifications', label: 'Notifications', icon: 'notifications', i18n: 'notifications' }, // Guest messages notifications
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/designs', label: 'Design Review', icon: 'design', i18n: 'designReview' },
   { href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // 生产管理
-  { href: '/admin/inventory-alerts', label: 'Inventory Alerts', icon: 'inventory', i18n: 'inventoryAlerts' }, // 库存预警
   { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costManagement' }, // 成本管理 - 使用 costManagement 翻译键
   { href: '/admin/offline-order-size-fees', label: 'Size Fees', icon: 'costs', i18n: 'sizeFees' }, // Added Size Fees configuration
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
-  { href: '/admin/promotions', label: 'Promotions', icon: 'promotions', i18n: 'promotions' },
   { href: '/admin/referral-settings', label: 'Referral', icon: 'promotions', i18n: 'promotions' }, // 推广活动配置
-  { href: '/admin/analytics', label: 'Analytics', icon: 'analytics', i18n: 'analytics' }, // Analytics and Reports for Issue #160
-  { href: '/admin/suppliers', label: 'Suppliers', icon: 'suppliers', i18n: 'suppliers' }, // Supplier management for Issue #89
   { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // Design Lab art assets CMS
   { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // Font management
   { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials' }, // Dedicated testimonials management

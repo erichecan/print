@@ -42,6 +42,99 @@ const safeJsonParse = (value) => {
 };
 
 /**
+ * [2026-03-13 05:10:00] 计算线下订单成本快照（pricing.costTotal）
+ * 成本定义：
+ * - 基础成本：Σ(产品 unit_cost × 件数)
+ * - 大码附加成本：Σ(大码附加费 additional_fee × 件数)
+ * - 不包含：DST File Fee / Rush Fee / 印刷费用
+ *
+ * 数据来源：
+ * - 配置中的 productItems/colors/sizes 结构
+ * - DB 表 offline_order_products.unit_cost
+ * - DB 表 offline_order_size_fees.additional_fee
+ */
+const computeCostTotalFromConfig = async (config) => {
+  try {
+    if (!config || !Array.isArray(config.productItems) || config.productItems.length === 0) {
+      return 0;
+    }
+
+    const productIds = Array.from(
+      new Set(
+        config.productItems
+          .map((item) => item && item.productId)
+          .filter((id) => typeof id === 'string' && id.trim() !== ''),
+      ),
+    );
+
+    if (productIds.length === 0) {
+      return 0;
+    }
+
+    // 批量读取产品成本
+    const products = await prisma.offline_order_products.findMany({
+      where: { id: { in: productIds } },
+      select: {
+        id: true,
+        unit_cost: true,
+      },
+    });
+    const productCostMap = new Map(
+      products.map((p) => [p.id, Number(p.unit_cost || 0)]),
+    );
+
+    // 读取大码附加费：优先使用配置中存储的 sizeFees（若有），否则从 DB 查询
+    let sizeFees = Array.isArray(config.sizeFees) ? config.sizeFees : null;
+    if (!sizeFees) {
+      try {
+        sizeFees = await prisma.offline_order_size_fees.findMany({
+          where: { is_active: true },
+        });
+      } catch (dbError) {
+        logger.warn('[offlineOrderController] Failed to fetch size fees for cost calc, defaulting to 0:', dbError.message);
+        sizeFees = [];
+      }
+    }
+
+    const sizeFeeMap = (sizeFees || []).reduce((acc, fee) => {
+      const key = (fee.size || fee.sizeKey || '').toString().toUpperCase();
+      if (!key) return acc;
+      const value = fee.additional_fee != null ? fee.additional_fee : fee.additionalFee;
+      acc[key] = Number(value || 0);
+      return acc;
+    }, {});
+
+    let total = 0;
+
+    for (const item of config.productItems) {
+      if (!item) continue;
+      const productId = item.productId;
+      const baseCost = productCostMap.get(productId) || 0;
+
+      const colors = Array.isArray(item.colors) ? item.colors : [];
+      for (const color of colors) {
+        const sizes = Array.isArray(color.sizes) ? color.sizes : [];
+        for (const sz of sizes) {
+          const qty = Number(sz?.quantity || 0);
+          if (!qty) continue;
+          const sizeKey = (sz.size || sz.sizeKey || '').toString().toUpperCase();
+          const additional = sizeKey ? (sizeFeeMap[sizeKey] || 0) : 0;
+          total += (baseCost + additional) * qty;
+        }
+      }
+    }
+
+    const normalized = Number(total.toFixed(2));
+    return Number.isNaN(normalized) ? 0 : normalized;
+  } catch (error) {
+    logger.warn('[offlineOrderController] computeCostTotalFromConfig failed, skipping cost snapshot:', {
+      message: error.message,
+    });
+    return 0;
+  }
+};
+
+/**
  * 生成订单编号
  * 修改规则：最后6位 = 前3位流水号（001开始递增）+ 后3位随机字母
  * @param {Object} tx - Prisma transaction 对象（可选）
@@ -295,7 +388,16 @@ exports.createOfflineOrder = async (req, res) => {
     logger.info('[offlineOrderController] Creating order with payload:', { startDate, status, dueDate, deliveryDate });
 
     // PRD v2.0: 解析configuration以获取orderNotes（如果projectName不存在）
-    const configData = safeJsonParse(configuration);
+    let configData = safeJsonParse(configuration);
+
+    // [2026-03-13 05:15:00] 创建订单时计算并写入成本快照 pricing.costTotal（不随后续产品成本变动）
+    if (configData) {
+      const costTotal = await computeCostTotalFromConfig(configData);
+      if (!configData.pricing) {
+        configData.pricing = {};
+      }
+      configData.pricing.costTotal = costTotal;
+    }
 
     // PRD v2.0: projectName现在是可选字段，如果不存在则从orderNotes或configuration中提取
     // 优先级：projectName > orderNotes > configuration.orderNotes > 订单编号（默认值）
@@ -1106,7 +1208,18 @@ exports.updateOfflineOrder = async (req, res) => {
       }
     }
     if (phone !== undefined) data.phone = phone?.trim() || null;
-    if (configuration !== undefined) data.configuration = safeJsonParse(configuration) || configuration || null;
+    if (configuration !== undefined) {
+      // [2026-03-13 05:15:30] 编辑订单时若更新配置，同步重算成本快照 pricing.costTotal
+      const configData = safeJsonParse(configuration) || configuration || null;
+      if (configData && typeof configData === 'object') {
+        const costTotal = await computeCostTotalFromConfig(configData);
+        if (!configData.pricing) {
+          configData.pricing = {};
+        }
+        configData.pricing.costTotal = costTotal;
+      }
+      data.configuration = configData;
+    }
     if (metadata !== undefined) data.metadata = safeJsonParse(metadata) || metadata || null;
 
     // Payment updates

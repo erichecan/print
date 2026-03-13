@@ -250,6 +250,68 @@ export default function SalesOrderDetailPage() {
     return totals;
   }, [config?.productItems, config?.colorGroupsByProduct]);
 
+  // [2026-03-12 03:40:00] 生成紧凑版对账/报价单用的产品行数据
+  const compactBillingLines = useMemo(() => {
+    if (!config?.productItems) return [];
+    const lines: Array<{
+      productName: string;
+      colorName: string;
+      size: string;
+      quantity: number;
+      unitPrice: number;
+      subtotal: number;
+    }> = [];
+
+    if (config.colorGroupsByProduct) {
+      Object.entries(config.colorGroupsByProduct).forEach(([productId, groups]) => {
+        const product = config.productItems.find((p) => p.id === productId);
+        const productName = product?.productName || product?.productId || 'Product';
+
+        (groups as any[]).forEach((group) => {
+          const colorName = group.colorName || group.colorCode || 'Color';
+          const unitPrice = Number(group.unitPrice || 0);
+          Object.entries(group.quantities || {}).forEach(([size, qtyStr]) => {
+            const quantity = Number(qtyStr) || 0;
+            if (!quantity) return;
+            const sizeFees = config.sizeFees || globalConfig?.sizeFees;
+            const sizeFee =
+              sizeFees?.find(
+                (sf: any) => sf.size?.toLowerCase() === (size as string).toLowerCase(),
+              )?.additionalFee || 0;
+            const pricePerUnit = unitPrice + Number(sizeFee || 0);
+            lines.push({
+              productName,
+              colorName,
+              size: size as string,
+              quantity,
+              unitPrice: pricePerUnit,
+              subtotal: quantity * pricePerUnit,
+            });
+          });
+        });
+      });
+      return lines;
+    }
+
+    // 旧数据结构回退：按 variants 生成
+    config.productItems.forEach((item) => {
+      (item.variants || []).forEach((variant: any) => {
+        const quantity = Number(variant.quantity || 0);
+        if (!quantity) return;
+        const unitPrice = Number(variant.unitPrice || 0);
+        lines.push({
+          productName: item.productName || item.productId || 'Product',
+          colorName: variant.color || 'Color',
+          size: variant.size || 'Size',
+          quantity,
+          unitPrice,
+          subtotal: quantity * unitPrice,
+        });
+      });
+    });
+    return lines;
+  }, [config, globalConfig]);
+
   // Transform data for BillingDetails component
   const billingData = useMemo(() => {
     if (!config?.productItems) return null;
@@ -355,6 +417,432 @@ export default function SalesOrderDetailPage() {
     }
   };
 
+  // [2026-03-12 03:40:30] 紧凑版对账/报价单 UI（基于 docs/offline-order-print-compact-preview.html）
+  const renderCompactInvoice = () => {
+    if (!meta || !config) return null;
+    const subtotal = Number(config.pricing?.subtotal || 0);
+    const dstFee = Number(meta.dst_file_fee || 0);
+    const rushFee = Number(config.pricing?.rushFee || 0);
+    const taxAmount = Number(config.pricing?.taxAmount || 0);
+    const total = Number(config.pricing?.total || subtotal + dstFee + rushFee + taxAmount);
+
+    return (
+      <>
+        <style
+          // [2026-03-12 03:40:40] 紧凑版样式内联，后续可抽到全局
+          dangerouslySetInnerHTML={{
+            __html: `
+        * { box-sizing: border-box; }
+        body.print-offline-invoice-mode {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+          font-size: 9pt;
+          line-height: 1.25;
+          color: #1a1a1a;
+          margin: 0;
+          padding: 8px;
+          background: #f5f5f5;
+        }
+        @media print {
+          body.print-offline-invoice-mode { padding: 0; background: #fff; }
+          .no-print { display: none !important; }
+          .compact-page { padding: 5mm; max-width: none; }
+          @page { margin: 6mm; size: A4; }
+        }
+        .compact-page {
+          max-width: 210mm;
+          margin: 0 auto;
+          background: #fff;
+          padding: 6mm;
+          box-shadow: 0 1px 3px rgba(0,0,0,.08);
+        }
+        .doc-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid #333;
+          padding-bottom: 2px;
+          margin-bottom: 4px;
+        }
+        .doc-title { font-size: 11pt; font-weight: 700; margin: 0; }
+        .order-code { font-family: monospace; font-size: 9pt; font-weight: 600; }
+        .badges { display: flex; gap: 4px; font-size: 7pt; }
+        .badge { padding: 1px 4px; border-radius: 2px; border: 1px solid #e5e7eb; }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-rush { background: #fef3c7; color: #b45309; }
+        .two-col {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+          margin-bottom: 6px;
+        }
+        .sec { margin-bottom: 4px; }
+        .sec-title {
+          font-size: 9pt;
+          font-weight: 700;
+          margin: 0 0 2px 0;
+          padding-bottom: 1px;
+          border-bottom: 1px solid #ccc;
+        }
+        .info-row { display: flex; gap: 6px; margin-bottom: 1px; }
+        .info-label { min-width: 56px; color: #555; }
+        .info-value { flex: 1; }
+        .product-block {
+          border: 1px solid #ddd;
+          padding: 4px 6px;
+          margin-bottom: 4px;
+          break-inside: avoid;
+        }
+        .product-head {
+          display: flex; justify-content: space-between; align-items: center;
+          font-weight: 700; font-size: 9pt; margin-bottom: 2px;
+        }
+        .print-specs {
+          font-size: 7pt; background: #fefce8; border: 1px solid #fde047;
+          padding: 2px 4px; margin: 2px 0; border-radius: 2px;
+        }
+        .print-specs span { margin-right: 8px; }
+        .color-block { margin-top: 2px; }
+        .color-line {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 8pt;
+          margin-bottom: 1px;
+          justify-content: space-between;
+        }
+        .color-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #999; margin-right: 4px; }
+        table.compact-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 8pt;
+        }
+        .compact-table th,
+        .compact-table td {
+          padding: 1px 4px;
+          border: 1px solid #e0e0e0;
+          text-align: left;
+        }
+        .compact-table th {
+          background: #f5f5f5;
+          font-weight: 600;
+        }
+        .compact-table td.num { text-align: right; }
+        .pricing-box {
+          border: 1px solid #bfdbfe;
+          background: #eff6ff;
+          padding: 4px 6px;
+          margin-bottom: 4px;
+          font-size: 8pt;
+        }
+        .pricing-box .row { display: flex; justify-content: space-between; margin-bottom: 1px; }
+        .pricing-box .total { font-weight: 700; font-size: 10pt; margin-top: 2px; padding-top: 2px; border-top: 1px solid #93c5fd; }
+        .billing-table { margin-top: 4px; }
+        .billing-table .compact-table { font-size: 7pt; }
+        .billing-table .compact-table th,
+        .billing-table .compact-table td { padding: 0 3px; }
+        .no-print-bar {
+          margin-bottom: 12px;
+          padding: 8px 12px;
+          background: #dbeafe;
+          border-radius: 6px;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .no-print-bar button {
+          padding: 6px 14px;
+          background: #2563eb;
+          color: #fff;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+        }
+        .no-print-bar button:hover { background: #1d4ed8; }
+      `,
+          }}
+        />
+        <div className="no-print-bar no-print">
+          <span>
+            <strong>线下订单 - 紧凑型对账/报价单</strong>（留白少、省纸，可直接打印本页查看效果）
+          </span>
+          <button type="button" onClick={() => window.print()}>
+            🖨️ 打印预览 / 打印
+          </button>
+        </div>
+        <div className="compact-page">
+          {/* 头部 */}
+          <div className="doc-header">
+            <div>
+              <h1 className="doc-title">{t('orderDetail')}</h1>
+              <span className="order-code">{meta.orderCode}</span>
+            </div>
+            <div className="badges">
+              <span className="badge badge-active">{meta.status}</span>
+              {meta.rushOrder && <span className="badge badge-rush">{t('tagRush')}</span>}
+              {meta.stage?.label && <span className="badge">{meta.stage.label}</span>}
+            </div>
+          </div>
+
+          {/* 项目信息 + 客户信息 两列 */}
+          <div className="two-col">
+            <div className="sec">
+              <h2 className="sec-title">Project Info / 项目信息</h2>
+              <div className="info-row">
+                <span className="info-label">{t('projectName')}</span>
+                <span className="info-value">{meta.projectName || '—'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">{t('primaryProduct')}</span>
+                <span className="info-value">{meta.primaryProduct || '—'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">{t('quantity')}</span>
+                <span className="info-value">{meta.quantity ?? '—'} pcs</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">{t('deliveryDate')}</span>
+                <span className="info-value">
+                  {meta.deliveryDate
+                    ? new Date(meta.deliveryDate).toLocaleDateString(
+                        locale === 'zh' ? 'zh-CN' : 'en-US',
+                      )
+                    : '—'}
+                </span>
+              </div>
+              {(config?.artworkNotes || meta.description) && (
+                <div className="info-row">
+                  <span className="info-label">{t('designNotes')}</span>
+                  <span className="info-value">{config?.artworkNotes || meta.description}</span>
+                </div>
+              )}
+            </div>
+            <div className="sec">
+              <h2 className="sec-title">Customer / 客户信息</h2>
+              <div className="info-row">
+                <span className="info-label">{t('contactName')}</span>
+                <span className="info-value">{meta.contact?.name || '—'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">{t('company')}</span>
+                <span className="info-value">{meta.contact?.company || '—'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">{t('email')}</span>
+                <span className="info-value">{meta.contact?.email || '—'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">{t('phone')}</span>
+                <span className="info-value">{meta.contact?.phone || '—'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 产品列表（基于 colorGroupsByProduct / variants） */}
+          <div className="sec">
+            <h2 className="sec-title">Product List / 产品明细</h2>
+            {config.productItems?.map((item) => {
+              const productId = item.id;
+              const totals = productTotals[productId] || { quantity: 0, total: 0 };
+              const colorGroups = config.colorGroupsByProduct?.[productId] as any[] | undefined;
+
+              return (
+                <div key={productId} className="product-block">
+                  <div className="product-head">
+                    <span>{item.productName || item.productId || 'Product'}</span>
+                    <span>
+                      {totals.quantity} pcs · ${totals.total.toFixed(2)} CAD
+                    </span>
+                  </div>
+
+                  {/* 印刷概览（简单拼一行） */}
+                  {printPositionsByProduct[productId] && (
+                    <div className="print-specs">
+                      <span>🛠️ {t('printPositions') || 'Print Positions'}:</span>
+                      {(printPositionsByProduct[productId] || [])
+                        .map((pos: any) => pos.positionName || pos.positionKey || '')
+                        .filter(Boolean)
+                        .join(' / ')}
+                    </div>
+                  )}
+
+                  {/* 颜色 + 尺码表 */}
+                  {colorGroups && colorGroups.length > 0 ? (
+                    colorGroups.map((group: any, idx: number) => {
+                      const colorName = group.colorName || group.colorCode || `Color ${idx + 1}`;
+                      const colorHex = group.colorHex || group.colorCodeHex;
+                      return (
+                        <div key={group.id || colorName || idx} className="color-block">
+                          <div className="color-line">
+                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                              <span
+                                className="color-dot"
+                                style={{
+                                  background: colorHex || '#ffffff',
+                                  borderColor: '#999',
+                                }}
+                              />
+                              <strong>{colorName}</strong>
+                            </span>
+                            {group.unitPrice && (
+                              <span>Unit: ${Number(group.unitPrice).toFixed(2)}</span>
+                            )}
+                          </div>
+                          <table className="compact-table">
+                            <thead>
+                              <tr>
+                                <th>Size</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th className="num">Subtotal</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Object.entries(group.quantities || {}).map(([size, qtyStr]) => {
+                                const quantity = Number(qtyStr) || 0;
+                                if (!quantity) return null;
+                                const sizeFees = config.sizeFees || globalConfig?.sizeFees;
+                                const sizeFee =
+                                  sizeFees?.find(
+                                    (sf: any) =>
+                                      sf.size?.toLowerCase() ===
+                                      (size as string).toLowerCase(),
+                                  )?.additionalFee || 0;
+                                const unitPrice = Number(group.unitPrice || 0) + Number(sizeFee || 0);
+                                const subtotalRow = quantity * unitPrice;
+                                return (
+                                  <tr key={size}>
+                                    <td>{size}</td>
+                                    <td>{quantity}</td>
+                                    <td>${unitPrice.toFixed(2)}</td>
+                                    <td className="num">${subtotalRow.toFixed(2)}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="color-block">
+                      <table className="compact-table">
+                        <thead>
+                          <tr>
+                            <th>Variant</th>
+                            <th>Qty</th>
+                            <th>Unit</th>
+                            <th className="num">Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(item.variants || []).map((v: any, idx: number) => {
+                            const quantity = Number(v.quantity || 0);
+                            if (!quantity) return null;
+                            const unitPrice = Number(v.unitPrice || 0);
+                            const subtotalRow = quantity * unitPrice;
+                            return (
+                              <tr key={v.id || idx}>
+                                <td>
+                                  {v.size} {v.color && `· ${v.color}`}
+                                </td>
+                                <td>{quantity}</td>
+                                <td>${unitPrice.toFixed(2)}</td>
+                                <td className="num">${subtotalRow.toFixed(2)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 价格汇总 */}
+          <div className="sec">
+            <h2 className="sec-title">Pricing / 价格</h2>
+            <div className="pricing-box">
+              <div className="row">
+                <span>Subtotal:</span>
+                <span>${subtotal.toFixed(2)} CAD</span>
+              </div>
+              {dstFee > 0 && (
+                <div className="row">
+                  <span>DST File Fee:</span>
+                  <span>${dstFee.toFixed(2)} CAD</span>
+                </div>
+              )}
+              {rushFee > 0 && (
+                <div className="row">
+                  <span>Rush Fee:</span>
+                  <span>${rushFee.toFixed(2)} CAD</span>
+                </div>
+              )}
+              {taxAmount > 0 && (
+                <div className="row">
+                  <span>Tax (HST):</span>
+                  <span>${taxAmount.toFixed(2)} CAD</span>
+                </div>
+              )}
+              <div className="row total">
+                <span>Total (incl. tax):</span>
+                <span>${total.toFixed(2)} CAD</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 计费明细（按产品/颜色/尺码平铺的小票式明细） */}
+          {compactBillingLines.length > 0 && (
+            <div className="sec billing-table">
+              <h2 className="sec-title">Billing Details / 计费明细</h2>
+              <table className="compact-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Qty</th>
+                    <th>Unit</th>
+                    <th className="num">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compactBillingLines.map((line, idx) => (
+                    <tr key={idx}>
+                      <td>{line.productName}</td>
+                      <td>{line.colorName}</td>
+                      <td>{line.size}</td>
+                      <td>{line.quantity}</td>
+                      <td>${line.unitPrice.toFixed(2)}</td>
+                      <td className="num">${line.subtotal.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  // [2026-03-12 03:45:00] 打印模式下，直接只渲染紧凑版对账单，避免页面上重复的 Project/Product 区块
+  if (isPrintMode && compactMode && !loading && meta && !error) {
+    return (
+      <div className="order-detail-shell print-compact-mode">
+        <div className="order-detail-card">
+          {renderCompactInvoice()}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`order-detail-shell ${isPrintMode || (compactMode && showPrintSettings) ? 'print-compact-mode' : ''}`}>
       {/* Print Settings Panel（仅非 print=true 时显示） */}
@@ -429,6 +917,13 @@ export default function SalesOrderDetailPage() {
             </div>
           </div>
         )}
+        {/* [2026-03-12 03:41:30] 打印紧凑对账单模式：直接渲染紧凑版组件 */}
+        {isPrintMode && compactMode && (
+          <div className="print-compact-invoice-wrapper">
+            {renderCompactInvoice()}
+          </div>
+        )}
+
         <header className="order-detail-header print:hidden">
           <button type="button" className="order-detail-back" onClick={handleBack}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">

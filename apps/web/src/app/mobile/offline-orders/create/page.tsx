@@ -2000,6 +2000,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                   min="0"
                   value={formState.depositAmount > 0 ? formState.depositAmount : ''}
                   onChange={(e) => setField('depositAmount', parseFloat(e.target.value) || 0)}
+                  // [2026-03-11 14:30:30] 防止鼠标滚轮在聚焦时误修改定金额度
+                  onWheel={(e) => {
+                    e.currentTarget.blur();
+                  }}
                   className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder="0.00"
                 />

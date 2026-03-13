@@ -51,6 +51,8 @@ COPY apps/web/src ./src
 RUN npm install --production=false
 # Prisma Client 已在 deps 阶段生成，无需重新生成
 RUN npm run build
+# 构建完成后裁剪依赖，只保留生产依赖，避免将 Playwright 等 E2E 套件打包进最终镜像
+RUN npm prune --omit=dev
 
 FROM node:18-bullseye-slim AS runner
 WORKDIR /app

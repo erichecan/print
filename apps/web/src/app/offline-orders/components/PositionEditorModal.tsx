@@ -207,6 +207,10 @@ export function PositionEditorModal({
                         e.stopPropagation();
                       }
                     }}
+                    // [2026-03-12 04:06:15] 防止鼠标滚轮在聚焦时误修改宽度
+                    onWheel={(e) => {
+                      e.currentTarget.blur();
+                    }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g.: 4"
                     min="0"
@@ -233,6 +237,10 @@ export function PositionEditorModal({
                         e.preventDefault();
                         e.stopPropagation();
                       }
+                    }}
+                    // [2026-03-12 04:06:20] 防止鼠标滚轮在聚焦时误修改高度
+                    onWheel={(e) => {
+                      e.currentTarget.blur();
                     }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g.: 6"
@@ -281,6 +289,10 @@ export function PositionEditorModal({
                       e.preventDefault();
                       e.stopPropagation();
                     }
+                  }}
+                  // [2026-03-12 04:06:25] 防止鼠标滚轮在聚焦时误修改 DST File Fee
+                  onWheel={(e) => {
+                    e.currentTarget.blur();
                   }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0.00"

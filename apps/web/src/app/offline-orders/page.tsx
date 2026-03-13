@@ -2214,6 +2214,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                     value={formState.rushFee > 0 ? formState.rushFee : ''}
                     onChange={(e) => setField('rushFee', parseFloat(e.target.value) || 0)}
                     placeholder="Rush Fee Amount"
+                    // [2026-03-12 04:06:30] 防止鼠标滚轮在聚焦时误修改加急费
+                    onWheel={(e) => {
+                      e.currentTarget.blur();
+                    }}
                     className="w-full border border-orange-300 rounded-lg pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all bg-orange-50"
                   />
                 </div>
@@ -2264,6 +2268,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                   min="0"
                   value={formState.depositAmount > 0 ? formState.depositAmount : ''}
                   onChange={(e) => setField('depositAmount', parseFloat(e.target.value) || 0)}
+                  // [2026-03-12 04:06:35] 防止鼠标滚轮在聚焦时误修改定金金额
+                  onWheel={(e) => {
+                    e.currentTarget.blur();
+                  }}
                   className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                 />
               </div>

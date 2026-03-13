@@ -198,6 +198,10 @@ export function ColorGroupCardIntegrated({
                           e.stopPropagation();
                         }
                       }}
+                      // [2026-03-11 14:30:00] 防止鼠标滚轮在聚焦时误修改尺码数量
+                      onWheel={(e) => {
+                        e.currentTarget.blur();
+                      }}
                       disabled={!isAvailable}
                       className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
@@ -240,6 +244,10 @@ export function ColorGroupCardIntegrated({
                           e.stopPropagation();
                         }
                       }}
+                      // [2026-03-11 14:30:05] 防止鼠标滚轮在聚焦时误修改尺码数量
+                      onWheel={(e) => {
+                        e.currentTarget.blur();
+                      }}
                       disabled={!isAvailable}
                       className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
@@ -278,6 +286,10 @@ export function ColorGroupCardIntegrated({
                     e.preventDefault();
                     e.stopPropagation();
                   }
+                }}
+                // [2026-03-11 14:30:10] 防止鼠标滚轮在聚焦时误修改颜色级单价
+                onWheel={(e) => {
+                  e.currentTarget.blur();
                 }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder={t('unitPricePlaceholder')}

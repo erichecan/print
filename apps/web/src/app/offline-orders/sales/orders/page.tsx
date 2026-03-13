@@ -15,6 +15,7 @@ import {
   AdminCategorySummary,
   suppliersApi,
   Supplier,
+  productColorImageApi,
 } from '@/lib/api';
 import useSWR from 'swr';
 import { useAuth } from '@/contexts/AuthContext';
@@ -993,15 +994,10 @@ export default function SalesOrdersPage() {
   const isManager = !!(currentUser?.role && ['SALES_MANAGER', 'ADMIN'].includes(String(currentUser.role).toUpperCase()));
 
   // 配置管理数据获取
-  // 修复：使用 authenticatedFetch 确保 token 正确传递
-  const { data: colorsData, mutate: mutateColors } = useSWR(
-    activeTab === 'config' && configTab === 'colors' ? '/api/proxy/admin/offline-order-colors' : null,
-    async (url) => {
-      const { authenticatedFetch } = await import('@/lib/api');
-      const response = await authenticatedFetch(url);
-      if (!response.ok) throw new Error('Failed to fetch colors');
-      return response.json();
-    }
+  // [2026-03-13 04:20:00] 颜色管理应读取全局 Color Mapping（admin color-mapping），仅展示名称和 HEX
+  const { data: colorsData } = useSWR(
+    activeTab === 'config' && configTab === 'colors' ? 'offline-orders-color-mapping-preview' : null,
+    () => productColorImageApi.getPreviewFromSettings(),
   );
 
   // 修复：使用 authenticatedFetch 确保 token 正确传递
@@ -1029,7 +1025,14 @@ export default function SalesOrdersPage() {
 
   useEffect(() => {
     if (colorsData?.data) {
-      setColors(colorsData.data);
+      // 将 color-mapping 的 { id, name, hex } 映射到本地 Color 结构
+      setColors(
+        colorsData.data.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          hexCode: item.hex || null,
+        })),
+      );
     }
   }, [colorsData]);
 
@@ -1090,49 +1093,17 @@ export default function SalesOrdersPage() {
     }
   }, [sizeFeesData]);
 
-  // 颜色管理函数
+  // 颜色管理函数（color-mapping 统一维护，这里只读展示，因此不再提供新增/编辑/删除）
   const handleCreateColor = async () => {
-    if (!newColorName.trim()) return;
-    try {
-      const response = await authenticatedFetch('/api/proxy/admin/offline-order-colors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newColorName.trim(), hexCode: newColorHex.trim() || null }),
-      });
-      if (!response.ok) throw new Error('Failed to create color');
-      setNewColorName('');
-      setNewColorHex('');
-      mutateColors();
-    } catch (err: any) {
-      alert(err.message || t('errorCreateFailed'));
-    }
+    alert(t('colorMappingManagedInAdmin') || 'Color mapping is managed in Admin > Settings > Color Mapping.');
   };
 
-  const handleUpdateColor = async (id: string) => {
-    if (!editColorName.trim()) return;
-    try {
-      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-colors/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: editColorName.trim(), hexCode: editColorHex.trim() || null }),
-      });
-      if (!response.ok) throw new Error('Failed to update color');
-      setEditingColorId(null);
-      mutateColors();
-    } catch (err: any) {
-      alert(err.message || t('errorUpdateFailed'));
-    }
+  const handleUpdateColor = async () => {
+    alert(t('colorMappingManagedInAdmin') || 'Color mapping is managed in Admin > Settings > Color Mapping.');
   };
 
-  const handleDeleteColor = async (id: string) => {
-    // confirmation removed
-    try {
-      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-colors/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete color');
-      mutateColors();
-    } catch (err: any) {
-      alert(err.message || t('errorDeleteFailed'));
-    }
+  const handleDeleteColor = async () => {
+    alert(t('colorMappingManagedInAdmin') || 'Color mapping is managed in Admin > Settings > Color Mapping.');
   };
 
   // 产品管理函数
