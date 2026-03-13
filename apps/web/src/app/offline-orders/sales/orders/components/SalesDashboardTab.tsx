@@ -130,6 +130,7 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
   const cost = data?.cost ?? { costTotal: 0, marginTotal: 0, marginPercent: 0 };
   const byCreator = data?.byCreator ?? [];
   const byProductLineRaw = data?.byProductLine ?? [];
+  const timeSeries = data?.timeSeries ?? [];
   const byProductLine = useMemo(() => {
     if (!topProductFilter) return byProductLineRaw;
     const q = topProductFilter.toLowerCase();
@@ -269,8 +270,8 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
           </div>
 
 
-          {/* 经营视角：按负责人 + 按产品线 */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* 经营视角：按负责人 + 按产品线 + 简单时间趋势 */}
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             {/* 按负责人 */}
             <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
               <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
@@ -295,7 +296,7 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
                       {byCreator.map((row: any) => (
                         <tr key={row.creatorId} className="transition-colors hover:bg-slate-50">
                           <td className="py-3 px-4 font-medium text-slate-900">
-                            {row.creatorId === 'unknown' ? t('unknownCreator') || 'Unknown' : row.creatorId}
+                            {row.creatorName || (row.creatorId === 'unknown' ? t('unknownCreator') || 'Unknown' : row.creatorId)}
                           </td>
                           <td className="py-3 px-4 text-right tabular-nums text-slate-700">{row.orderCount}</td>
                           <td className="py-3 px-4 text-right tabular-nums text-emerald-700">${row.revenue.toFixed(2)}</td>
@@ -365,6 +366,43 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
                     </tbody>
                   </table>
                 </div>
+              )}
+            </section>
+            {/* 时间趋势 */}
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-slate-900">
+                {Icons.trending}
+                {t('ordersTrend') || 'Orders Trend'}
+              </h2>
+              {timeSeries.length === 0 ? (
+                <p className="text-sm text-slate-500">
+                  {t('noData')}
+                </p>
+              ) : (
+                <ul className="space-y-2 max-h-64 overflow-y-auto">
+                  {timeSeries.map((row: any) => (
+                    <li key={row.date} className="flex items-center gap-3">
+                      <span className="w-20 shrink-0 text-sm text-slate-600">{row.date}</span>
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className="h-2 rounded-full bg-indigo-200"
+                          style={{
+                            width: `${Math.max(
+                              8,
+                              (row.orderCount / Math.max(1, ...timeSeries.map((t: any) => t.orderCount))) * 100,
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                      <span className="w-10 shrink-0 text-right text-xs tabular-nums text-slate-700">
+                        {row.orderCount}
+                      </span>
+                      <span className="w-20 shrink-0 text-right text-xs tabular-nums text-slate-500">
+                        ${row.revenue.toFixed(0)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               )}
             </section>
           </div>
