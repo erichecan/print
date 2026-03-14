@@ -843,6 +843,17 @@ function buildRawWhereConditions(baseWhere, req, dateOverride = null) {
   return { conditions, params };
 }
 
+/** [2026-03-11] 多表查询时给 offline_orders 的列加别名 o.，避免 created_at 等歧义 */
+function rawConditionsWithTableAlias(conditions, alias = 'o') {
+  if (!conditions || conditions.length === 0) return conditions;
+  return conditions.map((c) =>
+    c
+      .replace(/\bcreated_at\b/g, `${alias}.created_at`)
+      .replace(/\bmetadata\b/g, `${alias}.metadata`)
+      .replace(/\bprimary_product\b/g, `${alias}.primary_product`)
+  );
+}
+
 /** [2026-03-14] 根据当前周期计算上一周期起止日期（用于环比） */
 function getPreviousPeriodBounds(startDate, endDate) {
   if (!startDate || !endDate) return null;
@@ -1184,8 +1195,9 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
     let byCategoryError = null;
     // 2026-03-11: 数量字段兼容 totalQuantity 与 quantity，便于排查生产环境为空
     const qtyExpr = "COALESCE(NULLIF(pi->>'totalQuantity', '')::int, NULLIF(pi->>'quantity', '')::int, 0)";
+    const whereWithAlias = rawConditionsWithTableAlias(rawConditions);
+    const baseWhereStr = whereWithAlias.length ? whereWithAlias.join(' AND ') : '1=1';
     try {
-      const baseWhereStr = rawConditions.length ? rawConditions.join(' AND ') : '1=1';
       const bestRes = await prisma.$queryRawUnsafe(
         `SELECT 
            (pi->>'productId') AS product_id,
@@ -1214,13 +1226,14 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
     try {
       const catRes = await prisma.$queryRawUnsafe(
         `SELECT 
-           COALESCE(p.category, 'Uncategorized') AS category,
+           COALESCE(c.name, 'Uncategorized') AS category,
            SUM(${qtyExpr})::int AS quantity
          FROM offline_orders o,
            LATERAL jsonb_array_elements(CASE WHEN o.configuration->'productItems' IS NOT NULL AND jsonb_typeof(o.configuration->'productItems') = 'array' THEN o.configuration->'productItems' ELSE '[]'::jsonb END) AS pi
          LEFT JOIN offline_order_products p ON p.id = pi->>'productId'
-         WHERE ${rawConditions.length ? rawConditions.join(' AND ') : '1=1'}
-         GROUP BY p.category
+         LEFT JOIN categories c ON c.id = p.category_id
+         WHERE ${baseWhereStr}
+         GROUP BY c.id, c.name
          HAVING SUM(${qtyExpr}) > 0
          ORDER BY quantity DESC`,
         ...rawParams
@@ -1262,7 +1275,7 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
     let _debug;
     if (req.query.debug === '1') {
       try {
-        const dw = rawConditions.length ? rawConditions.join(' AND ') : '1=1';
+        const dw = whereWithAlias.length ? whereWithAlias.join(' AND ') : '1=1';
         const countWithItems = await prisma.$queryRawUnsafe(
           `SELECT COUNT(*)::int AS cnt FROM offline_orders o
            WHERE ${dw}
