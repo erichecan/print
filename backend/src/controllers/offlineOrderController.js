@@ -817,21 +817,22 @@ function buildMetricsWhere(req) {
 }
 
   /** 为 raw SQL 生成 WHERE 条件与参数（与 buildMetricsWhere 一致） */
-function buildRawWhereConditions(baseWhere, req) {
+function buildRawWhereConditions(baseWhere, req, dateOverride = null) {
   const conditions = [];
   const params = [];
   if (baseWhere.metadata?.equals) {
     conditions.push(`(metadata->>'submittedByUserId') = $${params.length + 1}`);
     params.push(baseWhere.metadata.equals);
   }
-  if (baseWhere.createdAt) {
-    if (baseWhere.createdAt.gte) {
+  const createdAt = dateOverride ? dateOverride.createdAt : baseWhere.createdAt;
+  if (createdAt) {
+    if (createdAt.gte) {
       conditions.push(`created_at >= $${params.length + 1}`);
-      params.push(baseWhere.createdAt.gte);
+      params.push(createdAt.gte);
     }
-    if (baseWhere.createdAt.lte) {
+    if (createdAt.lte) {
       conditions.push(`created_at <= $${params.length + 1}`);
-      params.push(baseWhere.createdAt.lte);
+      params.push(createdAt.lte);
     }
   }
   const primaryProduct = req?.query?.primaryProduct?.trim() || null;
@@ -840,6 +841,28 @@ function buildRawWhereConditions(baseWhere, req) {
     params.push(`%${primaryProduct}%`);
   }
   return { conditions, params };
+}
+
+/** [2026-03-14] 根据当前周期计算上一周期起止日期（用于环比） */
+function getPreviousPeriodBounds(startDate, endDate) {
+  if (!startDate || !endDate) return null;
+  const start = parseDate(startDate);
+  const end = parseDate(endDate);
+  if (!start || !end) return null;
+  const diffMs = end.getTime() - start.getTime();
+  const endPrev = new Date(start);
+  endPrev.setDate(endPrev.getDate() - 1);
+  endPrev.setHours(23, 59, 59, 999);
+  const startPrev = new Date(endPrev.getTime() - diffMs);
+  startPrev.setHours(0, 0, 0, 0);
+  return {
+    startDatePrev: startPrev.toISOString().slice(0, 10),
+    endDatePrev: endPrev.toISOString().slice(0, 10),
+    createdAtPrev: {
+      gte: startPrev,
+      lte: endPrev
+    }
+  };
 }
 
 exports.getOfflineOrderMetrics = async (req, res, next) => {
@@ -872,12 +895,13 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
 
     const averageOrderValue = totalCount > 0 ? revenueTotal / totalCount : 0;
 
-    // 库存消耗：从 configuration.productItems[].totalQuantity 汇总（2026-03-10）
+    // 库存消耗：从 configuration.productItems[].totalQuantity 或 quantity 汇总（2026-03-11 兼容 quantity）
     let inventoryConsumed = 0;
+    const invQtyExpr = "COALESCE(NULLIF(elem->>'totalQuantity', '')::int, NULLIF(elem->>'quantity', '')::int, 0)";
     try {
       const invWhere = rawConditions.length ? rawConditions.join(' AND ') : '1=1';
       const invResult = await prisma.$queryRawUnsafe(
-        `SELECT COALESCE(SUM((elem->>'totalQuantity')::int), 0)::bigint AS qty
+        `SELECT COALESCE(SUM(${invQtyExpr}), 0)::bigint AS qty
          FROM offline_orders o,
          LATERAL jsonb_array_elements(CASE WHEN o.configuration->'productItems' IS NOT NULL AND jsonb_typeof(o.configuration->'productItems') = 'array' THEN o.configuration->'productItems' ELSE '[]'::jsonb END) elem
          WHERE ${invWhere}`,
@@ -1052,8 +1076,50 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
       logger.warn('Offline order cost aggregation skipped', costErr.message);
     }
 
+    // [2026-03-14] 上一周期汇总（用于环比）
+    let previousPeriod = null;
+    const prevBounds = getPreviousPeriodBounds(req.query.startDate, req.query.endDate);
+    if (prevBounds && baseWhere.createdAt?.gte && baseWhere.createdAt?.lte) {
+      try {
+        const baseWherePrev = { ...baseWhere, createdAt: prevBounds.createdAtPrev };
+        const { conditions: condPrev, params: paramsPrev } = buildRawWhereConditions(baseWherePrev, req, { createdAt: prevBounds.createdAtPrev });
+        const wherePrev = condPrev.length ? condPrev.join(' AND ') : '1=1';
+
+        const revWherePrev = [
+          "(configuration->'pricing'->>'total') IS NOT NULL",
+          "(configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'",
+          ...condPrev
+        ].join(' AND ');
+        const [countPrev, revPrev, costPrevRes] = await Promise.all([
+          prisma.offlineOrder.count({ where: baseWherePrev }),
+          prisma.$queryRawUnsafe(
+            `SELECT COALESCE(SUM((configuration->'pricing'->>'total')::numeric), 0)::float as v FROM offline_orders WHERE ${revWherePrev}`,
+            ...paramsPrev
+          ).then((r) => (r && r[0]) ? Number(r[0].v) || 0 : 0),
+          prisma.$queryRawUnsafe(
+            `SELECT COALESCE(SUM((configuration->'pricing'->>'costTotal')::numeric), 0)::float as v FROM offline_orders WHERE (configuration->'pricing'->>'costTotal') IS NOT NULL AND (configuration->'pricing'->>'costTotal') ~ '^-?[0-9]+\\.?[0-9]*$' AND ${wherePrev}`,
+            ...paramsPrev
+          ).then((r) => (r && r[0]) ? Number(r[0].v) || 0 : 0)
+        ]);
+        const revPrevNum = Number(revPrev) || 0;
+        const costPrevNum = Number(costPrevRes) || 0;
+        const marginPrev = revPrevNum - costPrevNum;
+        previousPeriod = {
+          orderCount: countPrev,
+          revenueTotal: revPrevNum,
+          costTotal: costPrevNum,
+          marginTotal: marginPrev,
+          marginPercent: revPrevNum > 0 ? (marginPrev / revPrevNum) * 100 : 0,
+          averageOrderValue: countPrev > 0 ? revPrevNum / countPrev : 0
+        };
+      } catch (prevErr) {
+        logger.warn('Offline order previousPeriod aggregation skipped', prevErr.message);
+      }
+    }
+
     // 简单时间趋势：仅在有日期范围(start/end)时返回，按日统计订单数和营收
     let timeSeries = [];
+    let timeSeriesPrev = [];
     if (baseWhere.createdAt?.gte && baseWhere.createdAt?.lte) {
       try {
         const tsWhere = rawConditions.join(' AND ');
@@ -1073,13 +1139,166 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
             revenue: Number(row.revenue) || 0
           }));
         }
+
+        if (prevBounds) {
+          const { conditions: tsCondPrev, params: tsParamsPrev } = buildRawWhereConditions(
+            { ...baseWhere, createdAt: prevBounds.createdAtPrev },
+            req,
+            { createdAt: prevBounds.createdAtPrev }
+          );
+          const tsWherePrev = tsCondPrev.length ? tsCondPrev.join(' AND ') : '1=1';
+          const tsPrevResult = await prisma.$queryRawUnsafe(
+            `SELECT date(created_at) as day, COUNT(*)::int as order_count,
+             COALESCE(SUM(CASE WHEN (configuration->'pricing'->>'total') IS NOT NULL 
+                                  AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
+               THEN (configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float as revenue
+             FROM offline_orders WHERE ${tsWherePrev}
+             GROUP BY date(created_at) ORDER BY day`,
+            ...tsParamsPrev
+          );
+          if (tsPrevResult && tsPrevResult.length) {
+            timeSeriesPrev = tsPrevResult.map((row) => ({
+              date: row.day ? String(row.day).slice(0, 10) : '',
+              orderCount: Number(row.order_count) || 0,
+              revenue: Number(row.revenue) || 0
+            }));
+          }
+        }
       } catch (tsErr) {
         logger.warn('Offline order timeSeries aggregation skipped', tsErr.message);
       }
     }
 
+    // [2026-03-14] P&L 简表、畅销榜、按类目、按支付方式
+    const plStatement = {
+      salePrice: revenueTotal,
+      totalCosts: costTotal,
+      netProfit: marginTotal
+    };
+
+    let bestSellers = [];
+    let byCategory = [];
+    let byPaymentMode = [];
+    // [2026-03-11] debug=1 时把 catch 错误塞进 _debug，便于接口直接看到报错
+    let bestSellersError = null;
+    let byCategoryError = null;
+    // 2026-03-11: 数量字段兼容 totalQuantity 与 quantity，便于排查生产环境为空
+    const qtyExpr = "COALESCE(NULLIF(pi->>'totalQuantity', '')::int, NULLIF(pi->>'quantity', '')::int, 0)";
+    try {
+      const baseWhereStr = rawConditions.length ? rawConditions.join(' AND ') : '1=1';
+      const bestRes = await prisma.$queryRawUnsafe(
+        `SELECT 
+           (pi->>'productId') AS product_id,
+           COALESCE(NULLIF(pi->>'productName', ''), p.name, '—') AS product_name,
+           SUM(${qtyExpr})::int AS quantity
+         FROM offline_orders o,
+           LATERAL jsonb_array_elements(CASE WHEN o.configuration->'productItems' IS NOT NULL AND jsonb_typeof(o.configuration->'productItems') = 'array' THEN o.configuration->'productItems' ELSE '[]'::jsonb END) AS pi
+         LEFT JOIN offline_order_products p ON p.id = pi->>'productId'
+         WHERE ${baseWhereStr}
+         GROUP BY (pi->>'productId'), pi->>'productName', p.name
+         HAVING SUM(${qtyExpr}) > 0
+         ORDER BY quantity DESC
+         LIMIT 8`,
+        ...rawParams
+      );
+      if (bestRes && bestRes.length) {
+        bestSellers = bestRes.map((row) => ({
+          productName: row.product_name || '—',
+          quantity: Number(row.quantity) || 0
+        }));
+      }
+    } catch (e) {
+      bestSellersError = e?.message ?? String(e);
+      logger.warn('Offline order bestSellers skipped', bestSellersError);
+    }
+    try {
+      const catRes = await prisma.$queryRawUnsafe(
+        `SELECT 
+           COALESCE(p.category, 'Uncategorized') AS category,
+           SUM(${qtyExpr})::int AS quantity
+         FROM offline_orders o,
+           LATERAL jsonb_array_elements(CASE WHEN o.configuration->'productItems' IS NOT NULL AND jsonb_typeof(o.configuration->'productItems') = 'array' THEN o.configuration->'productItems' ELSE '[]'::jsonb END) AS pi
+         LEFT JOIN offline_order_products p ON p.id = pi->>'productId'
+         WHERE ${rawConditions.length ? rawConditions.join(' AND ') : '1=1'}
+         GROUP BY p.category
+         HAVING SUM(${qtyExpr}) > 0
+         ORDER BY quantity DESC`,
+        ...rawParams
+      );
+      if (catRes && catRes.length) {
+        byCategory = catRes.map((row) => ({
+          category: row.category || 'Uncategorized',
+          quantity: Number(row.quantity) || 0
+        }));
+      }
+    } catch (e) {
+      byCategoryError = e?.message ?? String(e);
+      logger.warn('Offline order byCategory skipped', byCategoryError);
+    }
+    try {
+      const payRes = await prisma.$queryRawUnsafe(
+        `SELECT 
+           COALESCE(NULLIF(TRIM(payment_method), ''), 'Other') AS payment_mode,
+           COUNT(*)::int AS order_count,
+           COALESCE(SUM(CASE WHEN (configuration->'pricing'->>'total') IS NOT NULL AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$' THEN (configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float AS revenue
+         FROM offline_orders
+         WHERE ${rawConditions.length ? rawConditions.join(' AND ') : '1=1'}
+         GROUP BY payment_method
+         ORDER BY revenue DESC`,
+        ...rawParams
+      );
+      if (payRes && payRes.length) {
+        byPaymentMode = payRes.map((row) => ({
+          paymentMode: row.payment_mode || 'Other',
+          orderCount: Number(row.order_count) || 0,
+          revenue: Number(row.revenue) || 0
+        }));
+      }
+    } catch (e) {
+      logger.warn('Offline order byPaymentMode skipped', e.message);
+    }
+
+    // [2026-03-11] 诊断：?debug=1 时返回 bestSellers/byCategory 为空的原因
+    let _debug;
+    if (req.query.debug === '1') {
+      try {
+        const dw = rawConditions.length ? rawConditions.join(' AND ') : '1=1';
+        const countWithItems = await prisma.$queryRawUnsafe(
+          `SELECT COUNT(*)::int AS cnt FROM offline_orders o
+           WHERE ${dw}
+             AND o.configuration->'productItems' IS NOT NULL
+             AND jsonb_typeof(o.configuration->'productItems') = 'array'
+             AND jsonb_array_length(o.configuration->'productItems') > 0`,
+          ...rawParams
+        );
+        const sampleRow = await prisma.$queryRawUnsafe(
+          `SELECT o.configuration->'productItems'->0 AS first_item
+           FROM offline_orders o
+           WHERE ${dw}
+             AND o.configuration->'productItems' IS NOT NULL
+             AND jsonb_typeof(o.configuration->'productItems') = 'array'
+             AND jsonb_array_length(o.configuration->'productItems') > 0
+           LIMIT 1`,
+          ...rawParams
+        );
+        const firstItem = sampleRow?.[0]?.first_item;
+        _debug = {
+          ordersInRange: totalCount,
+          ordersWithNonEmptyProductItems: countWithItems?.[0]?.cnt ?? 0,
+          sampleFirstItemKeys: firstItem && typeof firstItem === 'object' ? Object.keys(firstItem) : null,
+          sampleFirstItem: firstItem
+        };
+        if (bestSellersError) _debug.bestSellersError = bestSellersError;
+        if (byCategoryError) _debug.byCategoryError = byCategoryError;
+      } catch (debugErr) {
+        _debug = { error: debugErr.message };
+        if (bestSellersError) _debug.bestSellersError = bestSellersError;
+        if (byCategoryError) _debug.byCategoryError = byCategoryError;
+      }
+    }
+
     // 仅返回销售与经营维度，不返回订单状态/阶段（2026-03-10）；含库存消耗与平均单价
-    res.json({
+    const payload = {
       success: true,
       sales: {
         orderCount: totalCount,
@@ -1089,10 +1308,18 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
         averageUnitPrice
       },
       cost: { costTotal, marginTotal, marginPercent },
+      previousPeriod,
+      plStatement,
+      bestSellers,
+      byCategory,
+      byPaymentMode,
       byCreator,
       byProductLine,
-      timeSeries
-    });
+      timeSeries,
+      timeSeriesPrev
+    };
+    if (_debug) payload._debug = _debug;
+    res.json(payload);
   } catch (error) {
     logger.error('Failed to fetch offline order metrics', error);
     res.status(500).json({
