@@ -1310,9 +1310,25 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
       }
     }
 
+    // [2026-03-29] 状态与工作流维度：满足前端 Kanban 统计需求 (active, rushActive, completed, cancelled)
+    const [activeCount, rushActiveCount, completedCount, cancelledCount] = await Promise.all([
+      prisma.offlineOrder.count({ where: { ...baseWhere, status: { in: ['ACTIVE', 'PRINTED', 'REMINDER'] } } }),
+      prisma.offlineOrder.count({ where: { ...baseWhere, status: { in: ['ACTIVE', 'PRINTED', 'REMINDER'] }, rushOrder: true } }),
+      prisma.offlineOrder.count({ where: { ...baseWhere, status: 'COMPLETED' } }),
+      prisma.offlineOrder.count({ where: { ...baseWhere, status: 'CANCELLED' } })
+    ]);
+
+    const summary = {
+      active: activeCount,
+      rushActive: rushActiveCount,
+      completed: completedCount,
+      cancelled: cancelledCount
+    };
+
     // 仅返回销售与经营维度，不返回订单状态/阶段（2026-03-10）；含库存消耗与平均单价
     const payload = {
       success: true,
+      summary, // 修复：恢复 summary 以支持前端看板
       sales: {
         orderCount: totalCount,
         revenueTotal,

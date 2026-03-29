@@ -90,6 +90,14 @@ try {
         '创建 admin 用户（Prisma）',
         { timeout: 30000, allowFailure: false }
       );
+
+      // [2026-03-29] 自动同步 site.colorMappings 到 offline_order_colors
+      console.log('🌈 正在同步颜色配置...');
+      run(
+        'node scripts/migrate-colors.js',
+        '迁移 site.colorMappings 到 offline_order_colors',
+        { timeout: 30000, allowFailure: true }
+      );
     } catch (seedError) {
       console.warn('⚠️  创建用户失败，但继续执行:', seedError.message);
     }
