@@ -11,11 +11,12 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # 配置
-PROJECT_ID=${GCP_PROJECT_ID:-$(gcloud config get-value project 2>/dev/null || echo "")}
+PROJECT_ID=${GCP_PROJECT_ID:-print-482914}
 REGION=${GCP_REGION:-us-central1}
 REPOSITORY=${ARTIFACT_REGISTRY:-print-main}
 BACKEND_SERVICE=${BACKEND_SERVICE_NAME:-print-main-backend}
 FRONTEND_SERVICE=${FRONTEND_SERVICE_NAME:-print-main-frontend}
+DB_INSTANCE=${DB_INSTANCE_NAME:-print1600}
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║    GCP 全自动部署脚本 (免费层优化)       ║${NC}"

@@ -2795,7 +2795,7 @@ export interface AdminOfflineOrderListResponse {
   stages: OfflineOrderStageMeta[];
 }
 
-// Metrics payload for sales/business dashboard only (no order status or stage dimension) — 2026-03-10
+// Metrics payload for sales/business dashboard — 2026-03-14 redesign
 export interface OfflineOrderMetricsResponse {
   sales: {
     orderCount: number;
@@ -2805,14 +2805,22 @@ export interface OfflineOrderMetricsResponse {
     averageUnitPrice?: number;
   };
   cost: { costTotal: number; marginTotal: number; marginPercent: number };
-  topProducts: Array<{
-    productName: string;
+  previousPeriod?: {
     orderCount: number;
-    revenue: number;
-    category?: string;
-    supplier?: string;
-  }>;
+    revenueTotal: number;
+    costTotal: number;
+    marginTotal: number;
+    marginPercent: number;
+    averageOrderValue: number;
+  } | null;
+  plStatement?: { salePrice: number; totalCosts: number; netProfit: number };
+  bestSellers?: Array<{ productName: string; quantity: number }>;
+  byCategory?: Array<{ category: string; quantity: number }>;
+  byPaymentMode?: Array<{ paymentMode: string; orderCount: number; revenue: number }>;
+  byCreator?: Array<{ creatorId: string; creatorName?: string; orderCount: number; revenue: number; cost: number; margin: number; marginPercent: number }>;
+  byProductLine?: Array<{ productName: string; category?: string; orderCount: number; revenue: number; cost: number; margin: number; marginPercent: number }>;
   timeSeries: Array<{ date: string; orderCount: number; revenue: number }>;
+  timeSeriesPrev?: Array<{ date: string; orderCount: number; revenue: number }>;
 }
 
 export type OfflineOrderStage = OfflineOrderStageMeta;

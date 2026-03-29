@@ -17,7 +17,7 @@ spec:
         run.googleapis.com/cpu-throttling: "false"
         run.googleapis.com/memory: "512Mi"  # ✅ FREE TIER: Minimum memory
         run.googleapis.com/cpu: "1"
-        run.googleapis.com/cloudsql-instances: "PROJECT_ID:REGION:print-main-db"
+        run.googleapis.com/cloudsql-instances: "PROJECT_ID:REGION:print1600"
     spec:
       containerConcurrency: 80
       timeoutSeconds: 300
@@ -47,9 +47,9 @@ spec:
               name: stripe-secret-key
               key: latest
         - name: FRONTEND_URL
-          value: "https://FRONTEND_SERVICE_URL"
+          value: "https://print-main-frontend-651538279084.us-central1.run.app"
         - name: CORS_ORIGINS
-          value: "https://FRONTEND_SERVICE_URL"
+          value: "https://print-main-frontend-651538279084.us-central1.run.app"
         # 线下订单等图片上传必须配置；Cloud Run 服务账号需对该 bucket 有写权限（如 Storage Object Admin）
         - name: GCP_IMAGE_BUCKET
           value: "print-482914-images"

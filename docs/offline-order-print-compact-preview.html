@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>线下订单打印 - 紧凑型排版预览</title>
+  <style>
+    /* 紧凑型打印排版 - 减少留白、省纸 | 2026-03-10 */
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 9pt;
+      line-height: 1.25;
+      color: #1a1a1a;
+      margin: 0;
+      padding: 8px;
+      background: #f5f5f5;
+    }
+    /* 打印时：页边距尽量小 */
+    @media print {
+      body { padding: 0; background: #fff; }
+      .no-print { display: none !important; }
+      .compact-page { padding: 5mm; max-width: none; }
+      @page { margin: 6mm; size: A4; }
+    }
+
+    .compact-page {
+      max-width: 210mm;
+      margin: 0 auto;
+      background: #fff;
+      padding: 6mm;
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+
+    /* 顶部：订单号 + 状态 一行 */
+    .doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333;
+      padding-bottom: 2px;
+      margin-bottom: 4px;
+    }
+    .doc-title { font-size: 11pt; font-weight: 700; margin: 0; }
+    .order-code { font-family: monospace; font-size: 9pt; font-weight: 600; }
+    .badges { display: flex; gap: 4px; font-size: 7pt; }
+    .badge { padding: 1px 4px; border-radius: 2px; }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-rush { background: #fef3c7; color: #b45309; }
+
+    /* 两列：项目信息 | 客户信息 */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .sec {
+      margin-bottom: 4px;
+    }
+    .sec-title {
+      font-size: 9pt;
+      font-weight: 700;
+      margin: 0 0 2px 0;
+      padding-bottom: 1px;
+      border-bottom: 1px solid #ccc;
+    }
+    .info-row { display: flex; gap: 6px; margin-bottom: 1px; }
+    .info-label { min-width: 56px; color: #555; }
+    .info-value { flex: 1; }
+
+    /* 产品列表：紧凑（面向客户/财务，对账为主） */
+    .product-block {
+      border: 1px solid #ddd;
+      padding: 4px 6px;
+      margin-bottom: 4px;
+      break-inside: avoid;
+    }
+    .product-head {
+      display: flex; justify-content: space-between; align-items: center;
+      font-weight: 700; font-size: 9pt; margin-bottom: 2px;
+    }
+    .print-specs {
+      font-size: 7pt; background: #fefce8; border: 1px solid #fde047;
+      padding: 2px 4px; margin: 2px 0; border-radius: 2px;
+    }
+    .print-specs span { margin-right: 8px; }
+    .color-block { margin-top: 2px; }
+    .color-line {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 8pt;
+      margin-bottom: 1px;
+      justify-content: space-between;
+    }
+    .color-dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #999; }
+
+    /* 紧凑表格：财务对账优先，减少视觉噪音 */
+    table.compact-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8pt;
+    }
+    .compact-table th,
+    .compact-table td {
+      padding: 1px 4px;
+      border: 1px solid #e0e0e0;
+      text-align: left;
+    }
+    .compact-table th {
+      background: #f5f5f5;
+      font-weight: 600;
+    }
+    .compact-table td.num { text-align: right; }
+
+    /* 价格区：单列紧凑 */
+    .pricing-box {
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      padding: 4px 6px;
+      margin-bottom: 4px;
+      font-size: 8pt;
+    }
+    .pricing-box .row { display: flex; justify-content: space-between; margin-bottom: 1px; }
+    .pricing-box .total { font-weight: 700; font-size: 10pt; margin-top: 2px; padding-top: 2px; border-top: 1px solid #93c5fd; }
+
+    /* 计费明细表 */
+    .billing-table { margin-top: 4px; }
+    .billing-table .compact-table { font-size: 7pt; }
+    .billing-table .compact-table th,
+    .billing-table .compact-table td { padding: 0 3px; }
+
+    .no-print {
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      background: #dbeafe;
+      border-radius: 6px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .no-print button {
+      padding: 6px 14px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .no-print button:hover { background: #1d4ed8; }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <span><strong>线下订单 - 紧凑型排版预览</strong>（留白少、省纸，可直接打印本页查看效果）</span>
+    <button type="button" onclick="window.print()">🖨️ 打印预览 / 打印</button>
+  </div>
+
+  <div class="compact-page">
+    <!-- 头部 -->
+    <div class="doc-header">
+      <div>
+        <h1 class="doc-title">Order Detail / 订单详情</h1>
+        <span class="order-code">OF-20260310-A01XYZ</span>
+      </div>
+      <div class="badges">
+        <span class="badge badge-active">ACTIVE</span>
+        <span class="badge badge-rush">RUSH</span>
+        <span class="badge">Production</span>
+      </div>
+    </div>
+
+    <!-- 项目信息 + 客户信息 两列 -->
+    <div class="two-col">
+      <div class="sec">
+        <h2 class="sec-title">Project Info / 项目信息</h2>
+        <div class="info-row"><span class="info-label">项目名</span><span class="info-value">Spring Team Tee 2026</span></div>
+        <div class="info-row"><span class="info-label">主产品</span><span class="info-value">Unisex Staple T-Shirt</span></div>
+        <div class="info-row"><span class="info-label">数量</span><span class="info-value">120 pcs</span></div>
+        <div class="info-row"><span class="info-label">交期</span><span class="info-value">2026-04-15</span></div>
+        <div class="info-row"><span class="info-label">备注</span><span class="info-value">Logo front only, 2 colours.</span></div>
+      </div>
+      <div class="sec">
+        <h2 class="sec-title">Customer / 客户信息</h2>
+        <div class="info-row"><span class="info-label">联系人</span><span class="info-value">Zhang San</span></div>
+        <div class="info-row"><span class="info-label">公司</span><span class="info-value">ABC Corp</span></div>
+        <div class="info-row"><span class="info-label">邮箱</span><span class="info-value">zhang@abc.com</span></div>
+        <div class="info-row"><span class="info-label">电话</span><span class="info-value">416-123-4567</span></div>
+      </div>
+    </div>
+
+    <!-- 产品列表 -->
+    <div class="sec">
+      <h2 class="sec-title">Product List / 产品明细</h2>
+
+      <div class="product-block">
+        <div class="product-head">
+          <span>Unisex Staple T-Shirt</span>
+          <span>80 pcs · $1,240.00 CAD</span>
+        </div>
+        <div class="print-specs">🛠️ Front: DTF · 10×10 cm · Back: DTF · 30×40 cm</div>
+        <div class="color-block">
+          <div class="color-line"><span class="color-dot" style="background:#1a1a1a"></span><strong>Black</strong> Unit: $15.50</div>
+          <table class="compact-table">
+            <thead><tr><th>Size</th><th>Qty</th><th>Unit</th><th class="num">Subtotal</th></tr></thead>
+            <tbody>
+              <tr><td>S</td><td>10</td><td>$15.50</td><td class="num">$155.00</td></tr>
+              <tr><td>M</td><td>20</td><td>$15.50</td><td class="num">$310.00</td></tr>
+              <tr><td>L</td><td>25</td><td>$15.50</td><td class="num">$387.50</td></tr>
+              <tr><td>XL</td><td>15</td><td>$16.00</td><td class="num">$240.00</td></tr>
+              <tr><td>2XL</td><td>10</td><td>$18.00</td><td class="num">$180.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="color-block">
+          <div class="color-line"><span class="color-dot" style="background:#fff;border:1px solid #333"></span><strong>White</strong> Unit: $15.50</div>
+          <table class="compact-table">
+            <thead><tr><th>Size</th><th>Qty</th><th>Unit</th><th class="num">Subtotal</th></tr></thead>
+            <tbody>
+              <tr><td>M</td><td>20</td><td>$15.50</td><td class="num">$310.00</td></tr>
+              <tr><td>L</td><td>20</td><td>$15.50</td><td class="num">$310.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="product-block">
+        <div class="product-head">
+          <span>Embroidered Cap</span>
+          <span>40 pcs · $680.00 CAD</span>
+        </div>
+        <div class="print-specs">🛠️ Front: Embroidery · 8×4 cm · DST Fee: $25.00</div>
+        <div class="color-block">
+          <div class="color-line"><span class="color-dot" style="background:#1e3a8a"></span><strong>Navy</strong> Unit: $17.00</div>
+          <table class="compact-table">
+            <thead><tr><th>Size</th><th>Qty</th><th>Unit</th><th class="num">Subtotal</th></tr></thead>
+            <tbody>
+              <tr><td>OS</td><td>40</td><td>$17.00</td><td class="num">$680.00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 价格汇总 -->
+    <div class="sec">
+      <h2 class="sec-title">Pricing / 价格</h2>
+      <div class="pricing-box">
+        <div class="row"><span>Subtotal:</span><span>$1,920.00 CAD</span></div>
+        <div class="row"><span>DST File Fee:</span><span>$25.00 CAD</span></div>
+        <div class="row"><span>Rush Fee:</span><span>$50.00 CAD</span></div>
+        <div class="row"><span>Tax (13% HST):</span><span>$258.75 CAD</span></div>
+        <div class="row total"><span>Total (incl. tax):</span><span>$2,253.75 CAD</span></div>
+      </div>
+    </div>
+
+    <!-- 计费明细（小票式） -->
+    <div class="sec billing-table">
+      <h2 class="sec-title">Billing Details / 计费明细</h2>
+      <table class="compact-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Color</th>
+            <th>Size</th>
+            <th class="num">Qty</th>
+            <th>Position</th>
+            <th class="num">Unit</th>
+            <th class="num">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Unisex Staple T-Shirt</td><td>Black</td><td>S</td><td class="num">10</td><td>Front, Back</td><td class="num">15.50</td><td class="num">155.00</td></tr>
+          <tr><td>Unisex Staple T-Shirt</td><td>Black</td><td>M</td><td class="num">20</td><td>Front, Back</td><td class="num">15.50</td><td class="num">310.00</td></tr>
+          <tr><td>Unisex Staple T-Shirt</td><td>Black</td><td>L</td><td class="num">25</td><td>Front, Back</td><td class="num">15.50</td><td class="num">387.50</td></tr>
+          <tr><td>Unisex Staple T-Shirt</td><td>Black</td><td>XL</td><td class="num">15</td><td>Front, Back</td><td class="num">16.00</td><td class="num">240.00</td></tr>
+          <tr><td>Unisex Staple T-Shirt</td><td>Black</td><td>2XL</td><td class="num">10</td><td>Front, Back</td><td class="num">18.00</td><td class="num">180.00</td></tr>
+          <tr><td>Unisex Staple T-Shirt</td><td>White</td><td>M</td><td class="num">20</td><td>Front, Back</td><td class="num">15.50</td><td class="num">310.00</td></tr>
+          <tr><td>Unisex Staple T-Shirt</td><td>White</td><td>L</td><td class="num">20</td><td>Front, Back</td><td class="num">15.50</td><td class="num">310.00</td></tr>
+          <tr><td>Embroidered Cap</td><td>Navy</td><td>OS</td><td class="num">40</td><td>Front</td><td class="num">17.00</td><td class="num">680.00</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 支付信息 -->
+    <div class="two-col" style="margin-top:6px">
+      <div class="sec">
+        <h2 class="sec-title">Payment / 支付</h2>
+        <div class="info-row"><span class="info-label">方式</span><span class="info-value">e-Transfer</span></div>
+        <div class="info-row"><span class="info-label">Reference</span><span class="info-value">REF-20260310-001</span></div>
+        <div class="info-row"><span class="info-label">Deposit</span><span class="info-value">$500.00 CAD</span></div>
+        <div class="info-row"><span class="info-label">Balance</span><span class="info-value"><strong>$1,753.75 CAD</strong></span></div>
+      </div>
+      <div class="sec">
+        <h2 class="sec-title">Invoice / 发票</h2>
+        <div class="info-row"><span class="info-label">Company</span><span class="info-value">ABC Corp</span></div>
+        <div class="info-row"><span class="info-label">Address</span><span class="info-value">123 Main St, Toronto ON M1A 2B3</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
