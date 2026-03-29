@@ -28,7 +28,7 @@ gcloud functions deploy $FUNCTION_NAME \
   --entry-point=exportDb \
   --trigger-http \
   --no-allow-unauthenticated \
-  --set-env-vars "BACKUP_BUCKET=$BACKUP_BUCKET,DB_NAME=suvernireplus,CLOUD_SQL_INSTANCE=print-main-db,GCP_REGION=$REGION" \
+  --set-env-vars "BACKUP_BUCKET=$BACKUP_BUCKET,DB_NAME=suvernireplus,CLOUD_SQL_INSTANCE=print1600,GCP_REGION=$REGION" \
   --project=$PROJECT_ID
 
 # Gen2 部署为 Cloud Run 服务，服务名与 Function 名一致

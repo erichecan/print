@@ -7,7 +7,7 @@
 const { google } = require('googleapis');
 
 const PROJECT_ID = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
-const INSTANCE_NAME = process.env.CLOUD_SQL_INSTANCE || 'print-main-db';
+const INSTANCE_NAME = process.env.CLOUD_SQL_INSTANCE || 'print1600';
 const BUCKET = process.env.BACKUP_BUCKET || '';
 const DB_NAME = process.env.DB_NAME || 'suvernireplus';
 const REGION = process.env.GCP_REGION || 'us-central1';
