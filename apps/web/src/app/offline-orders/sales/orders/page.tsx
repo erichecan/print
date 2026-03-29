@@ -23,6 +23,7 @@ import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations
 import { FilterPanel, FilterOptions } from './components/FilterPanel';
 import { SalesDashboardTab } from './components/SalesDashboardTab';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
+import InfoModal from '@/components/ui/InfoModal';
 
 // 状态选择组件 - 参考 PillSelect 的单选版样式
 function StatusSelector({
@@ -370,6 +371,29 @@ export default function SalesOrdersPage() {
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<{ id: string, name: string } | null>(null);
+
+  // Color Management Extra State
+  const [isAddingColor, setIsAddingColor] = useState(false);
+  const [isDeleteColorModalOpen, setIsDeleteColorModalOpen] = useState(false);
+  const [colorToDelete, setColorToDelete] = useState<{ id: string, name: string } | null>(null);
+  const [deletingColorId, setDeletingColorId] = useState<string | null>(null);
+  
+  // Info Modal State
+  const [infoModalConfig, setInfoModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'info' | 'error' | 'success' | 'warning';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showInfo = (message: string, title = 'Info', type: 'info' | 'error' | 'success' | 'warning' = 'info') => {
+    setInfoModalConfig({ isOpen: true, message, title, type });
+  };
 
   // 语言环境状态
   const [locale, setLocale] = useState<OfflineOrdersLocale>('en');
@@ -887,7 +911,7 @@ export default function SalesOrdersPage() {
       setIsDeleteModalOpen(false);
       setOrderToDelete(null);
     } catch (err: any) {
-      alert(err.message || t('errorDeleteOrder'));
+      showInfo(err.message || t('errorDeleteOrder'), 'Error', 'error');
     } finally {
       setDeletingOrder(null);
     }
@@ -910,7 +934,7 @@ export default function SalesOrdersPage() {
           : o
       ));
     } catch (err: any) {
-      alert(err.message || t('errorUpdateStage'));
+      showInfo(err.message || t('errorUpdateStage'), 'Error', 'error');
     } finally {
       setUpdatingStage(null);
     }
@@ -934,7 +958,6 @@ export default function SalesOrdersPage() {
       } else if (newStatus === 'REMINDER') {
         // REMINDER 实际上也是 ACTIVE的一种变体，或者复用 ACTIVE 状态但加个标记？
         // 鉴于API current limitation, maybe we reuse "ACTIVE" status but handle it via separate logic or just store pure status string if Backend supports it?
-        // Assuming backend `updateStatus` validates enum. If backend validation is strict, we might need 'ACTIVE' + some local storage or relying on `stage`?
         // User requested "Status in status list", implying it's a first-class status.
         // If backend doesn't support 'REMINDER' enum, this will fail.
         // Let's assume for now we try to send 'ACTIVE' and maybe use a different field?
@@ -942,13 +965,7 @@ export default function SalesOrdersPage() {
         // If I look at `adminOfflineOrdersApi.updateStatus`, it might be strict.
         // Let's assume 'REMINDER' is NOT a valid backend status enum based on standard systems.
         // However, the user said "Add a status called reminder".
-        // I will try to use it. If it fails, I might need to clarify.
-        // BUT, for the purpose of this "Frontend" task, I will assume I can just use it or masquerade it.
-        // Let's check `OfflineOrderStage`? No, status is `ACTIVE` etc.
-        // Actually, if I recall `prisma/schema.prisma` (not visible but usually Enums are fixed), `REMINDER` is likely not there.
-        // But the user said "Modify database" previously for other things.
-        // Adding a status enum usually requires backend migration.
-        // The user said "Add a status called reminder". I should probably have checked backend.
+        // I should probably have checked backend.
         // But I am in "Frontend" modification primarily.
         // Let's try to treat it as "ACTIVE" status but with a special "Note" or just try it.
         // Actually, I'll send 'ACTIVE' and maybe use local state? No, needs persistence.
@@ -995,9 +1012,15 @@ export default function SalesOrdersPage() {
 
   // 配置管理数据获取
   // [2026-03-13 04:20:00] 颜色管理应读取全局 Color Mapping（admin color-mapping），仅展示名称和 HEX
-  const { data: colorsData } = useSWR(
-    activeTab === 'config' && configTab === 'colors' ? 'offline-orders-color-mapping-preview' : null,
-    () => productColorImageApi.getPreviewFromSettings(),
+  // 2026-03-29: 颜色管理直接读取数据库表 offline_order_colors，不再从 settings 读取
+  const { data: colorsData, mutate: mutateColors } = useSWR(
+    activeTab === 'config' && configTab === 'colors' ? '/api/proxy/admin/offline-order-colors' : null,
+    async (url) => {
+      const { authenticatedFetch } = await import('@/lib/api');
+      const response = await authenticatedFetch(url);
+      if (!response.ok) throw new Error('Failed to fetch colors');
+      return response.json();
+    }
   );
 
   // 修复：使用 authenticatedFetch 确保 token 正确传递
@@ -1025,12 +1048,12 @@ export default function SalesOrdersPage() {
 
   useEffect(() => {
     if (colorsData?.data) {
-      // 将 color-mapping 的 { id, name, hex } 映射到本地 Color 结构
+      // 2026-03-29: 直接读取数据库表 offline_order_colors 字段 hexCode
       setColors(
         colorsData.data.map((item: any) => ({
           id: item.id,
           name: item.name,
-          hexCode: item.hex || null,
+          hexCode: item.hexCode || null,
         })),
       );
     }
@@ -1093,24 +1116,87 @@ export default function SalesOrdersPage() {
     }
   }, [sizeFeesData]);
 
-  // 颜色管理函数（color-mapping 统一维护，这里只读展示，因此不再提供新增/编辑/删除）
+  // 颜色管理函数
   const handleCreateColor = async () => {
-    alert(t('colorMappingManagedInAdmin') || 'Color mapping is managed in Admin > Settings > Color Mapping.');
+    if (!newColorName.trim()) return;
+    try {
+      const { authenticatedFetch } = await import('@/lib/api');
+      const response = await authenticatedFetch('/api/proxy/admin/offline-order-colors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newColorName.trim(),
+          hexCode: newColorHex.trim() || null,
+        }),
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to create color');
+      }
+      setNewColorName('');
+      setNewColorHex('');
+      setIsAddingColor(false);
+      mutateColors();
+    } catch (err: any) {
+      showInfo(err.message || t('errorCreateFailed'), 'Error', 'error');
+    }
   };
 
-  const handleUpdateColor = async () => {
-    alert(t('colorMappingManagedInAdmin') || 'Color mapping is managed in Admin > Settings > Color Mapping.');
+  const handleUpdateColor = async (id: string) => {
+    if (!editColorName.trim()) return;
+    try {
+      const { authenticatedFetch } = await import('@/lib/api');
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-colors/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editColorName.trim(),
+          hexCode: editColorHex.trim() || null,
+        }),
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to update color');
+      }
+      setEditingColorId(null);
+      mutateColors();
+    } catch (err: any) {
+      showInfo(err.message || t('errorUpdateFailed'), 'Error', 'error');
+    }
   };
 
-  const handleDeleteColor = async () => {
-    alert(t('colorMappingManagedInAdmin') || 'Color mapping is managed in Admin > Settings > Color Mapping.');
+  const handleDeleteColor = (id: string, name: string) => {
+    setColorToDelete({ id, name });
+    setIsDeleteColorModalOpen(true);
+  };
+
+  const confirmDeleteColor = async () => {
+    if (!colorToDelete) return;
+    setDeletingColorId(colorToDelete.id);
+    try {
+      const { authenticatedFetch } = await import('@/lib/api');
+      const response = await authenticatedFetch(`/api/proxy/admin/offline-order-colors/${colorToDelete.id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to delete color');
+      }
+      mutateColors();
+      setIsDeleteColorModalOpen(false);
+      setColorToDelete(null);
+    } catch (err: any) {
+      showInfo(err.message || 'Failed to delete color', 'Error', 'error');
+    } finally {
+      setDeletingColorId(null);
+    }
   };
 
   // 产品管理函数
   const handleCreateProduct = async () => {
     if (!newProductName.trim()) return;
     if (!newProductCategoryId) {
-      alert(t('selectCategory') || 'Please select a category');
+      showInfo(t('selectCategory') || 'Please select a category', 'Warning', 'warning');
       return;
     }
     try {
@@ -1140,7 +1226,7 @@ export default function SalesOrdersPage() {
       mutateProducts();
       setProductPage(1);
     } catch (err: any) {
-      alert(err.message || t('errorCreateFailed'));
+      showInfo(err.message || t('errorCreateFailed'), 'Error', 'error');
     }
   };
 
@@ -1165,7 +1251,7 @@ export default function SalesOrdersPage() {
       setEditingProductId(null);
       mutateProducts();
     } catch (err: any) {
-      alert(err.message || t('errorUpdateFailed'));
+      showInfo(err.message || t('errorUpdateFailed'), 'Error', 'error');
     }
   };
 
@@ -1185,7 +1271,7 @@ export default function SalesOrdersPage() {
       setProductToDeleteId(null);
       mutateProducts();
     } catch (err: any) {
-      alert(err.message || t('errorDeleteFailed'));
+      showInfo(err.message || t('errorDeleteFailed'), 'Error', 'error');
     }
   };
 
@@ -1193,7 +1279,7 @@ export default function SalesOrdersPage() {
   const handleUpdateSizeFee = async (id: string, size: string) => {
     const fee = parseFloat(editSizeFeeValue);
     if (isNaN(fee) || fee < 0) {
-      alert(t('errorInvalidAmount') || 'Invalid amount');
+      showInfo(t('errorInvalidAmount') || 'Invalid amount', 'Error', 'error');
       return;
     }
 
@@ -1207,13 +1293,13 @@ export default function SalesOrdersPage() {
       setEditingSizeFeeId(null);
       mutateSizeFees();
     } catch (err: any) {
-      alert(err.message || t('errorUpdateFailed') || 'Update failed');
+      showInfo(err.message || t('errorUpdateFailed') || 'Update failed', 'Error', 'error');
     }
   };
 
   const handleCreateSizeFee = async () => {
     if (!newSizeName.trim()) {
-      alert(t('errorInvalidAmount') || 'Size name required');
+      showInfo(t('errorInvalidAmount') || 'Size name required', 'Error', 'error');
       return;
     }
     const fee = parseFloat(newSizeFeeValue) || 0;
@@ -1240,7 +1326,7 @@ export default function SalesOrdersPage() {
       setShowAddSizeForm(false);
       mutateSizeFees();
     } catch (err: any) {
-      alert(err.message || 'Error occurred');
+      showInfo(err.message || 'Error occurred', 'Error', 'error');
     }
   };
 
@@ -1251,7 +1337,7 @@ export default function SalesOrdersPage() {
       if (!response.ok) throw new Error('Delete failed');
       mutateSizeFees();
     } catch (err: any) {
-      alert(err.message || 'Delete failed');
+      showInfo(err.message || 'Delete failed', 'Error', 'error');
     }
   };
 
@@ -1311,7 +1397,7 @@ export default function SalesOrdersPage() {
 
       mutateSizeFees();
     } catch (err: any) {
-      alert(err.message || 'Failed to reorder');
+      showInfo(err.message || 'Failed to reorder', 'Error', 'error');
       mutateSizeFees(); // Revert on failure
     } finally {
       setDraggedSizeId(null);
@@ -1942,7 +2028,7 @@ export default function SalesOrdersPage() {
                                   {t('btnEdit')}
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteColor(color.id)}
+                                  onClick={() => handleDeleteColor(color.id, color.name)}
                                   className="config-btn config-btn-danger"
                                 >
                                   {t('btnDelete')}
@@ -3159,7 +3245,7 @@ export default function SalesOrdersPage() {
                       setIsCategoryModalOpen(false);
                       setCategoryForm({ id: undefined, name: '', slug: '', parentId: undefined });
                     } catch (err: any) {
-                      alert(`保存分类失败: ${err.message}`);
+                      showInfo(err.message || t('saveCategoryFailed') || '保存分类失败', '错误', 'error');
                       setError(err.message || t('saveCategoryFailed') || '保存分类失败');
                     }
                   }}
@@ -3312,7 +3398,7 @@ export default function SalesOrdersPage() {
                         syncInterval: 3600,
                       });
                     } catch (err: any) {
-                      alert(`保存供应商失败: ${err.message}`);
+                      showInfo(err.message || t('saveSupplierFailed') || '保存供应商失败', '错误', 'error');
                       setError(err.message || t('saveSupplierFailed') || '保存供应商失败');
                     }
                   }}
@@ -3359,8 +3445,27 @@ export default function SalesOrdersPage() {
           </div>
         </div>
       )}
+
+      {/* Color Deletion Confirmation */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteColorModalOpen}
+        onClose={() => setIsDeleteColorModalOpen(false)}
+        onConfirm={confirmDeleteColor}
+        title={t('deleteColorTitle') || 'Delete Color'}
+        itemName={colorToDelete?.name}
+        description={t('deleteColorConfirm') || 'Are you sure you want to delete this color? This action cannot be undone.'}
+        confirmLabel={t('delete') || 'Delete'}
+        isDeleting={!!deletingColorId}
+      />
+
+      {/* Global Info Modal */}
+      <InfoModal
+        isOpen={infoModalConfig.isOpen}
+        onClose={() => setInfoModalConfig(prev => ({ ...prev, isOpen: false }))}
+        title={infoModalConfig.title}
+        message={infoModalConfig.message}
+        type={infoModalConfig.type}
+      />
     </div >
   );
 }
-
-
