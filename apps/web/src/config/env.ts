@@ -116,15 +116,16 @@ export function getFrontendApiBaseUrl(): string {
     return normalizeApiUrl(envUrl);
   }
 
-// Design Lab 4.0: 生产环境运行时，必须配置环境变量，无隐式回退
+// 生产环境：NEXT_PUBLIC_API_URL 应在构建时由 Next.js 内联，
+  // 如果走到这里说明构建时也未设置，使用硬编码回退而非崩溃
   if (isProduction) {
-    const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL 或 NEXT_PUBLIC_API_BASE_URL。';
-    console.error('[Env Config] ❌', errorMsg);
-    throw new Error(errorMsg);
+    const fallbackUrl = 'https://print-main-backend-5spbppmmza-uc.a.run.app/api';
+    console.warn('[Env Config] ⚠️ 生产环境未检测到 API 地址环境变量，使用构建时默认值:', fallbackUrl);
+    return fallbackUrl;
   }
 
   // 开发环境：允许回退到 localhost
-// 修复：本仓库默认本地后端端口为 3001 (backend/.env PORT=3001)
+  // 修复：本仓库默认本地后端端口为 3001 (backend/.env PORT=3001)
   console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:3001/api');
   return 'http://localhost:3001/api';
 }
@@ -228,21 +229,14 @@ export function getBackendApiBaseUrl(): string {
     });
   }
 
-  // 生产环境运行时：必须配置环境变量
+  // 生产环境：NEXT_PUBLIC_API_URL 应在构建时内联，如果走到这里使用硬编码回退
   if (isProduction) {
-    const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL、API_BASE_URL 或 NEXT_PUBLIC_API_BASE_URL。';
-    console.error('[Env Config] ❌', errorMsg, {
+    const fallbackUrl = 'https://print-main-backend-5spbppmmza-uc.a.run.app/api';
+    console.warn('[Env Config] ⚠️ 生产环境未检测到 API 地址环境变量，使用构建时默认值:', fallbackUrl, {
       traceId,
       timestamp,
-      envVars: {
-        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '未设置',
-        API_BASE_URL: process.env.API_BASE_URL || '未设置',
-        NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '未设置',
-        NODE_ENV: process.env.NODE_ENV,
-        NEXT_PHASE: process.env.NEXT_PHASE,
-      },
     });
-    throw new Error(errorMsg);
+    return fallbackUrl;
   }
 
   // 开发环境或构建时：允许回退到 localhost

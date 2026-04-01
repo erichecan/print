@@ -8,15 +8,17 @@ const isProduction = !isDevelopment && !isBuildTime;
 
 /**
  * 必需的环境变量列表
+ * 注意：NEXT_PUBLIC_* 变量由 Next.js 在构建时内联到 JS bundle 中，
+ * 通过 process.env[varName] 动态访问无法获取到内联值，
+ * 因此不应在运行时检查这些变量。
  */
-const REQUIRED_ENV_VARS = [
-  'NEXT_PUBLIC_API_URL', // 后端 API URL（前端构建时内联）
-];
+const REQUIRED_ENV_VARS: string[] = [];
 
 /**
  * 可选但推荐的环境变量
  */
 const RECOMMENDED_ENV_VARS = [
+  'NEXT_PUBLIC_API_URL', // 后端 API URL（构建时内联，运行时可选覆盖）
   'API_BASE_URL', // 服务器端 API URL（运行时使用）
   'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', // Stripe 公钥
 ];
