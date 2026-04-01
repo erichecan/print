@@ -68,11 +68,11 @@ exports.authenticateOptional = async (req, res, next) => {
           req.user = user;
           logger.debug('[Auth] User authenticated in optional auth', { userId: user.id, email: user.email });
         } else {
-          logger.debug('[Auth] User not found in database', { userId: decoded.userId || decoded.id });
+          logger.warn('[Auth] Token decoded but user not found in database', { userId: decoded.userId || decoded.id });
         }
       } catch (jwtError) {
         // Invalid token, continue as guest
-        logger.debug('[Auth] Invalid JWT token in optional auth:', {
+        logger.warn('[Auth] Invalid JWT token in optional auth:', {
           error: jwtError.message,
           errorName: jwtError.name,
           tokenPresent: !!token

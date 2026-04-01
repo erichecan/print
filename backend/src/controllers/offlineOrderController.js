@@ -999,7 +999,7 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
           AND (o.metadata->>'submittedByUserId') <> ''
           AND u.id::text = o.metadata->>'submittedByUserId'
          WHERE ${creatorWhere}
-         GROUP BY COALESCE(o.metadata->>'submittedByUserId', 'unknown'), u."firstName", u."lastName", u.email
+         GROUP BY COALESCE(o.metadata->>'submittedByUserId', 'unknown'), u.first_name, u.last_name, u.email
          ORDER BY revenue DESC`,
         ...rawParams
       );
@@ -1089,7 +1089,7 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
           const marginPercent = revenueNum > 0 ? (margin / revenueNum) * 100 : 0;
           return {
             productName: row.product_name || '—',
-            category: row.category || '',
+            category: row.category_id || '',
             orderCount: Number(row.order_count) || 0,
             revenue: revenueNum,
             cost: costNum,
