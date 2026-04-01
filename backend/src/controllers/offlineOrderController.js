@@ -157,13 +157,26 @@ const generateOrderCode = async (tx = null, date = null, user = null) => {
   
   // 提取创建者名称前缀
   let creatorPrefix = 'OFF';
+  
   if (user) {
+    logger.info('[offlineOrderController] generateOrderCode user context', {
+      userId: user.id || 'N/A',
+      email: user.email || 'N/A',
+      firstName: user.firstName || 'N/A',
+      lastName: user.lastName || 'N/A'
+    });
+
     if (user.firstName) {
       creatorPrefix = user.firstName.toLowerCase();
     } else if (user.email) {
       creatorPrefix = user.email.split('@')[0].toLowerCase();
     }
+  } else {
+    logger.warn('[offlineOrderController] generateOrderCode called WITHOUT user context, using fallback OFF');
   }
+
+  // 清洗前缀：只保留字母数字
+  creatorPrefix = creatorPrefix.replace(/[^a-z0-9]/gi, '').slice(0, 10) || 'OFF';
 
   // 获取当天的最大流水号
   const prismaClient = tx || prisma;
@@ -220,8 +233,16 @@ const generateOrderCode = async (tx = null, date = null, user = null) => {
   // 递增流水号（从 001 开始）
   const nextSequence = maxSequence + 1;
   const sequencePart = String(nextSequence).padStart(3, '0');
+  const finalCode = `${prefix}${sequencePart}`;
+  
+  logger.info('[offlineOrderController] Final generated order code', {
+    fullDate,
+    creatorPrefix,
+    nextSequence,
+    finalCode
+  });
 
-  return `${prefix}${sequencePart}`;
+  return finalCode;
 };
 
 
@@ -952,8 +973,8 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
       const creatorResult = await prisma.$queryRawUnsafe(
         `SELECT 
            COALESCE(o.metadata->>'submittedByUserId', 'unknown') AS creator_id,
-           COALESCE(u."firstName", '') AS first_name,
-           COALESCE(u."lastName", '') AS last_name,
+           COALESCE(u.first_name, '') AS first_name,
+           COALESCE(u.last_name, '') AS last_name,
            u.email AS email,
            COUNT(*)::int AS order_count,
            COALESCE(SUM(
@@ -1020,7 +1041,7 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
            sub.order_count,
            sub.revenue,
            sub.cost,
-           p.category
+           p.category_id
          FROM (
            SELECT 
              (pi->>'productId') AS product_id,
