@@ -16,19 +16,16 @@ SCHEDULER_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 echo "Project: $PROJECT_ID Region: $REGION Bucket: $BACKUP_BUCKET"
 
 # 部署 Cloud Function (2nd gen，等价于 Cloud Run 服务)
-echo "Deploying Cloud Function $FUNCTION_NAME..."
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT_DIR/functions/db-export"
-npm install --production
-gcloud functions deploy $FUNCTION_NAME \
+echo "Deploying Cloud Function (Gen 2)..."
+gcloud functions deploy db-export \
   --gen2 \
-  --runtime=nodejs20 \
+  --runtime nodejs22 \
   --region=$REGION \
-  --source=. \
+  --project=$PROJECT_ID \
+  --source=functions/db-export \
   --entry-point=exportDb \
   --trigger-http \
-  --no-allow-unauthenticated \
-  --set-env-vars "BACKUP_BUCKET=$BACKUP_BUCKET,DB_NAME=suvernireplus,CLOUD_SQL_INSTANCE=print1600,GCP_REGION=$REGION" \
+  --set-env-vars BACKUP_BUCKET=$BACKUP_BUCKET,CLOUD_SQL_INSTANCE=print1600,DB_NAME=suvernireplus,GCP_REGION=$REGION,GCP_PROJECT=$PROJECT_ID \
   --project=$PROJECT_ID
 
 # Gen2 部署为 Cloud Run 服务，服务名与 Function 名一致

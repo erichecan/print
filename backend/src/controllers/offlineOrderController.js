@@ -141,30 +141,40 @@ const computeCostTotalFromConfig = async (config) => {
  * @param {Date} date - 订单日期（可选，默认为当前时间）
  * @returns {Promise<string>} 订单编号
  */
-const generateOrderCode = async (tx = null, date = null) => {
-  const timestamp = date || new Date(); // Use provided date or current time
-  // YYMMDD 格式 (e.g., 2026-01-08 -> 260108)
+/**
+ * 生成线下订单编号 (Format: creator-YYYYMMDD-XXX)
+ * 其中 XXX 是当天该创建者的流水号，从 001 开始
+ * 
+ * @param {Object} tx - Prisma transaction 对象（可选）
+ * @param {Date} date - 订单日期（可选，默认为当前时间）
+ * @param {Object} user - 创建者对象（可选）
+ * @returns {Promise<string>} 订单编号
+ */
+const generateOrderCode = async (tx = null, date = null, user = null) => {
+  const timestamp = date || new Date();
+  // YYYYMMDD 格式 (e.g., 20260401)
   const fullDate = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
-  const datePart = fullDate.substring(2);
+  
+  // 提取创建者名称前缀
+  let creatorPrefix = 'OFF';
+  if (user) {
+    if (user.firstName) {
+      creatorPrefix = user.firstName.toLowerCase();
+    } else if (user.email) {
+      creatorPrefix = user.email.split('@')[0].toLowerCase();
+    }
+  }
 
   // 获取当天的最大流水号
   const prismaClient = tx || prisma;
-  const todayStart = new Date(timestamp);
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date(timestamp);
-  todayEnd.setHours(23, 59, 59, 999);
-
-  // 查询当天所有订单编号，提取流水号
-  // 同时兼容旧格式 OFF-YYYYMMDD- 和新格式 OFF-YYMMDD-
+  
+  // 搜索属于该创建者当天的订单
+  const prefix = `${creatorPrefix}-${fullDate}-`;
+  
   const todayOrders = await prismaClient.offlineOrder.findMany({
     where: {
-      OR: [
-        { orderCode: { startsWith: `OFF-${datePart}-` } },
-        { orderCode: { startsWith: `OFF-${fullDate}-` } }
-      ],
-      createdAt: {
-        gte: todayStart,
-        lte: todayEnd
+      orderCode: {
+        startsWith: prefix
       }
     },
     select: {
@@ -175,36 +185,45 @@ const generateOrderCode = async (tx = null, date = null) => {
     }
   });
 
-  // 提取流水号并找到最大值
+  // 如果没有找到新格式的订单，且 prefix 是 OFF-，尝试查找旧格式的订单以保持兼容性
+  if (todayOrders.length === 0 && creatorPrefix === 'OFF') {
+    const oldDatePart = fullDate.substring(2);
+    const oldOrders = await prismaClient.offlineOrder.findMany({
+      where: {
+        OR: [
+          { orderCode: { startsWith: `OFF-${oldDatePart}-` } },
+          { orderCode: { startsWith: `OFF-${fullDate}-` } }
+        ]
+      },
+      select: { orderCode: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    todayOrders.push(...oldOrders);
+  }
+
+  // 提取最高流水号
   let maxSequence = 0;
   todayOrders.forEach(order => {
-    // 订单编号格式：OFF-YYYYMMDD-XXXXXX 或 OFF-YYMMDD-XX
     const parts = order.orderCode.split('-');
     const suffix = parts.pop() || '';
-
-    // 对于旧格式 OFF-YYYYMMDD-001ABC，提取前3位作为序号
-    // 对于新格式 OFF-YYMMDD-01，直接提取全部作为序号
-    let sequenceStr = '';
-    if (parts[1] && parts[1].length === 8) {
-      // 旧格式 YYYYMMDD
-      sequenceStr = suffix.substring(0, 3);
-    } else {
-      // 新格式 YYMMDD
-      sequenceStr = suffix;
-    }
-
-    const sequence = parseInt(sequenceStr, 10);
-    if (!isNaN(sequence) && sequence > maxSequence) {
-      maxSequence = sequence;
+    
+    // 尝试提取数字部分 (处理可能带随机后缀的情况)
+    const sequenceMatch = suffix.match(/^\d+/);
+    if (sequenceMatch) {
+      const sequence = parseInt(sequenceMatch[0], 10);
+      if (!isNaN(sequence) && sequence > maxSequence) {
+        maxSequence = sequence;
+      }
     }
   });
 
-  // 递增流水号（从01开始）
+  // 递增流水号（从 001 开始）
   const nextSequence = maxSequence + 1;
-  const sequencePart = String(nextSequence).padStart(2, '0');
+  const sequencePart = String(nextSequence).padStart(3, '0');
 
-  return `OFF-${datePart}-${sequencePart}`;
+  return `${prefix}${sequencePart}`;
 };
+
 
 const generateWorkOrderCode = () => {
   const timestamp = new Date();
@@ -503,12 +522,12 @@ exports.createOfflineOrder = async (req, res) => {
 
     const order = await prisma.$transaction(async (tx) => {
       // 在事务中生成订单编号（使用流水号）
-      let uniqueCode = await generateOrderCode(tx, orderDate);
+      let uniqueCode = await generateOrderCode(tx, orderDate, req.user);
       let exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
       // 如果发生冲突（理论上不应该发生），重新生成
       let retryCount = 0;
       while (exists && retryCount < 10) {
-        uniqueCode = await generateOrderCode(tx, orderDate);
+        uniqueCode = await generateOrderCode(tx, orderDate, req.user);
         exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
         retryCount++;
       }

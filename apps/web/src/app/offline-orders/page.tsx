@@ -7,6 +7,7 @@ import Link from 'next/link'; // 添加 Link 用于导航
 import { API_BASE_URL } from '@/lib/api-config'; // 使用统一 API 基址，避免指向 Next.js 自身路由
 import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct, authenticatedFetch, salesOrdersApi, SalesOfflineOrderDetail, adminOfflineOrdersApi } from '@/lib/api'; // 简化的产品 API
 import useSWR from 'swr'; // 使用 SWR 获取分类数据
+import { useAuth } from '@/contexts/AuthContext'; // 导入 AuthContext
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // 引入翻译
 import { OrderItemColorGroup } from '@/types/order'; // 导入颜色组类型
 import { ProductItemColorConfig } from './components/ProductItemColorConfig'; // 导入产品项颜色配置组件
@@ -161,22 +162,7 @@ type FormState = {
 // 生成订单编号（与后端格式一致）
 // 更新规则：最后6位 = 前3位流水号（001开始递增）+ 后3位随机字母
 // 注意：前端只是用于预览，实际编号由后端生成
-const generateOrderCode = (): string => {
-  const timestamp = new Date();
-  const datePart = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
-  // 前端预览使用临时流水号（001）和随机字母
-  const sequencePart = '001'; // 预览时使用固定值
-  const generateRandomLetters = () => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-    for (let i = 0; i < 3; i++) {
-      result += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    return result;
-  };
-  const randomPart = generateRandomLetters();
-  return `OFF-${datePart}-${sequencePart}${randomPart}`;
-};
+// NOTE: generateOrderCode is now defined inside the component to access user context
 
 // 根据产品ID生成固定颜色（用于视觉区隔）
 const getProductColor = (productId: string): string => {
@@ -428,6 +414,37 @@ export default function OfflineOrdersIntakePage() {
 
 function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const router = useRouter();
+  const { user } = useAuth(); // 获取登录用户信息
+
+  // 生成订单编号（与后端格式一致）
+  const generateOrderCode = useCallback((): string => {
+    const timestamp = new Date();
+    const fullDate = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
+    
+    // 提取创建者名称前缀
+    let creatorPrefix = 'OFF';
+    if (user) {
+      if (user.firstName) {
+        creatorPrefix = user.firstName.toLowerCase();
+      } else if (user.email) {
+        creatorPrefix = user.email.split('@')[0].toLowerCase();
+      }
+    }
+
+    // 前端预览使用临时流水号（001）和随机字母
+    const sequencePart = '001';
+    const generateRandomLetters = () => {
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let result = '';
+      for (let i = 0; i < 3; i++) {
+        result += letters.charAt(Math.floor(Math.random() * letters.length));
+      }
+      return result;
+    };
+    const randomPart = generateRandomLetters();
+    return `${creatorPrefix}-${fullDate}-${sequencePart}${randomPart}`;
+  }, [user]);
+
   // 语言切换状态 - 默认值，避免hydration错误
   const [locale, setLocale] = useState<OfflineOrdersLocale>('en');
   const [isClient, setIsClient] = useState(false); // 标记是否在客户端

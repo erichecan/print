@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { API_BASE_URL } from '@/lib/api-config';
 import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct, authenticatedFetch, salesOrdersApi, SalesOfflineOrderDetail, adminOfflineOrdersApi } from '@/lib/api';
 import useSWR from 'swr';
+import { useAuth } from '@/contexts/AuthContext';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 import { OrderItemColorGroup } from '@/types/order';
 import { ProductItemColorConfig } from './components/ProductItemColorConfig';
@@ -124,21 +125,7 @@ type FormState = {
   currentStep: number;
 };
 
-const generateOrderCode = (): string => {
-  const timestamp = new Date();
-  const datePart = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
-  const sequencePart = '001';
-  const generateRandomLetters = () => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-    for (let i = 0; i < 3; i++) {
-      result += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    return result;
-  };
-  const randomPart = generateRandomLetters();
-  return `OFF-${datePart}-${sequencePart}${randomPart}`;
-};
+// NOTE: generateOrderCode is now defined inside the component to access user context
 
 const getProductColor = (productId: string): string => {
   const hash = productId.split('').reduce((acc, char) => {
@@ -219,6 +206,37 @@ export default function OfflineOrdersIntakePage() {
 
 function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const router = useRouter();
+  const { user } = useAuth();
+  
+  // 生成订单编号（与后端格式一致）
+  const generateOrderCode = useCallback((): string => {
+    const timestamp = new Date();
+    const fullDate = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
+    
+    // 提取创建者名称前缀
+    let creatorPrefix = 'OFF';
+    if (user) {
+      if (user.firstName) {
+        creatorPrefix = user.firstName.toLowerCase();
+      } else if (user.email) {
+        creatorPrefix = user.email.split('@')[0].toLowerCase();
+      }
+    }
+
+    // 前端预览使用临时流水号（001）和随机字母
+    const sequencePart = '001';
+    const generateRandomLetters = () => {
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let result = '';
+      for (let i = 0; i < 3; i++) {
+        result += letters.charAt(Math.floor(Math.random() * letters.length));
+      }
+      return result;
+    };
+    const randomPart = generateRandomLetters();
+    return `${creatorPrefix}-${fullDate}-${sequencePart}${randomPart}`;
+  }, [user]);
+
   const [locale, setLocale] = useState<OfflineOrdersLocale>('en');
   const [isClient, setIsClient] = useState(false);
   const [isMobile, setIsMobile] = useState(true); // Default to true for mobile page
@@ -522,11 +540,12 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         return;
       }
 
-      if (draftData.formState) {
+      const savedState = draftData.formState as Partial<FormState> | undefined;
+      if (savedState) {
         // 恢复草稿时，如果没有订单编号则生成新的
-        const restoredState = draftData.formState.orderCode
-          ? draftData.formState
-          : { ...draftData.formState, orderCode: generateOrderCode() };
+        const restoredState = (savedState.orderCode
+          ? savedState
+          : { ...savedState, orderCode: generateOrderCode() }) as Partial<FormState>;
 
         // 合并状态，确保不会弄丢必要的字段
         setFormState((prev) => ({ ...prev, ...restoredState }));
@@ -539,8 +558,9 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           return prev;
         });
       }
-      if (draftData.currentStep) {
-        setCurrentStep(draftData.currentStep);
+      const savedStep = draftData.currentStep;
+      if (typeof savedStep === 'number') {
+        setCurrentStep(savedStep as number);
       }
       setStatus({ type: 'success', message: 'Draft restored. Please re-attach files before submitting.' });
     } catch (error) {
@@ -553,7 +573,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         return prev;
       });
     }
-  }, [loadingEditData, editId, router]);
+  }, [loadingEditData, editId, router, generateOrderCode]);
+
 
   const setField = useCallback(<K extends keyof FormState>(key: K, value: FormState[K]) => {
     setFormState((prev) => ({ ...prev, [key]: value }));

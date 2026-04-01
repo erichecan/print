@@ -6,26 +6,29 @@
 
 const { google } = require('googleapis');
 
-const PROJECT_ID = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
 const INSTANCE_NAME = process.env.CLOUD_SQL_INSTANCE || 'print1600';
 const BUCKET = process.env.BACKUP_BUCKET || '';
 const DB_NAME = process.env.DB_NAME || 'suvernireplus';
 const REGION = process.env.GCP_REGION || 'us-central1';
 
 exports.exportDb = async (req, res) => {
-  const auth = await google.auth.getClient({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
-  const sqladmin = google.sqladmin({ version: 'v1beta4', auth });
-
-  const bucket = BUCKET || (PROJECT_ID ? `${PROJECT_ID}-db-backups` : '');
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const uri = `gs://${bucket}/daily/${dateStr}.sql.gz`;
-
-  if (!PROJECT_ID || !bucket) {
-    res.status(500).send('Missing GCP_PROJECT/GOOGLE_CLOUD_PROJECT or BACKUP_BUCKET');
-    return;
-  }
-
   try {
+    const auth = await google.auth.getClient({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+    const sqladmin = google.sqladmin({ version: 'v1beta4', auth });
+
+    // Fallback to dynamically fetching the project ID from the auth context
+    const PROJECT_ID = process.env.GCP_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || await google.auth.getProjectId();
+    
+    const bucket = BUCKET || (PROJECT_ID ? `${PROJECT_ID}-db-backups` : '');
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const uri = `gs://${bucket}/daily/${dateStr}.sql.gz`;
+
+    if (!PROJECT_ID || !bucket) {
+      console.error('Missing configuration: PROJECT_ID or bucket is blank.');
+      res.status(500).send('Missing GCP_PROJECT or BACKUP_BUCKET');
+      return;
+    }
+
     await sqladmin.instances.export({
       project: PROJECT_ID,
       instance: INSTANCE_NAME,
@@ -38,9 +41,11 @@ exports.exportDb = async (req, res) => {
         },
       },
     });
+    
+    console.log(`Export initiated to: ${uri}`);
     res.status(200).send(JSON.stringify({ ok: true, uri }));
   } catch (err) {
-    console.error('Export failed:', err.message);
+    console.error('Export exception occurred:', err.stack || err.message);
     res.status(500).send(JSON.stringify({ error: err.message }));
   }
 };
