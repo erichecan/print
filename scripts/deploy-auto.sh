@@ -128,14 +128,17 @@ else
     echo -e "${YELLOW}⚠️  JWT Secret 已存在${NC}"
 fi
 
-# 数据库 URL（用户输入）
+# 数据库 URL
+# ⚠️ 生产环境使用 Cloud SQL (print-482914:us-central1:print1600)，数据库名 suvernireplus
+# ⚠️ 连接串格式: postgresql://app:<密码>@localhost/suvernireplus?host=/cloudsql/print-482914:us-central1:print1600&sslmode=disable
+# ⚠️ 请勿在此输入 Neon/Supabase 等外部数据库 URL，会导致数据丢失
 if ! gcloud secrets describe database-url &> /dev/null; then
     echo -e "${YELLOW}需要配置数据库 URL${NC}"
-    echo -e "${YELLOW}推荐使用免费数据库:${NC}"
-    echo "  - Supabase: https://supabase.com (免费 500MB)"
-    echo "  - Neon: https://neon.tech (免费 PostgreSQL)"
+    echo -e "${YELLOW}生产数据库为 Cloud SQL (print1600)，连接串格式:${NC}"
+    echo "  postgresql://app:<密码>@localhost/suvernireplus?host=/cloudsql/print-482914:us-central1:print1600&sslmode=disable"
+    echo "  （或运行 scripts/update-database-url-secret-and-deploy-backend.sh）"
     echo ""
-    read -p "请输入数据库 URL (格式: postgresql://user:pass@host:5432/dbname): " DB_URL
+    read -p "请输入 DATABASE_URL: " DB_URL
     if [ -z "$DB_URL" ]; then
         echo -e "${RED}❌ 错误: 必须提供数据库 URL${NC}"
         exit 1
@@ -143,7 +146,7 @@ if ! gcloud secrets describe database-url &> /dev/null; then
     echo -n "${DB_URL}" | gcloud secrets create database-url --data-file=-
     echo -e "${GREEN}✅ 数据库 URL Secret 已创建${NC}"
 else
-    echo -e "${YELLOW}⚠️  数据库 URL Secret 已存在${NC}"
+    echo -e "${YELLOW}⚠️  数据库 URL Secret 已存在（跳过）${NC}"
 fi
 
 # Stripe 密钥（用户输入）
@@ -205,13 +208,14 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --region ${REGION} \
   --platform managed \
   --allow-unauthenticated \
+  --add-cloudsql-instances ${PROJECT_ID}:${REGION}:${DB_INSTANCE} \
   --min-instances 0 \
   --max-instances 5 \
   --memory 512Mi \
   --cpu 1 \
   --timeout 300 \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars NODE_ENV=production,GCP_IMAGE_BUCKET=${PROJECT_ID}-images \
+  --set-env-vars "NODE_ENV=production,AUTO_MIGRATE=true,GCP_IMAGE_BUCKET=print-482914-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-482914-images,FRONTEND_URL=https://printngoplus.com,PGSSLMODE=disable" \
   --quiet
 
 BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')

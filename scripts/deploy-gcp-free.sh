@@ -18,6 +18,7 @@ REGION="${GCP_REGION:-us-central1}"
 REPOSITORY="${ARTIFACT_REGISTRY:-print-main}"
 BACKEND_SERVICE="print-main-backend"
 FRONTEND_SERVICE="print-main-frontend"
+DB_INSTANCE="${DB_INSTANCE_NAME:-print1600}"
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
@@ -121,13 +122,14 @@ gcloud run deploy "$BACKEND_SERVICE" \
   --region "$REGION" \
   --platform managed \
   --allow-unauthenticated \
+  --add-cloudsql-instances "${PROJECT_ID}:${REGION}:${DB_INSTANCE}" \
   --min-instances 0 \
   --max-instances 5 \
   --memory 512Mi \
   --cpu 1 \
   --timeout 600 \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars "NODE_ENV=production,AUTO_MIGRATE=false,GCP_IMAGE_BUCKET=print-main-product-images" \
+  --set-env-vars "NODE_ENV=production,AUTO_MIGRATE=true,GCP_IMAGE_BUCKET=print-482914-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-482914-images,FRONTEND_URL=https://printngoplus.com,PGSSLMODE=disable" \
   --cpu-boost \
   --project "$PROJECT_ID"
 

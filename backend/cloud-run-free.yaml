@@ -17,8 +17,8 @@ spec:
         run.googleapis.com/cpu-throttling: "false"
         run.googleapis.com/memory: "512Mi"      # ✅ Minimum memory (free tier optimized)
         run.googleapis.com/cpu: "1"
-        # ⚠️ REMOVED Cloud SQL connection - use external free database (Supabase/Neon)
-        # run.googleapis.com/cloudsql-instances: "PROJECT_ID:REGION:DB_INSTANCE_NAME"
+        # ✅ Cloud SQL connection - production database is suvernireplus on print1600
+        run.googleapis.com/cloudsql-instances: "print-482914:us-central1:print1600"
     spec:
       containerConcurrency: 80
       timeoutSeconds: 300
@@ -32,7 +32,7 @@ spec:
           value: "production"
         - name: PORT
           value: "8080"
-        # ⚠️ Use external database URL (Supabase/Neon) instead of Cloud SQL
+        # ✅ DATABASE_URL secret points to Cloud SQL (suvernireplus via Unix socket proxy)
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
@@ -49,9 +49,15 @@ spec:
               name: stripe-secret-key
               key: latest
         - name: FRONTEND_URL
-          value: "https://FRONTEND_SERVICE_URL"
+          value: "https://printngoplus.com"
         - name: CORS_ORIGINS
-          value: "https://FRONTEND_SERVICE_URL"
+          value: "https://printngoplus.com"
+        - name: PGSSLMODE
+          value: "disable"
+        - name: GCP_IMAGE_BUCKET
+          value: "print-482914-images"
+        - name: GCP_IMAGE_BASE_URL
+          value: "https://storage.googleapis.com/print-482914-images"
         resources:
           limits:
             cpu: "1000m"    # ✅ 1 CPU (minimum)
@@ -60,10 +66,10 @@ spec:
           httpGet:
             path: /api/health
             port: 8080
-          initialDelaySeconds: 10
-          timeoutSeconds: 5
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
           periodSeconds: 10
-          failureThreshold: 3
+          failureThreshold: 12 # 为重型迁移留出约 140 秒总视口空间
         livenessProbe:
           httpGet:
             path: /api/health
