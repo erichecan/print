@@ -122,8 +122,7 @@ steps:
           --region ${_REGION} \
           --platform managed \
           --allow-unauthenticated \
-          --add-cloudsql-instances ${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME} \
-          --set-env-vars NODE_ENV=production,AUTO_MIGRATE=true,FRONTEND_URL=https://printngoplus.com,GCP_IMAGE_BUCKET=print-482914-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-482914-images,APP_BUILD_SHA=$$BUILD_SHA,APP_BUILD_TIME=$$BUILD_TIME \
+          --set-env-vars NODE_ENV=production,AUTO_MIGRATE=false,FRONTEND_URL=https://printngoplus.com,GCP_IMAGE_BUCKET=print-482914-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-482914-images,APP_BUILD_SHA=$$BUILD_SHA,APP_BUILD_TIME=$$BUILD_TIME \
           --memory 512Mi \
           --cpu 1 \
           --min-instances 0 \
@@ -176,7 +175,6 @@ substitutions:
   _ARTIFACT_REGISTRY: 'print-main'           # Artifact Registry repository name
   _BACKEND_SERVICE_NAME: 'print-main-backend'
   _FRONTEND_SERVICE_NAME: 'print-main-frontend'
-  _DB_INSTANCE_NAME: 'print1600'         # Cloud SQL instance for DATABASE_URL
 
 # Build timeout (optional, in seconds)
 timeout: '1200s'  # 20 minutes
