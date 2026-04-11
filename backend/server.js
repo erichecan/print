@@ -10,6 +10,18 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const PORT = process.env.PORT || 3001; // 默认端口改为3001，避免与前端冲突
 
+// 验证关键环境变量
+const criticalEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'STRIPE_SECRET_KEY'];
+criticalEnvVars.forEach(varName => {
+    if (!process.env[varName]) {
+        console.error(`❌ CRITICAL ERROR: Environment variable ${varName} is missing!`);
+    } else if (process.env[varName].trim() === '') {
+        console.error(`❌ CRITICAL ERROR: Environment variable ${varName} is empty!`);
+    } else {
+        console.log(`✅ Environment variable ${varName} is set (length: ${process.env[varName].length})`);
+    }
+});
+
 // 验证 DATABASE_URL 环境变量
 const validateDatabaseUrl = () => {
   const databaseUrl = process.env.DATABASE_URL;
@@ -76,12 +88,14 @@ console.log(' 📋 Environment:', process.env.NODE_ENV || 'development');
 console.log(' 🔌 PORT:', PORT);
 
 // 验证环境变量
+// 2026-04-01 优化：在生产环境不再立即退出，而是记录错误并允许服务器启动，
+// 这样 Cloud Run 可以成功监听端口，用户可以通过日志发现并修复配额/Secret 问题。
 try {
   validateJwtSecret();
-  console.log(' ✅ JWT_SECRET validated');
 } catch (error) {
   console.error(' ❌ JWT_SECRET validation failed:', error.message);
-  process.exit(1);
+  // 不再执行 process.exit(1)
+  process.env.JWT_SECRET_ERROR = error.message;
 }
 
 // 现在可以安全地导入应用
@@ -91,71 +105,18 @@ const { testConnection } = require('./src/config/database');
 const logger = require('./src/utils/logger');
 console.log(' ✅ Application modules loaded');
 
-// 改进迁移执行，失败时不阻止服务器启动
-const runMigrationsIfEnabled = () => {
-  try {
-    if (process.env.AUTO_MIGRATE === 'true') {
-      logger.info('🔧 AUTO_MIGRATE=true detected. Running database migrations...');
-      try {
-        execSync('node scripts/run-migrations.js', {
-          stdio: 'inherit',
-          timeout: 60000, // 60秒超时
-        });
-        logger.info('✅ Database migrations completed.');
-
-        // 迁移后自动修复 base_price 列问题
-        // 使用直接 SQL 脚本，不依赖 Prisma Client
-        // 修复后重新生成 Prisma Client 以确保使用正确的 schema
-        /* 
-        // 暂时注释掉不存在的脚本
-      try {
-        logger.info('🔧 Running database column fix (direct SQL)...');
-        execSync('node scripts/fix-base-price-direct-sql.js', {
-          stdio: 'inherit',
-          timeout: 30000, // 30秒超时
-          cwd: __dirname,
-        });
-        logger.info('✅ Database column fix completed.');
-
-// 修复后重新生成 Prisma Client 以确保使用正确的 schema
-        logger.info('🔧 Regenerating Prisma Client after column fix...');
-        execSync('npx prisma generate --schema=./prisma/schema.prisma', {
-          stdio: 'inherit',
-          timeout: 30000,
-          cwd: __dirname,
-        });
-        logger.info('✅ Prisma Client regenerated.');
-      } catch (fixError) {
-        logger.warn('⚠️  Database column fix failed, but server will continue to start');
-        logger.warn('   错误详情:', fixError.message);
-        // 不退出，让服务器继续启动
-      }
-      */
-      } catch (migrationError) {
-        // 迁移失败时不退出服务器
-        // 如果数据库已经是最新的，迁移失败不应该阻止服务器启动
-        logger.warn('⚠️  Database migrations failed, but server will continue to start');
-        logger.warn('   如果数据库已经是最新状态，可以忽略此错误');
-        logger.warn('   错误详情:', migrationError.message);
-        // 不退出，让服务器继续启动
-      }
-    } else {
-      logger.info('ℹ️  AUTO_MIGRATE not enabled. Skipping migrations.');
-    }
-  } catch (error) {
-    logger.error('❌ Failed to run migrations:', error);
-    // 即使迁移失败，也继续启动服务器
-    logger.warn('⚠️  Server will continue to start despite migration failure');
-  }
-};
-
-// 2026-03-11 修复：在 listen 之前先跑 DB 连接 + 迁移，避免 Cloud Run 在迁移完成前 SIGTERM 导致 schema 从未同步
+// 2026-04-01 优化：立即开启端口监听，避免 Cloud Run 因长时间未响应而判定启动失败
+// 数据库连接和迁移将在后台异步执行
 const http = require('http');
 const httpServer = http.createServer(app);
 
 const { initializeChatServer } = require('./src/socket/chatServer');
-const io = initializeChatServer(httpServer);
-logger.info('✅ Socket.IO chat server initialized');
+try {
+  const io = initializeChatServer(httpServer);
+  logger.info('✅ Socket.IO chat server initialized');
+} catch (socketError) {
+  logger.error('❌ Failed to initialize Socket.IO server:', socketError.message);
+}
 
 function startListening() {
   httpServer.listen(PORT, () => {
@@ -163,34 +124,54 @@ function startListening() {
     logger.info(`📡 API available at http://localhost:${PORT}/api`);
     logger.info(`💬 WebSocket available at ws://localhost:${PORT}/socket.io`);
     logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // 开启异步后台初始化工作 (连接测试 + 迁移)
+    performBackgroundInitialization();
   });
 }
 
-// 先验证 DB 连接；若开启 AUTO_MIGRATE 则同步执行迁移后再 listen
-testConnection()
-  .then(() => {
-    logger.info('✅ Database connection verified');
+async function performBackgroundInitialization() {
+  try {
+    logger.info('⏳ Starting background initialization (DB connection + migrations)...');
+    
+    // 设置全局启动标识 (可选，用于健康检查)
+    app.set('isStarting', true);
+    
+    await testConnection();
+    logger.info('✅ Database connection verified in background');
+    
     if (process.env.AUTO_MIGRATE === 'true') {
-      logger.info('🔧 AUTO_MIGRATE=true: running migrations before starting HTTP server...');
+      logger.info('🔧 AUTO_MIGRATE=true: running migrations in background...');
       try {
-        require('child_process').execSync('node scripts/run-migrations.js', {
-          stdio: 'inherit',
-          timeout: 120000,
+        // 使用非阻塞方式运行迁移，或如果必须同步则放在异步函数中
+        const { exec } = require('child_process');
+        const { promisify } = require('util');
+        const execAsync = promisify(exec);
+        
+        const { stdout, stderr } = await execAsync('node scripts/run-migrations.js', {
+          timeout: 180000, // 3分钟超时
           cwd: path.join(__dirname),
         });
-        logger.info('✅ Migrations completed.');
+        
+        if (stdout) logger.info(`[Migration STDOUT]: ${stdout}`);
+        if (stderr) logger.warn(`[Migration STDERR]: ${stderr}`);
+        
+        logger.info('✅ Background migrations completed successfully.');
       } catch (e) {
-        logger.warn('⚠️  Migrations failed (server will start anyway):', e.message);
+        logger.warn('⚠️  Background migrations failed:', e.message);
+        app.set('migrationError', e.message);
       }
-    } else {
-      runMigrationsIfEnabled();
     }
-    startListening();
-  })
-  .catch((err) => {
-    logger.error('⚠️  Database connection test failed, but server will start:', err.message);
-    startListening();
-  });
+  } catch (err) {
+    logger.error('❌ Background initialization failed:', err.message);
+  } finally {
+    app.set('isStarting', false);
+    logger.info('🏁 Background initialization finished.');
+  }
+}
+
+// 立即启动监听
+startListening();
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

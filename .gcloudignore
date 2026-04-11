@@ -1,5 +1,30 @@
 .DS_Store
 .git
+.gitignore
+.gcloudignore
 node_modules
 .docker_tmp
 .gcloud_config
+
+# Claude/Agent specific folders (can be huge)
+.claude
+.agent
+.gemini
+_agent
+_agents
+.agents
+
+# Backend specific ignores for frontend build
+backend/node_modules
+backend/dist
+
+# Frontend specific ignores for backend build
+apps/web/node_modules
+apps/web/.next
+
+# Large assets or temporary files
+**/tmp/
+**/temp/
+**/*.log
+**/*.zip
+**/*.tar.gz

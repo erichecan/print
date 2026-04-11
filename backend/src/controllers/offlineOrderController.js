@@ -969,7 +969,8 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
     // [2026-03-13 05:40:00] 经营维度：按负责人聚合（submittedByUserId），并关联 users 获取姓名/邮箱
     let byCreator = [];
     try {
-      const creatorWhere = rawConditions.length ? rawConditions.join(' AND ') : '1=1';
+      const creatorWhereRaw = rawConditionsWithTableAlias(rawConditions, 'o');
+      const creatorWhere = creatorWhereRaw.length ? creatorWhereRaw.join(' AND ') : '1=1';
       const creatorResult = await prisma.$queryRawUnsafe(
         `SELECT 
            COALESCE(o.metadata->>'submittedByUserId', 'unknown') AS creator_id,
@@ -1072,7 +1073,7 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
                  ELSE '[]'::jsonb 
                END
              ) AS pi
-           WHERE ${rawConditions.length ? rawConditions.join(' AND ') : '1=1'}
+           WHERE ${rawConditionsWithTableAlias(rawConditions, 'o').length ? rawConditionsWithTableAlias(rawConditions, 'o').join(' AND ') : '1=1'}
            GROUP BY (pi->>'productId'), COALESCE(NULLIF(pi->>'productName', ''), NULLIF(o.primary_product, ''))
          ) sub
          LEFT JOIN offline_order_products p ON sub.product_id = p.id
@@ -1175,12 +1176,12 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
       try {
         const tsWhere = rawConditions.join(' AND ');
         const tsResult = await prisma.$queryRawUnsafe(
-          `SELECT date(created_at) as day, COUNT(*)::int as order_count,
-           COALESCE(SUM(CASE WHEN (configuration->'pricing'->>'total') IS NOT NULL 
-                                AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
-             THEN (configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float as revenue
-           FROM offline_orders WHERE ${tsWhere}
-           GROUP BY date(created_at) ORDER BY day`,
+          `SELECT date(o.created_at) as day, COUNT(*)::int as order_count,
+           COALESCE(SUM(CASE WHEN (o.configuration->'pricing'->>'total') IS NOT NULL 
+                                AND (o.configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
+             THEN (o.configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float as revenue
+           FROM offline_orders o WHERE ${tsWhere}
+           GROUP BY date(o.created_at) ORDER BY day`,
           ...rawParams
         );
         if (tsResult && tsResult.length) {
@@ -1199,12 +1200,12 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
           );
           const tsWherePrev = tsCondPrev.length ? tsCondPrev.join(' AND ') : '1=1';
           const tsPrevResult = await prisma.$queryRawUnsafe(
-            `SELECT date(created_at) as day, COUNT(*)::int as order_count,
-             COALESCE(SUM(CASE WHEN (configuration->'pricing'->>'total') IS NOT NULL 
-                                  AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
-               THEN (configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float as revenue
-             FROM offline_orders WHERE ${tsWherePrev}
-             GROUP BY date(created_at) ORDER BY day`,
+            `SELECT date(o.created_at) as day, COUNT(*)::int as order_count,
+             COALESCE(SUM(CASE WHEN (o.configuration->'pricing'->>'total') IS NOT NULL 
+                                  AND (o.configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
+               THEN (o.configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float as revenue
+             FROM offline_orders o WHERE ${tsWherePrev}
+             GROUP BY date(o.created_at) ORDER BY day`,
             ...tsParamsPrev
           );
           if (tsPrevResult && tsPrevResult.length) {
@@ -1291,12 +1292,12 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
     try {
       const payRes = await prisma.$queryRawUnsafe(
         `SELECT 
-           COALESCE(NULLIF(TRIM(payment_method), ''), 'Other') AS payment_mode,
+           COALESCE(NULLIF(TRIM(o.payment_method), ''), 'Other') AS payment_mode,
            COUNT(*)::int AS order_count,
-           COALESCE(SUM(CASE WHEN (configuration->'pricing'->>'total') IS NOT NULL AND (configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$' THEN (configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float AS revenue
-         FROM offline_orders
-         WHERE ${rawConditions.length ? rawConditions.join(' AND ') : '1=1'}
-         GROUP BY payment_method
+           COALESCE(SUM(CASE WHEN (o.configuration->'pricing'->>'total') IS NOT NULL AND (o.configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$' THEN (o.configuration->'pricing'->>'total')::numeric ELSE 0 END), 0)::float AS revenue
+         FROM offline_orders o
+         WHERE ${whereWithAlias.length ? whereWithAlias.join(' AND ') : '1=1'}
+         GROUP BY o.payment_method
          ORDER BY revenue DESC`,
         ...rawParams
       );

@@ -7,16 +7,13 @@ const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
 const logger = require('../utils/logger');
 
-// Global Stripe Initialization (Fail Fast)
+// Global Stripe Initialization (Non-blocking)
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey || stripeSecretKey.trim() === '') {
   const errorMsg = 'STRIPE_SECRET_KEY is not configured. Payment features will not work.';
-  // In production, fail immediately to prevent silent crashes later
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(errorMsg);
-  } else {
-    logger.warn(errorMsg);
-  }
+  logger.error(`❌ ${errorMsg}`);
+  // In production, we log a critical error but DON'T throw, 
+  // allowing the server to start and report the issue via health checks.
 }
 const stripe = stripeSecretKey ? Stripe(stripeSecretKey) : null;
 const { sendOrderConfirmation } = require('../services/emailService');

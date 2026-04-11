@@ -6,7 +6,7 @@ require('dotenv').config();
 // 从 DATABASE_URL 解析数据库连接参数（用于 Sequelize CLI）
 function parseDatabaseUrl(databaseUrl) {
   if (!databaseUrl) return null;
-  
+
   try {
     const url = new URL(databaseUrl);
     return {
@@ -19,6 +19,31 @@ function parseDatabaseUrl(databaseUrl) {
   } catch (error) {
     console.warn('⚠️  Failed to parse DATABASE_URL:', error.message);
     return null;
+  }
+}
+
+// 为 Sequelize/pg 清理 URL，只去掉 channel_binding 参数（保留 sslmode 等其他参数）
+// 原因：channel_binding=require 在 Node.js 20 + PgBouncer 组合下会导致
+// SCRAM-SHA-256-PLUS 认证失败（pg 库不支持 channel binding）
+// sslmode=require 必须保留，否则 Neon PgBouncer 会在 TLS 握手前断开连接（ECONNRESET）
+// SSL rejectUnauthorized 由 dialectOptions.ssl 显式控制
+function cleanUrlForSequelize(databaseUrl) {
+  if (!databaseUrl || databaseUrl.includes('host=/cloudsql/')) {
+    // Cloud SQL socket URL 或空 URL 不处理
+    return databaseUrl;
+  }
+  try {
+    // 只去掉 channel_binding 参数，保留 sslmode 等其他参数
+    if (!databaseUrl.includes('channel_binding=')) {
+      return databaseUrl; // 没有 channel_binding，直接返回原 URL
+    }
+    const cleaned = databaseUrl
+      .replace(/([?&])channel_binding=[^&]*/g, '$1')  // 替换成保留分隔符
+      .replace(/[?&]{2,}/g, '?')                       // 清理多余的 ? 或 &&
+      .replace(/[?&]$/, '');                            // 去掉末尾的 ? 或 &
+    return cleaned;
+  } catch (e) {
+    return databaseUrl;
   }
 }
 
@@ -72,7 +97,11 @@ const dbConfig = config[env];
 // 支持 DATABASE_URL 一键连接（Render/Neon/Heroku），否则回退到分字段配置
 let sequelize;
 if (process.env.DATABASE_URL) {
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+  // 去掉 channel_binding/sslmode 等 URL 参数，由 dialectOptions.ssl 统一控制
+  // 避免 Node.js 20 + PgBouncer 下 channel_binding=require 触发 ECONNRESET
+  const seqUrl = cleanUrlForSequelize(process.env.DATABASE_URL);
+  console.log(' 🔗 Sequelize URL host:', seqUrl.split('@')[1]?.split('/')[0] || '(cloud-sql-socket)');
+  sequelize = new Sequelize(seqUrl, {
     dialect: 'postgres',
     logging: dbConfig.logging,
     pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },

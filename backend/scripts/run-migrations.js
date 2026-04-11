@@ -4,14 +4,14 @@ const { execSync } = require('child_process');
 
 // 改进迁移脚本，增加超时处理和容错机制
 function run(command, description, options = {}) {
-  const { timeout = 30000, allowFailure = false } = options;
+  const { timeout = 30000, allowFailure = false, env: envOverride } = options;
   console.log(`开始执行: ${description}`);
   try {
     execSync(command, {
       stdio: 'inherit',
       timeout,
       env: {
-        ...process.env,
+        ...(envOverride || process.env),
         // 增加 Prisma 迁移超时时间
         PRISMA_MIGRATE_LOCK_TIMEOUT: '30000',
       },
@@ -46,10 +46,35 @@ function run(command, description, options = {}) {
 }
 
 try {
-  // 允许 Prisma 迁移失败（可能数据库已经是最新的）
   // 临时禁用 SSL 证书验证以解决 Cloud Run 上的 ECONNRESET 问题
-  // 这通常是由于容器环境缺少某些根证书或 SSL 库兼容性问题
-  const env = { ...process.env, NODE_TLS_REJECT_UNAUTHORIZED: '0' };
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+  // 去掉 channel_binding=require：Prisma binary engine (Rust/quaint) 不支持
+  // SCRAM-SHA-256-PLUS 认证，channel_binding=require 会导致 "Authentication timed out"
+  // 降级为标准 SCRAM-SHA-256（仍然安全，Neon PgBouncer 支持）
+  if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('channel_binding=')) {
+    process.env.DATABASE_URL = process.env.DATABASE_URL
+      .replace(/([?&])channel_binding=[^&]*/g, '$1')  // 替换成保留分隔符
+      .replace(/[?&]{2,}/g, '?')                      // 清理多余的 ? 或 &&
+      .replace(/[?&]$/, '');                           // 去掉末尾的 ? 或 &
+    console.log(' ✅ Stripped channel_binding from DATABASE_URL for Prisma compatibility');
+  }
+
+  // [2026-04-10] Prisma migrate deploy 使用 advisory lock，不兼容 PgBouncer 连接池
+  // Neon pooler URL 含 "-pooler"，迁移必须使用 direct connection（去掉 "-pooler"）
+  // 否则 advisory lock 会在 PgBouncer 上挂起直到 120s 超时
+  // 详见：https://neon.tech/docs/connect/connection-pooling#migrations-with-prisma
+  let migrationDatabaseUrl = process.env.DATABASE_URL;
+  if (migrationDatabaseUrl && migrationDatabaseUrl.includes('-pooler.')) {
+    migrationDatabaseUrl = migrationDatabaseUrl.replace('-pooler.', '.');
+    console.log(' ✅ Using Neon direct connection URL for migrations (bypasses PgBouncer advisory lock issue)');
+  }
+  // 设置 DIRECT_URL 供 Prisma 使用（schema.prisma 中如有 directUrl = env("DIRECT_URL")）
+  process.env.DIRECT_URL = migrationDatabaseUrl;
+  // 迁移时用 direct URL 覆盖 DATABASE_URL（避免 PgBouncer 干扰 advisory lock）
+  const migrationEnv = { ...process.env, DATABASE_URL: migrationDatabaseUrl };
+
+  const env = { ...process.env };
 
   // 容器内 __dirname=/app/scripts，prisma 在 /app/prisma；本地 __dirname=backend/scripts，prisma 在 repo/prisma
   const path = require('path');
@@ -57,11 +82,31 @@ try {
   const schemaInParent = path.resolve(__dirname, '..', 'prisma', 'schema.prisma');
   const schemaInRepo = path.resolve(__dirname, '..', '..', 'prisma', 'schema.prisma');
   const schemaPath = fs.existsSync(schemaInParent) ? schemaInParent : schemaInRepo;
-  const prismaSuccess = run(
-    `npx prisma db push --schema=${schemaPath} --accept-data-loss`,
-    'Prisma db push',
-    { timeout: 120000, allowFailure: false, env } // 增加超时时间，不允许失败
-  );
+  // [2026-04-02] Prioritize 'prisma migrate deploy' for production-like environments
+  // This is safer and avoids issues with 'db push' requiring table ownership for introspection
+  let prismaSuccess = false;
+  
+  if (fs.existsSync(path.join(path.dirname(schemaPath), 'migrations'))) {
+    console.log('📂 Migrations directory found, attempting prisma migrate deploy...');
+    console.log('🔗 Using direct Neon connection (bypasses PgBouncer for advisory locks)');
+    prismaSuccess = run(
+      `npx prisma migrate deploy --schema=${schemaPath}`,
+      'Prisma migrate deploy',
+      { timeout: 120000, allowFailure: true, env: migrationEnv } // Use direct URL, allow failure to try fallback
+    );
+  }
+
+  if (!prismaSuccess) {
+    console.log('🔄 Falling back to prisma db push analysis...');
+
+    // [2026-04-02] Check if migrate deploy failed due to non-recoverable errors
+    // If it's a permission/ownership error, db push will also fail and potentially be more confusing
+    prismaSuccess = run(
+      `npx prisma db push --schema=${schemaPath} --accept-data-loss`,
+      'Prisma db push',
+      { timeout: 120000, allowFailure: false, env: migrationEnv }
+    );
+  }
 
   // Sequelize 迁移已禁用 (缺少 config/config.json)
   // const sequelizeSuccess = run(

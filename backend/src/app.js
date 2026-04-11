@@ -130,37 +130,43 @@ const limiter = rateLimit({
 
 app.use('/api/', limiter);
 
-// Health check handler（/health 与 /api/health 共用，Cloud Run 探针使用 /api/health）
-// 2026-03-06: 始终返回 200，避免冷启动时 DB 未就绪导致实例被判不健康并全网 503
-const healthCheckHandler = async (req, res) => {
-  const health = {
+// Health check handler (/health and /api/health)
+// Returns 200 OK always to Cloud Run, but provides status details in the body.
+const healthCheckHandler = (req, res) => {
+  const isStarting = req.app.get('isStarting');
+  const migrationError = req.app.get('migrationError');
+  const jwtSecretError = process.env.JWT_SECRET_ERROR;
+  
+  const status = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    services: {}
+    environment: process.env.NODE_ENV,
+    bootstrapping: !!isStarting,
+    checks: {
+      server: 'up',
+      jwt_secret: jwtSecretError ? 'error' : 'ok',
+      database: migrationError ? 'error' : (isStarting ? 'connecting' : 'ok'),
+      redis: 'not_configured'
+    }
   };
 
   try {
-    const prisma = require('./lib/prisma');
-    await prisma.$queryRaw`SELECT 1`;
-    health.services.database = 'connected';
-  } catch (error) {
-    health.services.database = 'disconnected';
-    health.status = 'degraded';
-  }
-
-  try {
+    // Optional Redis check if available
     const { redis } = require('./config/redis');
     if (redis && redis.status === 'ready') {
-      health.services.redis = 'connected';
-    } else {
-      health.services.redis = 'not_configured';
+      status.checks.redis = 'connected';
     }
-  } catch (error) {
-    health.services.redis = 'error';
+  } catch (err) {
+    // Ignore redis error here, just report status
   }
 
-  res.status(200).json(health);
+  if (jwtSecretError || migrationError) {
+    status.status = 'degraded';
+    status.message = `Configuration notice: ${jwtSecretError || ''} ${migrationError || ''}`.trim();
+  }
+
+  return res.status(200).json(status);
 };
 
 app.get('/health', healthCheckHandler);

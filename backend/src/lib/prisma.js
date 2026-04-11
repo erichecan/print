@@ -120,6 +120,17 @@ function ensureConnectionPoolParams(databaseUrl) {
       databaseUrl = databaseUrl + separator + additions.join('&');
     }
 
+    // 去掉 channel_binding=require：Prisma binary engine (Rust/quaint) 不支持
+    // SCRAM-SHA-256-PLUS 认证，channel_binding=require 会导致 "Authentication timed out"
+    // 降级为标准 SCRAM-SHA-256（仍然安全，Neon PgBouncer 支持）
+    if (databaseUrl.includes('channel_binding=')) {
+      databaseUrl = databaseUrl
+        .replace(/([?&])channel_binding=[^&]*/g, '$1')  // 替换成保留分隔符
+        .replace(/[?&]{2,}/g, '?')                      // 清理多余的 ? 或 &&
+        .replace(/[?&]$/, '');                           // 去掉末尾的 ? 或 &
+      logger.info(' ✅ Stripped channel_binding from DATABASE_URL for Prisma compatibility');
+    }
+
     logger.info(' ✅ DATABASE_URL connection pool params ensured (string-based, no URL API corruption)');
     return databaseUrl;
   } catch (error) {
