@@ -459,7 +459,8 @@ model OfflineOrder {
   stageKey            String                     @map("stage_key")
   stageLabel          String                     @map("stage_label")
   stagePosition       Int?                       @map("stage_position")
-  status              OfflineOrderStatus         @default(ACTIVE)
+  // 2026-04-20: status 从 OfflineOrderStatus enum 改为 String 以支持用户自定义选项（见 offline_order_status_options 表）
+  status              String                     @default("待确认订单")
   contactName         String?                    @map("contact_name")
   company             String?
   email               String?
@@ -473,6 +474,10 @@ model OfflineOrder {
   payment_method      String?                    @map("payment_method")
   reference_number    String?                    @map("reference_number")
   deposit_amount      Decimal?                   @map("deposit_amount") @db.Decimal(10, 2)
+  // 2026-04-20: 订单管理列表改造新增字段
+  type                String?                    @map("type")                           // 印花类型标签：DTF / EMB / Screen Printing / DTF + EMB；由产品 positions.method 自动汇总或用户手选
+  invoiceStatus       String                     @default("No") @map("invoice_status")   // 发票状态：No / Require / Sent
+  totalAmount         Decimal?                   @map("total_amount") @db.Decimal(12, 2) // 订单总金额；inline 新增时用户手填
   assets              OfflineOrderAsset[]
   histories           OfflineOrderStageHistory[]
   productionWorkOrder ProductionWorkOrder?
@@ -513,6 +518,21 @@ model OfflineOrderStageHistory {
   @@index([orderId])
   @@index([toStageKey])
   @@map("offline_order_stage_history")
+}
+
+// 2026-04-20: 订单 Status 下拉选项表，支持系统预置 + 用户自定义追加
+model OfflineOrderStatusOption {
+  id        String   @id @default(cuid())
+  value     String   @unique                        // 内部值（同时也是 UI 显示文案，中文）
+  label     String                                   // UI 显示文案（默认等同 value，预留未来多语言）
+  sortOrder Int      @default(0) @map("sort_order")
+  isSystem  Boolean  @default(false) @map("is_system") // 系统预置选项不可删除
+  createdBy String?  @map("created_by")              // 用户添加时记录用户 id
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([sortOrder])
+  @@map("offline_order_status_options")
 }
 
 model ProductionWorkOrder {
@@ -1131,14 +1151,6 @@ enum ShipmentStatus {
   IN_TRANSIT
   DELIVERED
   EXCEPTION
-}
-
-enum OfflineOrderStatus {
-  ACTIVE
-  PRINTED
-  COMPLETED
-  CANCELLED
-  REMINDER
 }
 
 enum ProductionWorkOrderStatus {
