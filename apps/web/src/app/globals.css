@@ -11675,3 +11675,13 @@ select {
     font-size: 7pt !important;
   }
 }
+/* 2026-04-21: 全局禁用 number 输入框上下箭头（spinner）— 见 CLAUDE.md UI 约定 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

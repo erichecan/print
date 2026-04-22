@@ -174,7 +174,7 @@ const initialFormState: FormState = {
   rushOrder: false,
   rushFee: 0,
   startDate: '', // New
-  status: 'ACTIVE', // New
+  status: '待确认订单', // 2026-04-20 改为中文状态
   currentStep: 1,
 };
 

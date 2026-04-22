@@ -94,7 +94,7 @@ exports.createOrder = async (orderData) => {
                 contactName: customer.name,
                 phone: customer.phone,
                 email: customer.email,
-                status: 'ACTIVE', // Default status per schema (Draft stage handles pending state)
+                status: '待确认订单', // 2026-04-20: status 从 enum 改为中文文本（系统预置选项）
                 stageKey: 'draft', // Initial stage
                 stageLabel: 'Draft',
                 configuration,

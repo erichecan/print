@@ -216,7 +216,7 @@ const initialFormState: FormState = {
   referenceNumber: '',
   total: 0,
   startDate: '',
-  status: 'ACTIVE',
+  status: '待确认订单',
   currentStep: 1,
 };
 
@@ -598,11 +598,12 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
     }
   }, []);
 
-  // PRD v2.0: 3步流程（产品选择、客户信息和Invoice、文件上传）
+  // PRD v2.0: 3步流程
+  // 2026-04-20 调整顺序：1=客户信息、2=产品选择、3=印刷位配置（文件上传已注释）
+  // 2026-04-21 step3 整体下线（文件上传 + 订单汇总已合并进 step2 末尾）
   const STEPS = useMemo(() => [
-    { id: 1, title: t('step1Title'), description: t('step1Description') }, // 产品选择
-    { id: 2, title: t('step2TitleV2'), description: t('step2DescriptionV2') }, // 客户信息和Invoice
-    { id: 3, title: t('step3TitleV2'), description: t('step3DescriptionV2') }, // 文件上传
+    { id: 1, title: t('step2TitleV2'), description: t('step2DescriptionV2') }, // 客户信息和Invoice
+    { id: 2, title: t('step1Title'), description: t('step1Description') }, // 产品选择 + 订单汇总
   ], [t, isClient]);
 
   // 动态生成印刷位置选项 - 依赖isClient确保hydration一致性
@@ -1110,8 +1111,22 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const validateStep = useCallback((step: number): boolean => {
     setFieldErrors({});
 
+    // 2026-04-20: 步骤交换 — 新 step1 = 客户信息，新 step2 = 产品选择
     if (step === 1) {
-      // 第一步验证：至少选择一个产品，每个产品至少选择一个颜色，每个颜色至少填写一个尺码的数量（>0），每个尺码必须填写单价（>0），订单备注
+      // 新第一步：客户信息和Invoice — 全部非必填，仅做邮箱格式校验
+      if (formState.email.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formState.email)) {
+          setFieldErrors({ email: t('errorEmailFormat') || '邮箱格式不正确' });
+          setStatus({ type: 'error', message: t('errorEmailFormat') || '邮箱格式不正确' });
+          return false;
+        }
+      }
+      return true;
+    }
+
+    if (step === 2) {
+      // 新第二步：产品选择 — 至少一个产品/颜色/尺码/单价
       if (formState.productItems.length === 0) {
         setStatus({ type: 'error', message: t('errorNoProducts') || '请至少添加一个产品' });
         return false;
@@ -1133,37 +1148,16 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           }
         }
       }
-
-      // 订单备注改为非必填，移除验证
-
-      // 印刷位置验证已移至步骤3（颜色组配置验证），此处不再验证globalPrintPositions
-
       return true;
     }
 
-    // PRD v2.0: 第二步验证（客户信息和Invoice - 全部改为非必填）
-    if (step === 2) {
-      // 所有字段都改为非必填，只保留格式验证（如果填写了的话）
-      // 邮箱格式验证（仅在填写了邮箱时验证）
-      if (formState.email.trim()) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formState.email)) {
-          setFieldErrors({ email: t('errorEmailFormat') || '邮箱格式不正确' });
-          setStatus({ type: 'error', message: t('errorEmailFormat') || '邮箱格式不正确' });
-          return false;
-        }
-      }
-
-      // 所有Invoice相关字段都改为非必填，不再进行验证
-      return true;
-    }
     // PRD v2.0: 第三步验证（印刷位配置）
     if (step === 3) {
       // 验证每个产品项的颜色组配置
       const itemsWithColors = formState.productItems.filter(item => item.colors.length > 0);
 
       if (itemsWithColors.length === 0) {
-        setStatus({ type: 'error', message: '请先在步骤1中添加产品并选择颜色' });
+        setStatus({ type: 'error', message: '请先在步骤2中添加产品并选择颜色' });
         return false;
       }
 
@@ -1442,8 +1436,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
       console.log('[OfflineOrder] ✅ Form submit triggered by submit button, proceeding...');
       resetStatus();
 
-      // PRD v2.0: 验证3个步骤
-      if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
+      // 2026-04-21: step3 已下线，只验证 step1 + step2（内部印刷位配置由 step2 渲染时 auto-init）
+      if (!validateStep(1) || !validateStep(2)) {
         return;
       }
 
@@ -2585,7 +2579,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
       return (
         <div className="space-y-6">
           <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">选择印刷位</h2>
-          <p className="text-gray-600 mb-6 text-sm">请先在步骤1中添加产品并选择颜色</p>
+          <p className="text-gray-600 mb-6 text-sm">请先在步骤2中添加产品并选择颜色</p>
         </div>
       );
     }
@@ -2688,7 +2682,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           );
         })}
 
-        {/* 文件上传（可选，移到步骤3下方） */}
+        {/* 2026-04-20: 文件上传 UI 暂时下线（保留原代码，便于日后恢复）
+            注释掉的范围：上传卡片 + 文件列表
+            保留：订单汇总（价格明细）部分 */}
+        {/* === 文件上传（已注释，2026-04-20） — START ===
         <div className="mt-8 p-5 bg-gray-50 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">文件上传（可选）</h3>
           <p className="text-sm text-gray-600 mb-4">您可以上传设计文件，也可以不传文件直接提交订单。</p>
@@ -2745,9 +2742,12 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               ))}
             </ul>
           )}
+        === 文件上传（已注释，2026-04-20） — END === */}
 
+        {/* 订单汇总区块独立显示（原本嵌在文件上传卡片里） */}
+        <div className="mt-8 p-5 bg-gray-50 border border-gray-200 rounded-xl">
           {/* PRD v2.0: Step 3 Price Summary (Before Submit) */}
-          <div className="mt-8">
+          <div className="">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">订单汇总</h3>
 
             {/* Price Details Summary Box */}
@@ -2962,9 +2962,15 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             {/* 使用 isClient 条件渲染避免 hydration 错误 */}
             {isClient && (
               <div className="min-h-[400px]">
-                {currentStep === 1 && renderStep1()}
-                {currentStep === 2 && renderStep2()}
-                {currentStep === 3 && renderStep3()}
+                {/* 2026-04-20: 步骤交换 — 新 step1=客户信息, step2=产品选择（含订单汇总）
+                    2026-04-21: 去掉 step3；订单汇总在 step2 末尾渲染（renderStep1 里合并） */}
+                {currentStep === 1 && renderStep2()}
+                {currentStep === 2 && (
+                  <>
+                    {renderStep1()}
+                    {renderStep3()}
+                  </>
+                )}
               </div>
             )}
 

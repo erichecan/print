@@ -988,6 +988,7 @@ export interface SalesOfflineOrderSummary {
   primaryProduct: string | null;
   quantity: number | null;
   deliveryDate: string | null;
+  description: string | null;
   status: string;
   rushOrder: boolean;
   rushFee?: number;
@@ -1019,8 +1020,39 @@ export interface SalesOfflineOrderSummary {
   order_notes?: string | null; // PRD v2.0
   payment_method?: string | null; // PRD v2.0
   reference_number?: string | null; // PRD v2.0
+  // 2026-04-20: 列表改造新增字段
+  type?: string | null;
+  invoiceStatus?: 'No' | 'Require' | 'Sent' | string;
+  totalAmount?: number | null;
+  // 列表 include assets：首张 image 作为缩略图，其余供下载浮层
+  assets?: Array<{
+    id: string;
+    fileName: string;
+    fileSize?: number | null;
+    contentType?: string | null;
+    url: string;
+    uploadedAt?: string;
+  }>;
+  productionWorkOrder?: {
+    id?: string;
+    status?: string;
+    startDate?: string | null;
+    dueDate?: string | null;
+  } | null;
   createdAt: string;
   updatedAt: string;
+}
+
+// 2026-04-20: 订单状态字典（20 条系统预置 + 用户自定义）
+export interface OfflineOrderStatusOption {
+  id: string;
+  value: string;
+  label: string;
+  sortOrder: number;
+  isSystem: boolean;
+  createdBy?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SalesOfflineOrderListResponse {
@@ -1177,8 +1209,8 @@ export const salesOrdersApi = {
       body: data,
     }),
   // 更新订单状态
-  // 支持 rushOrder 参数
-  updateStatus: (id: string, status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED', rushOrder?: boolean) => {
+  // 2026-04-20: status 改为自由文本（含自定义选项）
+  updateStatus: (id: string, status: string, rushOrder?: boolean) => {
     const body: { status: string; rushOrder?: boolean } = { status };
     if (rushOrder !== undefined) {
       body.rushOrder = rushOrder;
@@ -1191,6 +1223,43 @@ export const salesOrdersApi = {
   // 删除订单
   delete: (id: string) =>
     api(`/admin/offline-orders/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// 2026-04-20: 订单管理列表改造 —
+// 通用的 PATCH / POST 接口，支持宽屏表格 inline 编辑与新增
+export const offlineOrdersInlineApi = {
+  // Inline 更新单个字段（status / type / invoiceStatus / totalAmount / rushOrder / ...）
+  patch: (id: string, patch: Record<string, unknown>) =>
+    api<{ success: boolean; order: any }>(`/admin/offline-orders/${id}`, {
+      method: 'PATCH',
+      body: patch as any,
+    }),
+  // Inline 新增一行（最小载荷，所有字段都可选）
+  create: (payload: Record<string, unknown>) =>
+    api<{ success: boolean; order: any }>(`/offline-orders`, {
+      method: 'POST',
+      body: payload as any,
+    }),
+};
+
+// 2026-04-20: 状态选项字典客户端
+export const statusOptionsApi = {
+  list: () =>
+    api<{ success: boolean; options: OfflineOrderStatusOption[] }>(
+      `/admin/offline-orders/status-options`
+    ),
+  create: (value: string, label?: string) =>
+    api<{ success: boolean; option: OfflineOrderStatusOption }>(
+      `/admin/offline-orders/status-options`,
+      {
+        method: 'POST',
+        body: { value, label } as any,
+      }
+    ),
+  delete: (id: string) =>
+    api<{ success: boolean }>(`/admin/offline-orders/status-options/${id}`, {
       method: 'DELETE',
     }),
 };

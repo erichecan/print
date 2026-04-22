@@ -104,13 +104,14 @@ exports.listSalesOrders = async (req, res) => {
     }
 
     // 2. 状态过滤（服务端）
+    // 2026-04-20: status 由 enum 改为中文自由文本；
+    //   - 仍兼容旧 ACTIVE_RUSH = 进行中(非已完成/已取消) + rushOrder
+    //   - 其他值原样匹配（不再 toUpperCase）
     if (statusFilter) {
-      // 支持逗号分隔的多状态过滤，如 "ACTIVE,COMPLETED"
-      const statuses = statusFilter.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+      const statuses = statusFilter.split(',').map((s) => s.trim()).filter(Boolean);
       if (statuses.length === 1) {
-        // 特殊处理 ACTIVE_RUSH: 实际上是 status=ACTIVE + rushOrder=true
-        if (statuses[0] === 'ACTIVE_RUSH') {
-          where.status = 'ACTIVE';
+        if (statuses[0].toUpperCase() === 'ACTIVE_RUSH') {
+          where.status = { notIn: ['已完成', '已取消'] };
           where.rushOrder = true;
         } else {
           where.status = statuses[0];
@@ -510,15 +511,25 @@ exports.updateSalesOrderStatus = async (req, res) => {
       newStatus: status,
     });
 
-    // 验证状态值
-    const validStatuses = ['ACTIVE', 'PRINTED', 'COMPLETED', 'CANCELLED', 'REMINDER'];
-    const normalizedStatus = status ? String(status).toUpperCase() : null;
-    if (!normalizedStatus || !validStatuses.includes(normalizedStatus)) {
+    // 2026-04-20: status 改为自由文本，不再做硬编码枚举校验。
+    //   - 仍兼容旧的英文枚举（大写）→ 映射为中文 20 个预置选项之一
+    //   - 其他非空字符串一律透传；前端下拉里的自定义值走此路径
+    const legacyStatusMap = {
+      ACTIVE: '待确认订单',
+      PRINTED: '待取货',
+      COMPLETED: '已完成',
+      CANCELLED: '已取消',
+      REMINDER: '需通知'
+    };
+    const rawStatus = status ? String(status).trim() : null;
+    if (!rawStatus) {
       return res.status(400).json({
         error: 'Validation Error',
-        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+        message: 'status 不能为空'
       });
     }
+    const normalizedStatus =
+      legacyStatusMap[rawStatus.toUpperCase()] || rawStatus;
 
     // 查找订单并验证权限
     // 修复：包含 rushOrder 字段用于比较，包含 configuration 用于计算总额
@@ -587,8 +598,13 @@ exports.updateSalesOrderStatus = async (req, res) => {
       updateData.rushOrder = Boolean(rushOrder);
     }
 
-    // 核心逻辑：如果变为 COMPLETED，自动将定金设为总额（平衡余额为 0）
-    if (normalizedStatus === 'COMPLETED' && order.status !== 'COMPLETED') {
+    // 核心逻辑：如果变为「已完成」，自动将定金设为总额（平衡余额为 0）
+    // 2026-04-20: 兼容旧英文 COMPLETED
+    if (
+      (normalizedStatus === '已完成' || normalizedStatus === 'COMPLETED') &&
+      order.status !== '已完成' &&
+      order.status !== 'COMPLETED'
+    ) {
       const config = order.configuration || {};
       const productItems = config.productItems || [];
       const discount = config.discount || 0;

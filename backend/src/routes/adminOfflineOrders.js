@@ -3,6 +3,8 @@
 const express = require('express');
 const multer = require('multer');
 const offlineOrderController = require('../controllers/offlineOrderController');
+// 2026-04-20: 新增 status 选项字典 controller
+const offlineOrderStatusOptionController = require('../controllers/offlineOrderStatusOptionController');
 const { ensureOfflineUploadRoot, getAllowedExtensions, isExtensionAllowed } = require('../utils/offlineUpload');
 const { requireAdmin, authorizeRoles } = require('../middleware/auth');
 
@@ -46,6 +48,26 @@ const adminUpload = multer({
 });
 
 // 注意：以下路由都会应用 requireAdmin 中间件（通过上面的 router.use）
+
+// ----------------------------------------------------------------
+// 2026-04-20: 状态选项字典（订单管理列表 status 自定义功能用）
+// 必须放在 /:id 之前，否则 'status-options' 会被当作 :id 截获
+// ----------------------------------------------------------------
+router.get(
+  '/status-options',
+  authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  offlineOrderStatusOptionController.listStatusOptions
+);
+router.post(
+  '/status-options',
+  authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  offlineOrderStatusOptionController.createStatusOption
+);
+router.delete(
+  '/status-options/:id',
+  authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  offlineOrderStatusOptionController.deleteStatusOption
+);
 
 router.get('/metrics/summary', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.getOfflineOrderMetrics);
 

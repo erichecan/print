@@ -142,9 +142,11 @@ const computeCostTotalFromConfig = async (config) => {
  * @returns {Promise<string>} 订单编号
  */
 /**
- * 生成线下订单编号 (Format: creator-YYYYMMDD-XXX)
+ * 生成线下订单编号 (Format: creator-YYMMDD-XXX)
  * 其中 XXX 是当天该创建者的流水号，从 001 开始
- * 
+ *
+ * 2026-04-21: 日期段由 YYYYMMDD 改为 YYMMDD（更短更好看）
+ *
  * @param {Object} tx - Prisma transaction 对象（可选）
  * @param {Date} date - 订单日期（可选，默认为当前时间）
  * @param {Object} user - 创建者对象（可选）
@@ -152,12 +154,14 @@ const computeCostTotalFromConfig = async (config) => {
  */
 const generateOrderCode = async (tx = null, date = null, user = null) => {
   const timestamp = date || new Date();
-  // YYYYMMDD 格式 (e.g., 20260401)
+  // YYYYMMDD 格式 (e.g., 20260401) — 仅用于兼容旧数据扫描
   const fullDate = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
-  
+  // YYMMDD 格式 (e.g., 260401) — 新编号使用该格式
+  const shortDate = fullDate.substring(2);
+
   // 提取创建者名称前缀
   let creatorPrefix = 'OFF';
-  
+
   if (user) {
     logger.info('[offlineOrderController] generateOrderCode user context', {
       userId: user.id || 'N/A',
@@ -180,46 +184,47 @@ const generateOrderCode = async (tx = null, date = null, user = null) => {
 
   // 获取当天的最大流水号
   const prismaClient = tx || prisma;
-  
-  // 搜索属于该创建者当天的订单
-  const prefix = `${creatorPrefix}-${fullDate}-`;
-  
+
+  // 新编号 prefix（YYMMDD 格式）
+  const prefix = `${creatorPrefix}-${shortDate}-`;
+
+  // 扫描时把新旧两种日期格式都算进来，避免同日切换格式导致流水号重复
   const todayOrders = await prismaClient.offlineOrder.findMany({
     where: {
-      orderCode: {
-        startsWith: prefix
-      }
+      OR: [
+        { orderCode: { startsWith: `${creatorPrefix}-${shortDate}-` } },
+        { orderCode: { startsWith: `${creatorPrefix}-${fullDate}-` } },
+      ],
     },
     select: {
-      orderCode: true
+      orderCode: true,
     },
     orderBy: {
-      createdAt: 'desc'
-    }
+      createdAt: 'desc',
+    },
   });
 
-  // 如果没有找到新格式的订单，且 prefix 是 OFF-，尝试查找旧格式的订单以保持兼容性
+  // 兼容旧 OFF 格式（没有创建者前缀的情况已经不会发生，但保留扫描）
   if (todayOrders.length === 0 && creatorPrefix === 'OFF') {
-    const oldDatePart = fullDate.substring(2);
     const oldOrders = await prismaClient.offlineOrder.findMany({
       where: {
         OR: [
-          { orderCode: { startsWith: `OFF-${oldDatePart}-` } },
-          { orderCode: { startsWith: `OFF-${fullDate}-` } }
-        ]
+          { orderCode: { startsWith: `OFF-${shortDate}-` } },
+          { orderCode: { startsWith: `OFF-${fullDate}-` } },
+        ],
       },
       select: { orderCode: true },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
     todayOrders.push(...oldOrders);
   }
 
   // 提取最高流水号
   let maxSequence = 0;
-  todayOrders.forEach(order => {
+  todayOrders.forEach((order) => {
     const parts = order.orderCode.split('-');
     const suffix = parts.pop() || '';
-    
+
     // 尝试提取数字部分 (处理可能带随机后缀的情况)
     const sequenceMatch = suffix.match(/^\d+/);
     if (sequenceMatch) {
@@ -234,12 +239,12 @@ const generateOrderCode = async (tx = null, date = null, user = null) => {
   const nextSequence = maxSequence + 1;
   const sequencePart = String(nextSequence).padStart(3, '0');
   const finalCode = `${prefix}${sequencePart}`;
-  
+
   logger.info('[offlineOrderController] Final generated order code', {
-    fullDate,
+    shortDate,
     creatorPrefix,
     nextSequence,
-    finalCode
+    finalCode,
   });
 
   return finalCode;
@@ -345,6 +350,10 @@ const mapOrder = (order) => ({
     position: order.stagePosition
   },
   status: order.status,
+  // 2026-04-20: 列表改造新增三列（Prisma JS 字段：type / invoiceStatus / totalAmount）
+  type: order.type ?? null,
+  invoiceStatus: order.invoiceStatus || 'No',
+  totalAmount: order.totalAmount != null ? parseFloat(order.totalAmount) : null,
   contact: {
     name: order.contactName,
     company: order.company,
@@ -407,6 +416,7 @@ exports.createOfflineOrder = async (req, res) => {
       quantity,
       deliveryDate,
       artworkNotes,
+      description: descriptionInput, // 2026-04-21: 列表 inline 新增行「备注」字段
       company,
       contactName,
       email,
@@ -421,8 +431,12 @@ exports.createOfflineOrder = async (req, res) => {
       paymentMethod,
       referenceNumber,
       startDate, // New: Optional start date for historical imports
-      status, // New: Optional status override (e.g., COMPLETED)
-      dueDate // New: Optional explicit due date
+      status, // New: Optional status override, 2026-04-20 起为中文文本
+      dueDate, // New: Optional explicit due date
+      // 2026-04-20: 列表改造新增三列 + inline 新增行支持
+      type,
+      invoiceStatus,
+      totalAmount
     } = req.body;
 
     logger.info('[offlineOrderController] Creating order with payload:', { startDate, status, dueDate, deliveryDate });
@@ -488,14 +502,36 @@ exports.createOfflineOrder = async (req, res) => {
       primaryProduct: primaryProduct?.trim() || null,
       quantity: quantity ? parseInt(quantity, 10) || null : null,
       deliveryDate: parseDate(deliveryDate),
-      description: artworkNotes?.trim() || null,
+      description: (descriptionInput?.trim() || artworkNotes?.trim() || null),
       requiresMockups: parseBoolean(requiresMockups),
       requiresProof: parseBoolean(requiresProof),
       rushOrder: parseBoolean(rushOrder),
       stageKey: initialStage.key,
       stageLabel: initialStage.label,
       stagePosition: initialStage.position ?? 0,
-      status: status ? status.toUpperCase() : 'ACTIVE', // Support status override
+      // 2026-04-20: 默认中文状态；兼容旧的 UPPERCASE 枚举 → 映射到中文
+      status: (() => {
+        const raw = status?.toString().trim();
+        if (!raw) return '待确认订单';
+        const legacyMap = {
+          ACTIVE: '待确认订单',
+          PRINTED: '待取货',
+          COMPLETED: '已完成',
+          CANCELLED: '已取消',
+          REMINDER: '需通知'
+        };
+        return legacyMap[raw.toUpperCase()] || raw;
+      })(),
+      // 2026-04-20: 列表改造新三列
+      type: type?.toString().trim() || null,
+      invoiceStatus: (() => {
+        const v = invoiceStatus?.toString().trim();
+        return v && ['No', 'Require', 'Sent'].includes(v) ? v : 'No';
+      })(),
+      totalAmount:
+        totalAmount !== undefined && totalAmount !== null && totalAmount !== ''
+          ? (Number.isNaN(parseFloat(totalAmount)) ? null : parseFloat(totalAmount))
+          : null,
       // 修复：contactName 和 email 改为可选字段，使用默认值或null
       contactName: contactName?.trim() || '未提供',
       company: company?.trim() || null,
@@ -620,13 +656,13 @@ exports.createOfflineOrder = async (req, res) => {
 
       // Let's create it now.
       if (!createdOrder.productionWorkOrder) {
-        // Determine work order status based on order status
+        // 2026-04-20: status 已改为中文文本 / 兼容旧枚举
         let workOrderStatus = 'PLANNING';
-        const orderStatus = status ? status.toUpperCase() : 'ACTIVE';
+        const finalStatus = createdOrder.status; // 已经过 status 默认/映射处理
 
-        if (orderStatus === 'COMPLETED') {
+        if (finalStatus === '已完成' || finalStatus === 'COMPLETED') {
           workOrderStatus = 'COMPLETED';
-        } else if (orderStatus === 'CANCELLED') {
+        } else if (finalStatus === '已取消' || finalStatus === 'CANCELLED') {
           workOrderStatus = 'CANCELLED';
         }
 
@@ -710,7 +746,8 @@ exports.listOfflineOrders = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const stageFilter = req.query.stageKey ? req.query.stageKey.toString() : null;
-    const statusFilter = req.query.status ? req.query.status.toString().toUpperCase() : null;
+    // 2026-04-20: status 由 enum 改为自由文本，直接用原字符串匹配
+    const statusFilter = req.query.status ? req.query.status.toString().trim() : null;
     const rushFilter = req.query.rush === 'true' ? true : req.query.rush === 'false' ? false : null;
     const search = req.query.search?.toString().trim();
     const paymentMethod = req.query.paymentMethod?.toString().trim();
@@ -725,7 +762,7 @@ exports.listOfflineOrders = async (req, res, next) => {
       where.AND.push({ stageKey: stageFilter });
     }
 
-    if (statusFilter && ['ACTIVE', 'COMPLETED', 'CANCELLED'].includes(statusFilter)) {
+    if (statusFilter) {
       where.AND.push({ status: statusFilter });
     }
 
@@ -784,14 +821,17 @@ exports.listOfflineOrders = async (req, res, next) => {
         where: where.AND.length ? where : undefined,
         skip,
         take: limit,
+        // 2026-04-20: 排序改造 —
+        // 已完成订单沉底由应用层处理（Prisma 不能直接表达 CASE WHEN），
+        // 先按 productionWorkOrder.dueDate ASC，再按 createdAt DESC 兜底。
         orderBy: [
           { stagePosition: 'asc' },
           { createdAt: 'asc' }
         ],
         include: {
+          // 列表需要全部资产：首张 image 用作缩略图，其余供下载浮层
           assets: {
-            orderBy: { uploadedAt: 'asc' },
-            take: 1
+            orderBy: { uploadedAt: 'asc' }
           },
           productionWorkOrder: true
         }
@@ -802,9 +842,30 @@ exports.listOfflineOrders = async (req, res, next) => {
       getStageConfig()
     ]);
 
+    // 2026-04-20: 应用层排序 —
+    //   1) status = '已完成' 沉底
+    //   2) 其余按 productionWorkOrder.dueDate ASC（null 排最后），同 dueDate 按 createdAt ASC
+    const sortedOrders = [...orders].sort((a, b) => {
+      const aDone = a.status === '已完成' ? 1 : 0;
+      const bDone = b.status === '已完成' ? 1 : 0;
+      if (aDone !== bDone) return aDone - bDone;
+
+      const aDue = a.productionWorkOrder?.dueDate
+        ? new Date(a.productionWorkOrder.dueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+      const bDue = b.productionWorkOrder?.dueDate
+        ? new Date(b.productionWorkOrder.dueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+      if (aDue !== bDue) return aDue - bDue;
+
+      const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aCreated - bCreated;
+    });
+
     res.json({
       success: true,
-      orders: orders.map((order) =>
+      orders: sortedOrders.map((order) =>
         mapOrder({
           ...order,
           histories: []
@@ -1352,11 +1413,19 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
     }
 
     // [2026-03-29] 状态与工作流维度：满足前端 Kanban 统计需求 (active, rushActive, completed, cancelled)
+    // 2026-04-20: status 改为中文自由文本；
+    //   - completed = '已完成'
+    //   - cancelled = '已取消'
+    //   - active     = 除上两者之外的所有订单
     const [activeCount, rushActiveCount, completedCount, cancelledCount] = await Promise.all([
-      prisma.offlineOrder.count({ where: { ...baseWhere, status: { in: ['ACTIVE', 'PRINTED', 'REMINDER'] } } }),
-      prisma.offlineOrder.count({ where: { ...baseWhere, status: { in: ['ACTIVE', 'PRINTED', 'REMINDER'] }, rushOrder: true } }),
-      prisma.offlineOrder.count({ where: { ...baseWhere, status: 'COMPLETED' } }),
-      prisma.offlineOrder.count({ where: { ...baseWhere, status: 'CANCELLED' } })
+      prisma.offlineOrder.count({
+        where: { ...baseWhere, status: { notIn: ['已完成', '已取消'] } }
+      }),
+      prisma.offlineOrder.count({
+        where: { ...baseWhere, status: { notIn: ['已完成', '已取消'] }, rushOrder: true }
+      }),
+      prisma.offlineOrder.count({ where: { ...baseWhere, status: '已完成' } }),
+      prisma.offlineOrder.count({ where: { ...baseWhere, status: '已取消' } })
     ]);
 
     const summary = {
@@ -1563,7 +1632,14 @@ exports.updateOfflineOrder = async (req, res) => {
       status,
       configuration,
       metadata,
-      note
+      note,
+      // 2026-04-20: 列表改造新增三列
+      type,
+      invoiceStatus,
+      totalAmount,
+      // 2026-04-21: 列表 inline 编辑开始/交期 - 同步到 ProductionWorkOrder
+      startDate,
+      dueDate
     } = req.body;
 
     const data = {};
@@ -1620,14 +1696,45 @@ exports.updateOfflineOrder = async (req, res) => {
     if (req.body.depositAmount !== undefined) data.deposit_amount = req.body.depositAmount ? parseFloat(req.body.depositAmount) : null;
 
     if (status !== undefined) {
-      const normalizedStatus = status?.toString().toUpperCase();
-      if (!['ACTIVE', 'PRINTED', 'COMPLETED', 'CANCELLED'].includes(normalizedStatus)) {
+      // 2026-04-20: status 改成自由文本（含用户自定义选项），不再做枚举校验
+      const trimmedStatus = status?.toString().trim();
+      if (!trimmedStatus) {
         return res.status(400).json({
           error: 'Validation Error',
-          message: 'Invalid status value'
+          message: 'status cannot be empty'
         });
       }
-      data.status = normalizedStatus;
+      data.status = trimmedStatus;
+    }
+
+    // 2026-04-20: 新三列
+    if (type !== undefined) {
+      const t = type?.toString().trim();
+      data.type = t || null;
+    }
+    if (invoiceStatus !== undefined) {
+      const v = invoiceStatus?.toString().trim();
+      if (v && !['No', 'Require', 'Sent'].includes(v)) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'invoiceStatus must be one of: No / Require / Sent'
+        });
+      }
+      data.invoiceStatus = v || 'No';
+    }
+    if (totalAmount !== undefined) {
+      if (totalAmount === null || totalAmount === '') {
+        data.totalAmount = null;
+      } else {
+        const amt = parseFloat(totalAmount);
+        if (Number.isNaN(amt) || amt < 0) {
+          return res.status(400).json({
+            error: 'Validation Error',
+            message: 'totalAmount must be a non-negative number'
+          });
+        }
+        data.totalAmount = amt;
+      }
     }
 
     const actorName = req.user
@@ -1658,6 +1765,7 @@ exports.updateOfflineOrder = async (req, res) => {
           id: true,
           stageKey: true,
           status: true,
+          productionWorkOrder: { select: { id: true } }
         }
       });
 
@@ -1665,10 +1773,61 @@ exports.updateOfflineOrder = async (req, res) => {
         return null;
       }
 
-      // 核心逻辑：如果修改了配置（添加了新产品等）且当前状态是已完成，则状态自动回退到进行中
-      if (configuration !== undefined && existing.status === 'COMPLETED' && status === undefined) {
-        data.status = 'ACTIVE';
-        logger.info(`[OfflineOrder] Order ${id} configuration updated. Reverting status from COMPLETED to ACTIVE.`);
+      // 2026-04-21: 列表 inline 编辑开始/交期 → upsert 到 ProductionWorkOrder
+      if (startDate !== undefined || dueDate !== undefined) {
+        const workOrderData = {};
+        if (startDate !== undefined) workOrderData.startDate = parseDate(startDate);
+        if (dueDate !== undefined) workOrderData.dueDate = parseDate(dueDate);
+
+        if (existing.productionWorkOrder) {
+          await tx.productionWorkOrder.update({
+            where: { id: existing.productionWorkOrder.id },
+            data: workOrderData
+          });
+        } else {
+          let workOrderCode = generateWorkOrderCode();
+          let collision = await tx.productionWorkOrder.findUnique({
+            where: { workOrderCode }
+          });
+          while (collision) {
+            workOrderCode = generateWorkOrderCode();
+            collision = await tx.productionWorkOrder.findUnique({
+              where: { workOrderCode }
+            });
+          }
+          await tx.productionWorkOrder.create({
+            data: {
+              workOrderCode,
+              offlineOrderId: id,
+              status: 'PLANNING',
+              priority: 0,
+              ...workOrderData,
+              events: {
+                create: [
+                  {
+                    status: 'PLANNING',
+                    actorId: req.user?.id || null,
+                    actorName,
+                    note: 'Production work order auto-created from inline date edit'
+                  }
+                ]
+              }
+            }
+          });
+        }
+      }
+
+      // 2026-04-20: status 改成中文自由文本。
+      //   如果修改了配置（添加了新产品等）且当前状态是"已完成"，自动回退到"待确认订单"
+      if (
+        configuration !== undefined &&
+        (existing.status === '已完成' || existing.status === 'COMPLETED') &&
+        status === undefined
+      ) {
+        data.status = '待确认订单';
+        logger.info(
+          `[OfflineOrder] Order ${id} configuration updated. Reverting status from 已完成 to 待确认订单.`
+        );
       }
 
       const order = await tx.offlineOrder.update({
