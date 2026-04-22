@@ -18,6 +18,7 @@ import {
   productColorImageApi,
 } from '@/lib/api';
 import useSWR from 'swr';
+import { UserMenu } from '../../components/UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 import { FilterPanel, FilterOptions } from './components/FilterPanel';
@@ -1485,6 +1486,7 @@ export default function SalesOrdersPage() {
             >
               {t('newOfflineOrder')}
             </button>
+            <UserMenu />
           </div>
 
         </header>
