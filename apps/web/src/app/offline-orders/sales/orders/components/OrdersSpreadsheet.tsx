@@ -503,6 +503,54 @@ export default function OrdersSpreadsheet() {
   const [error, setError] = useState<string | null>(null);
   const [statusOptions, setStatusOptions] = useState<OfflineOrderStatusOption[]>([]);
 
+  // 搜索 & 筛选状态
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatuses, setFilterStatuses] = useState<string[]>([]);
+  const [filterStartFrom, setFilterStartFrom] = useState('');
+  const [filterStartTo, setFilterStartTo] = useState('');
+  const [filterDueFrom, setFilterDueFrom] = useState('');
+  const [filterDueTo, setFilterDueTo] = useState('');
+  const [filterQtyMin, setFilterQtyMin] = useState('');
+  const [filterQtyMax, setFilterQtyMax] = useState('');
+  const [filterTotalMin, setFilterTotalMin] = useState('');
+  const [filterTotalMax, setFilterTotalMax] = useState('');
+  const [filterDepositMin, setFilterDepositMin] = useState('');
+  const [filterDepositMax, setFilterDepositMax] = useState('');
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!statusDropdownOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
+        setStatusDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [statusDropdownOpen]);
+
+  const hasActiveFilter = useMemo(() => (
+    searchQuery.trim() !== '' ||
+    filterStatuses.length > 0 ||
+    filterStartFrom !== '' || filterStartTo !== '' ||
+    filterDueFrom !== '' || filterDueTo !== '' ||
+    filterQtyMin !== '' || filterQtyMax !== '' ||
+    filterTotalMin !== '' || filterTotalMax !== '' ||
+    filterDepositMin !== '' || filterDepositMax !== ''
+  ), [searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
+
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setFilterStatuses([]);
+    setFilterStartFrom(''); setFilterStartTo('');
+    setFilterDueFrom(''); setFilterDueTo('');
+    setFilterQtyMin(''); setFilterQtyMax('');
+    setFilterTotalMin(''); setFilterTotalMax('');
+    setFilterDepositMin(''); setFilterDepositMax('');
+    setCurrentPage(1);
+  }, []);
+
   // inline 新增行的草稿
   // 2026-04-21: 列序调整 — 编号 / 开始时间 / 客户名 / Due / 件数 / 总金额 / 预付款 / Type / Status / 发票 / 备注
   const [newDraft, setNewDraft] = useState<{
@@ -642,16 +690,50 @@ export default function OrdersSpreadsheet() {
     }
   }, [newDraft, refreshOrders, savingNew]);
 
-  // 排序的渲染数据（后端已排过，这里再保险一次）
   const PAGE_SIZE = 30;
   const [currentPage, setCurrentPage] = useState(1);
 
+  // 过滤 + 排序
   const renderOrders = useMemo(() => {
-    return [...orders].sort((a, b) => {
+    const q = searchQuery.trim().toLowerCase();
+
+    const filtered = orders.filter((o) => {
+      // 搜索：客户名、电话、邮件
+      if (q) {
+        const name = (o.contact?.name || '').toLowerCase();
+        const phone = (o.contact?.phone || '').toLowerCase();
+        const email = (o.contact?.email || '').toLowerCase();
+        if (!name.includes(q) && !phone.includes(q) && !email.includes(q)) return false;
+      }
+      // 状态多选
+      if (filterStatuses.length > 0 && !filterStatuses.includes(o.status)) return false;
+      // 开始时间区间
+      const startTs = o.productionWorkOrder?.startDate ? new Date(o.productionWorkOrder.startDate).getTime() : null;
+      if (filterStartFrom && (startTs === null || startTs < new Date(filterStartFrom).getTime())) return false;
+      if (filterStartTo && (startTs === null || startTs > new Date(filterStartTo + 'T23:59:59').getTime())) return false;
+      // Due Date 区间
+      const dueTs = o.productionWorkOrder?.dueDate ? new Date(o.productionWorkOrder.dueDate).getTime() : null;
+      if (filterDueFrom && (dueTs === null || dueTs < new Date(filterDueFrom).getTime())) return false;
+      if (filterDueTo && (dueTs === null || dueTs > new Date(filterDueTo + 'T23:59:59').getTime())) return false;
+      // 件数区间
+      const qty = o.quantity ?? null;
+      if (filterQtyMin !== '' && (qty === null || qty < Number(filterQtyMin))) return false;
+      if (filterQtyMax !== '' && (qty === null || qty > Number(filterQtyMax))) return false;
+      // 总金额区间
+      const total = resolveTotalAmount(o);
+      if (filterTotalMin !== '' && total < Number(filterTotalMin)) return false;
+      if (filterTotalMax !== '' && total > Number(filterTotalMax)) return false;
+      // 预付款区间
+      const deposit = o.payment?.depositAmount ?? null;
+      if (filterDepositMin !== '' && (deposit === null || deposit < Number(filterDepositMin))) return false;
+      if (filterDepositMax !== '' && (deposit === null || deposit > Number(filterDepositMax))) return false;
+      return true;
+    });
+
+    return filtered.sort((a, b) => {
       const aDone = a.status === '已完成' ? 1 : 0;
       const bDone = b.status === '已完成' ? 1 : 0;
       if (aDone !== bDone) return aDone - bDone;
-      // 按开始时间倒序（越近越靠前），无开始时间排最后
       const aStart = a.productionWorkOrder?.startDate
         ? new Date(a.productionWorkOrder.startDate).getTime()
         : Number.NEGATIVE_INFINITY;
@@ -659,12 +741,14 @@ export default function OrdersSpreadsheet() {
         ? new Date(b.productionWorkOrder.startDate).getTime()
         : Number.NEGATIVE_INFINITY;
       if (aStart !== bStart) return bStart - aStart;
-      // 开始时间相同则按 createdAt 倒序
       const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return bCreated - aCreated;
     });
-  }, [orders]);
+  }, [orders, searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
+
+  // 筛选条件变化时重置到第 1 页
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
 
   const totalPages = Math.max(1, Math.ceil(renderOrders.length / PAGE_SIZE));
   const pagedOrders = renderOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -676,6 +760,124 @@ export default function OrdersSpreadsheet() {
           {error}
         </div>
       )}
+
+      {/* 搜索栏 */}
+      <div className="mb-2 flex items-center gap-2">
+        <input
+          type="text"
+          className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded"
+          placeholder="搜索客户名、电话、邮件..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {hasActiveFilter && (
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="px-3 py-1.5 text-xs text-red-600 border border-red-300 rounded hover:bg-red-50 whitespace-nowrap"
+          >
+            清空筛选
+          </button>
+        )}
+        {hasActiveFilter && (
+          <span className="text-xs text-gray-500 whitespace-nowrap">
+            已筛选 {renderOrders.length} / 共 {orders.length} 条
+          </span>
+        )}
+      </div>
+
+      {/* 筛选器 */}
+      <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+        {/* 状态多选 */}
+        <div className="col-span-2 flex items-start gap-2">
+          <span className="text-gray-500 pt-1 whitespace-nowrap w-16 shrink-0">状态</span>
+          <div className="relative" ref={statusDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setStatusDropdownOpen((v) => !v)}
+              className="px-2 py-1 border border-gray-300 rounded bg-white text-xs min-w-[120px] text-left"
+            >
+              {filterStatuses.length === 0
+                ? '全部状态'
+                : `已选 ${filterStatuses.length} 个`}
+              {' ▾'}
+            </button>
+            {statusDropdownOpen && (
+              <div className="absolute z-20 mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-56 overflow-y-auto min-w-[160px]">
+                {statusOptions.map((opt) => (
+                  <label key={opt.value} className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={filterStatuses.includes(opt.value)}
+                      onChange={() => {
+                        setFilterStatuses((prev) =>
+                          prev.includes(opt.value)
+                            ? prev.filter((s) => s !== opt.value)
+                            : [...prev, opt.value]
+                        );
+                      }}
+                    />
+                    {opt.label || opt.value}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+          {filterStatuses.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {filterStatuses.map((s) => (
+                <span
+                  key={s}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"
+                >
+                  {s}
+                  <button type="button" onClick={() => setFilterStatuses((prev) => prev.filter((x) => x !== s))}>×</button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 开始时间 */}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 whitespace-nowrap w-16 shrink-0">开始时间</span>
+          <input type="date" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" value={filterStartFrom} onChange={(e) => setFilterStartFrom(e.target.value)} />
+          <span className="text-gray-400">—</span>
+          <input type="date" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" value={filterStartTo} onChange={(e) => setFilterStartTo(e.target.value)} />
+        </div>
+
+        {/* Due Date */}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 whitespace-nowrap w-16 shrink-0">Due Date</span>
+          <input type="date" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" value={filterDueFrom} onChange={(e) => setFilterDueFrom(e.target.value)} />
+          <span className="text-gray-400">—</span>
+          <input type="date" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" value={filterDueTo} onChange={(e) => setFilterDueTo(e.target.value)} />
+        </div>
+
+        {/* 件数 */}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 whitespace-nowrap w-16 shrink-0">件数</span>
+          <input type="number" min="0" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" placeholder="最小" value={filterQtyMin} onChange={(e) => setFilterQtyMin(e.target.value)} />
+          <span className="text-gray-400">—</span>
+          <input type="number" min="0" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" placeholder="最大" value={filterQtyMax} onChange={(e) => setFilterQtyMax(e.target.value)} />
+        </div>
+
+        {/* 总金额 */}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 whitespace-nowrap w-16 shrink-0">总金额</span>
+          <input type="number" min="0" step="0.01" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" placeholder="最小 $" value={filterTotalMin} onChange={(e) => setFilterTotalMin(e.target.value)} />
+          <span className="text-gray-400">—</span>
+          <input type="number" min="0" step="0.01" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" placeholder="最大 $" value={filterTotalMax} onChange={(e) => setFilterTotalMax(e.target.value)} />
+        </div>
+
+        {/* 预付款 */}
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500 whitespace-nowrap w-16 shrink-0">预付款</span>
+          <input type="number" min="0" step="0.01" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" placeholder="最小 $" value={filterDepositMin} onChange={(e) => setFilterDepositMin(e.target.value)} />
+          <span className="text-gray-400">—</span>
+          <input type="number" min="0" step="0.01" className="flex-1 px-2 py-1 border border-gray-300 rounded bg-white" placeholder="最大 $" value={filterDepositMax} onChange={(e) => setFilterDepositMax(e.target.value)} />
+        </div>
+      </div>
 
       <div className="border border-gray-200 rounded">
         <table className="w-full text-sm table-fixed">
@@ -1167,7 +1369,9 @@ export default function OrdersSpreadsheet() {
         )}
 
         <span className={totalPages <= 1 ? 'ml-auto' : ''}>
-          共 {renderOrders.length} 条，第 {currentPage}/{totalPages} 页
+          {hasActiveFilter
+            ? `筛选 ${renderOrders.length} / 共 ${orders.length} 条，第 ${currentPage}/${totalPages} 页`
+            : `共 ${renderOrders.length} 条，第 ${currentPage}/${totalPages} 页`}
         </span>
       </div>
     </div>
