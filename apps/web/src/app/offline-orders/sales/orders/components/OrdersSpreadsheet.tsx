@@ -643,6 +643,9 @@ export default function OrdersSpreadsheet() {
   }, [newDraft, refreshOrders, savingNew]);
 
   // 排序的渲染数据（后端已排过，这里再保险一次）
+  const PAGE_SIZE = 30;
+  const [currentPage, setCurrentPage] = useState(1);
+
   const renderOrders = useMemo(() => {
     return [...orders].sort((a, b) => {
       const aDone = a.status === '已完成' ? 1 : 0;
@@ -657,6 +660,9 @@ export default function OrdersSpreadsheet() {
       return aDue - bDue;
     });
   }, [orders]);
+
+  const totalPages = Math.max(1, Math.ceil(renderOrders.length / PAGE_SIZE));
+  const pagedOrders = renderOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="w-full">
@@ -837,14 +843,14 @@ export default function OrdersSpreadsheet() {
                 </td>
               </tr>
             )}
-            {!loading && renderOrders.length === 0 && (
+            {!loading && pagedOrders.length === 0 && (
               <tr>
                 <td colSpan={12} className="px-3 py-6 text-center text-gray-500">
                   暂无订单
                 </td>
               </tr>
             )}
-            {renderOrders.map((order) => {
+            {pagedOrders.map((order) => {
               const total = resolveTotalAmount(order);
               const paid = order.payment?.depositAmount ?? 0;
               const displayType =
@@ -1104,7 +1110,8 @@ export default function OrdersSpreadsheet() {
         </table>
       </div>
 
-      <div className="mt-3 text-xs text-gray-500 flex items-center gap-4">
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+        {/* 图例 */}
         <span>
           <span className="inline-block w-3 h-3 align-middle bg-gray-200 border border-gray-300 mr-1" />
           已完成（沉底）
@@ -1117,7 +1124,46 @@ export default function OrdersSpreadsheet() {
           <span className="inline-block w-3 h-3 align-middle bg-green-100 border border-gray-300 mr-1" />
           待确认订单
         </span>
-        <span className="ml-auto">共 {orders.length} 条</span>
+
+        {/* 分页 */}
+        {totalPages > 1 && (
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className="px-2 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setCurrentPage(page)}
+                className={`px-2 py-1 rounded border text-xs ${
+                  page === currentPage
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'border-gray-300 hover:bg-gray-100'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className="px-2 py-1 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              ›
+            </button>
+          </div>
+        )}
+
+        <span className={totalPages <= 1 ? 'ml-auto' : ''}>
+          共 {renderOrders.length} 条，第 {currentPage}/{totalPages} 页
+        </span>
       </div>
     </div>
   );
