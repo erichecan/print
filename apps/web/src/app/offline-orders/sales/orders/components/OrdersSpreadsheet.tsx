@@ -651,13 +651,18 @@ export default function OrdersSpreadsheet() {
       const aDone = a.status === '已完成' ? 1 : 0;
       const bDone = b.status === '已完成' ? 1 : 0;
       if (aDone !== bDone) return aDone - bDone;
-      const aDue = a.productionWorkOrder?.dueDate
-        ? new Date(a.productionWorkOrder.dueDate).getTime()
-        : Number.POSITIVE_INFINITY;
-      const bDue = b.productionWorkOrder?.dueDate
-        ? new Date(b.productionWorkOrder.dueDate).getTime()
-        : Number.POSITIVE_INFINITY;
-      return aDue - bDue;
+      // 按开始时间倒序（越近越靠前），无开始时间排最后
+      const aStart = a.productionWorkOrder?.startDate
+        ? new Date(a.productionWorkOrder.startDate).getTime()
+        : Number.NEGATIVE_INFINITY;
+      const bStart = b.productionWorkOrder?.startDate
+        ? new Date(b.productionWorkOrder.startDate).getTime()
+        : Number.NEGATIVE_INFINITY;
+      if (aStart !== bStart) return bStart - aStart;
+      // 开始时间相同则按 createdAt 倒序
+      const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bCreated - aCreated;
     });
   }, [orders]);
 
