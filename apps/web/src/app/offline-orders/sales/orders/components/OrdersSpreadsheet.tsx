@@ -535,7 +535,7 @@ export default function OrdersSpreadsheet() {
     setLoading(true);
     setError(null);
     try {
-      const res = await authenticatedFetch(`/api/proxy/admin/offline-orders?limit=100`);
+      const res = await authenticatedFetch(`/api/proxy/admin/offline-orders?limit=500`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setOrders(json.orders || []);

@@ -742,7 +742,7 @@ exports.createOfflineOrder = async (req, res) => {
 exports.listOfflineOrders = async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 500);
     const skip = (page - 1) * limit;
 
     const stageFilter = req.query.stageKey ? req.query.stageKey.toString() : null;
