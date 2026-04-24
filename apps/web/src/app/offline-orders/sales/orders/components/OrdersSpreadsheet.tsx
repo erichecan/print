@@ -25,6 +25,7 @@ import {
   useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import * as XLSX from 'xlsx';
 import {
   authenticatedFetch,
   offlineOrdersInlineApi,
@@ -43,6 +44,9 @@ const TYPE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'EMB', label: 'EMB' },
   { value: 'Screen Printing', label: 'Screen Printing' },
   { value: 'DTF + EMB', label: 'DTF + EMB' },
+  { value: 'UV', label: 'UV' },
+  { value: 'Card', label: 'Card' },
+  { value: 'Others', label: 'Others' },
 ];
 
 const INVOICE_OPTIONS: Array<{ value: 'No' | 'Require' | 'Sent'; label: string }> = [
@@ -698,12 +702,14 @@ export default function OrdersSpreadsheet() {
     const q = searchQuery.trim().toLowerCase();
 
     const filtered = orders.filter((o) => {
-      // 搜索：客户名、电话、邮件
+      // 搜索：客户名、电话、邮件、创建者
       if (q) {
         const name = (o.contact?.name || '').toLowerCase();
         const phone = (o.contact?.phone || '').toLowerCase();
         const email = (o.contact?.email || '').toLowerCase();
-        if (!name.includes(q) && !phone.includes(q) && !email.includes(q)) return false;
+        const creatorName = (o.creator?.name || '').toLowerCase();
+        const creatorEmail = (o.creator?.email || '').toLowerCase();
+        if (!name.includes(q) && !phone.includes(q) && !email.includes(q) && !creatorName.includes(q) && !creatorEmail.includes(q)) return false;
       }
       // 状态多选
       if (filterStatuses.length > 0 && !filterStatuses.includes(o.status)) return false;
@@ -753,6 +759,43 @@ export default function OrdersSpreadsheet() {
   const totalPages = Math.max(1, Math.ceil(renderOrders.length / PAGE_SIZE));
   const pagedOrders = renderOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  const exportFile = useCallback((format: 'xlsx' | 'csv') => {
+    const rows = renderOrders.map((o) => ({
+      '订单编号': o.orderCode || '',
+      '开始时间': o.productionWorkOrder?.startDate
+        ? new Date(o.productionWorkOrder.startDate).toLocaleDateString('zh-CN')
+        : '',
+      '客户名': o.contact?.name || '',
+      '电话': o.contact?.phone || '',
+      '邮件': o.contact?.email || '',
+      'Due Date': o.dueDate ? new Date(o.dueDate).toLocaleDateString('zh-CN') : '',
+      '件数': o.quantity ?? '',
+      '总金额': o.totalAmount ?? '',
+      '预付款': o.depositAmount ?? '',
+      'Type': o.type || '',
+      '状态': o.status || '',
+      '发票': o.invoiceStatus || '',
+      '备注': o.description || '',
+      '创建者': o.creator?.name || o.creator?.email || '',
+      '图片': (o.assets || [])
+        .filter((a) => /\.(png|jpe?g|gif|webp|svg)$/i.test(a.fileName))
+        .map((a) => a.url)
+        .join(', '),
+      '文件': (o.assets || []).map((a) => a.url).join(', '),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '订单');
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    if (format === 'csv') {
+      XLSX.writeFile(wb, `orders_${dateStr}.csv`, { bookType: 'csv' });
+    } else {
+      XLSX.writeFile(wb, `orders_${dateStr}.xlsx`);
+    }
+  }, [renderOrders]);
+
   return (
     <div className="w-full">
       {error && (
@@ -784,6 +827,22 @@ export default function OrdersSpreadsheet() {
             已筛选 {renderOrders.length} / 共 {orders.length} 条
           </span>
         )}
+        <button
+          type="button"
+          onClick={() => exportFile('xlsx')}
+          className="px-3 py-1.5 text-xs text-green-700 border border-green-300 rounded hover:bg-green-50 whitespace-nowrap"
+          title="导出 Excel（当前筛选结果）"
+        >
+          Excel
+        </button>
+        <button
+          type="button"
+          onClick={() => exportFile('csv')}
+          className="px-3 py-1.5 text-xs text-blue-700 border border-blue-300 rounded hover:bg-blue-50 whitespace-nowrap"
+          title="导出 CSV（当前筛选结果）"
+        >
+          CSV
+        </button>
       </div>
 
       {/* 筛选器 */}
@@ -894,7 +953,7 @@ export default function OrdersSpreadsheet() {
             <col className="w-[11rem]" />{/* Status */}
             <col className="w-[5rem]" />{/* 发票 */}
             <col />{/* 备注（flex 占剩余） */}
-            <col className="w-[7rem]" />{/* 操作 */}
+            <col className="w-[10rem]" />{/* 操作 */}
           </colgroup>
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -1270,6 +1329,11 @@ export default function OrdersSpreadsheet() {
                   {/* 12. 操作 */}
                   <td className="px-2 py-1">
                     <div className="flex items-center justify-center gap-0.5">
+                      <FileCell
+                        orderId={order.id}
+                        assets={order.assets}
+                        onChanged={refreshOrders}
+                      />
                       <button
                         type="button"
                         title="查看详情"
