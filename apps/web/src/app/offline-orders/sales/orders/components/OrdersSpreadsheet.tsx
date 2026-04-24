@@ -737,19 +737,26 @@ export default function OrdersSpreadsheet() {
     });
 
     return filtered.sort((a, b) => {
+      // 1. 已完成沉底
       const aDone = a.status === '已完成' ? 1 : 0;
       const bDone = b.status === '已完成' ? 1 : 0;
       if (aDone !== bDone) return aDone - bDone;
+      // 2. Due Date ASC（越快截止越靠前，null 排最后）
+      const aDue = a.productionWorkOrder?.dueDate
+        ? new Date(a.productionWorkOrder.dueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+      const bDue = b.productionWorkOrder?.dueDate
+        ? new Date(b.productionWorkOrder.dueDate).getTime()
+        : Number.POSITIVE_INFINITY;
+      if (aDue !== bDue) return aDue - bDue;
+      // 3. Start Date DESC 兜底（due date 相同时，开始时间越新越靠前）
       const aStart = a.productionWorkOrder?.startDate
         ? new Date(a.productionWorkOrder.startDate).getTime()
         : Number.NEGATIVE_INFINITY;
       const bStart = b.productionWorkOrder?.startDate
         ? new Date(b.productionWorkOrder.startDate).getTime()
         : Number.NEGATIVE_INFINITY;
-      if (aStart !== bStart) return bStart - aStart;
-      const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bCreated - aCreated;
+      return bStart - aStart;
     });
   }, [orders, searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
 
