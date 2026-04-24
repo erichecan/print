@@ -1001,9 +1001,9 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto">
-      <div className="border border-gray-200 rounded min-w-[1400px]">
+      <div className="border border-gray-200 rounded min-w-[1650px]">
         <table className="w-full text-sm table-fixed">
-          {/* 2026-04-21: 列宽 — 拆分 备注 / 操作；表格整体加宽 */}
+          {/* 列宽 */}
           <colgroup>
             <col className="w-[8.5rem]" />{/* 编号 */}
             <col className="w-[7rem]" />{/* 开始时间 */}
@@ -1016,7 +1016,7 @@ export default function OrdersSpreadsheet() {
             <col className="w-[11rem]" />{/* Status */}
             <col className="w-[5rem]" />{/* 发票 */}
             <col />{/* 备注（flex 占剩余） */}
-            <col className="w-[10rem]" />{/* 操作 */}
+            <col className="w-[13rem]" />{/* 操作 */}
           </colgroup>
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
