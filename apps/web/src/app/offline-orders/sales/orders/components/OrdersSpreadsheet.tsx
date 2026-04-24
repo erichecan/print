@@ -24,6 +24,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 import {
@@ -288,24 +289,18 @@ function FileCell({
   assets: SalesOfflineOrderSummary['assets'];
   onChanged: () => void;
 }) {
-  const [downloadOpen, setDownloadOpen] = useState(false);
-  const [dropdownPos, setDropdownPos] = useState<{ x: number; y: number } | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const ref = useRef<HTMLDivElement>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const closeDropdown = () => setDropdownPos(null);
 
   useEffect(() => {
-    if (!downloadOpen) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setDownloadOpen(false);
-        setDropdownPos(null);
-      }
-    };
+    if (!dropdownPos) return;
+    const onDocClick = () => closeDropdown();
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
-  }, [downloadOpen]);
+  }, [dropdownPos]);
 
   const handleUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -330,8 +325,62 @@ function FileCell({
 
   const list = assets || [];
 
+  const dropdown = dropdownPos && createPortal(
+    <div
+      className="fixed z-[9999] w-72 max-h-64 overflow-auto bg-white border border-gray-200 rounded shadow-lg"
+      style={{ top: dropdownPos.top, right: dropdownPos.right }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {list.length === 0 ? (
+        <div className="px-3 py-3 text-sm text-gray-500">暂无文件</div>
+      ) : (
+        <ul className="text-sm">
+          {list.map((asset) => (
+            <li key={asset.id} className="border-b last:border-b-0 flex items-center">
+              <a
+                href={asset.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download={asset.fileName}
+                className="flex-1 block px-3 py-2 hover:bg-blue-50 truncate text-blue-700"
+                title={asset.fileName}
+              >
+                {asset.fileName}
+              </a>
+              <button
+                type="button"
+                title="删除"
+                className="shrink-0 px-2 py-2 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  // eslint-disable-next-line no-alert
+                  if (!confirm(`确认删除 ${asset.fileName}？`)) return;
+                  try {
+                    const res = await authenticatedFetch(
+                      `/api/proxy/admin/offline-orders/${orderId}/assets/${asset.id}`,
+                      { method: 'DELETE' }
+                    );
+                    if (!res.ok) throw new Error(await res.text());
+                    closeDropdown();
+                    onChanged();
+                  } catch (err) {
+                    // eslint-disable-next-line no-alert
+                    alert(`删除失败：${err instanceof Error ? err.message : err}`);
+                  }
+                }}
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>,
+    document.body
+  );
+
   return (
-    <div ref={ref} className="flex items-center gap-1">
+    <div className="flex items-center gap-1">
       <button
         type="button"
         title="上传文件"
@@ -348,81 +397,28 @@ function FileCell({
         className="hidden"
         onChange={(e) => handleUpload(e.target.files)}
       />
-      <div className="relative">
-        <button
-          ref={btnRef}
-          type="button"
-          title={`下载文件（${list.length}）`}
-          className="px-1.5 py-0.5 text-base hover:bg-gray-100 rounded relative"
-          onClick={() => {
-            if (downloadOpen) {
-              setDownloadOpen(false);
-              setDropdownPos(null);
-            } else {
-              const rect = btnRef.current?.getBoundingClientRect();
-              if (rect) setDropdownPos({ x: rect.right, y: rect.bottom + 4 });
-              setDownloadOpen(true);
-            }
-          }}
-        >
-          ⬇
-          {list.length > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] bg-blue-600 text-white rounded-full flex items-center justify-center">
-              {list.length}
-            </span>
-          )}
-        </button>
-        {downloadOpen && dropdownPos && (
-          <div
-            className="fixed z-[9999] w-72 max-h-64 overflow-auto bg-white border border-gray-200 rounded shadow-lg"
-            style={{ top: dropdownPos.y, right: window.innerWidth - dropdownPos.x }}
-          >
-            {list.length === 0 ? (
-              <div className="px-3 py-3 text-sm text-gray-500">暂无文件</div>
-            ) : (
-              <ul className="text-sm">
-                {list.map((asset) => (
-                  <li key={asset.id} className="border-b last:border-b-0 flex items-center">
-                    <a
-                      href={asset.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download={asset.fileName}
-                      className="flex-1 block px-3 py-2 hover:bg-blue-50 truncate text-blue-700"
-                      title={asset.fileName}
-                    >
-                      {asset.fileName}
-                    </a>
-                    <button
-                      type="button"
-                      title="删除"
-                      className="shrink-0 px-2 py-2 text-gray-400 hover:text-red-600 hover:bg-red-50"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        // eslint-disable-next-line no-alert
-                        if (!confirm(`确认删除 ${asset.fileName}？`)) return;
-                        try {
-                          const res = await authenticatedFetch(
-                            `/api/proxy/admin/offline-orders/${orderId}/assets/${asset.id}`,
-                            { method: 'DELETE' }
-                          );
-                          if (!res.ok) throw new Error(await res.text());
-                          onChanged();
-                        } catch (err) {
-                          // eslint-disable-next-line no-alert
-                          alert(`删除失败：${err instanceof Error ? err.message : err}`);
-                        }
-                      }}
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+      <button
+        type="button"
+        title={`下载文件（${list.length}）`}
+        className="px-1.5 py-0.5 text-base hover:bg-gray-100 rounded relative"
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          if (dropdownPos) {
+            closeDropdown();
+          } else {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setDropdownPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+          }
+        }}
+      >
+        ⬇
+        {list.length > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] bg-blue-600 text-white rounded-full flex items-center justify-center">
+            {list.length}
+          </span>
         )}
-      </div>
+      </button>
+      {dropdown}
     </div>
   );
 }
@@ -432,19 +428,7 @@ function FileCell({
 // ---------------------------------------------------------------------------
 function ThumbnailCell({ assets }: { assets: SalesOfflineOrderSummary['assets'] }) {
   const firstImg = (assets || []).find(isImageAsset);
-  const [hovered, setHovered] = useState(false);
   const [popupPos, setPopupPos] = useState<{ left: number; top: number } | null>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  const handleMouseEnter = () => {
-    const rect = imgRef.current?.getBoundingClientRect();
-    if (rect) {
-      const left = Math.min(rect.left, window.innerWidth - 320);
-      const top = rect.top - 308;
-      setPopupPos({ left: Math.max(0, left), top: Math.max(0, top) });
-    }
-    setHovered(true);
-  };
 
   if (!firstImg) {
     return (
@@ -453,6 +437,24 @@ function ThumbnailCell({ assets }: { assets: SalesOfflineOrderSummary['assets'] 
       </div>
     );
   }
+
+  const popup = popupPos && createPortal(
+    <div
+      className="fixed z-[9999] pointer-events-none"
+      style={{ left: popupPos.left, top: popupPos.top }}
+    >
+      <div className="bg-white border border-gray-300 rounded shadow-xl p-1">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={firstImg.url}
+          alt={firstImg.fileName}
+          className="w-[300px] h-[300px] object-cover rounded"
+        />
+      </div>
+    </div>,
+    document.body
+  );
+
   return (
     <div className="relative shrink-0">
       <a
@@ -461,33 +463,23 @@ function ThumbnailCell({ assets }: { assets: SalesOfflineOrderSummary['assets'] 
         rel="noopener noreferrer"
         title={firstImg.fileName}
         onClick={(e) => e.stopPropagation()}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setHovered(false)}
+        onMouseEnter={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const left = Math.min(rect.left, window.innerWidth - 320);
+          const top = Math.max(8, rect.top - 310);
+          setPopupPos({ left, top });
+        }}
+        onMouseLeave={() => setPopupPos(null)}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          ref={imgRef}
           src={firstImg.url}
           alt={firstImg.fileName}
           className="w-8 h-8 object-cover border border-gray-300 rounded"
           loading="lazy"
         />
       </a>
-      {hovered && popupPos && (
-        <div
-          className="fixed z-[9999] pointer-events-none"
-          style={{ left: popupPos.left, top: popupPos.top }}
-        >
-          <div className="bg-white border border-gray-300 rounded shadow-xl p-1">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={firstImg.url}
-              alt={firstImg.fileName}
-              className="w-[300px] h-[300px] object-cover rounded"
-            />
-          </div>
-        </div>
-      )}
+      {popup}
     </div>
   );
 }
