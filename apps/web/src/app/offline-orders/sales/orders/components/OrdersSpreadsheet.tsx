@@ -993,7 +993,7 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto">
-      <div className="border border-gray-200 rounded min-w-[1800px]">
+      <div className="border border-gray-200 rounded min-w-[1600px]">
         <table className="w-full text-sm table-fixed">
           {/* 列宽 */}
           <colgroup>
@@ -1004,8 +1004,8 @@ export default function OrdersSpreadsheet() {
             <col className="w-[4.5rem]" />{/* 件数 */}
             <col className="w-[6rem]" />{/* 总金额 */}
             <col className="w-[6rem]" />{/* 预付款 */}
-            <col className="w-[12rem]" />{/* Type */}
-            <col className="w-[11rem]" />{/* Status */}
+            <col className="w-[9rem]" />{/* Type */}
+            <col className="w-[9rem]" />{/* Status */}
             <col className="w-[5rem]" />{/* 发票 */}
             <col />{/* 备注（flex 占剩余） */}
             <col className="w-[15rem]" />{/* 操作 */}
