@@ -2095,7 +2095,7 @@ exports.deleteOfflineOrderAsset = async (req, res) => {
     const { id, assetId } = req.params;
 
     const asset = await prisma.offlineOrderAsset.findFirst({
-      where: { id: assetId, offlineOrderId: id },
+      where: { id: assetId, orderId: id },
       select: { id: true, storageKey: true }
     });
 
