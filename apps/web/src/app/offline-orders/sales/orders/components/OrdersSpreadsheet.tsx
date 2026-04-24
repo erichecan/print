@@ -997,7 +997,7 @@ export default function OrdersSpreadsheet() {
         <table className="w-full text-sm table-fixed">
           {/* 列宽 */}
           <colgroup>
-            <col className="w-[8.5rem]" />{/* 编号 */}
+            <col className="w-[6rem]" />{/* 编号 */}
             <col className="w-[7rem]" />{/* 开始时间 */}
             <col className="w-[12rem]" />{/* 客户名（含缩略图） */}
             <col className="w-[7rem]" />{/* Due Date */}
@@ -1008,7 +1008,7 @@ export default function OrdersSpreadsheet() {
             <col className="w-[11rem]" />{/* Status */}
             <col className="w-[5rem]" />{/* 发票 */}
             <col />{/* 备注（flex 占剩余） */}
-            <col className="w-[13rem]" />{/* 操作 */}
+            <col className="w-[15rem]" />{/* 操作 */}
           </colgroup>
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
