@@ -108,6 +108,18 @@ async function uploadBufferToGcs(buffer, objectPath, options = {}) {
   return `${baseUrl}/${objectPath}`;
 }
 
+/**
+ * 从 GCS 删除指定对象
+ */
+async function deleteFromGcs(objectPath) {
+  if (!objectPath) return;
+  const client = getStorageClient();
+  const bucketName = getImageBucketName();
+  const bucket = client.bucket(bucketName);
+  const file = bucket.file(objectPath);
+  await file.delete({ ignoreNotFound: true });
+}
+
 module.exports = {
   getStorageClient,
   getImageBucketName,
@@ -115,6 +127,7 @@ module.exports = {
   buildObjectPath,
   uploadFileToGcs,
   uploadBufferToGcs,
+  deleteFromGcs,
 };
 
 

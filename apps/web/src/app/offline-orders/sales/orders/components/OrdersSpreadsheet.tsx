@@ -364,17 +364,40 @@ function FileCell({
             ) : (
               <ul className="text-sm">
                 {list.map((asset) => (
-                  <li key={asset.id} className="border-b last:border-b-0">
+                  <li key={asset.id} className="border-b last:border-b-0 flex items-center">
                     <a
                       href={asset.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       download={asset.fileName}
-                      className="block px-3 py-2 hover:bg-blue-50 truncate text-blue-700"
+                      className="flex-1 block px-3 py-2 hover:bg-blue-50 truncate text-blue-700"
                       title={asset.fileName}
                     >
                       {asset.fileName}
                     </a>
+                    <button
+                      type="button"
+                      title="删除"
+                      className="shrink-0 px-2 py-2 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        // eslint-disable-next-line no-alert
+                        if (!confirm(`确认删除 ${asset.fileName}？`)) return;
+                        try {
+                          const res = await authenticatedFetch(
+                            `/api/proxy/admin/offline-orders/${orderId}/assets/${asset.id}`,
+                            { method: 'DELETE' }
+                          );
+                          if (!res.ok) throw new Error(await res.text());
+                          onChanged();
+                        } catch (err) {
+                          // eslint-disable-next-line no-alert
+                          alert(`删除失败：${err instanceof Error ? err.message : err}`);
+                        }
+                      }}
+                    >
+                      ✕
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -391,7 +414,7 @@ function FileCell({
 // ---------------------------------------------------------------------------
 function ThumbnailCell({ assets }: { assets: SalesOfflineOrderSummary['assets'] }) {
   const firstImg = (assets || []).find(isImageAsset);
-  const [hover, setHover] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
 
   if (!firstImg) {
     return (
@@ -403,8 +426,8 @@ function ThumbnailCell({ assets }: { assets: SalesOfflineOrderSummary['assets'] 
   return (
     <div
       className="relative shrink-0"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}
+      onMouseLeave={() => setPos(null)}
     >
       <a
         href={firstImg.url}
@@ -421,8 +444,11 @@ function ThumbnailCell({ assets }: { assets: SalesOfflineOrderSummary['assets'] 
           loading="lazy"
         />
       </a>
-      {hover && (
-        <div className="absolute z-[120] left-full top-0 ml-2 pointer-events-none">
+      {pos && (
+        <div
+          className="fixed z-[9999] pointer-events-none"
+          style={{ left: pos.x + 16, top: pos.y - 150 }}
+        >
           <div className="bg-white border border-gray-300 rounded shadow-xl p-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -741,14 +767,14 @@ export default function OrdersSpreadsheet() {
       const aDone = a.status === '已完成' ? 1 : 0;
       const bDone = b.status === '已完成' ? 1 : 0;
       if (aDone !== bDone) return aDone - bDone;
-      // 2. Due Date ASC（越快截止越靠前，null 排最后）
+      // 2. Due Date DESC（越晚截止越靠前，null 排最后）
       const aDue = a.productionWorkOrder?.dueDate
         ? new Date(a.productionWorkOrder.dueDate).getTime()
-        : Number.POSITIVE_INFINITY;
+        : Number.NEGATIVE_INFINITY;
       const bDue = b.productionWorkOrder?.dueDate
         ? new Date(b.productionWorkOrder.dueDate).getTime()
-        : Number.POSITIVE_INFINITY;
-      if (aDue !== bDue) return aDue - bDue;
+        : Number.NEGATIVE_INFINITY;
+      if (aDue !== bDue) return bDue - aDue;
       // 3. Start Date DESC 兜底（due date 相同时，开始时间越新越靠前）
       const aStart = a.productionWorkOrder?.startDate
         ? new Date(a.productionWorkOrder.startDate).getTime()
@@ -945,7 +971,8 @@ export default function OrdersSpreadsheet() {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded">
+      <div className="overflow-x-auto">
+      <div className="border border-gray-200 rounded min-w-[1400px]">
         <table className="w-full text-sm table-fixed">
           {/* 2026-04-21: 列宽 — 拆分 备注 / 操作；表格整体加宽 */}
           <colgroup>
@@ -1386,6 +1413,7 @@ export default function OrdersSpreadsheet() {
             })}
           </tbody>
         </table>
+      </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">

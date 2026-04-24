@@ -90,6 +90,12 @@ router.post(
   offlineOrderController.uploadOfflineOrderAssets
 );
 
+router.delete(
+  '/:id/assets/:assetId',
+  authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  offlineOrderController.deleteOfflineOrderAsset
+);
+
 router.post('/:id/production', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.createOrUpdateProductionWorkOrder);
 
 // 删除订单 - 仅限 ADMIN

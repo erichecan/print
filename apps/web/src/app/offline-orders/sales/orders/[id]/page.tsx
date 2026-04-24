@@ -1723,21 +1723,52 @@ export default function SalesOrderDetailPage() {
                   <h2 className="section-title">{t('attachmentsCount', { count: meta.assets.length })}</h2>
                   <div className="assets-list">
                     {meta.assets.map((asset: any) => (
-                      <a
-                        key={asset.id}
-                        href={asset.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="asset-item"
-                      >
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M12.5 2.5H17.5V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          <path d="M8.33333 11.6667L17.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <span className="asset-name">{asset.fileName}</span>
-                        <span className="asset-size">{(asset.fileSize / (1024 * 1024)).toFixed(2)} MB</span>
-                      </a>
+                      <div key={asset.id} className="asset-item-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <a
+                          href={asset.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="asset-item"
+                          style={{ flex: 1, minWidth: 0 }}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M12.5 2.5H17.5V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M8.33333 11.6667L17.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className="asset-name">{asset.fileName}</span>
+                          <span className="asset-size">{(asset.fileSize / (1024 * 1024)).toFixed(2)} MB</span>
+                        </a>
+                        {!showPrintSettings && (
+                          <button
+                            type="button"
+                            title="删除附件"
+                            style={{ flexShrink: 0, padding: '4px 8px', color: '#9ca3af', cursor: 'pointer', background: 'none', border: 'none', borderRadius: '4px', fontSize: '14px' }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#ef4444'; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#9ca3af'; }}
+                            onClick={async () => {
+                              // eslint-disable-next-line no-alert
+                              if (!confirm(`确认删除 ${asset.fileName}？`)) return;
+                              try {
+                                const res = await authenticatedFetch(
+                                  `/api/proxy/admin/offline-orders/${orderId}/assets/${asset.id}`,
+                                  { method: 'DELETE' }
+                                );
+                                if (!res.ok) throw new Error(await res.text());
+                                setOrder((prev) => prev ? {
+                                  ...prev,
+                                  assets: prev.assets.filter((a: any) => a.id !== asset.id)
+                                } : prev);
+                              } catch (err) {
+                                // eslint-disable-next-line no-alert
+                                alert(`删除失败：${err instanceof Error ? err.message : err}`);
+                              }
+                            }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </section>

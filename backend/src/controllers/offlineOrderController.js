@@ -10,7 +10,7 @@ const {
   findStageByKey,
   getInitialStage
 } = require('../services/offlineWorkflowService');
-const { uploadBufferToGcs } = require('../utils/gcsStorage');
+const { uploadBufferToGcs, deleteFromGcs } = require('../utils/gcsStorage');
 const { ensureOfflineUploadRoot } = require('../utils/offlineUpload');
 const { InternalServerError } = require('../utils/errors');
 const settingService = require('../services/settingService');
@@ -387,6 +387,11 @@ const mapOrder = (order) => ({
     dstFileFee: order.dst_file_fee ? parseFloat(order.dst_file_fee) : 0,
   },
   productionWorkOrder: mapProductionWorkOrder(order.productionWorkOrder),
+  creator: order._creator ? {
+    id: order._creator.id,
+    email: order._creator.email,
+    name: [order._creator.firstName, order._creator.lastName].filter(Boolean).join(' ') || order._creator.email
+  } : null,
   createdAt: order.createdAt,
   updatedAt: order.updatedAt
 });
@@ -842,35 +847,31 @@ exports.listOfflineOrders = async (req, res, next) => {
       getStageConfig()
     ]);
 
-    // 2026-04-20: 应用层排序 —
-    //   1) status = '已完成' 沉底
-    //   2) 其余按 productionWorkOrder.dueDate ASC（null 排最后），同 dueDate 按 createdAt ASC
-    const sortedOrders = [...orders].sort((a, b) => {
-      const aDone = a.status === '已完成' ? 1 : 0;
-      const bDone = b.status === '已完成' ? 1 : 0;
-      if (aDone !== bDone) return aDone - bDone;
-
-      const aDue = a.productionWorkOrder?.dueDate
-        ? new Date(a.productionWorkOrder.dueDate).getTime()
-        : Number.POSITIVE_INFINITY;
-      const bDue = b.productionWorkOrder?.dueDate
-        ? new Date(b.productionWorkOrder.dueDate).getTime()
-        : Number.POSITIVE_INFINITY;
-      if (aDue !== bDue) return aDue - bDue;
-
-      const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return aCreated - bCreated;
-    });
+    // 批量查询创建者信息（metadata.submittedByUserId）
+    const creatorIds = [...new Set(
+      orders
+        .map((o) => o.metadata?.submittedByUserId)
+        .filter(Boolean)
+    )];
+    const creatorMap = {};
+    if (creatorIds.length > 0) {
+      const users = await prisma.user.findMany({
+        where: { id: { in: creatorIds } },
+        select: { id: true, firstName: true, lastName: true, email: true }
+      });
+      users.forEach((u) => { creatorMap[u.id] = u; });
+    }
 
     res.json({
       success: true,
-      orders: sortedOrders.map((order) =>
-        mapOrder({
+      orders: orders.map((order) => {
+        const creatorUser = creatorMap[order.metadata?.submittedByUserId] || null;
+        return mapOrder({
           ...order,
-          histories: []
-        })
-      ),
+          histories: [],
+          _creator: creatorUser
+        });
+      }),
       pagination: {
         page,
         limit,
@@ -2082,6 +2083,38 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
       error: 'Server Error',
       message: 'Failed to upload assets'
     });
+  }
+};
+
+/**
+ * DELETE /api/admin/offline-orders/:id/assets/:assetId
+ * 删除订单附件（从 DB + GCS 同时删除）
+ */
+exports.deleteOfflineOrderAsset = async (req, res) => {
+  try {
+    const { id, assetId } = req.params;
+
+    const asset = await prisma.offlineOrderAsset.findFirst({
+      where: { id: assetId, offlineOrderId: id },
+      select: { id: true, storageKey: true }
+    });
+
+    if (!asset) {
+      return res.status(404).json({ error: 'Not Found', message: 'Asset not found' });
+    }
+
+    await prisma.offlineOrderAsset.delete({ where: { id: assetId } });
+
+    try {
+      await deleteFromGcs(asset.storageKey);
+    } catch (gcsErr) {
+      logger.warn('[deleteOfflineOrderAsset] GCS delete failed (DB already deleted):', gcsErr?.message);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('[deleteOfflineOrderAsset] Failed:', error);
+    res.status(500).json({ error: 'Server Error', message: 'Failed to delete asset' });
   }
 };
 
