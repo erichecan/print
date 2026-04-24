@@ -289,14 +289,19 @@ function FileCell({
   onChanged: () => void;
 }) {
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<{ x: number; y: number } | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!downloadOpen) return;
     const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setDownloadOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setDownloadOpen(false);
+        setDropdownPos(null);
+      }
     };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
@@ -345,20 +350,33 @@ function FileCell({
       />
       <div className="relative">
         <button
+          ref={btnRef}
           type="button"
           title={`下载文件（${list.length}）`}
           className="px-1.5 py-0.5 text-base hover:bg-gray-100 rounded relative"
-          onClick={() => setDownloadOpen((o) => !o)}
+          onClick={() => {
+            if (downloadOpen) {
+              setDownloadOpen(false);
+              setDropdownPos(null);
+            } else {
+              const rect = btnRef.current?.getBoundingClientRect();
+              if (rect) setDropdownPos({ x: rect.right, y: rect.bottom + 4 });
+              setDownloadOpen(true);
+            }
+          }}
         >
           ⬇
           {list.length > 0 && (
-            <span className="absolute -top-1 -right-1 text-[10px] bg-blue-600 text-white rounded-full px-1">
+            <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] bg-blue-600 text-white rounded-full flex items-center justify-center">
               {list.length}
             </span>
           )}
         </button>
-        {downloadOpen && (
-          <div className="absolute right-0 z-50 mt-1 w-72 max-h-64 overflow-auto bg-white border border-gray-200 rounded shadow-lg">
+        {downloadOpen && dropdownPos && (
+          <div
+            className="fixed z-[9999] w-72 max-h-64 overflow-auto bg-white border border-gray-200 rounded shadow-lg"
+            style={{ top: dropdownPos.y, right: window.innerWidth - dropdownPos.x }}
+          >
             {list.length === 0 ? (
               <div className="px-3 py-3 text-sm text-gray-500">暂无文件</div>
             ) : (
@@ -414,7 +432,19 @@ function FileCell({
 // ---------------------------------------------------------------------------
 function ThumbnailCell({ assets }: { assets: SalesOfflineOrderSummary['assets'] }) {
   const firstImg = (assets || []).find(isImageAsset);
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const [popupPos, setPopupPos] = useState<{ left: number; top: number } | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  const handleMouseEnter = () => {
+    const rect = imgRef.current?.getBoundingClientRect();
+    if (rect) {
+      const left = Math.min(rect.left, window.innerWidth - 320);
+      const top = rect.top - 308;
+      setPopupPos({ left: Math.max(0, left), top: Math.max(0, top) });
+    }
+    setHovered(true);
+  };
 
   if (!firstImg) {
     return (
@@ -424,30 +454,29 @@ function ThumbnailCell({ assets }: { assets: SalesOfflineOrderSummary['assets'] 
     );
   }
   return (
-    <div
-      className="relative shrink-0"
-      onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}
-      onMouseLeave={() => setPos(null)}
-    >
+    <div className="relative shrink-0">
       <a
         href={firstImg.url}
         target="_blank"
         rel="noopener noreferrer"
         title={firstImg.fileName}
         onClick={(e) => e.stopPropagation()}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setHovered(false)}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
+          ref={imgRef}
           src={firstImg.url}
           alt={firstImg.fileName}
           className="w-8 h-8 object-cover border border-gray-300 rounded"
           loading="lazy"
         />
       </a>
-      {pos && (
+      {hovered && popupPos && (
         <div
           className="fixed z-[9999] pointer-events-none"
-          style={{ left: pos.x + 16, top: pos.y - 150 }}
+          style={{ left: popupPos.left, top: popupPos.top }}
         >
           <div className="bg-white border border-gray-300 rounded shadow-xl p-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
