@@ -993,7 +993,7 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto">
-      <div className="border border-gray-200 rounded min-w-[1650px]">
+      <div className="border border-gray-200 rounded min-w-[1800px]">
         <table className="w-full text-sm table-fixed">
           {/* 列宽 */}
           <colgroup>
