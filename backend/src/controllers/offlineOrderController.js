@@ -354,6 +354,9 @@ const mapOrder = (order) => ({
   type: order.type ?? null,
   invoiceStatus: order.invoiceStatus || 'No',
   totalAmount: order.totalAmount != null ? parseFloat(order.totalAmount) : null,
+  // 2026-04-24: 备货/订货情况
+  stockingStatus: order.stockingStatus ?? null,
+  purchaseStatus: order.purchaseStatus ?? null,
   contact: {
     name: order.contactName,
     company: order.company,
@@ -1640,7 +1643,10 @@ exports.updateOfflineOrder = async (req, res) => {
       totalAmount,
       // 2026-04-21: 列表 inline 编辑开始/交期 - 同步到 ProductionWorkOrder
       startDate,
-      dueDate
+      dueDate,
+      // 2026-04-24: 备货/订货情况
+      stockingStatus,
+      purchaseStatus,
     } = req.body;
 
     const data = {};
@@ -1736,6 +1742,14 @@ exports.updateOfflineOrder = async (req, res) => {
         }
         data.totalAmount = amt;
       }
+    }
+
+    // 2026-04-24: 备货/订货情况
+    if (stockingStatus !== undefined) {
+      data.stockingStatus = stockingStatus?.toString().trim() || null;
+    }
+    if (purchaseStatus !== undefined) {
+      data.purchaseStatus = purchaseStatus?.toString().trim() || null;
     }
 
     const actorName = req.user

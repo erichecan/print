@@ -35,6 +35,7 @@ import {
   statusOptionsApi,
   OfflineOrderStatusOption,
 } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ---------------------------------------------------------------------------
 // 常量
@@ -54,6 +55,24 @@ const INVOICE_OPTIONS: Array<{ value: 'No' | 'Require' | 'Sent'; label: string }
   { value: 'No', label: 'No' },
   { value: 'Require', label: 'Require' },
   { value: 'Sent', label: 'Sent' },
+];
+
+// 2026-04-24: 备货情况 / 订货情况 选项
+const STOCKING_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: '', label: '—' },
+  { value: '已备货', label: '已备货' },
+  { value: '有货未备货', label: '有货未备货' },
+  { value: '部分有货已备', label: '部分有货已备' },
+  { value: '部分有货未备', label: '部分有货未备' },
+  { value: '全部无货需订', label: '全部无货需订' },
+];
+
+const PURCHASE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: '', label: '—' },
+  { value: '未订货', label: '未订货' },
+  { value: '已订未到', label: '已订未到' },
+  { value: '已到货', label: '已到货' },
+  { value: '供应商缺货', label: '供应商缺货' },
 ];
 
 const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/i;
@@ -278,8 +297,29 @@ function StatusCell({
 }
 
 // ---------------------------------------------------------------------------
-// 文件上传 / 下载浮层
+// 文件上传弹窗（modal）
 // ---------------------------------------------------------------------------
+
+const DEFAULT_ROW_COUNT = 5;
+
+type UploadRow = {
+  id: string; // local uuid
+  file: File | null;
+  comment: string;
+};
+
+function shortName(name: string): string {
+  if (name.length <= 10) return name;
+  const dot = name.lastIndexOf('.');
+  const ext = dot > 0 ? name.slice(dot) : '';
+  const base = dot > 0 ? name.slice(0, dot) : name;
+  return `${base.slice(0, 8)}...${ext}`;
+}
+
+function newRow(): UploadRow {
+  return { id: Math.random().toString(36).slice(2), file: null, comment: '' };
+}
+
 function FileCell({
   orderId,
   assets,
@@ -289,92 +329,229 @@ function FileCell({
   assets: SalesOfflineOrderSummary['assets'];
   onChanged: () => void;
 }) {
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [rows, setRows] = useState<UploadRow[]>(() =>
+    Array.from({ length: DEFAULT_ROW_COUNT }, newRow)
+  );
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const closeDropdown = () => setDropdownPos(null);
+  const list = assets || [];
 
-  useEffect(() => {
-    if (!dropdownPos) return;
-    const onDocClick = () => closeDropdown();
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [dropdownPos]);
+  // Reset rows when modal opens
+  const openModal = () => {
+    setRows(Array.from({ length: DEFAULT_ROW_COUNT }, newRow));
+    setModalOpen(true);
+  };
 
-  const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const closeModal = () => {
+    setModalOpen(false);
+    setUploading(false);
+  };
+
+  const handleFileChange = (rowId: string, file: File | null) => {
+    setRows((prev) =>
+      prev.map((r) => (r.id === rowId ? { ...r, file: file ?? null } : r))
+    );
+  };
+
+  const handleCommentChange = (rowId: string, comment: string) => {
+    setRows((prev) =>
+      prev.map((r) => (r.id === rowId ? { ...r, comment } : r))
+    );
+  };
+
+  const addRow = () => setRows((prev) => [...prev, newRow()]);
+
+  const removeRow = (rowId: string) => {
+    setRows((prev) => prev.filter((r) => r.id !== rowId));
+  };
+
+  const handleUpload = async () => {
+    const toUpload = rows.filter((r) => r.file !== null);
+    if (toUpload.length === 0) return;
     setUploading(true);
     try {
       const fd = new FormData();
-      Array.from(files).forEach((f) => fd.append('assets', f));
+      toUpload.forEach((r) => {
+        fd.append('assets', r.file as File);
+        // send comment as parallel field (backend ignores unknowns gracefully)
+        if (r.comment.trim()) fd.append('comments', r.comment.trim());
+        else fd.append('comments', '');
+      });
       const res = await authenticatedFetch(`/api/proxy/admin/offline-orders/${orderId}/assets`, {
         method: 'POST',
         body: fd,
       });
       if (!res.ok) throw new Error(await res.text());
       onChanged();
+      closeModal();
     } catch (err) {
       // eslint-disable-next-line no-alert
       alert(`上传失败：${err instanceof Error ? err.message : err}`);
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const list = assets || [];
+  const handleDeleteAsset = async (assetId: string, fileName: string) => {
+    // eslint-disable-next-line no-alert
+    if (!confirm(`确认删除 ${fileName}？`)) return;
+    try {
+      const res = await authenticatedFetch(
+        `/api/proxy/admin/offline-orders/${orderId}/assets/${assetId}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      onChanged();
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(`删除失败：${err instanceof Error ? err.message : err}`);
+    }
+  };
 
-  const dropdown = dropdownPos && createPortal(
+  const hasFilesToUpload = rows.some((r) => r.file !== null);
+
+  const modal = modalOpen && createPortal(
     <div
-      className="fixed z-[9999] w-72 max-h-64 overflow-auto bg-white border border-gray-200 rounded shadow-lg"
-      style={{ top: dropdownPos.top, right: dropdownPos.right }}
-      onMouseDown={(e) => e.stopPropagation()}
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) closeModal();
+      }}
     >
-      {list.length === 0 ? (
-        <div className="px-3 py-3 text-sm text-gray-500">暂无文件</div>
-      ) : (
-        <ul className="text-sm">
-          {list.map((asset) => (
-            <li key={asset.id} className="border-b last:border-b-0 flex items-center">
-              <a
-                href={asset.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                download={asset.fileName}
-                className="flex-1 block px-3 py-2 hover:bg-blue-50 truncate text-blue-700"
-                title={asset.fileName}
-              >
-                {asset.fileName}
-              </a>
+      <div
+        className="bg-white rounded-lg shadow-2xl w-[760px] max-w-[95vw] max-h-[90vh] flex flex-col"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+          <span className="font-semibold text-gray-800 text-sm">文件管理</span>
+          <button
+            type="button"
+            onClick={closeModal}
+            className="text-gray-400 hover:text-gray-700 text-lg leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left: upload rows */}
+          <div className="flex-1 flex flex-col border-r border-gray-200 overflow-hidden">
+            <div className="px-4 pt-3 pb-1 text-xs text-gray-500 font-medium uppercase tracking-wide">
+              上传新文件
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 pb-3">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-400 border-b border-gray-100">
+                    <th className="py-1 text-left font-normal w-[40%]">文件</th>
+                    <th className="py-1 text-left font-normal">备注</th>
+                    <th className="py-1 w-6" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => (
+                    <tr key={row.id} className="border-b border-gray-50">
+                      <td className="py-1 pr-2">
+                        <div
+                          className="flex items-center gap-1.5 cursor-pointer group"
+                          onClick={() => fileRefs.current[row.id]?.click()}
+                        >
+                          <span className="text-gray-300 group-hover:text-blue-500 text-base">📎</span>
+                          <span className={`text-xs truncate max-w-[110px] ${row.file ? 'text-gray-700' : 'text-gray-400'}`}>
+                            {row.file ? shortName(row.file.name) : '点击选择…'}
+                          </span>
+                        </div>
+                        <input
+                          ref={(el) => { fileRefs.current[row.id] = el; }}
+                          type="file"
+                          className="hidden"
+                          onChange={(e) => handleFileChange(row.id, e.target.files?.[0] ?? null)}
+                        />
+                      </td>
+                      <td className="py-1 pr-1">
+                        <input
+                          type="text"
+                          value={row.comment}
+                          onChange={(e) => handleCommentChange(row.id, e.target.value)}
+                          placeholder="备注（可选）"
+                          className="w-full px-1.5 py-0.5 text-xs border border-gray-200 rounded focus:border-blue-400 focus:outline-none"
+                        />
+                      </td>
+                      <td className="py-1">
+                        <button
+                          type="button"
+                          onClick={() => removeRow(row.id)}
+                          className="text-gray-300 hover:text-red-500 text-xs px-1"
+                          title="移除此行"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
               <button
                 type="button"
-                title="删除"
-                className="shrink-0 px-2 py-2 text-gray-400 hover:text-red-600 hover:bg-red-50"
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  // eslint-disable-next-line no-alert
-                  if (!confirm(`确认删除 ${asset.fileName}？`)) return;
-                  try {
-                    const res = await authenticatedFetch(
-                      `/api/proxy/admin/offline-orders/${orderId}/assets/${asset.id}`,
-                      { method: 'DELETE' }
-                    );
-                    if (!res.ok) throw new Error(await res.text());
-                    closeDropdown();
-                    onChanged();
-                  } catch (err) {
-                    // eslint-disable-next-line no-alert
-                    alert(`删除失败：${err instanceof Error ? err.message : err}`);
-                  }
-                }}
+                onClick={addRow}
+                className="mt-2 text-xs text-blue-600 hover:underline"
               >
-                ✕
+                + 添加行
               </button>
-            </li>
-          ))}
-        </ul>
-      )}
+            </div>
+            {/* Upload button */}
+            <div className="px-4 py-3 border-t border-gray-100 flex justify-end">
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={!hasFilesToUpload || uploading}
+                className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {uploading ? '上传中…' : '上传'}
+              </button>
+            </div>
+          </div>
+
+          {/* Right: existing files */}
+          <div className="w-[260px] flex flex-col overflow-hidden">
+            <div className="px-4 pt-3 pb-1 text-xs text-gray-500 font-medium uppercase tracking-wide">
+              已上传文件（{list.length}）
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 pb-3">
+              {list.length === 0 ? (
+                <div className="text-xs text-gray-400 mt-2">暂无文件</div>
+              ) : (
+                <ul className="text-xs space-y-1">
+                  {list.map((asset) => (
+                    <li key={asset.id} className="flex items-center gap-1.5 group">
+                      <a
+                        href={asset.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={asset.fileName}
+                        className="flex-1 truncate text-blue-600 hover:underline"
+                        title={asset.fileName}
+                      >
+                        {shortName(asset.fileName)}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAsset(asset.id, asset.fileName)}
+                        className="shrink-0 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="删除"
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>,
     document.body
   );
@@ -383,42 +560,18 @@ function FileCell({
     <div className="flex items-center gap-1">
       <button
         type="button"
-        title="上传文件"
-        className="px-1.5 py-0.5 text-base hover:bg-gray-100 rounded disabled:opacity-50"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
+        title="文件管理"
+        className="flex items-center gap-1 px-1.5 py-0.5 text-sm hover:bg-gray-100 rounded"
+        onClick={openModal}
       >
-        {uploading ? '⏳' : '📎'}
-      </button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => handleUpload(e.target.files)}
-      />
-      <button
-        type="button"
-        title={`下载文件（${list.length}）`}
-        className="px-1.5 py-0.5 text-base hover:bg-gray-100 rounded relative"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          if (dropdownPos) {
-            closeDropdown();
-          } else {
-            const rect = e.currentTarget.getBoundingClientRect();
-            setDropdownPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-          }
-        }}
-      >
-        ⬇
+        <span className="text-base">📎</span>
         {list.length > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] bg-blue-600 text-white rounded-full flex items-center justify-center">
+          <span className="text-[10px] bg-blue-600 text-white rounded-full w-4 h-4 flex items-center justify-center">
             {list.length}
           </span>
         )}
       </button>
-      {dropdown}
+      {modal}
     </div>
   );
 }
@@ -549,6 +702,7 @@ function TrashIcon({ className = 'w-4 h-4' }: { className?: string }) {
 // 主组件
 // ---------------------------------------------------------------------------
 export default function OrdersSpreadsheet() {
+  const { user: currentUser } = useAuth();
   const [orders, setOrders] = useState<SalesOfflineOrderSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -788,7 +942,11 @@ export default function OrdersSpreadsheet() {
       const aDone = a.status === '已完成' ? 1 : 0;
       const bDone = b.status === '已完成' ? 1 : 0;
       if (aDone !== bDone) return aDone - bDone;
-      // 2. Due Date DESC（越晚截止越靠前，null 排最后）
+      // 2. 当前用户的订单优先
+      const aIsMe = currentUser && a.creator?.id === currentUser.id ? 0 : 1;
+      const bIsMe = currentUser && b.creator?.id === currentUser.id ? 0 : 1;
+      if (aIsMe !== bIsMe) return aIsMe - bIsMe;
+      // 3. Due Date DESC（越晚截止越靠前，null 排最后）
       const aDue = a.productionWorkOrder?.dueDate
         ? new Date(a.productionWorkOrder.dueDate).getTime()
         : Number.NEGATIVE_INFINITY;
@@ -796,7 +954,7 @@ export default function OrdersSpreadsheet() {
         ? new Date(b.productionWorkOrder.dueDate).getTime()
         : Number.NEGATIVE_INFINITY;
       if (aDue !== bDue) return bDue - aDue;
-      // 3. Start Date DESC 兜底（due date 相同时，开始时间越新越靠前）
+      // 4. Start Date DESC 兜底（due date 相同时，开始时间越新越靠前）
       const aStart = a.productionWorkOrder?.startDate
         ? new Date(a.productionWorkOrder.startDate).getTime()
         : Number.NEGATIVE_INFINITY;
@@ -805,7 +963,7 @@ export default function OrdersSpreadsheet() {
         : Number.NEGATIVE_INFINITY;
       return bStart - aStart;
     });
-  }, [orders, searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
+  }, [orders, currentUser, searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
 
   // 筛选条件变化时重置到第 1 页
   useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
@@ -993,7 +1151,7 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto">
-      <div className="border border-gray-200 rounded min-w-[1600px]">
+      <div className="border border-gray-200 rounded min-w-[1900px]">
         <table className="w-full text-sm table-fixed">
           {/* 列宽 */}
           <colgroup>
@@ -1004,7 +1162,10 @@ export default function OrdersSpreadsheet() {
             <col className="w-[4.5rem]" />{/* 件数 */}
             <col className="w-[6rem]" />{/* 总金额 */}
             <col className="w-[6rem]" />{/* 预付款 */}
-            <col className="w-[9rem]" />{/* Type */}
+            <col className="w-[5.5rem]" />{/* 余款（只读） */}
+            <col className="w-[8rem]" />{/* Type */}
+            <col className="w-[8rem]" />{/* 备货情况 */}
+            <col className="w-[7rem]" />{/* 订货情况 */}
             <col className="w-[9rem]" />{/* Status */}
             <col className="w-[5rem]" />{/* 发票 */}
             <col />{/* 备注（flex 占剩余） */}
@@ -1019,7 +1180,10 @@ export default function OrdersSpreadsheet() {
               <th className="px-2 py-2 text-right">件数</th>
               <th className="px-2 py-2 text-right">总金额</th>
               <th className="px-2 py-2 text-right">预付款</th>
+              <th className="px-2 py-2 text-right">余款</th>
               <th className="px-2 py-2 text-left">Type</th>
+              <th className="px-2 py-2 text-left">备货情况</th>
+              <th className="px-2 py-2 text-left">订货情况</th>
               <th className="px-2 py-2 text-left">Status</th>
               <th className="px-2 py-2 text-left">发票</th>
               <th className="px-2 py-2 text-left">备注</th>
@@ -1087,6 +1251,8 @@ export default function OrdersSpreadsheet() {
                   onChange={(e) => setNewDraft({ ...newDraft, depositAmount: e.target.value })}
                 />
               </td>
+              {/* 余款（只读，保存后显示） */}
+              <td className="px-2 py-1 text-right text-gray-400 text-xs">保存后</td>
               {/* Type */}
               <td className="px-2 py-1">
                 <select
@@ -1101,6 +1267,10 @@ export default function OrdersSpreadsheet() {
                   ))}
                 </select>
               </td>
+              {/* 备货情况 */}
+              <td className="px-2 py-1 text-gray-400 text-xs">—</td>
+              {/* 订货情况 */}
+              <td className="px-2 py-1 text-gray-400 text-xs">—</td>
               {/* Status */}
               <td className="px-2 py-1">
                 <select
@@ -1159,14 +1329,14 @@ export default function OrdersSpreadsheet() {
             {/* 数据行 */}
             {loading && (
               <tr>
-                <td colSpan={12} className="px-3 py-6 text-center text-gray-500">
+                <td colSpan={15} className="px-3 py-6 text-center text-gray-500">
                   加载中…
                 </td>
               </tr>
             )}
             {!loading && pagedOrders.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-6 text-center text-gray-500">
+                <td colSpan={15} className="px-3 py-6 text-center text-gray-500">
                   暂无订单
                 </td>
               </tr>
@@ -1203,6 +1373,7 @@ export default function OrdersSpreadsheet() {
                   {/* 2. 开始时间 */}
                   <td className="px-2 py-1 text-xs">
                     <input
+                      key={`startDate-${order.id}-${order.productionWorkOrder?.startDate ?? 'none'}`}
                       type="date"
                       defaultValue={
                         order.productionWorkOrder?.startDate
@@ -1212,12 +1383,10 @@ export default function OrdersSpreadsheet() {
                       className="w-full px-1 py-0.5 text-xs bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
                       onBlur={(e) => {
                         const v = e.target.value;
-                        if (
-                          v !==
-                          (order.productionWorkOrder?.startDate
-                            ? formatDate(order.productionWorkOrder.startDate)
-                            : '')
-                        ) {
+                        const cur = order.productionWorkOrder?.startDate
+                          ? formatDate(order.productionWorkOrder.startDate)
+                          : '';
+                        if (v !== cur) {
                           patchOrder(order.id, { startDate: v || null });
                         }
                       }}
@@ -1323,7 +1492,18 @@ export default function OrdersSpreadsheet() {
                       }}
                     />
                   </td>
-                  {/* 8. Type */}
+                  {/* 8. 余款（只读） */}
+                  <td className="px-2 py-1 text-right text-sm">
+                    {total > 0 || paid > 0
+                      ? (() => {
+                          const balance = total - paid;
+                          if (balance <= 0) return <span className="text-green-600 font-medium text-xs">✓ Paid</span>;
+                          return <span className={balance > 0 ? 'text-orange-600' : ''}>{formatMoney(balance)}</span>;
+                        })()
+                      : <span className="text-gray-300">—</span>
+                    }
+                  </td>
+                  {/* 9. Type */}
                   <td className="px-2 py-1">
                     <select
                       value={order.type ?? ''}
@@ -1342,7 +1522,39 @@ export default function OrdersSpreadsheet() {
                       <div className="text-[10px] text-gray-500 mt-0.5">自动: {displayType}</div>
                     )}
                   </td>
-                  {/* 9. Status */}
+                  {/* 10. 备货情况 */}
+                  <td className="px-2 py-1">
+                    <select
+                      value={order.stockingStatus ?? ''}
+                      onChange={(e) =>
+                        patchOrder(order.id, { stockingStatus: e.target.value || null })
+                      }
+                      className="w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                    >
+                      {STOCKING_OPTIONS.map((o) => (
+                        <option key={o.value || 'empty'} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  {/* 11. 订货情况 */}
+                  <td className="px-2 py-1">
+                    <select
+                      value={order.purchaseStatus ?? ''}
+                      onChange={(e) =>
+                        patchOrder(order.id, { purchaseStatus: e.target.value || null })
+                      }
+                      className="w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                    >
+                      {PURCHASE_OPTIONS.map((o) => (
+                        <option key={o.value || 'empty'} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  {/* 12. Status */}
                   <td className="px-2 py-1">
                     <StatusCell
                       value={order.status}
