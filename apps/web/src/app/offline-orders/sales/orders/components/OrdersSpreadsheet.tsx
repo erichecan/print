@@ -415,12 +415,15 @@ function FileCell({
   const modal = modalOpen && createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
+      onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => {
+        e.stopPropagation();
         if (e.target === e.currentTarget) closeModal();
       }}
     >
       <div
         className="bg-white rounded-lg shadow-2xl w-[760px] max-w-[95vw] max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
