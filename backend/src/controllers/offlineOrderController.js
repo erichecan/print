@@ -372,7 +372,8 @@ const mapOrder = (order) => ({
     contentType: asset.contentType,
     url: asset.url,
     uploadedAt: asset.uploadedAt,
-    uploadedBy: asset.uploadedBy
+    uploadedBy: asset.uploadedBy,
+    comment: asset.comment ?? null
   })),
   histories: (order.histories || []).map((history) => ({
     id: history.id,
@@ -2009,6 +2010,17 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
       });
     }
 
+    // comments[i] corresponds to files[i]; sent as JSON string or repeated field
+    let commentsRaw = req.body?.comments;
+    let comments;
+    if (typeof commentsRaw === 'string') {
+      try { comments = JSON.parse(commentsRaw); } catch { comments = [commentsRaw]; }
+    } else if (Array.isArray(commentsRaw)) {
+      comments = commentsRaw;
+    } else {
+      comments = [];
+    }
+
     let assetPayloads;
     try {
       assetPayloads = await Promise.all(files.map(processAssetUpload));
@@ -2041,13 +2053,14 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
         where: { id },
         data: {
           assets: {
-            create: assetPayloads.map((asset) => ({
+            create: assetPayloads.map((asset, i) => ({
               fileName: asset.fileName,
               fileSize: asset.fileSize,
               contentType: asset.contentType,
               storageKey: asset.storageKey,
               url: asset.url,
-              uploadedBy: req.user?.id || null
+              uploadedBy: req.user?.id || null,
+              comment: comments[i] || null
             }))
           },
           histories: {

@@ -1035,6 +1035,7 @@ export interface SalesOfflineOrderSummary {
     contentType?: string | null;
     url: string;
     uploadedAt?: string;
+    comment?: string | null;
   }>;
   productionWorkOrder?: {
     id?: string;
@@ -1154,7 +1155,8 @@ export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
     fileName: string;
     url: string;
     fileSize?: number;
-    [key: string]: any
+    comment?: string | null;
+    [key: string]: unknown
   }>;
   histories: Array<{
     id: string;
@@ -2957,9 +2959,12 @@ export const adminOfflineOrdersApi = {
     api(`/admin/offline-orders/${id}/stage`, { method: 'PATCH', body: payload }),
   addNote: (id: string, note: string) =>
     api(`/admin/offline-orders/${id}/notes`, { method: 'POST', body: { note } }),
-  uploadAssets: async (id: string, files: File[]) => {
+  uploadAssets: async (id: string, files: File[], comments?: string[]) => {
     const formData = new FormData();
     files.forEach((file) => formData.append('assets', file));
+    if (comments && comments.length > 0) {
+      formData.append('comments', JSON.stringify(comments));
+    }
     const response = await fetch(`${API_BASE_URL}/admin/offline-orders/${id}/assets`, {
       method: 'POST',
       body: formData,

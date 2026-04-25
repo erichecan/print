@@ -541,27 +541,34 @@ function FileCell({
               {list.length === 0 ? (
                 <div className="text-xs text-gray-400 mt-2">暂无文件</div>
               ) : (
-                <ul className="text-xs space-y-1">
+                <ul className="text-xs space-y-2">
                   {list.map((asset) => (
-                    <li key={asset.id} className="flex items-center gap-1.5 group">
-                      <a
-                        href={asset.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download={asset.fileName}
-                        className="flex-1 truncate text-blue-600 hover:underline"
-                        title={asset.fileName}
-                      >
-                        {shortName(asset.fileName)}
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteAsset(asset.id, asset.fileName)}
-                        className="shrink-0 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        title="删除"
-                      >
-                        ✕
-                      </button>
+                    <li key={asset.id} className="group">
+                      <div className="flex items-center gap-1.5">
+                        <a
+                          href={asset.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          download={asset.fileName}
+                          className="flex-1 truncate text-blue-600 hover:underline"
+                          title={asset.fileName}
+                        >
+                          {shortName(asset.fileName)}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAsset(asset.id, asset.fileName)}
+                          className="shrink-0 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="删除"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      {asset.comment && (
+                        <div className="text-gray-500 text-[11px] mt-0.5 leading-tight pl-0.5">
+                          {asset.comment}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
