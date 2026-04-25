@@ -1182,25 +1182,25 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto">
-      <div className="border border-gray-200 rounded min-w-[2200px]">
+      <div className="border border-gray-200 rounded min-w-[1700px]">
         <table className="w-full text-sm table-fixed">
-          {/* 列宽 */}
+          {/* 列宽 — 总计约 105rem ≈ 1680px */}
           <colgroup>
-            <col className="w-[6rem]" />{/* 编号 */}
-            <col className="w-[7.5rem]" />{/* 开始时间 */}
-            <col className="w-[13rem]" />{/* 客户名（含缩略图） */}
-            <col className="w-[7.5rem]" />{/* Due Date */}
-            <col className="w-[4.5rem]" />{/* 件数 */}
-            <col className="w-[6.5rem]" />{/* 总金额 */}
-            <col className="w-[6.5rem]" />{/* 预付款 */}
-            <col className="w-[6rem]" />{/* 余款（只读） */}
-            <col className="w-[8rem]" />{/* Type */}
-            <col className="w-[9rem]" />{/* 备货情况 */}
-            <col className="w-[8rem]" />{/* 订货情况 */}
+            <col className="w-[5rem]" />{/* 编号 */}
+            <col className="w-[6rem]" />{/* 开始时间 */}
+            <col className="w-[10rem]" />{/* 客户名（含缩略图） */}
+            <col className="w-[6rem]" />{/* Due Date */}
+            <col className="w-[4rem]" />{/* 件数 */}
+            <col className="w-[6rem]" />{/* 总金额 */}
+            <col className="w-[6rem]" />{/* 预付款 */}
+            <col className="w-[5rem]" />{/* 余款（只读） */}
+            <col className="w-[7rem]" />{/* Type */}
+            <col className="w-[8rem]" />{/* 备货情况 */}
+            <col className="w-[7rem]" />{/* 订货情况 */}
             <col className="w-[10rem]" />{/* Status */}
             <col className="w-[5rem]" />{/* 发票 */}
-            <col className="w-[12rem]" />{/* 备注 */}
-            <col className="w-[15rem]" />{/* 操作 */}
+            <col className="w-[10rem]" />{/* 备注 */}
+            <col className="w-[10rem]" />{/* 操作 */}
           </colgroup>
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
