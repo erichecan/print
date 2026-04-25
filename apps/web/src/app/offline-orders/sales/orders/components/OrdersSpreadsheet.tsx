@@ -190,6 +190,7 @@ function StatusCell({
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
   const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement | null>(null);
 
   const closeDropdown = useCallback(() => {
     setDropPos(null);
@@ -206,7 +207,11 @@ function StatusCell({
   useEffect(() => {
     if (!dropPos) return;
     const onDocClick = () => closeDropdown();
-    const onScroll = () => closeDropdown();
+    const onScroll = (e: Event) => {
+      // Don't close when scrolling inside the dropdown itself
+      if (dropRef.current && dropRef.current.contains(e.target as Node)) return;
+      closeDropdown();
+    };
     document.addEventListener('mousedown', onDocClick);
     document.addEventListener('scroll', onScroll, true);
     return () => {
@@ -237,6 +242,7 @@ function StatusCell({
 
   const dropdown = dropPos && createPortal(
     <div
+      ref={dropRef}
       className="fixed z-[9999] overflow-auto rounded border border-gray-200 shadow-xl bg-white"
       style={{ top: dropPos.top, left: dropPos.left, minWidth: dropPos.minWidth, maxHeight: '18rem' }}
       onMouseDown={(e) => e.stopPropagation()}
@@ -342,7 +348,7 @@ function FileCell({
 }: {
   orderId: string;
   assets: SalesOfflineOrderSummary['assets'];
-  onChanged: () => void;
+  onChanged: () => void | Promise<void>;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [rows, setRows] = useState<UploadRow[]>(() =>
@@ -399,7 +405,7 @@ function FileCell({
         body: fd,
       });
       if (!res.ok) throw new Error(await res.text());
-      onChanged();
+      await onChanged();
       closeModal();
     } catch (err) {
       // eslint-disable-next-line no-alert
