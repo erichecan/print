@@ -173,7 +173,7 @@ function isImageAsset(asset: { fileName: string; contentType?: string | null; ur
 }
 
 // ---------------------------------------------------------------------------
-// 状态选项下拉（含「+ 添加新选项」）
+// 状态选项下拉（含「+ 添加新选项」）— portal 渲染，避免 table z-index 失效
 // ---------------------------------------------------------------------------
 function StatusCell({
   value,
@@ -186,19 +186,34 @@ function StatusCell({
   onChange: (v: string) => void;
   onAddOption: (v: string) => Promise<void>;
 }) {
-  const [open, setOpen] = useState(false);
+  const [dropPos, setDropPos] = useState<{ top: number; left: number; minWidth: number } | null>(null);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const closeDropdown = useCallback(() => {
+    setDropPos(null);
+    setAdding(false);
+    setDraft('');
+  }, []);
+
+  const openDropdown = () => {
+    if (!btnRef.current) return;
+    const rect = btnRef.current.getBoundingClientRect();
+    setDropPos({ top: rect.bottom + 2, left: rect.left, minWidth: Math.max(rect.width, 200) });
+  };
 
   useEffect(() => {
-    if (!open) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
+    if (!dropPos) return;
+    const onDocClick = () => closeDropdown();
+    const onScroll = () => closeDropdown();
     document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [open]);
+    document.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('scroll', onScroll, true);
+    };
+  }, [dropPos, closeDropdown]);
 
   const handleAdd = async () => {
     const v = draft.trim();
@@ -207,10 +222,10 @@ function StatusCell({
     setDraft('');
     setAdding(false);
     onChange(v);
-    setOpen(false);
+    closeDropdown();
   };
 
-  // 2026-04-21: 去重 — 若 DB/迁移重复导入产生同 value，UI 层只保留第一个
+  // 去重 — 若 DB 重复导入产生同 value，UI 层只保留第一个
   const dedupedOptions = useMemo(() => {
     const seen = new Set<string>();
     return options.filter((o) => {
@@ -220,78 +235,78 @@ function StatusCell({
     });
   }, [options]);
 
+  const dropdown = dropPos && createPortal(
+    <div
+      className="fixed z-[9999] overflow-auto rounded border border-gray-200 shadow-xl bg-white"
+      style={{ top: dropPos.top, left: dropPos.left, minWidth: dropPos.minWidth, maxHeight: '18rem' }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <ul className="text-sm divide-y divide-gray-100 m-0 p-0 list-none">
+        {dedupedOptions.map((opt) => {
+          const active = value === opt.value;
+          return (
+            <li key={opt.id} className="m-0">
+              <button
+                type="button"
+                onClick={() => { onChange(opt.value); closeDropdown(); }}
+                className={`block w-full text-left px-3 py-2 leading-tight text-sm hover:bg-blue-50 ${
+                  active ? 'bg-blue-100 font-medium text-blue-900' : 'text-gray-800'
+                }`}
+              >
+                {opt.label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="border-t border-gray-200 p-2 bg-white">
+        {adding ? (
+          <div className="flex gap-1">
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAdd();
+                if (e.key === 'Escape') { setAdding(false); setDraft(''); }
+              }}
+              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+              placeholder="新选项名称"
+            />
+            <button
+              type="button"
+              onClick={handleAdd}
+              className="px-2 py-1 text-xs text-white bg-blue-600 rounded hover:bg-blue-700"
+            >
+              确定
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="w-full text-left text-sm text-blue-600 hover:underline"
+          >
+            + 添加新选项
+          </button>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+
   return (
-    <div ref={ref} className="relative">
+    <div className="relative">
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={dropPos ? closeDropdown : openDropdown}
         className="w-full px-2 py-1 text-left text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded truncate"
       >
         {value || '—'}
       </button>
-      {open && (
-        <div
-          className="absolute left-0 top-full z-[100] mt-1 w-56 max-h-72 overflow-auto rounded border border-gray-200 shadow-lg"
-          style={{ backgroundColor: '#ffffff' }}
-        >
-          <ul className="text-sm divide-y divide-gray-100 m-0 p-0 list-none">
-            {dedupedOptions.map((opt) => {
-              const active = value === opt.value;
-              return (
-                <li key={opt.id} className="m-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onChange(opt.value);
-                      setOpen(false);
-                    }}
-                    className={`block w-full text-left px-3 py-2 leading-tight text-sm hover:bg-blue-50 ${
-                      active ? 'bg-blue-100 font-medium text-blue-900' : 'text-gray-800'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <div className="border-t border-gray-200 p-2 bg-white">
-            {adding ? (
-              <div className="flex gap-1">
-                <input
-                  autoFocus
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAdd();
-                    if (e.key === 'Escape') {
-                      setAdding(false);
-                      setDraft('');
-                    }
-                  }}
-                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
-                  placeholder="新选项名称"
-                />
-                <button
-                  type="button"
-                  onClick={handleAdd}
-                  className="px-2 py-1 text-xs text-white bg-blue-600 rounded hover:bg-blue-700"
-                >
-                  确定
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAdding(true)}
-                className="w-full text-left text-sm text-blue-600 hover:underline"
-              >
-                + 添加新选项
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 }
@@ -1154,24 +1169,24 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto">
-      <div className="border border-gray-200 rounded min-w-[1900px]">
+      <div className="border border-gray-200 rounded min-w-[2200px]">
         <table className="w-full text-sm table-fixed">
           {/* 列宽 */}
           <colgroup>
             <col className="w-[6rem]" />{/* 编号 */}
-            <col className="w-[7rem]" />{/* 开始时间 */}
-            <col className="w-[12rem]" />{/* 客户名（含缩略图） */}
-            <col className="w-[7rem]" />{/* Due Date */}
+            <col className="w-[7.5rem]" />{/* 开始时间 */}
+            <col className="w-[13rem]" />{/* 客户名（含缩略图） */}
+            <col className="w-[7.5rem]" />{/* Due Date */}
             <col className="w-[4.5rem]" />{/* 件数 */}
-            <col className="w-[6rem]" />{/* 总金额 */}
-            <col className="w-[6rem]" />{/* 预付款 */}
-            <col className="w-[5.5rem]" />{/* 余款（只读） */}
+            <col className="w-[6.5rem]" />{/* 总金额 */}
+            <col className="w-[6.5rem]" />{/* 预付款 */}
+            <col className="w-[6rem]" />{/* 余款（只读） */}
             <col className="w-[8rem]" />{/* Type */}
-            <col className="w-[8rem]" />{/* 备货情况 */}
-            <col className="w-[7rem]" />{/* 订货情况 */}
-            <col className="w-[9rem]" />{/* Status */}
+            <col className="w-[9rem]" />{/* 备货情况 */}
+            <col className="w-[8rem]" />{/* 订货情况 */}
+            <col className="w-[10rem]" />{/* Status */}
             <col className="w-[5rem]" />{/* 发票 */}
-            <col />{/* 备注（flex 占剩余） */}
+            <col className="w-[12rem]" />{/* 备注 */}
             <col className="w-[15rem]" />{/* 操作 */}
           </colgroup>
           <thead className="bg-gray-50 border-b border-gray-200">
