@@ -1796,6 +1796,17 @@ exports.updateOfflineOrder = async (req, res) => {
         dueDate !== undefined ||
         (!existing.productionWorkOrder?.startDate && Object.keys(data).length > 0);
 
+      logger.info('[autoStartDate] debug', {
+        orderId: id,
+        dataKeys: Object.keys(data),
+        startDate,
+        dueDate,
+        existingWorkOrder: existing.productionWorkOrder
+          ? { id: existing.productionWorkOrder.id, startDate: existing.productionWorkOrder.startDate }
+          : null,
+        shouldUpsertWorkOrder,
+      });
+
       if (shouldUpsertWorkOrder) {
         const workOrderData = {};
         if (startDate !== undefined) workOrderData.startDate = parseDate(startDate);
@@ -1804,6 +1815,7 @@ exports.updateOfflineOrder = async (req, res) => {
         // 自动补 startDate：仅当调用方未明确提供 startDate，且当前无 startDate 时
         if (startDate === undefined && !existing.productionWorkOrder?.startDate) {
           workOrderData.startDate = new Date();
+          logger.info('[autoStartDate] auto-filling startDate', { orderId: id, startDate: workOrderData.startDate });
         }
 
         if (existing.productionWorkOrder) {
