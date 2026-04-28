@@ -2117,6 +2117,33 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
  * DELETE /api/admin/offline-orders/:id/assets/:assetId
  * 删除订单附件（从 DB + GCS 同时删除）
  */
+exports.updateOfflineOrderAssetComment = async (req, res) => {
+  try {
+    const { id, assetId } = req.params;
+    const { comment } = req.body;
+
+    const asset = await prisma.offlineOrderAsset.findFirst({
+      where: { id: assetId, orderId: id },
+      select: { id: true }
+    });
+
+    if (!asset) {
+      return res.status(404).json({ error: 'Not Found', message: 'Asset not found' });
+    }
+
+    const updated = await prisma.offlineOrderAsset.update({
+      where: { id: assetId },
+      data: { comment: typeof comment === 'string' ? comment.slice(0, 100) : null },
+      select: { id: true, comment: true }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    logger.error('[updateOfflineOrderAssetComment] Failed:', error);
+    res.status(500).json({ error: 'Server Error', message: 'Failed to update comment' });
+  }
+};
+
 exports.deleteOfflineOrderAsset = async (req, res) => {
   try {
     const { id, assetId } = req.params;

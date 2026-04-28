@@ -460,7 +460,7 @@ model OfflineOrder {
   stageLabel          String                     @map("stage_label")
   stagePosition       Int?                       @map("stage_position")
   // 2026-04-20: status 从 OfflineOrderStatus enum 改为 String 以支持用户自定义选项（见 offline_order_status_options 表）
-  status              String                     @default("待确认订单")
+  status              String?                    @default("待客户确认")
   contactName         String?                    @map("contact_name")
   company             String?
   email               String?

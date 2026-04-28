@@ -90,6 +90,12 @@ router.post(
   offlineOrderController.uploadOfflineOrderAssets
 );
 
+router.patch(
+  '/:id/assets/:assetId',
+  authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  offlineOrderController.updateOfflineOrderAssetComment
+);
+
 router.delete(
   '/:id/assets/:assetId',
   authorizeRoles(...ORDER_MANAGEMENT_ROLES),

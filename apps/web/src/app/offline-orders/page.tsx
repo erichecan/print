@@ -216,7 +216,7 @@ const initialFormState: FormState = {
   referenceNumber: '',
   total: 0,
   startDate: '',
-  status: '待确认订单',
+  status: '待客户确认',
   currentStep: 1,
 };
 

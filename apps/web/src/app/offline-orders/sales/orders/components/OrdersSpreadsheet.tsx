@@ -129,11 +129,11 @@ function aggregateTypeFromConfig(config: any): string | null {
   return Array.from(norm).join(' + ');
 }
 
-/** 行底色：已完成 > rush > 待确认订单 > 默认 */
+/** 行底色：完成 > rush > 待客户确认 > 默认 */
 function rowBgClass(order: SalesOfflineOrderSummary): string {
-  if (order.status === '已完成') return 'bg-gray-200';
+  if (order.status === '完成') return 'bg-gray-200';
   if (order.rushOrder) return 'bg-pink-100';
-  if (order.status === '待确认订单') return 'bg-green-100';
+  if (order.status === '待客户确认') return 'bg-green-100';
   return 'bg-white';
 }
 
@@ -181,7 +181,7 @@ function StatusCell({
   onChange,
   onAddOption,
 }: {
-  value: string;
+  value: string | null;
   options: OfflineOrderStatusOption[];
   onChange: (v: string) => void;
   onAddOption: (v: string) => Promise<void>;
@@ -314,6 +314,91 @@ function StatusCell({
       </button>
       {dropdown}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 已上传文件行（可编辑备注 + 删除）
+// ---------------------------------------------------------------------------
+
+function AssetRow({
+  asset,
+  orderId,
+  onDelete,
+  onChanged,
+}: {
+  asset: { id: string; fileName: string; url: string; comment?: string | null };
+  orderId: string;
+  onDelete: (id: string, name: string) => void;
+  onChanged: () => void;
+}) {
+  const [draft, setDraft] = useState(asset.comment ?? '');
+  const [saving, setSaving] = useState(false);
+  const isDirty = draft !== (asset.comment ?? '');
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await authenticatedFetch(
+        `/api/proxy/admin/offline-orders/${orderId}/assets/${asset.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ comment: draft }),
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
+      onChanged();
+    } catch (err) {
+      // eslint-disable-next-line no-alert
+      alert(`保存失败：${err instanceof Error ? err.message : err}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <li>
+      <div className="flex items-center gap-1.5">
+        <a
+          href={asset.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          download={asset.fileName}
+          className="flex-1 truncate text-blue-600 hover:underline"
+          title={asset.fileName}
+        >
+          {shortName(asset.fileName)}
+        </a>
+        <button
+          type="button"
+          onClick={() => onDelete(asset.id, asset.fileName)}
+          className="shrink-0 px-1.5 py-0.5 text-[10px] bg-red-500 text-white rounded hover:bg-red-600"
+        >
+          删除
+        </button>
+      </div>
+      <div className="mt-1">
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value.slice(0, 100))}
+          maxLength={100}
+          rows={2}
+          placeholder="备注（可选）"
+          className="w-full px-1.5 py-1 text-[11px] border border-gray-200 rounded focus:border-blue-400 focus:outline-none resize-none leading-snug"
+        />
+        {isDirty && (
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="mt-0.5 px-2 py-0.5 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? '保存中…' : 'Save'}
+          </button>
+        )}
+      </div>
+    </li>
   );
 }
 
@@ -547,35 +632,15 @@ function FileCell({
               {list.length === 0 ? (
                 <div className="text-xs text-gray-400 mt-2">暂无文件</div>
               ) : (
-                <ul className="text-xs space-y-2">
+                <ul className="text-xs space-y-3">
                   {list.map((asset) => (
-                    <li key={asset.id} className="group">
-                      <div className="flex items-center gap-1.5">
-                        <a
-                          href={asset.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download={asset.fileName}
-                          className="flex-1 truncate text-blue-600 hover:underline"
-                          title={asset.fileName}
-                        >
-                          {shortName(asset.fileName)}
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAsset(asset.id, asset.fileName)}
-                          className="shrink-0 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                          title="删除"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                      {asset.comment && (
-                        <div className="text-gray-500 text-[11px] mt-0.5 leading-tight pl-0.5">
-                          {asset.comment}
-                        </div>
-                      )}
-                    </li>
+                    <AssetRow
+                      key={asset.id}
+                      asset={asset}
+                      orderId={orderId}
+                      onDelete={handleDeleteAsset}
+                      onChanged={onChanged}
+                    />
                   ))}
                 </ul>
               )}
@@ -808,7 +873,7 @@ export default function OrdersSpreadsheet() {
     totalAmount: '',
     depositAmount: '',
     type: '',
-    status: '待确认订单',
+    status: '待客户确认',
     invoiceStatus: 'No',
     description: '',
   });
@@ -847,12 +912,19 @@ export default function OrdersSpreadsheet() {
   // 单字段 patch
   const patchOrder = useCallback(
     async (id: string, patch: Record<string, unknown>) => {
+      // 如果该订单还没有开始时间，保存任意字段时自动补今天
+      const order = orders.find((o) => o.id === id);
+      const finalPatch = { ...patch };
+      if (order && !order.productionWorkOrder?.startDate && finalPatch.startDate === undefined) {
+        const today = new Date();
+        finalPatch.startDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      }
       // 乐观更新
       setOrders((prev) =>
-        prev.map((o) => (o.id === id ? ({ ...o, ...patch } as any) : o))
+        prev.map((o) => (o.id === id ? ({ ...o, ...finalPatch } as any) : o))
       );
       try {
-        await offlineOrdersInlineApi.patch(id, patch);
+        await offlineOrdersInlineApi.patch(id, finalPatch);
         refreshOrders();
       } catch (err) {
         // eslint-disable-next-line no-alert
@@ -860,7 +932,7 @@ export default function OrdersSpreadsheet() {
         refreshOrders();
       }
     },
-    [refreshOrders]
+    [orders, refreshOrders]
   );
 
   const addStatusOption = useCallback(
@@ -913,7 +985,7 @@ export default function OrdersSpreadsheet() {
         totalAmount: '',
         depositAmount: '',
         type: '',
-        status: '待确认订单',
+        status: '待客户确认',
         invoiceStatus: 'No',
         description: '',
       });
@@ -944,7 +1016,7 @@ export default function OrdersSpreadsheet() {
         if (!name.includes(q) && !phone.includes(q) && !email.includes(q) && !creatorName.includes(q) && !creatorEmail.includes(q)) return false;
       }
       // 状态多选
-      if (filterStatuses.length > 0 && !filterStatuses.includes(o.status)) return false;
+      if (filterStatuses.length > 0 && !filterStatuses.includes(o.status ?? '')) return false;
       // 开始时间区间
       const startTs = o.productionWorkOrder?.startDate ? new Date(o.productionWorkOrder.startDate).getTime() : null;
       if (filterStartFrom && (startTs === null || startTs < new Date(filterStartFrom).getTime())) return false;
@@ -969,9 +1041,9 @@ export default function OrdersSpreadsheet() {
     });
 
     return filtered.sort((a, b) => {
-      // 1. 已完成沉底
-      const aDone = a.status === '已完成' ? 1 : 0;
-      const bDone = b.status === '已完成' ? 1 : 0;
+      // 1. 完成沉底
+      const aDone = a.status === '完成' ? 1 : 0;
+      const bDone = b.status === '完成' ? 1 : 0;
       if (aDone !== bDone) return aDone - bDone;
       // 2. 当前用户的订单优先
       const aIsMe = currentUser && a.creator?.id === currentUser.id ? 0 : 1;
@@ -1182,14 +1254,14 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto">
-      <div className="border border-gray-200 rounded min-w-[1700px]">
+      <div className="border border-gray-200 rounded min-w-[1760px]">
         <table className="w-full text-sm table-fixed">
-          {/* 列宽 — 总计约 105rem ≈ 1680px */}
+          {/* 列宽 — 总计约 110rem ≈ 1760px */}
           <colgroup>
             <col className="w-[5rem]" />{/* 编号 */}
-            <col className="w-[6rem]" />{/* 开始时间 */}
+            <col className="w-[9rem]" />{/* 开始时间 */}
             <col className="w-[10rem]" />{/* 客户名（含缩略图） */}
-            <col className="w-[6rem]" />{/* Due Date */}
+            <col className="w-[9rem]" />{/* Due Date */}
             <col className="w-[4rem]" />{/* 件数 */}
             <col className="w-[6rem]" />{/* 总金额 */}
             <col className="w-[6rem]" />{/* 预付款 */}
@@ -1684,7 +1756,7 @@ export default function OrdersSpreadsheet() {
         {/* 图例 */}
         <span>
           <span className="inline-block w-3 h-3 align-middle bg-gray-200 border border-gray-300 mr-1" />
-          已完成（沉底）
+          完成（沉底）
         </span>
         <span>
           <span className="inline-block w-3 h-3 align-middle bg-pink-100 border border-gray-300 mr-1" />
@@ -1692,7 +1764,7 @@ export default function OrdersSpreadsheet() {
         </span>
         <span>
           <span className="inline-block w-3 h-3 align-middle bg-green-100 border border-gray-300 mr-1" />
-          待确认订单
+          待客户确认
         </span>
 
         {/* 分页 */}
