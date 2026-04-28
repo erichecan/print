@@ -912,24 +912,32 @@ export default function OrdersSpreadsheet() {
   // 单字段 patch
   const patchOrder = useCallback(
     async (id: string, patch: Record<string, unknown>) => {
-      // 如果该订单还没有开始时间，保存任意字段时自动补今天
       const order = orders.find((o) => o.id === id);
       const finalPatch = { ...patch };
-      if (order && !order.productionWorkOrder?.startDate && finalPatch.startDate === undefined) {
-        const today = new Date();
-        finalPatch.startDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      }
-      // 乐观更新
+
+      // 乐观更新：把 startDate/dueDate 正确嵌套到 productionWorkOrder，避免 key 不变导致 input 不刷新
+      const buildOptimistic = (o: typeof orders[number]) => {
+        const root: Record<string, unknown> = { ...o, ...finalPatch };
+        if ('startDate' in finalPatch || 'dueDate' in finalPatch) {
+          root.productionWorkOrder = {
+            ...(o.productionWorkOrder as Record<string, unknown> | null ?? {}),
+            ...('startDate' in finalPatch ? { startDate: finalPatch.startDate } : {}),
+            ...('dueDate' in finalPatch ? { dueDate: finalPatch.dueDate } : {}),
+          };
+        }
+        return root;
+      };
+
       setOrders((prev) =>
-        prev.map((o) => (o.id === id ? ({ ...o, ...finalPatch } as any) : o))
+        prev.map((o) => (o.id === id ? (buildOptimistic(o) as any) : o))
       );
       try {
         await offlineOrdersInlineApi.patch(id, finalPatch);
-        refreshOrders();
+        await refreshOrders();
       } catch (err) {
         // eslint-disable-next-line no-alert
         alert(`保存失败：${err instanceof Error ? err.message : err}`);
-        refreshOrders();
+        await refreshOrders();
       }
     },
     [orders, refreshOrders]

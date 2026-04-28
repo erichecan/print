@@ -1781,7 +1781,7 @@ exports.updateOfflineOrder = async (req, res) => {
           id: true,
           stageKey: true,
           status: true,
-          productionWorkOrder: { select: { id: true } }
+          productionWorkOrder: { select: { id: true, startDate: true } }
         }
       });
 
@@ -1790,10 +1790,21 @@ exports.updateOfflineOrder = async (req, res) => {
       }
 
       // 2026-04-21: 列表 inline 编辑开始/交期 → upsert 到 ProductionWorkOrder
-      if (startDate !== undefined || dueDate !== undefined) {
+      // 2026-04-27: 任意字段 PATCH 时，若 productionWorkOrder.startDate 为空则自动补今天
+      const shouldUpsertWorkOrder =
+        startDate !== undefined ||
+        dueDate !== undefined ||
+        (!existing.productionWorkOrder?.startDate && Object.keys(data).length > 0);
+
+      if (shouldUpsertWorkOrder) {
         const workOrderData = {};
         if (startDate !== undefined) workOrderData.startDate = parseDate(startDate);
         if (dueDate !== undefined) workOrderData.dueDate = parseDate(dueDate);
+
+        // 自动补 startDate：仅当调用方未明确提供 startDate，且当前无 startDate 时
+        if (startDate === undefined && !existing.productionWorkOrder?.startDate) {
+          workOrderData.startDate = new Date();
+        }
 
         if (existing.productionWorkOrder) {
           await tx.productionWorkOrder.update({
