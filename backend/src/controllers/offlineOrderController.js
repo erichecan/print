@@ -680,7 +680,7 @@ exports.createOfflineOrder = async (req, res) => {
             offlineOrderId: createdOrder.id,
             workOrderCode: generateWorkOrderCode(),
             status: workOrderStatus,
-            startDate: startDate ? parseDate(startDate) : null,
+            startDate: startDate ? parseDate(startDate) : new Date(),
             dueDate: dueDate ? parseDate(dueDate) : (deliveryDate ? parseDate(deliveryDate) : null),
           }
         });
