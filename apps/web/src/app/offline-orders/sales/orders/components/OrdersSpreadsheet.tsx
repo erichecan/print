@@ -1197,7 +1197,23 @@ export default function OrdersSpreadsheet() {
               </div>
             )}
           </div>
-          {filterStatuses.length > 0 && (
+          {/* 已完成订单快捷按钮 */}
+          <button
+            type="button"
+            onClick={() => {
+              const isActive = filterStatuses.length === 1 && filterStatuses[0] === '完成';
+              setFilterStatuses(isActive ? [] : ['完成']);
+              setStatusDropdownOpen(false);
+            }}
+            className={`px-3 py-1 text-xs font-medium rounded border transition-colors ${
+              filterStatuses.length === 1 && filterStatuses[0] === '完成'
+                ? 'bg-red-500 text-white border-red-500'
+                : 'bg-white text-red-500 border-red-400 hover:bg-red-50'
+            }`}
+          >
+            已完成订单
+          </button>
+          {filterStatuses.length > 0 && !(filterStatuses.length === 1 && filterStatuses[0] === '完成') && (
             <div className="flex flex-wrap gap-1">
               {filterStatuses.map((s) => (
                 <span
