@@ -4174,11 +4174,11 @@ return (
       </div>
     </header>
 
-  {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */ }
-    < div className = "dl-main" >
-    {/* 2. Dark Rail - 左侧深灰色工具栏 */ }
-{/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
-    < nav className = "dl-rail" aria - label="Design tools" data - testid="rail" >
+  {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */}
+    <div className="dl-main">
+    {/* 2. Dark Rail - 左侧深灰色工具栏 */}
+    {/* 阶段1：添加 data-testid 用于 Playwright 测试 */}
+    <nav className="dl-rail" aria-label="Design tools" data-testid="rail">
   <button
     className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
     onClick={() => handleToolClick('upload')}
@@ -4221,12 +4221,12 @@ return (
     <span className="dl-rail__btn-label">Add Art</span>
   </button>
 
-  {/* 启用 Product Colors 功能 */ }
-    < button
-    className = {`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
-onClick = {() => handleToolClick('colors')}
-aria - label="Product colors"
-aria - pressed={ activeTool === 'colors' }
+  {/* 启用 Product Colors 功能 */}
+    <button
+    className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('colors')}
+    aria-label="Product colors"
+    aria-pressed={activeTool === 'colors'}
   >
     <span className="dl-rail__btn-icon">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -4238,9 +4238,9 @@ aria - pressed={ activeTool === 'colors' }
       </svg>
     </span>
     <span className="dl-rail__btn-label">Product Colors</span>
-  </button >
+  </button>
 
-  {/* 暂时屏蔽 Add Names 功能 */ }
+  {/* 暂时屏蔽 Add Names 功能 */}
 {
   false && (
     <button
@@ -4257,10 +4257,10 @@ aria - pressed={ activeTool === 'colors' }
     </button>
   )
 }
-</nav >
+</nav>
 
-  {/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */ }
-  < ToolPanel panelType = { toolPanelType } onBack = { handleBackToHome } >
+  {/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */}
+  <ToolPanel panelType={toolPanelType} onBack={handleBackToHome}>
     { toolPanelType === 'home' && (
       <HomePanel onAction={handleHomeAction} />
     )}
@@ -4334,8 +4334,8 @@ aria - pressed={ activeTool === 'colors' }
     />
   )
 }
-{/* 移除：layers 功能 */ }
-</ToolPanel >
+{/* 移除：layers 功能 */}
+</ToolPanel>
 
   {/* 移除：模板库面板功能 */ }
 
@@ -4625,10 +4625,10 @@ aria - pressed={ activeTool === 'colors' }
     <span className="dl-sidebar__label">Zoom</span>
   </button>
 </aside>
-</div >
+</div>
 
-  {/* 5. Bottom Bar - 底部操作栏 */ }
-{/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+  {/* 5. Bottom Bar - 底部操作栏 */}
+{/* 阶段1：添加 data-testid 用于 Playwright 测试 */}
 <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
   <div className="dl-bottom-bar__left">
     <button

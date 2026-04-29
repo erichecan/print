@@ -1277,7 +1277,7 @@ export default function OrdersSpreadsheet() {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-420px)] min-h-[300px]">
       <div className="border border-gray-200 rounded min-w-[1760px]">
         <table className="w-full text-sm table-fixed">
           {/* 列宽 — 总计约 110rem ≈ 1760px */}
@@ -1298,7 +1298,7 @@ export default function OrdersSpreadsheet() {
             <col className="w-[10rem]" />{/* 备注 */}
             <col className="w-[10rem]" />{/* 操作 */}
           </colgroup>
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>
               <th className="px-2 py-2 text-left">编号</th>
               <th className="px-2 py-2 text-left">开始时间</th>
