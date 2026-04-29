@@ -69,12 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // 无论后端请求是否成功，都清除用户状态
       setUser(null);
       setError(null);
-      // Ensure local storage is cleared
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('auth_token');
-        // Clear any other auth related keys if needed
-        localStorage.removeItem('offline-order-intake-draft'); // Optional: clear drafts on logout? Maybe keep it.
-        // Force redirect
+        sessionStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_token'); // 兼容旧版本残留
         window.location.href = redirectUrl;
       }
     }

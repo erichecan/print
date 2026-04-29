@@ -365,8 +365,8 @@ exports.login = async (req, res) => {
 // 添加连接错误重试逻辑
     let user;
     try {
-      user = await prisma.user.findUnique({
-        where: { email: normalizedEmail },
+      user = await prisma.user.findFirst({
+        where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
       });
     } catch (dbError) {
 // 如果是连接错误，尝试断开并重连
@@ -382,8 +382,8 @@ exports.login = async (req, res) => {
 // 增加重试等待时间，给 TLS 连接更多时间建立
           await new Promise(resolve => setTimeout(resolve, 200));
           // 重试一次
-          user = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
+          user = await prisma.user.findFirst({
+            where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
           });
         } catch (retryError) {
           console.error('[Auth] Database error finding user (after retry)', {

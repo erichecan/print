@@ -827,24 +827,24 @@ export const ordersApi = {
 
 // Auth API
 // 创建同域 API 调用函数（用于登录相关请求，避免跨域 Cookie 问题）
-// 从 localStorage 获取 token
+// 从 sessionStorage 获取 token（sessionStorage 随 tab 关闭自动清除，防止会话共享）
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   try {
-    return localStorage.getItem('auth_token');
+    return sessionStorage.getItem('auth_token');
   } catch (e) {
-    console.error('[API] Error reading token from localStorage:', e);
+    console.error('[API] Error reading token from sessionStorage:', e);
     return null;
   }
 }
 
-// 保存 token 到 localStorage
+// 保存 token 到 sessionStorage
 export function setAuthToken(token: string): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem('auth_token', token);
+    sessionStorage.setItem('auth_token', token);
   } catch (e) {
-    console.error('[API] Error saving token to localStorage:', e);
+    console.error('[API] Error saving token to sessionStorage:', e);
   }
 }
 
@@ -852,9 +852,10 @@ export function setAuthToken(token: string): void {
 export function clearAuthToken(): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_token'); // 兼容旧版本残留
   } catch (e) {
-    console.error('[API] Error clearing token from localStorage:', e);
+    console.error('[API] Error clearing token from sessionStorage:', e);
   }
 }
 
