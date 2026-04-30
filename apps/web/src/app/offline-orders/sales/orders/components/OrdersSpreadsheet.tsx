@@ -1300,12 +1300,14 @@ export default function OrdersSpreadsheet() {
           </colgroup>
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>
-              <th className="px-2 py-2 text-left">编号</th>
-              <th className="px-2 py-2 text-left">开始时间</th>
-              <th className="px-2 py-2 text-left">客户名</th>
-              <th className="px-2 py-2 text-left">Due Date</th>
-              <th className="px-2 py-2 text-right">件数</th>
-              <th className="px-2 py-2 text-right">总金额</th>
+              {/* 冻结列 1-6：sticky left，z-20 确保覆盖可滚动的 body td */}
+              <th className="px-2 py-2 text-left sticky left-0 z-20 bg-gray-50">编号</th>
+              <th className="px-2 py-2 text-left sticky left-[5rem] z-20 bg-gray-50">开始时间</th>
+              <th className="px-2 py-2 text-left sticky left-[14rem] z-20 bg-gray-50">客户名</th>
+              <th className="px-2 py-2 text-left sticky left-[24rem] z-20 bg-gray-50">Due Date</th>
+              <th className="px-2 py-2 text-right sticky left-[33rem] z-20 bg-gray-50">件数</th>
+              <th className="px-2 py-2 text-right sticky left-[37rem] z-20 bg-gray-50 border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">总金额</th>
+              {/* 可滚动列 */}
               <th className="px-2 py-2 text-right">预付款</th>
               <th className="px-2 py-2 text-right">余款</th>
               <th className="px-2 py-2 text-left">Type</th>
@@ -1321,11 +1323,11 @@ export default function OrdersSpreadsheet() {
             {/* Inline 新增行（2026-04-21：列序 = 编号/开始/客户/Due/件数/总额/预付/Type/Status/发票/备注+保存） */}
             <tr className="bg-yellow-50 border-b border-yellow-200">
               {/* 编号 */}
-              <td className="px-2 py-1 text-gray-400 text-xs">自动</td>
+              <td className="px-2 py-1 text-gray-400 text-xs sticky left-0 z-[1] bg-yellow-50">自动</td>
               {/* 开始时间 */}
-              <td className="px-2 py-1 text-gray-400 text-xs">保存后</td>
+              <td className="px-2 py-1 text-gray-400 text-xs sticky left-[5rem] z-[1] bg-yellow-50">保存后</td>
               {/* 客户名 */}
-              <td className="px-2 py-1">
+              <td className="px-2 py-1 sticky left-[14rem] z-[1] bg-yellow-50">
                 <input
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
                   placeholder="客户名 / 公司"
@@ -1334,7 +1336,7 @@ export default function OrdersSpreadsheet() {
                 />
               </td>
               {/* Due Date */}
-              <td className="px-2 py-1">
+              <td className="px-2 py-1 sticky left-[24rem] z-[1] bg-yellow-50">
                 <input
                   type="date"
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
@@ -1343,7 +1345,7 @@ export default function OrdersSpreadsheet() {
                 />
               </td>
               {/* 件数 */}
-              <td className="px-2 py-1 text-right">
+              <td className="px-2 py-1 text-right sticky left-[33rem] z-[1] bg-yellow-50">
                 <input
                   type="number"
                   step="1"
@@ -1355,7 +1357,7 @@ export default function OrdersSpreadsheet() {
                 />
               </td>
               {/* 总金额 */}
-              <td className="px-2 py-1 text-right">
+              <td className="px-2 py-1 text-right sticky left-[37rem] z-[1] bg-yellow-50 border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">
                 <input
                   type="number"
                   step="0.01"
@@ -1484,9 +1486,9 @@ export default function OrdersSpreadsheet() {
                   }}
                   className={`border-b border-gray-100 ${rowBgClass(order)} hover:brightness-95 cursor-pointer`}
                 >
-                  {/* 1. 编号 */}
+                  {/* 1. 编号 — 冻结列 */}
                   <td
-                    className="px-2 py-1 text-xs text-blue-700 font-mono"
+                    className={`px-2 py-1 text-xs text-blue-700 font-mono sticky left-0 z-[1] ${rowBgClass(order)}`}
                     title={`${order.orderCode}\n项目: ${order.projectName || '-'}\n联系人: ${
                       order.contact?.name || '-'
                     }\n公司: ${order.contact?.company || '-'}\n创建于: ${formatDate(
@@ -1497,8 +1499,8 @@ export default function OrdersSpreadsheet() {
                       {order.orderCode || '—'}
                     </span>
                   </td>
-                  {/* 2. 开始时间 */}
-                  <td className="px-2 py-1 text-xs">
+                  {/* 2. 开始时间 — 冻结列 */}
+                  <td className={`px-2 py-1 text-xs sticky left-[5rem] z-[1] ${rowBgClass(order)}`}>
                     <input
                       key={`startDate-${order.id}-${order.productionWorkOrder?.startDate ?? 'none'}`}
                       type="date"
@@ -1519,8 +1521,8 @@ export default function OrdersSpreadsheet() {
                       }}
                     />
                   </td>
-                  {/* 3. 客户名（含缩略图） */}
-                  <td className="px-2 py-1">
+                  {/* 3. 客户名（含缩略图）— 冻结列 */}
+                  <td className={`px-2 py-1 sticky left-[14rem] z-[1] ${rowBgClass(order)}`}>
                     <div className="flex items-center gap-2 min-w-0">
                       <ThumbnailCell assets={order.assets} />
                       <input
@@ -1545,8 +1547,8 @@ export default function OrdersSpreadsheet() {
                       />
                     </div>
                   </td>
-                  {/* 4. Due Date */}
-                  <td className="px-2 py-1 text-xs">
+                  {/* 4. Due Date — 冻结列 */}
+                  <td className={`px-2 py-1 text-xs sticky left-[24rem] z-[1] ${rowBgClass(order)}`}>
                     <input
                       type="date"
                       defaultValue={
@@ -1568,8 +1570,8 @@ export default function OrdersSpreadsheet() {
                       }}
                     />
                   </td>
-                  {/* 5. 件数 */}
-                  <td className="px-2 py-1 text-right">
+                  {/* 5. 件数 — 冻结列 */}
+                  <td className={`px-2 py-1 text-right sticky left-[33rem] z-[1] ${rowBgClass(order)}`}>
                     <input
                       type="number"
                       step="1"
@@ -1585,8 +1587,8 @@ export default function OrdersSpreadsheet() {
                       }}
                     />
                   </td>
-                  {/* 6. 总金额 */}
-                  <td className="px-2 py-1 text-right">
+                  {/* 6. 总金额 — 冻结列（最后一个冻结列，加右侧分隔线） */}
+                  <td className={`px-2 py-1 text-right sticky left-[37rem] z-[1] ${rowBgClass(order)} border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]`}>
                     <input
                       type="number"
                       step="0.01"
