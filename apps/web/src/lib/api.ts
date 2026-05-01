@@ -839,13 +839,15 @@ function getToken(): string | null {
   }
 }
 
-// 保存 token 到 sessionStorage
+// 保存 token 到 sessionStorage 和 localStorage（sessionStorage 随 tab 关闭自动清除；
+// localStorage 跨 tab 可访问，确保在新标签页打开表单时仍能读取 token）
 export function setAuthToken(token: string): void {
   if (typeof window === 'undefined') return;
   try {
     sessionStorage.setItem('auth_token', token);
+    localStorage.setItem('auth_token', token);
   } catch (e) {
-    console.error('[API] Error saving token to sessionStorage:', e);
+    console.error('[API] Error saving token to storage:', e);
   }
 }
 
