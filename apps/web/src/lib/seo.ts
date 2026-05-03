@@ -5,6 +5,9 @@
 
 import type { Metadata } from 'next';
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://suvernireplus.com';
+const DEFAULT_OG_IMAGE = `${SITE_URL}/assets/hero/hero-products.jpg`;
+
 export interface SEOMetadata {
   title: string;
   description: string;
@@ -25,8 +28,8 @@ export function generateSEOMetadata(options: SEOMetadata): Metadata {
     title,
     description,
     keywords = [],
-    image = 'https://suvernireplus.com/assets/og-home.jpg',
-    url = 'https://suvernireplus.com',
+    image = DEFAULT_OG_IMAGE,
+    url = SITE_URL,
     type = 'website',
     publishedTime,
     modifiedTime,
@@ -76,12 +79,12 @@ export function generateWebsiteSchema() {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'suvernire plus',
-    url: 'https://suvernireplus.com',
+    url: SITE_URL,
     potentialAction: {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: 'https://suvernireplus.com/search?q={search_term_string}',
+        urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },
@@ -97,18 +100,48 @@ export function generateOrganizationSchema() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'suvernire plus',
-    url: 'https://suvernireplus.com',
-logo: 'https://suvernireplus.com/logo.png', // 使用 Souvenir Plus Inc 官方 logo
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: '+1-416-916-6352',
       contactType: 'Customer Service',
-      areaServed: 'US',
+      areaServed: 'CA',
       availableLanguage: ['en', 'zh'],
     },
-    sameAs: [
-      // 可以添加社交媒体链接
+    sameAs: [],
+  };
+}
+
+/**
+ * 生成本地商家结构化数据 (JSON-LD)
+ * 用于提升本地搜索排名
+ */
+export function generateLocalBusinessSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: 'suvernire plus',
+    description: 'Custom merch and promotional products. T-shirts, hoodies, hats & more with expert design help.',
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
+    image: DEFAULT_OG_IMAGE,
+    telephone: '+1-416-916-6352',
+    email: 'support@suvernireplus.com',
+    priceRange: '$$',
+    currenciesAccepted: 'CAD, USD',
+    paymentAccepted: 'Credit Card, Debit Card',
+    areaServed: ['CA', 'US'],
+    hasMap: 'https://maps.google.com',
+    openingHoursSpecification: [
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        opens: '09:00',
+        closes: '18:00',
+      },
     ],
+    sameAs: [],
   };
 }
 
@@ -132,7 +165,7 @@ export function generateProductSchema(product: {
   const {
     name,
     description,
-    image = 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
+    image = `${SITE_URL}/assets/hero/hero-card-tee.jpg`,
     price,
     currency = 'CAD',
     sku,
@@ -143,7 +176,7 @@ export function generateProductSchema(product: {
   } = product;
 
   const images = Array.isArray(image) ? image : [image];
-  const productUrl = url || (sku ? `https://suvernireplus.com/products/${sku}` : `https://suvernireplus.com/products/${name.toLowerCase().replace(/\s+/g, '-')}`);
+  const productUrl = url || (sku ? `${SITE_URL}/products/${sku}` : `${SITE_URL}/products/${name.toLowerCase().replace(/\s+/g, '-')}`);
 
   return {
     '@context': 'https://schema.org',
@@ -171,3 +204,15 @@ export function generateProductSchema(product: {
   };
 }
 
+export function generateBreadcrumbSchema(items: Array<{ name: string; url: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}

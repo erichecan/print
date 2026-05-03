@@ -1,7 +1,7 @@
 // 商品详情页面包装器
 // 优化 SEO 元数据，从 API 获取实际产品信息 for Issue #154
 import { ProductDetail } from '@/components/product/detail/ProductDetail';
-import { generateSEOMetadata } from '@/lib/seo';
+import { generateSEOMetadata, generateBreadcrumbSchema } from '@/lib/seo';
 import type { Metadata } from 'next';
 import { API_BASE_URL } from '@/lib/api-config';
 
@@ -31,12 +31,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   if (product) {
     const productName = product.name || params.slug.replace(/-/g, ' ');
     const description = product.description || `Custom ${productName} - Design your own custom apparel. Free shipping, satisfaction guaranteed.`;
-    const image = product.images?.[0]?.url || product.imageUrl || 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg';
-    const fullImageUrl = image.startsWith('http') ? image : `https://suvernireplus.com${image}`;
+    const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://suvernireplus.com';
+    const image = product.images?.[0]?.url || product.imageUrl || `${SITE_URL}/assets/hero/hero-card-tee.jpg`;
+    const fullImageUrl = image.startsWith('http') ? image : `${SITE_URL}${image}`;
 
     return generateSEOMetadata({
       title: productName,
-      description: description.substring(0, 160), // 限制描述长度
+      description: description.substring(0, 160),
       keywords: [
         productName.toLowerCase(),
         'custom apparel',
@@ -44,19 +45,19 @@ export async function generateMetadata({ params }: { params: { slug: string } })
         product.category?.name?.toLowerCase() || '',
         product.brand?.name?.toLowerCase() || '',
       ].filter(Boolean),
-      url: `https://suvernireplus.com/products/${params.slug}`,
+      url: `${SITE_URL}/products/${params.slug}`,
       image: fullImageUrl,
       type: 'article',
     });
   }
 
-  // 回退到默认元数据
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://suvernireplus.com';
   return generateSEOMetadata({
-    title: `商品详情 - ${params.slug.replace(/-/g, ' ')}`,
-    description: '查看商品详情、价格和定制选项。添加到购物车并开始设计您的定制商品。',
-    keywords: ['商品', '定制商品', 'T恤', '卫衣', '服装'],
-    url: `https://suvernireplus.com/products/${params.slug}`,
-    image: 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
+    title: `${params.slug.replace(/-/g, ' ')} - Custom Merchandise`,
+    description: 'View product details, pricing, and customization options. Add to cart and start designing your custom merchandise.',
+    keywords: ['custom apparel', 'custom merchandise', 't-shirt', 'hoodie', 'promotional products'],
+    url: `${SITE_URL}/products/${params.slug}`,
+    image: `${SITE_URL}/assets/hero/hero-card-tee.jpg`,
     type: 'article',
   });
 }
@@ -69,10 +70,20 @@ export async function generateStaticParams() {
 import { Suspense } from 'react';
 
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
-  void params; // 满足静态导出要求，实际 slug 由组件内部解析
+  const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://suvernireplus.com';
+  const productName = params.slug.replace(/-/g, ' ');
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: SITE_URL },
+    { name: 'Products', url: `${SITE_URL}/products` },
+    { name: productName, url: `${SITE_URL}/products/${params.slug}` },
+  ]);
+
   return (
-    <Suspense fallback={<div className="container mx-auto p-8 text-center">Loading product...</div>}>
-      <ProductDetail />
-    </Suspense>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <Suspense fallback={<div className="container mx-auto p-8 text-center">Loading product...</div>}>
+        <ProductDetail />
+      </Suspense>
+    </>
   );
 }

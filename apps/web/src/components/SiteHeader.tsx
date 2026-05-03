@@ -281,6 +281,9 @@ export function SiteHeader() {
               )}
             </ul>
             <div className="primary-nav__actions">
+              <Link href="/offline-orders" className="primary-nav__offline-btn">
+                Offline Orders
+              </Link>
               {/* 根据登录状态显示不同内容 */}
               {authLoading ? (
                 <span style={{ opacity: 0.6 }}>Loading...</span>

@@ -54,8 +54,10 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
   variable: '--font-noto-sans-devanagari',
 }); // Hindi (Devanagari)
 
-// 补充完整的 SEO 元数据，基于原型实现
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://suvernireplus.com';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: 'Custom Merch & Promotional Products | suvernire plus',
     template: '%s | suvernire plus',
@@ -72,13 +74,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://suvernireplus.com',
+    url: siteUrl,
     siteName: 'suvernire plus',
     title: 'Custom Merch & Promotional Products | suvernire plus',
     description: 'Design custom t-shirts, hoodies, and apparel online. Free shipping, satisfaction guaranteed.',
     images: [
       {
-        url: 'https://suvernireplus.com/assets/og-home.jpg',
+        url: '/assets/hero/hero-products.jpg',
         width: 1200,
         height: 630,
         alt: 'suvernire plus - Custom Merch & Promotional Products',
@@ -89,15 +91,10 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Custom Merch & Promotional Products | suvernire plus',
     description: 'Design custom t-shirts, hoodies, and apparel online. Free shipping, satisfaction guaranteed.',
-    images: ['https://suvernireplus.com/assets/twitter-home.jpg'],
+    images: ['/assets/hero/hero-products.jpg'],
   },
   alternates: {
-    canonical: 'https://suvernireplus.com',
-  },
-  other: {
-    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-    'Pragma': 'no-cache',
-    'Expires': '0',
+    canonical: siteUrl,
   },
 };
 
