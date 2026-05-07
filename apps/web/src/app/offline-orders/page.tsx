@@ -1443,6 +1443,9 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
       try {
         setIsSubmitting(true);
+        if (formState.requiresInvoice && !formState.invoiceInfo) {
+          throw new Error('发票信息丢失，请返回上一步重新填写发票信息后再提交。');
+        }
         const payload = new FormData();
         // PRD v2.0: 移除旧字段 projectName, artworkNotes, requiresMockups, requiresProof, rushOrder
         // 修复：编辑模式下也需要发送这些基本字段，确保后端能够更新
@@ -1461,7 +1464,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           payload.append('contactName', formState.contactName?.trim() || '');
           payload.append('email', formState.email?.trim() || '');
           payload.append('phone', formState.phone?.trim() || '');
-          const companyValue = formState.requiresInvoice && formState.invoiceInfo.companyName
+          const companyValue = formState.requiresInvoice && formState.invoiceInfo?.companyName
             ? formState.invoiceInfo.companyName.trim()
             : formState.company?.trim() || '';
           payload.append('company', companyValue);
@@ -1476,7 +1479,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           if (formState.phone) {
             payload.append('phone', formState.phone.trim());
           }
-          const companyValue = formState.requiresInvoice && formState.invoiceInfo.companyName
+          const companyValue = formState.requiresInvoice && formState.invoiceInfo?.companyName
             ? formState.invoiceInfo.companyName.trim()
             : formState.company || '';
           if (companyValue) {
@@ -1526,8 +1529,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             colorGroupsByProduct: formState.colorGroupsByProduct, // 按颜色分组的印刷位配置（主要数据源）
             requiresInvoice: formState.requiresInvoice,
             invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null,
-            paymentMethod: formState.paymentMethod || (formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : null),
-            referenceNumber: formState.referenceNumber || (formState.requiresInvoice ? formState.invoiceInfo.referenceNumber : null),
+            paymentMethod: formState.paymentMethod || (formState.requiresInvoice ? formState.invoiceInfo?.paymentMethod : null),
+            referenceNumber: formState.referenceNumber || (formState.requiresInvoice ? formState.invoiceInfo?.referenceNumber : null),
             depositAmount: formState.depositAmount,
             sizeFees: orderConfig.sizeFees, // Fix: Save size fees to configuration
             pricing: {
@@ -1551,8 +1554,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         }
 
         // Fix: Always send payment info if available, regardless of invoice requirement
-        const finalPaymentMethod = formState.paymentMethod || (formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : '');
-        const finalReferenceNumber = formState.referenceNumber || (formState.requiresInvoice ? formState.invoiceInfo.referenceNumber : '');
+        const finalPaymentMethod = formState.paymentMethod || (formState.requiresInvoice ? formState.invoiceInfo?.paymentMethod : '');
+        const finalReferenceNumber = formState.referenceNumber || (formState.requiresInvoice ? formState.invoiceInfo?.referenceNumber : '');
 
         if (finalPaymentMethod) {
           payload.append('paymentMethod', finalPaymentMethod);
