@@ -15,9 +15,39 @@ export default function SalesLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [retryCountdown, setRetryCountdown] = useState(0);
 
 // Use global auth context to update state after login
   const { refresh } = useAuth();
+
+  const isDbColdStartError = (message: string) =>
+    /database connection error|database.*connect|connecting/i.test(message);
+
+  const attemptLogin = async (email: string, password: string, retryLeft = 2): Promise<Awaited<ReturnType<typeof authApi.login>>> => {
+    try {
+      return await authApi.login(email, password);
+    } catch (err: any) {
+      if (retryLeft > 0 && isDbColdStartError(err.message || '')) {
+        const wait = (4 - retryLeft) * 3;
+        setError(`服务正在启动中，将在 ${wait} 秒后自动重试...`);
+        setRetryCountdown(wait);
+        await new Promise<void>(resolve => {
+          let remaining = wait;
+          const timer = setInterval(() => {
+            remaining -= 1;
+            setRetryCountdown(remaining);
+            if (remaining <= 0) { clearInterval(timer); resolve(); }
+          }, 1000);
+        });
+        setError('');
+        return attemptLogin(email, password, retryLeft - 1);
+      }
+      if (isDbColdStartError(err.message || '')) {
+        throw new Error('服务启动较慢，请稍候片刻后再试。');
+      }
+      throw err;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +55,7 @@ export default function SalesLoginPage() {
     setLoading(true);
 
     try {
-      const response = await authApi.login(email, password);
+      const response = await attemptLogin(email, password);
       const role = String(response.user?.role || '').toUpperCase();
 
 // 仅允许 SALES / SALES_MANAGER / ADMIN 进入 Sales 区域
@@ -75,7 +105,7 @@ export default function SalesLoginPage() {
             />
           </div>
           <button type="submit" disabled={loading} className="sales-login-button">
-            {loading ? '登录中...' : '登录'}
+            {retryCountdown > 0 ? `重试中 (${retryCountdown}s)...` : loading ? '登录中...' : '登录'}
           </button>
         </form>
       </div>

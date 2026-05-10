@@ -77,7 +77,7 @@ export function middleware(request: NextRequest) {
         loginUrl.pathname = '/offline-orders/sales/login';
       }
 
-      loginUrl.searchParams.set('callbackUrl', pathname);
+      loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
   }
