@@ -329,20 +329,20 @@ export function getStripeSecretKey(): string {
 export function validateEnvConfig(): void {
   try {
     if (typeof window === 'undefined') {
-      // 服务端：验证后端 API URL 和 Stripe Secret Key
       getBackendApiBaseUrl();
       getStripeSecretKey();
     } else {
-      // 客户端：验证前端 API URL 和 Stripe Publishable Key
       getFrontendApiBaseUrl();
-      getStripePublishableKey();
+      try {
+        getStripePublishableKey();
+      } catch {
+        console.warn('[Env Config] Stripe key missing — checkout will be unavailable, but other features work normally');
+      }
     }
   } catch (error) {
-    // 在开发环境只警告，不阻止启动
     if (isDevelopment) {
       console.warn('[Env Config] ⚠️ 环境变量配置警告:', error instanceof Error ? error.message : String(error));
     } else {
-      // 生产环境：抛出错误，阻止启动
       throw error;
     }
   }
