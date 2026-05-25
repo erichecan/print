@@ -132,8 +132,8 @@ const ICONS: Record<string, JSX.Element> = {
 
 const NAV_LINKS = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard', exact: true, i18n: 'dashboard' },
-  { href: '/admin/online-products', label: 'Online Products', icon: 'products', i18n: 'products' },
-  { href: '/admin/online-categories', label: 'Online Categories', icon: 'categories', i18n: 'categories' },
+  { href: '/admin/online-products', label: 'Online Products', icon: 'products', i18n: 'onlineProducts' },
+  { href: '/admin/online-categories', label: 'Online Categories', icon: 'categories', i18n: 'onlineCategories' },
   { href: '/admin/orders', label: 'Orders', icon: 'orders', i18n: 'orders' },
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/designs', label: 'Design Review', icon: 'design', i18n: 'designReview' },
