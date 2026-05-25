@@ -7,23 +7,15 @@
 * 完全重新设计布局以匹配参考设计，包含完整的筛选器和产品卡片
  */
 
-import Link from 'next/link';
-import Image from 'next/image'; // 使用 Next Image 组件提升性能
-// 使用统一的 API 客户端
 import { apiGet } from '@/lib/apiClient';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
-import SortSelect from './SortSelect';
 
-// 分组分类导航组件（替换原有的树状导航）
-const SidebarGrouped = dynamic(() => import('@/components/catalog/SidebarGrouped').then(mod => mod.SidebarGrouped), { ssr: false });
-// 客户端筛选组件
-const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
-// 动态筛选器组件（从API获取筛选选项和数量）
-const DynamicFilters = dynamic(() => import('@/components/products/DynamicFilters').then(mod => mod.DynamicFilters), { ssr: false });
-// 移动端筛选抽屉组件
-const MobileFilterDrawer = dynamic(() => import('@/components/products/MobileFilterDrawer').then(mod => mod.MobileFilterDrawer), { ssr: false });
+const PLPLayoutClient = dynamic(
+  () => import('./PLPLayoutClient').then(mod => ({ default: mod.PLPLayoutClient })),
+  { ssr: false }
+);
 
 // 生成产品列表页 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
@@ -346,80 +338,25 @@ export default async function ProductsPage({
     ).values()
   ).sort((a, b) => a.name.localeCompare(b.name));
 
-  const prevLink =
-    pagination.page > 1
-      ? buildRoute(normalizedParams, { page: String(pagination.page - 1) })
-      : null;
-  const nextLink =
-    pagination.page < pagination.totalPages
-      ? buildRoute(normalizedParams, { page: String(pagination.page + 1) })
-      : null;
-
-  // 使用动态导入的客户端组件，禁用 SSR，避免服务端报错影响页面渲染
-  const ProductsClient = dynamic(() => import('./ProductsClient'), { ssr: false });
-
-  // 获取当前分类名称用于面包屑
   const currentCategoryName = currentCollection
     ? (collections.find(c => c.slug === currentCollection)?.name || 'T-shirts')
-    : (normalizedParams.category ? (normalizedParams.category.charAt(0).toUpperCase() + (normalizedParams.category as string).slice(1).replace(/-/g, ' ')) : 'T-shirts');
+    : (normalizedParams.category
+      ? (normalizedParams.category.charAt(0).toUpperCase() + (normalizedParams.category as string).slice(1).replace(/-/g, ' '))
+      : 'T-shirts');
 
   return (
     <div className="catalog-page">
-      {/* 完全重新设计的布局以匹配参考设计 */}
       <section className="plp-new">
-        <div className="container plp-new__grid">
-          {/* 左侧筛选器 */}
-          <aside className="plp-new__sidebar">
-            {/* 使用分组分类导航组件 */}
-            <SidebarGrouped
-              selected={{
-                groupSlug: resolvedSearchParams?.group as string,
-                childSlug: resolvedSearchParams?.category as string,
-              }}
-            />
-            {/* 使用客户端筛选组件处理筛选逻辑 */}
-            <ProductFiltersClient currentCollection={currentCollection} currentBrand={currentBrand} brands={brands} />
-            {/* 使用动态筛选器组件（从API获取筛选选项和数量） */}
-            {/* 移除表单和按钮，改为实时筛选（参考 Custom Ink） */}
-            <DynamicFilters currentCollection={currentCollection} />
-          </aside>
-
-          {/* 主内容区 */}
-          <div className="plp-new__main">
-            {/* 移动端筛选按钮 - 仅在移动端显示，但 MobileProductListView 已包含它，所以这里隐藏 */}
-            <div className="md:hidden hidden">
-              <MobileFilterDrawer
-                currentCollection={currentCollection}
-                currentBrand={currentBrand}
-                brands={brands}
-              />
-            </div>
-
-            {/* 面包屑和标题 - 移动端由 MobileProductListView 渲染，这里仅在桌面端显示 */}
-            <nav className="breadcrumb-nav hidden md:block">
-              <ol>
-                <li><Link href="/products">All Products</Link></li>
-                <li>›</li>
-                <li><Link href="/products?category=t-shirts">T-shirts</Link></li>
-                <li>›</li>
-                <li>{currentCategoryName}</li>
-              </ol>
-            </nav>
-
-            <h1 className="plp-new__title hidden md:block">{currentCategoryName}</h1>
-
-            {/* 排序 - 移动端由 MobileProductListView 渲染，这里仅在桌面端显示 */}
-            <div className="hidden md:block">
-              <SortSelect defaultValue={currentSort} />
-            </div>
-
-            {/* 产品网格 */}
-            <ProductsClient
-              collections={collections}
-              initialCategoryName={currentCategoryName}
-            />
-          </div>
-        </div>
+        <PLPLayoutClient
+          collections={collections}
+          currentSort={currentSort}
+          currentCollection={currentCollection}
+          currentBrand={currentBrand}
+          currentCategoryName={currentCategoryName}
+          brands={brands}
+          groupSlug={resolvedSearchParams?.group as string | undefined}
+          categorySlug={resolvedSearchParams?.category as string | undefined}
+        />
       </section>
     </div>
   );

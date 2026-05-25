@@ -91,7 +91,7 @@ export function BuyBox({
   onColorSelect: controlledOnColorSelect,
 }: BuyBoxProps) {
   const router = useRouter();
-  const [selectedStyle, setSelectedStyle] = useState(style.options[0]?.value || '');
+  const [selectedStyle] = useState(style.options[0]?.value || '');
 
   // Use controlled color if provided, otherwise internal state
   const [internalColor, setInternalColor] = useState(colors.find(c => c.available)?.name || '');
@@ -282,27 +282,6 @@ export function BuyBox({
         </div>
         <span className={styles.buyboxRatingValue}>{rating.average.toFixed(2)}</span>
         <span className={styles.buyboxRatingCount}>({rating.count} reviews)</span>
-      </div>
-
-      {/* 参考图一位置：Style下拉 */}
-      <div className={styles.buyboxField}>
-        <label htmlFor="style-select" className={styles.buyboxLabel}>
-          Style
-        </label>
-        <select
-          id="style-select"
-          className={styles.buyboxSelect}
-          value={selectedStyle}
-          onChange={(e) => setSelectedStyle(e.target.value)}
-          aria-label="Select product style"
-        >
-          {style.options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <p className={styles.buyboxDescription}>{style.description}</p>
       </div>
 
       {/* 参考图一位置：Color 圆形色块 */}

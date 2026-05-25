@@ -105,12 +105,31 @@ model Category {
   designTemplates     DesignTemplate[]
   productCategories   ProductCategory[]
   products            Product[]
-  offlineProducts     offline_order_products[]
   promotionCategories PromotionCategory[]
 
   @@index([slug])
   @@index([parentId])
   @@map("categories")
+}
+
+model OfflineCategory {
+  id              String                   @id @default(uuid())
+  name            String
+  slug            String                   @unique
+  description     String?
+  imageUrl        String?                  @map("image_url")
+  parentId        String?                  @map("parent_id")
+  sortOrder       Int                      @default(0) @map("sort_order")
+  isActive        Boolean                  @default(true) @map("is_active")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  parent          OfflineCategory?         @relation("OfflineCategoryTree", fields: [parentId], references: [id])
+  children        OfflineCategory[]        @relation("OfflineCategoryTree")
+  offlineProducts offline_order_products[]
+
+  @@index([slug])
+  @@index([parentId])
+  @@map("offline_categories")
 }
 
 model Brand {
@@ -1034,7 +1053,7 @@ model offline_order_products {
   sku                               String?                             @db.VarChar(255)
   stockQuantity                     Int                                 @default(0) @map("stock_quantity")
   offline_order_product_color_sizes offline_order_product_color_sizes[]
-  category                          Category?                           @relation(fields: [categoryId], references: [id])
+  offlineCategory                   OfflineCategory?                    @relation(fields: [categoryId], references: [id])
   supplier                          supplier?                           @relation(fields: [supplierId], references: [id])
 
   @@index([categoryId])

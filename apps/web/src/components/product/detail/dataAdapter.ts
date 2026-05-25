@@ -1,5 +1,17 @@
 import { ApiProduct, ProductData } from './types';
 
+function shopifyThumbUrl(url: string, width = 160): string {
+    if (!url || !url.includes('cdn.shopify.com')) return url;
+    try {
+        const parsed = new URL(url);
+        parsed.searchParams.set('width', String(width));
+        parsed.searchParams.set('quality', '75');
+        return parsed.toString();
+    } catch {
+        return url;
+    }
+}
+
 // 预定义颜色映射 (可以扩展)
 const PREDEFINED_COLORS: Record<string, string> = {
     'Black': '#000000',
@@ -146,11 +158,14 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
 
             const matchedName = sortedColorNames.find(c => {
                 const cLower = c.toLowerCase();
-                // 匹配模式： "Color", "Product - Color - View", "Color - View", "Product - Color"
+                // 匹配模式（支持 hyphen 和 em-dash 两种分隔符）
                 return altText === cLower ||
                     altText.includes(` - ${cLower} - `) ||
                     altText.endsWith(` - ${cLower}`) ||
-                    altText.startsWith(`${cLower} - `);
+                    altText.startsWith(`${cLower} - `) ||
+                    altText.includes(` — ${cLower} — `) ||
+                    altText.includes(` — ${cLower}`) ||
+                    altText.endsWith(`— ${cLower}`);
             });
 
             if (matchedName) {
@@ -162,7 +177,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
             id: img.id,
             url: img.url,
             alt: img.alt || apiProduct.name,
-            thumbnail: img.url,
+            thumbnail: shopifyThumbUrl(img.url),
             color: linkedColor || null,
         };
     });
@@ -180,7 +195,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
                             id: `colorImg-${ci.color}-${idx}`,
                             url: url,
                             alt: `${apiProduct.name} - ${ci.color} - view ${idx + 1}`,
-                            thumbnail: url,
+                            thumbnail: shopifyThumbUrl(url),
                             color: ci.color,
                         });
                     }

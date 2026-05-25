@@ -368,70 +368,55 @@ export default function ProductsClient({
                 </div>
               </Link>
 
-              <div className="product-card-new__colors">
-                {displayedColors.map((color, colorIndex) => (
-                  <span
-                    key={colorIndex}
-                    className="color-dot"
-                    style={{ backgroundColor: color.hex }}
-                    title={color.name}
-                    onMouseEnter={() => {
-                      // 鼠标悬停时切换图片
-                      setHoveredColors(prev => ({
-                        ...prev,
-                        [product.id]: color.name
-                      }));
-                    }}
-                    onMouseLeave={() => {
-                      // 鼠标离开时恢复默认图片
-                      setHoveredColors(prev => {
-                        const newState = { ...prev };
-                        delete newState[product.id];
-                        return newState;
-                      });
-                    }}
-                  />
-                ))}
-                {moreColors > 0 && (
-                  <span className="color-more">+{moreColors}</span>
-                )}
-              </div>
+              <div className="product-card-new__info">
+                <h3 className="product-card-new__title">{product.name}</h3>
 
-              <h3 className="product-card-new__title">{product.name}</h3>
+                <div className="product-card-new__colors">
+                  {displayedColors.map((color, colorIndex) => (
+                    <span
+                      key={colorIndex}
+                      className="color-dot"
+                      style={{ backgroundColor: color.hex }}
+                      title={color.name}
+                      onMouseEnter={() => {
+                        setHoveredColors(prev => ({ ...prev, [product.id]: color.name }));
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredColors(prev => {
+                          const newState = { ...prev };
+                          delete newState[product.id];
+                          return newState;
+                        });
+                      }}
+                    />
+                  ))}
+                  {moreColors > 0 && (
+                    <span className="color-more">+{moreColors}</span>
+                  )}
+                </div>
 
-              <div className="product-card-new__rating">
-                <span className="rating-stars">
-                  {'★'.repeat(Math.floor(rating))}
-                  {'☆'.repeat(5 - Math.floor(rating))}
-                </span>
-                <span className="rating-value">{rating.toFixed(1)}</span>
-                <span className="rating-count">({reviewCount >= 10000 ? '10,000+' : reviewCount.toLocaleString()} reviews)</span>
-              </div>
+                <div className="product-card-new__price-row">
+                  <div className="product-card-new__rating">
+                    <span className="rating-stars">{'★'.repeat(Math.floor(rating))}{'☆'.repeat(5 - Math.floor(rating))}</span>
+                    <span className="rating-value">{rating.toFixed(1)}</span>
+                  </div>
+                  <div className="product-card-new__price">
+                    {bestPromotion && basePrice !== finalPrice ? (
+                      <>
+                        <span className="price-original">${basePrice.toFixed(2)}</span>
+                        <span className="price-amount price-amount--sale">${finalPrice.toFixed(2)}/ea</span>
+                      </>
+                    ) : (
+                      <span className="price-amount">${basePrice.toFixed(2)}/ea</span>
+                    )}
+                  </div>
+                </div>
 
-              <div className="product-card-new__price">
-                {/* 显示促销后的价格 */}
-                {bestPromotion && basePrice !== finalPrice ? (
-                  <>
-                    <span className="price-amount" style={{ textDecoration: 'line-through', color: '#999', marginRight: '8px' }}>
-                      ${basePrice.toFixed(2)}
-                    </span>
-                    <span className="price-amount" style={{ color: '#e74c3c', fontWeight: 'bold' }}>
-                      ${finalPrice.toFixed(2)}/ea
-                    </span>
-                  </>
-                ) : (
-                  <span className="price-amount">${basePrice.toFixed(2)}/ea</span>
-                )}
-                <span className="price-quantity">for 500 items</span>
-                <Link href={`/products/${product.slug}`} className="price-details-link">Pricing Details</Link>
-              </div>
-
-              <div className="product-card-new__shipping">
-                <span className="shipping-rush">3-Day Super Rush Available</span>
-              </div>
-
-              <div className="product-card-new__minimum">
-                <span>No Minimum</span>
+                <div className="product-card-new__meta">
+                  <span className="meta-rush">⚡ 3-Day Rush</span>
+                  <span className="meta-sep">·</span>
+                  <span className="meta-min">No Min</span>
+                </div>
               </div>
             </article>
           );

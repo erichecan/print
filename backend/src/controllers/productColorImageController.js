@@ -7,6 +7,7 @@ const { ProductColorImage, Product, Variant } = require('../models');
 const logger = require('../utils/logger');
 const settingService = require('../services/settingService');
 const { uploadBufferToGcs } = require('../utils/gcsStorage');
+const { uploadBufferToShopifyCdn, isShopifyCdnConfigured } = require('../utils/shopifyCdn');
 const { slugify } = require('../utils/productUpload'); // Assuming slugify exists here or I'll define it locally
 
 const localSlugify = (text) => {
@@ -340,28 +341,21 @@ exports.uploadColorImage = async (req, res) => {
     // Note: We use a fixed product folder for now as per frontend requirement
     const objectPath = `design-lab-products/gildan-softstyle-tshirt/${colorSlug}/${fileName}`;
 
-    const gcsUrl = await uploadBufferToGcs(file.buffer, objectPath, {
-      contentType: 'image/png', // Force PNG as per requirement
-      isPublic: true
-    });
-
-    // Also update the database record if it exists
-    // Fix: Find the default product first
-    const productSlug = 'design-lab-default-tee';
-    const product = await Product.findOne({ where: { slug: productSlug } });
-    // If using Prisma, this syntax is wrong. The project uses Prisma.
-    // Let's use Prisma syntax. this file used `require('../models')` which implies Sequelize OR Prisma wrapper?
-    // adminProductController used `prisma`. This file uses `ProductColorImage` from `../models`.
-    // Let's check `backend/src/models/index.js` to see what ORM is used.
-    // Assuming Sequelize based on `findAll`, `findOne`.
-    // Wait, the project moved to Prisma recently? `adminProductController` used `prisma`.
-    // But `productColorImageController` uses `ProductColorImage.findAll`.
-    // I need to be careful. Let's check `backend/src/models/index.js`.
+    let imageUrl;
+    if (isShopifyCdnConfigured()) {
+      const shopifyFilename = `design-lab-${colorSlug}-${fileName}`;
+      imageUrl = await uploadBufferToShopifyCdn(file.buffer, shopifyFilename, 'image/png', colorName);
+    } else {
+      imageUrl = await uploadBufferToGcs(file.buffer, objectPath, {
+        contentType: 'image/png',
+        isPublic: true,
+      });
+    }
 
     res.json({
       success: true,
-      url: gcsUrl,
-      objectPath
+      url: imageUrl,
+      objectPath,
     });
 
   } catch (error) {

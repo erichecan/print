@@ -80,6 +80,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
                   alt={img.alt}
                   width={80}
                   height={80}
+                  sizes="80px"
                   className={styles.galleryThumbnailImage}
                 />
               </button>
@@ -107,6 +108,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
                   alt={currentImage.alt}
                   width={800}
                   height={1000}
+                  sizes="(max-width: 768px) 100vw, 600px"
                   className={styles.galleryMainImage}
                   priority={selectedIndex === 0}
                 />

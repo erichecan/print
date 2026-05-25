@@ -13,6 +13,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
         categories: 'Categories',
         onlineProducts: 'Online Products',
         onlineCategories: 'Online Categories',
+        onlineOrders: 'Online Orders',
         orders: 'Orders',
         users: 'Users',
         designReview: 'Design Review',
@@ -377,6 +378,8 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
         unitCostPrompt: 'Unit cost',
         salePricePrompt: 'Sale price',
         invalidNumericValues: 'Invalid numeric values',
+        designLab: 'Design Lab',
+        fonts: 'Fonts',
         // Art Assets Management
         artAssets: 'Art Assets',
         artAssetsSubtitle: 'Manage Design Lab art assets and categories',
@@ -573,6 +576,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
         categories: '分类',
         onlineProducts: '线上商品',
         onlineCategories: '线上类目',
+        onlineOrders: '线上订单',
         orders: '订单',
         users: '用户',
         designReview: '设计审核',
@@ -937,6 +941,8 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
         unitCostPrompt: '单位成本',
         salePricePrompt: '售价',
         invalidNumericValues: '无效的数值',
+        designLab: 'Design Lab',
+        fonts: '字体管理',
         // 素材管理
         artAssets: '素材管理',
         artAssetsSubtitle: '管理 Design Lab 艺术素材和分类',

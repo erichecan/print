@@ -130,22 +130,23 @@ const ICONS: Record<string, JSX.Element> = {
   ),
 };
 
-const NAV_LINKS = [
+type NavItem =
+  | { type: 'group'; i18n: string }
+  | { type?: undefined; href: string; label: string; icon: string; exact?: boolean; i18n: string; sub?: boolean };
+
+const NAV_LINKS: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard', exact: true, i18n: 'dashboard' },
   { href: '/admin/online-products', label: 'Online Products', icon: 'products', i18n: 'onlineProducts' },
   { href: '/admin/online-categories', label: 'Online Categories', icon: 'categories', i18n: 'onlineCategories' },
-  { href: '/admin/orders', label: 'Orders', icon: 'orders', i18n: 'orders' },
+  { href: '/admin/online-orders', label: 'Online Orders', icon: 'orders', i18n: 'onlineOrders' },
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
-  { href: '/admin/designs', label: 'Design Review', icon: 'design', i18n: 'designReview' },
-  { href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // 生产管理
-  { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costManagement' }, // 成本管理 - 使用 costManagement 翻译键
-  { href: '/admin/offline-order-size-fees', label: 'Size Fees', icon: 'costs', i18n: 'sizeFees' }, // Added Size Fees configuration
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
-  { href: '/admin/referral-settings', label: 'Referral', icon: 'promotions', i18n: 'promotions' }, // 推广活动配置
-  { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // Design Lab art assets CMS
-  { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // Font management
-  { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials' }, // Dedicated testimonials management
-  { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' }, // Content Management System
+  { href: '/admin/referral-settings', label: 'Referral', icon: 'promotions', i18n: 'promotions' },
+  { type: 'group', i18n: 'designLab' },
+  { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets', sub: true },
+  { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts', sub: true },
+  { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' },
+  { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials', sub: true },
   { href: '/admin/settings/shipping', label: 'Shipping', icon: 'shipping', i18n: 'shipping' },
   { href: '/admin/settings/color-mapping', label: 'Color Mapping', icon: 'settings', i18n: 'colorMapping' },
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
@@ -210,7 +211,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [router, pathname, t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 未登录时直接跳转到管理员专用登录页
   // 如果当前路径是登录页面，则不执行重定向，避免循环
@@ -250,7 +252,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   ); // useCallback 保持导航判定引用稳定
 
   const currentNav = useMemo(() => {
-    return NAV_LINKS.find((link) => isActive(link.href, link.exact));
+    return NAV_LINKS.find((link) => link.type !== 'group' && isActive(link.href, link.exact));
   }, [isActive]);
 
   const toggleSidebar = useCallback(() => {
@@ -397,19 +399,27 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             </button>
           </div>
           <ul>
-            {NAV_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className={isActive(link.href, link.exact) ? 'is-active' : ''}
-
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <span className="admin-nav-icon" aria-hidden="true">{ICONS[link.icon]}</span>
-                  {!sidebarCollapsed && <span>{t(link.i18n)}</span>}
-                </Link>
-              </li>
-            ))}
+            {NAV_LINKS.map((item) => {
+              if (item.type === 'group') {
+                return (
+                  <li key={`group-${item.i18n}`} className="admin-nav-group">
+                    {!sidebarCollapsed && <span>{t(item.i18n)}</span>}
+                  </li>
+                );
+              }
+              return (
+                <li key={item.href} className={item.sub ? 'admin-nav-subitem' : undefined}>
+                  <Link
+                    href={item.href}
+                    className={isActive(item.href, item.exact) ? 'is-active' : ''}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <span className="admin-nav-icon" aria-hidden="true">{ICONS[item.icon]}</span>
+                    {!sidebarCollapsed && <span>{t(item.i18n)}</span>}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
           {!sidebarCollapsed && (
             <div className="admin-nav__footer">

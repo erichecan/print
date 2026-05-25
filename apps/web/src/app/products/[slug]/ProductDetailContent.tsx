@@ -109,7 +109,7 @@ export function ProductDetailContent() {
   // Get unique colors and sizes from variants
   const colors = Array.from(new Set(product?.variants.map(v => v.color).filter(Boolean))) as string[];
   const sizes = Array.from(new Set(product?.variants.map(v => v.size).filter(Boolean))) as string[];
-  const colorVariants = product?.variants.filter(v => v.color && v.colorHex) || [];
+  const colorVariants = product?.variants.filter(v => v.color) || [];
 
   // Find selected variant
   const selectedVariant = product?.variants.find(
@@ -242,9 +242,24 @@ export function ProductDetailContent() {
     : 0;
 
   // Get unique colors with hex values
+  const COLOR_HEX_MAP: Record<string, string> = {
+    'Black': '#1a1a1a', 'White': '#FFFFFF', 'Navy': '#1B2A4A', 'Red': '#CC2222',
+    'Royal': '#2255AA', 'Forest Green': '#2D6A2D', 'Charcoal': '#4A4A4A',
+    'Dark Heather': '#5A5A5A', 'Sport Grey': '#AAAAAA', 'Ash': '#D0CEC8',
+    'Cardinal Red': '#9B1B30', 'Gold': '#E8B400', 'Orange': '#E85D00',
+    'Purple': '#5C2D91', 'Maroon': '#6B1E2E', 'Light Blue': '#7FB8E0',
+    'Sand': '#D4B896', 'Natural': '#F5EDD8', 'Daisy': '#FFD700',
+    'Azalea': '#E87EA1', 'Heliconia': '#E8457A', 'Irish Green': '#2D9B4A',
+    'Sapphire': '#1A5FA8', 'Antique Cherry Red': '#8B2020', 'Military Green': '#4A5D2A',
+    'Tweed': '#8B7355', 'Smoke': '#8A8A8A', 'Graphite Heather': '#6B6B6B',
+    'Russet': '#8B4513', 'Midnight': '#191970', 'Cherry Red': '#BB1122',
+  };
   const uniqueColors = Array.from(
     new Map(
-      colorVariants.map(v => [v.color, { name: v.color, hex: v.colorHex || '#FFFFFF' }])
+      colorVariants.map(v => [
+        v.color,
+        { name: v.color, hex: v.colorHex || COLOR_HEX_MAP[v.color as string] || '#CCCCCC' },
+      ])
     ).values()
   );
 
@@ -428,24 +443,6 @@ console.log(` Shared to ${platform}:`, product.name);
               <span className="text-gray-400 italic">No reviews yet</span>
             )}
           </div>
-
-          {/* Style Selector */}
-          {product.category && (
-            <div className="flex flex-col gap-2">
-              <label className="font-bold text-sm text-gray-900 block mb-2">Style</label>
-              <select className="w-full px-3 py-3 border border-gray-300 rounded text-sm bg-white cursor-pointer" defaultValue={product.category.slug}>
-                <option value={product.category.slug}>{product.category.name}</option>
-              </select>
-              <p className="text-xs text-gray-600 m-0">
-                {product.category.name === 'Oversized T-Shirt' 
-                  ? 'Heavyweight, crewneck, oversized fit.'
-                  : product.category.name === 'Classic T-Shirt'
-                  ? 'Lightweight, classic fit, crewneck.'
-                  : 'Premium quality, comfortable fit.'}
-              </p>
-              <Link href="/products" className="text-sm text-blue-600 no-underline hover:underline">Explore more styles</Link>
-            </div>
-          )}
 
           {/* Color Selection - 始终显示颜色区域 */}
           <div className="flex flex-col gap-3">

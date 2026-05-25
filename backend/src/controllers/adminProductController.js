@@ -15,6 +15,7 @@ const {
   extractStorageKeyFromUrl,
 } = require('../utils/productUpload');
 const { uploadBufferToGcs, buildObjectPath } = require('../utils/gcsStorage');
+const { uploadBufferToShopifyCdn, isShopifyCdnConfigured } = require('../utils/shopifyCdn');
 const logger = require('../utils/logger'); // Import logger
 
 // 将 Prisma Decimal / string / number 安全转换为原始 number，便于做单位换算
@@ -1268,29 +1269,42 @@ exports.uploadProductImages = async (req, res) => {
 
     const existingCount = await prisma.productImage.count({ where: { productId: id } });
 
-    // 并行上传所有图片到 GCS
+    const useShopifyCdn = isShopifyCdnConfigured();
+
+    // 并行上传所有图片（优先 Shopify CDN，回退到 GCS）
     const createPayload = await Promise.all(
       files.map(async (file, index) => {
         const timestamp = Date.now();
         const safeName = file.originalname.replace(/[^a-z0-9.\-_]+/gi, '_');
         const fileName = `${timestamp}-${safeName}`;
 
-        // 构建 GCS 路径: products/:productId/:fileName
-        const objectPath = buildObjectPath('products', [id, fileName]);
+        const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
+        const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
+        const altText = sanitizeAltText(providedAlt, fallbackAlt);
 
         try {
-          // 直接从内存 Buffer 上传到 GCS
-          const gcsUrl = await uploadBufferToGcs(file.buffer, objectPath, {
-            contentType: file.mimetype,
-          });
+          let imageUrl;
 
-          const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
-          const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
+          if (useShopifyCdn) {
+            imageUrl = await uploadBufferToShopifyCdn(
+              file.buffer,
+              fileName,
+              file.mimetype,
+              altText
+            );
+            logger.info(`[uploadProductImages] Uploaded to Shopify CDN: ${fileName}`);
+          } else {
+            const objectPath = buildObjectPath('products', [id, fileName]);
+            imageUrl = await uploadBufferToGcs(file.buffer, objectPath, {
+              contentType: file.mimetype,
+            });
+            logger.info(`[uploadProductImages] Uploaded to GCS: ${fileName}`);
+          }
 
           return {
             productId: id,
-            url: gcsUrl, // 存储完整的 GCS URL
-            alt: sanitizeAltText(providedAlt, fallbackAlt),
+            url: imageUrl,
+            alt: altText,
             sortOrder: existingCount + index,
           };
         } catch (uploadError) {

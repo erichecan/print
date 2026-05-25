@@ -216,7 +216,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             Placed {new Date(order.createdAt).toLocaleString()} · {order.itemCount} items
           </p>
         </div>
-        <Link href="/admin/orders" className="btn btn--outline">
+        <Link href="/admin/online-orders" className="btn btn--outline">
           ← Back to Orders
         </Link>
       </div>

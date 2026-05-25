@@ -1,24 +1,10 @@
 'use client';
 
-/**
- * Admin Orders Page - Unified Order Management
-* 订单列表与筛选
-* 还原 prototype/admin/admin/orders.html 布局
-* 添加批量订单处理功能 (Issue #87)
-* 统一订单管理：合并线上订单（Order）和线下订单（OfflineOrder）
- */
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
-import { unifiedOrdersApi, UnifiedOrderDTO, UnifiedOrderListParams } from '@/lib/api';
-import { useToast } from '@/hooks/useToast';
+import { adminOrdersApi, AdminOrderSummary, AdminOrderListParams } from '@/lib/api';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
-
-const TYPE_OPTIONS = [
-  { label: 'All Orders', value: 'all' },
-  { label: 'Online', value: 'online' },
-  { label: 'Offline', value: 'offline' },
-];
 
 const STATUS_OPTIONS = [
   { label: 'All statuses', value: 'all' },
@@ -31,59 +17,48 @@ const STATUS_OPTIONS = [
   { label: 'Refunded', value: 'refunded' },
 ];
 
-export default function AdminOrdersPage() {
-  const { warning: showWarningToast } = useToast();
-  const [filters, setFilters] = useState<UnifiedOrderListParams>({
+export default function AdminOnlineOrdersPage() {
+  const [filters, setFilters] = useState<AdminOrderListParams & { page: number; status: string }>({
     page: 1,
-    pageSize: 20,
-    type: 'all',
+    limit: 20,
     status: 'all',
     search: '',
   });
   const [searchInput, setSearchInput] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  // Batch selection state for Issue #87
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   const [batchUpdateStatus, setBatchUpdateStatus] = useState<string>('');
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
-  const swrKey = useMemo(() => ['unified-orders', filters], [filters]);
-  const { data, isLoading, mutate, error } = useSWR(swrKey, ([, params]: [string, UnifiedOrderListParams]) =>
-    unifiedOrdersApi.list(params)
+
+  const swrKey = useMemo(() => ['online-orders', filters], [filters]);
+  const { data, isLoading, mutate } = useSWR(swrKey, ([, params]: [string, typeof filters]) =>
+    adminOrdersApi.list({
+      page: params.page,
+      limit: params.limit,
+      status: params.status !== 'all' ? params.status : undefined,
+      search: params.search || undefined,
+    })
   );
 
   const orders = data?.data ?? [];
   const pagination = data?.pagination;
-  const warnings = data?.meta?.warnings;
 
-  // 显示警告信息
-  useEffect(() => {
-    if (warnings && warnings.length > 0) {
-      if (warnings.includes('onlineQueryFailed')) {
-        showWarningToast('部分线上订单查询失败，列表可能不完整');
-      }
-      if (warnings.includes('offlineQueryFailed')) {
-        showWarningToast('部分线下订单查询失败，列表可能不完整');
-      }
-    }
-  }, [warnings, showWarningToast]);
-
-  // Batch selection handlers for Issue #87
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedOrderIds(new Set(orders.map((order) => order.compositeId)));
+      setSelectedOrderIds(new Set(orders.map((order) => order.id)));
     } else {
       setSelectedOrderIds(new Set());
     }
   };
 
-  const handleSelectOrder = (compositeId: string, checked: boolean) => {
+  const handleSelectOrder = (id: string, checked: boolean) => {
     const newSelected = new Set(selectedOrderIds);
     if (checked) {
-      newSelected.add(compositeId);
+      newSelected.add(id);
     } else {
-      newSelected.delete(compositeId);
+      newSelected.delete(id);
     }
     setSelectedOrderIds(newSelected);
   };
@@ -91,28 +66,18 @@ export default function AdminOrdersPage() {
   const isAllSelected = orders.length > 0 && selectedOrderIds.size === orders.length;
   const isIndeterminate = selectedOrderIds.size > 0 && selectedOrderIds.size < orders.length;
 
-  // 批量导出（使用统一订单API）
   const handleBatchExport = async () => {
     try {
-      await unifiedOrdersApi.export({
-        type: filters.type,
+      await adminOrdersApi.exportOrders({
         status: filters.status !== 'all' ? filters.status : undefined,
         search: filters.search || undefined,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
+        startDate: dateFrom || undefined,
+        endDate: dateTo || undefined,
       });
     } catch (error: any) {
       console.error('Export error:', error);
       alert(`Failed to export orders: ${error.message || 'Unknown error'}`);
     }
-  };
-
-  const handleFilterChange = (key: 'type' | 'status') => (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setFilters((prev) => ({
-      ...prev,
-      page: 1,
-      [key]: event.target.value,
-    }));
   };
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -124,45 +89,22 @@ export default function AdminOrdersPage() {
     }));
   };
 
-  // 批量更新处理（注意：统一订单的批量更新需要按类型分发）
-  const handleBatchUpdate = async () => {
+  const handleBatchUpdate = () => {
     if (selectedOrderIds.size === 0) {
       alert('Please select at least one order');
       return;
     }
-
     if (!batchUpdateStatus) {
       alert('Please select a status to update');
       return;
     }
-
-    const count = selectedOrderIds.size;
     setIsBatchModalOpen(true);
   };
 
   const executeBatchUpdate = async () => {
-    const count = selectedOrderIds.size;
     setIsBatchUpdating(true);
     try {
-      // 分离线上和线下订单
-      const onlineIds: string[] = [];
-      const offlineIds: string[] = [];
-
-      selectedOrderIds.forEach((compositeId) => {
-        if (compositeId.startsWith('online-')) {
-          onlineIds.push(compositeId.replace('online-', ''));
-        } else if (compositeId.startsWith('offline-')) {
-          offlineIds.push(compositeId.replace('offline-', ''));
-        }
-      });
-
-      // 分别更新（这里需要调用对应的API）
-      // TODO: 实现批量更新逻辑，根据订单类型调用不同的API
-      // 目前先提示用户
-      alert(
-        `Batch update for ${count} orders (${onlineIds.length} online, ${offlineIds.length} offline) is not yet fully implemented. Please update orders individually.`
-      );
-
+      await adminOrdersApi.batchUpdateStatus(Array.from(selectedOrderIds), { status: batchUpdateStatus });
       setSelectedOrderIds(new Set());
       setBatchUpdateStatus('');
       setIsBatchModalOpen(false);
@@ -174,23 +116,11 @@ export default function AdminOrdersPage() {
       setIsBatchUpdating(false);
     }
   };
-  // 获取订单详情链接
-  // 修复：offline 订单应该链接到 sales 订单详情页面
-  const getOrderDetailLink = (order: UnifiedOrderDTO) => {
-    if (order.type === 'online') {
-      return `/admin/orders/${order.id}`;
-    } else {
-      return `/offline-orders/sales/orders/${order.id}`;
-    }
-  };
 
   const goToPage = (page: number) => {
     if (!pagination) return;
     if (page < 1 || page > pagination.totalPages || page === pagination.page) return;
-    setFilters((prev) => ({
-      ...prev,
-      page,
-    }));
+    setFilters((prev) => ({ ...prev, page }));
   };
 
   const formatCurrency = (value: number, currency?: string) =>
@@ -201,8 +131,8 @@ export default function AdminOrdersPage() {
       <div style={{ marginTop: 24 }}>
         <div className="admin-page-header">
           <div>
-            <h1 data-i18n="orders">Orders</h1>
-            <p className="text-muted">Track fulfillment progress and customer activity</p>
+            <h1>Online Orders</h1>
+            <p className="text-muted">Manage web store orders</p>
           </div>
         </div>
 
@@ -210,7 +140,7 @@ export default function AdminOrdersPage() {
           <form className="admin-search admin-search-form" onSubmit={handleSearchSubmit}>
             <input
               type="search"
-              placeholder="Search order #, name, email, phone, notes..."
+              placeholder="Search order #, name, email..."
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               minLength={2}
@@ -219,14 +149,10 @@ export default function AdminOrdersPage() {
               Search
             </button>
           </form>
-          <select value={filters.type || 'all'} onChange={handleFilterChange('type')}>
-            {TYPE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <select value={filters.status || 'all'} onChange={handleFilterChange('status')}>
+          <select
+            value={filters.status || 'all'}
+            onChange={(e) => setFilters((prev) => ({ ...prev, page: 1, status: e.target.value }))}
+          >
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -239,11 +165,7 @@ export default function AdminOrdersPage() {
               value={dateFrom}
               onChange={(e) => {
                 setDateFrom(e.target.value);
-                setFilters((prev) => ({
-                  ...prev,
-                  page: 1,
-                  dateFrom: e.target.value || undefined,
-                }));
+                setFilters((prev) => ({ ...prev, page: 1 }));
               }}
               placeholder="From"
               style={{ padding: '6px', border: '1px solid #d1d5db', borderRadius: '4px' }}
@@ -254,11 +176,7 @@ export default function AdminOrdersPage() {
               value={dateTo}
               onChange={(e) => {
                 setDateTo(e.target.value);
-                setFilters((prev) => ({
-                  ...prev,
-                  page: 1,
-                  dateTo: e.target.value || undefined,
-                }));
+                setFilters((prev) => ({ ...prev, page: 1 }));
               }}
               placeholder="To"
               style={{ padding: '6px', border: '1px solid #d1d5db', borderRadius: '4px' }}
@@ -269,7 +187,6 @@ export default function AdminOrdersPage() {
           </button>
         </div>
 
-        {/* Batch operations toolbar for Issue #87 */}
         {selectedOrderIds.size > 0 && (
           <div
             style={{
@@ -359,10 +276,9 @@ export default function AdminOrdersPage() {
                       style={{ cursor: 'pointer' }}
                     />
                   </th>
-                  <th>Type</th>
                   <th>Order #</th>
                   <th>Customer</th>
-                  <th>Contact</th>
+                  <th>Email</th>
                   <th>Items</th>
                   <th>Total</th>
                   <th>Status</th>
@@ -371,45 +287,24 @@ export default function AdminOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order: UnifiedOrderDTO) => (
-                  <tr key={order.compositeId}>
+                {orders.map((order: AdminOrderSummary) => (
+                  <tr key={order.id}>
                     <td>
                       <input
                         type="checkbox"
-                        checked={selectedOrderIds.has(order.compositeId)}
-                        onChange={(e) => handleSelectOrder(order.compositeId, e.target.checked)}
+                        checked={selectedOrderIds.has(order.id)}
+                        onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
                         style={{ cursor: 'pointer' }}
                       />
                     </td>
                     <td>
-                      <span
-                        className={`badge ${order.type === 'online' ? 'badge-primary' : 'badge-secondary'}`}
-                        style={{
-                          backgroundColor: order.type === 'online' ? '#3b82f6' : '#6b7280',
-                          color: 'white',
-                          padding: '2px 8px',
-                          borderRadius: '4px',
-                          fontSize: '11px',
-                          fontWeight: '500',
-                        }}
-                      >
-                        {order.type === 'online' ? 'Online' : 'Offline'}
-                      </span>
-                    </td>
-                    <td>
-                      <Link href={getOrderDetailLink(order)}>#{order.orderNo}</Link>
+                      <Link href={`/admin/online-orders/${order.id}`}>#{order.orderNumber}</Link>
                     </td>
                     <td>{order.customerName || '—'}</td>
+                    <td>{order.customerEmail || '—'}</td>
+                    <td>{order.itemCount ?? 0} items</td>
                     <td>
-                      <div style={{ fontSize: '12px' }}>
-                        {order.customerEmail && <div>{order.customerEmail}</div>}
-                        {order.customerPhone && <div style={{ color: '#6b7280' }}>{order.customerPhone}</div>}
-                        {!order.customerEmail && !order.customerPhone && '—'}
-                      </div>
-                    </td>
-                    <td>{order.itemsCount} items</td>
-                    <td>
-                      {order.totalAmount > 0 ? `${order.currency || 'CAD'} ${formatCurrency(order.totalAmount)}` : '—'}
+                      {order.total > 0 ? `${order.currency || 'CAD'} ${formatCurrency(order.total)}` : '—'}
                     </td>
                     <td>
                       <span className={`badge badge-${order.status.toLowerCase()}`}>{order.status}</span>
@@ -417,10 +312,9 @@ export default function AdminOrdersPage() {
                     <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                     <td>
                       <Link
-                        href={getOrderDetailLink(order)}
+                        href={`/admin/online-orders/${order.id}`}
                         className="btn-icon btn--outline"
                         style={{ fontSize: 12 }}
-                        {...(order.type === 'offline' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                       >
                         View
                       </Link>
@@ -449,6 +343,7 @@ export default function AdminOrdersPage() {
             </button>
           </div>
         )}
+
         <DeleteConfirmationModal
           isOpen={isBatchModalOpen}
           isDeleting={isBatchUpdating}
@@ -462,6 +357,3 @@ export default function AdminOrdersPage() {
     </>
   );
 }
-
-
-

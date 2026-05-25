@@ -178,7 +178,8 @@ function optimizeImageUrl(url, options = {}) {
       lowerUrl.includes('cloudflare') ||
       lowerUrl.includes('imgix') ||
       lowerUrl.includes('akamai') ||
-      lowerUrl.includes('fastly');
+      lowerUrl.includes('fastly') ||
+      lowerUrl.includes('cdn.shopify.com');
 
 // 如果不是CDN URL，直接返回规范化后的URL（不进行优化）
     if (!isCdnUrl) {
