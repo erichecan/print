@@ -1662,7 +1662,7 @@ export interface ProductWizardData {
   slug?: string;
 }
 
-// Admin Categories API
+// Admin Online Categories API
 export const adminCategoriesApi = {
   list: (params?: { page?: number; limit?: number; search?: string; status?: 'active' | 'inactive' }) => {
     const query = new URLSearchParams();
@@ -1671,16 +1671,37 @@ export const adminCategoriesApi = {
     if (params?.search) query.append('search', params.search);
     if (params?.status) query.append('status', params.status);
     const queryString = query.toString();
-    return api<{ data: AdminCategorySummary[]; pagination: PaginationResponse }>( // Issue #105 - Replace any with proper type
-      `/admin/categories${queryString ? `?${queryString}` : ''}`
+    return api<{ data: AdminCategorySummary[]; pagination: PaginationResponse }>(
+      `/admin/online-categories${queryString ? `?${queryString}` : ''}`
     );
   },
-  get: (id: string) => api<AdminCategoryDetail>(`/admin/categories/${id}`),
+  get: (id: string) => api<AdminCategoryDetail>(`/admin/online-categories/${id}`),
   create: (data: AdminCategoryPayload) =>
-    api<AdminCategoryDetail>('/admin/categories', { method: 'POST', body: data }),
+    api<AdminCategoryDetail>('/admin/online-categories', { method: 'POST', body: data }),
   update: (id: string, data: Partial<AdminCategoryPayload>) =>
-    api<AdminCategoryDetail>(`/admin/categories/${id}`, { method: 'PUT', body: data }),
-  archive: (id: string) => api(`/admin/categories/${id}`, { method: 'DELETE' }),
+    api<AdminCategoryDetail>(`/admin/online-categories/${id}`, { method: 'PUT', body: data }),
+  archive: (id: string) => api(`/admin/online-categories/${id}`, { method: 'DELETE' }),
+};
+
+// Offline Categories API (independent from online categories)
+export const offlineCategoriesApi = {
+  list: (params?: { page?: number; limit?: number; search?: string; status?: 'active' | 'inactive' }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.search) query.append('search', params.search);
+    if (params?.status) query.append('status', params.status);
+    const queryString = query.toString();
+    return api<{ data: AdminCategorySummary[]; pagination: PaginationResponse }>(
+      `/offline-orders/categories${queryString ? `?${queryString}` : ''}`
+    );
+  },
+  get: (id: string) => api<AdminCategoryDetail>(`/offline-orders/categories/${id}`),
+  create: (data: AdminCategoryPayload) =>
+    api<AdminCategoryDetail>('/offline-orders/categories', { method: 'POST', body: data }),
+  update: (id: string, data: Partial<AdminCategoryPayload>) =>
+    api<AdminCategoryDetail>(`/offline-orders/categories/${id}`, { method: 'PUT', body: data }),
+  archive: (id: string) => api(`/offline-orders/categories/${id}`, { method: 'DELETE' }),
 };
 
 // Admin Products API
@@ -1714,11 +1735,11 @@ export const inventoryApi = {
     const query = new URLSearchParams();
     if (threshold !== undefined) query.append('threshold', threshold.toString());
     return api<{ products: LowStockProduct[]; count: number; threshold: number }>(
-      `/admin/products/low-stock${query.toString() ? `?${query.toString()}` : ''}`
+      `/admin/online-products/low-stock${query.toString() ? `?${query.toString()}` : ''}`
     );
   },
   // Get out of stock products
-  getOutOfStock: () => api<{ products: LowStockProduct[]; count: number }>('/admin/products/out-of-stock'),
+  getOutOfStock: () => api<{ products: LowStockProduct[]; count: number }>('/admin/online-products/out-of-stock'),
   // Get inventory alerts summary
   getAlerts: (threshold?: number) => {
     const query = new URLSearchParams();
@@ -1734,7 +1755,7 @@ export const inventoryApi = {
       lowStockThreshold: number | null;
       currentStock: number;
       effectiveThreshold: number;
-    }>(`/admin/products/variants/${variantId}/low-stock-threshold`),
+    }>(`/admin/online-products/variants/${variantId}/low-stock-threshold`),
   // Update low stock threshold for a variant
   updateThreshold: (variantId: string, threshold: number | null) =>
     api<{
@@ -1743,7 +1764,7 @@ export const inventoryApi = {
       productName: string;
       lowStockThreshold: number | null;
       currentStock: number;
-    }>(`/admin/products/variants/${variantId}/low-stock-threshold`, {
+    }>(`/admin/online-products/variants/${variantId}/low-stock-threshold`, {
       method: 'PATCH',
       body: { threshold },
     }),
@@ -1765,42 +1786,39 @@ export const adminProductsApi = {
     if (params?.categoryId) query.append('categoryId', params.categoryId);
     const queryString = query.toString();
     return api<{ data: AdminProductSummary[]; pagination: any }>(
-      `/admin/products${queryString ? `?${queryString}` : ''}`
+      `/admin/online-products${queryString ? `?${queryString}` : ''}`
     );
   },
-  get: (id: string) => api<AdminProductDetail>(`/admin/products/${id}`),
+  get: (id: string) => api<AdminProductDetail>(`/admin/online-products/${id}`),
   create: (data: AdminProductPayload) =>
-    api<AdminProductDetail>('/admin/products', { method: 'POST', body: data }),
+    api<AdminProductDetail>('/admin/online-products', { method: 'POST', body: data }),
   update: (id: string, data: Partial<AdminProductPayload>) =>
-    api<AdminProductDetail>(`/admin/products/${id}`, { method: 'PUT', body: data }),
-  delete: (id: string) => api(`/admin/products/${id}`, { method: 'DELETE' }),
+    api<AdminProductDetail>(`/admin/online-products/${id}`, { method: 'PUT', body: data }),
+  delete: (id: string) => api(`/admin/online-products/${id}`, { method: 'DELETE' }),
   updateStatus: (id: string, isActive: boolean) =>
-    api<AdminProductDetail>(`/admin/products/${id}/status`, { method: 'PATCH', body: { isActive } }),
+    api<AdminProductDetail>(`/admin/online-products/${id}/status`, { method: 'PATCH', body: { isActive } }),
   uploadImages: async (productId: string, files: File[], altTexts?: string[]) => {
-    // 修复：使用代理路由，确保认证头正确传递
     const formData = new FormData();
     files.forEach((file) => formData.append('images', file));
     if (altTexts && altTexts.length > 0) {
       formData.append('alt', altTexts.join(','));
     }
 
-    // 使用统一的 api 函数，自动走代理并包含认证头
     return api<{ images: Array<{ id: string; url: string; alt?: string | null; sortOrder?: number }> }>(
-      `/admin/products/${productId}/images`,
+      `/admin/online-products/${productId}/images`,
       {
         method: 'POST',
         body: formData,
-        // FormData 不需要 Content-Type header，浏览器会自动设置
         headers: {},
       }
     );
   },
   deleteImage: (productId: string, imageId: string) =>
-    api(`/admin/products/${productId}/images/${imageId}`, { method: 'DELETE' }),
-  activate: (id: string) => api(`/admin/products/${id}/activate`, { method: 'PATCH' }),
-  deactivate: (id: string) => api(`/admin/products/${id}/deactivate`, { method: 'PATCH' }),
-  bulkUpdateStatus: (ids: string[], status: string) => api('/admin/products/batch/status', { method: 'PATCH', body: { ids, status } }),
-  bulkDelete: (ids: string[]) => api('/admin/products/batch/delete', { method: 'POST', body: { ids } }),
+    api(`/admin/online-products/${productId}/images/${imageId}`, { method: 'DELETE' }),
+  activate: (id: string) => api(`/admin/online-products/${id}/activate`, { method: 'PATCH' }),
+  deactivate: (id: string) => api(`/admin/online-products/${id}/deactivate`, { method: 'PATCH' }),
+  bulkUpdateStatus: (ids: string[], status: string) => api('/admin/online-products/batch/status', { method: 'PATCH', body: { ids, status } }),
+  bulkDelete: (ids: string[]) => api('/admin/online-products/batch/delete', { method: 'POST', body: { ids } }),
 };
 
 export interface AdminUserSummary {

@@ -140,7 +140,7 @@ export function Step4Preview() {
 
       // Show success message and redirect to products list
       alert('商品发布成功');
-      router.push('/admin/products');
+      router.push('/admin/online-products');
     } catch (error: any) {
       console.error('Failed to publish product:', error);
       setSubmitError(error?.message || '发布失败，请稍后重试');

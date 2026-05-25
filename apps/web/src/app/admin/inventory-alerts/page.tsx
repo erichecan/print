@@ -63,7 +63,7 @@ export default function InventoryAlertsPage() {
               style={{ width: '80px', padding: '6px 8px', fontSize: '0.9em' }}
             />
           </label>
-          <Link href="/admin/products" className="btn btn--outline">
+          <Link href="/admin/online-products" className="btn btn--outline">
             管理产品
           </Link>
         </div>
@@ -125,7 +125,7 @@ export default function InventoryAlertsPage() {
                     </td>
                     <td>
                       <Link
-                        href={`/admin/products/${product.productId}`}
+                        href={`/admin/online-products/${product.productId}`}
                         className="btn btn--outline btn--xs"
                       >
                         查看详情
@@ -193,7 +193,7 @@ export default function InventoryAlertsPage() {
                     </td>
                     <td>
                       <Link
-                        href={`/admin/products/${product.productId}`}
+                        href={`/admin/online-products/${product.productId}`}
                         className="btn btn--outline btn--xs"
                       >
                         查看详情

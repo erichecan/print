@@ -11,131 +11,6 @@ const parseDecimal = (value) => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-function slugifyName(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'product';
-}
-
-async function syncOfflineProductToCatalog({ name, categoryId, sku, unitCost, stockQuantity }) {
-  if (!sku || !name) {
-    return;
-  }
-
-  try {
-    const existingVariant = await prisma.variant.findUnique({
-      where: { sku },
-      include: {
-        product: true,
-      },
-    });
-
-    if (existingVariant) {
-      const productUpdates = {};
-      if (categoryId && existingVariant.product.categoryId !== categoryId) {
-        productUpdates.categoryId = categoryId;
-      }
-      if (unitCost !== undefined && unitCost !== null) {
-        const currentUnitCost = Number(existingVariant.product.unitCost || 0);
-        if (Number(unitCost) !== currentUnitCost) {
-          productUpdates.unitCost = unitCost;
-        }
-      }
-      if (Object.keys(productUpdates).length > 0) {
-        await prisma.product.update({
-          where: { id: existingVariant.productId },
-          data: productUpdates,
-        });
-      }
-
-      if (typeof stockQuantity === 'number' && stockQuantity >= 0) {
-        await prisma.variant.update({
-          where: { id: existingVariant.id },
-          data: { stockQuantity },
-        });
-        const aggregate = await prisma.variant.aggregate({
-          where: { productId: existingVariant.productId },
-          _sum: { stockQuantity: true },
-        });
-        await prisma.product.update({
-          where: { id: existingVariant.productId },
-          data: { stockQuantity: aggregate._sum.stockQuantity || 0 },
-        });
-      }
-      return;
-    }
-
-    const basePriceCents =
-      unitCost !== undefined && unitCost !== null
-        ? Math.max(0, Math.round(Number(unitCost) * 100 * 1.2))
-        : 0;
-
-    const baseSlug = slugifyName(name);
-    let slug = baseSlug;
-    let suffix = 1;
-
-    // 保证 slug 唯一
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      try {
-        const product = await prisma.product.create({
-          data: {
-            name,
-            slug,
-            description: null,
-            longDescription: null,
-            basePrice: basePriceCents,
-            unitCost: unitCost !== undefined && unitCost !== null ? unitCost : 0,
-            salePrice: unitCost !== undefined && unitCost !== null ? unitCost : 0,
-            grossProfit: 0,
-            sku: `${slug}-MASTER`,
-            isCustomizable: true,
-            stockQuantity: typeof stockQuantity === 'number' ? stockQuantity : 0,
-            weight: null,
-            dimensions: null,
-            printableAreas: null,
-            isActive: true,
-            isDraft: false,
-            categoryId: categoryId || undefined,
-            brandId: null,
-            isSystem: false,
-          },
-        });
-
-        await prisma.variant.create({
-          data: {
-            productId: product.id,
-            color: 'Default',
-            colorHex: null,
-            colorDisplayName: 'Default',
-            size: 'OS',
-            sku,
-            priceAdjustment: 0,
-            stockQuantity: typeof stockQuantity === 'number' ? stockQuantity : 0,
-            imageUrl: null,
-          },
-        });
-
-        return;
-      } catch (error) {
-        if (error.code === 'P2002' && error.meta?.target?.includes('slug')) {
-          slug = `${baseSlug}-${suffix++}`;
-          continue;
-        }
-        logger.warn('[offlineOrderProductController] syncOfflineProductToCatalog error', {
-          error: error.message,
-        });
-        return;
-      }
-    }
-  } catch (error) {
-    logger.warn('[offlineOrderProductController] syncOfflineProductToCatalog unexpected error', {
-      error: error.message,
-    });
-  }
-}
-
 /**
  * 获取产品列表（公开接口，仅返回激活的产品）
  * GET /api/offline-orders/products
@@ -207,7 +82,7 @@ exports.listAllProducts = async (req, res, next) => {
           { name: 'asc' },
         ],
         include: {
-          category: {
+          offlineCategory: {
             select: {
               id: true,
               name: true,
@@ -260,8 +135,8 @@ exports.listAllProducts = async (req, res, next) => {
         displayOrder: p.display_order,
         isActive: p.is_active,
         unitCost: Number(p.unit_cost || 0),
-        categoryId: (p.category && p.category.id) || p.categoryId || null,
-        categoryName: (p.category && p.category.name) || null,
+        categoryId: (p.offlineCategory && p.offlineCategory.id) || p.categoryId || null,
+        categoryName: (p.offlineCategory && p.offlineCategory.name) || null,
         supplierId: (p.supplier && p.supplier.id) || p.supplierId || null,
         supplierName: (p.supplier && p.supplier.name) || null,
         sku: p.sku || null,
@@ -303,7 +178,7 @@ exports.createProduct = async (req, res, next) => {
       return next(new BadRequestError('Category is required for offline products'));
     }
 
-    const category = await prisma.category.findUnique({
+    const category = await prisma.offlineCategory.findUnique({
       where: { id: categoryId },
       select: { id: true },
     });
@@ -355,14 +230,6 @@ exports.createProduct = async (req, res, next) => {
         sku: sku?.trim() || null,
         stockQuantity: typeof stockQuantity === 'number' ? stockQuantity : 0,
       },
-    });
-
-    await syncOfflineProductToCatalog({
-      name: product.name,
-      categoryId,
-      sku: product.sku,
-      unitCost: product.unit_cost || 0,
-      stockQuantity: product.stock_quantity,
     });
 
     res.status(201).json({
@@ -446,7 +313,7 @@ exports.updateProduct = async (req, res, next) => {
       if (!categoryId) {
         return next(new BadRequestError('Category is required for offline products'));
       }
-      const category = await prisma.category.findUnique({
+      const category = await prisma.offlineCategory.findUnique({
         where: { id: categoryId },
         select: { id: true },
       });
@@ -489,14 +356,6 @@ exports.updateProduct = async (req, res, next) => {
     const product = await prisma.offline_order_products.update({
       where: { id },
       data: updateData,
-    });
-
-    await syncOfflineProductToCatalog({
-      name: product.name,
-      categoryId: product.categoryId ?? product.category_id,
-      sku: product.sku,
-      unitCost: product.unit_cost || 0,
-      stockQuantity: product.stockQuantity ?? product.stock_quantity ?? 0,
     });
 
     res.json({

@@ -19,7 +19,7 @@ export default function AdminCategoryCreatePage() {
       <CategoryForm
         mode="create"
         onSuccess={(category) => {
-          router.push(`/admin/categories/${category.id}`);
+          router.push(`/admin/online-categories/${category.id}`);
         }}
       />
       <style jsx>{`

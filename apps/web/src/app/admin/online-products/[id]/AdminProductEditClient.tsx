@@ -46,7 +46,7 @@ export default function AdminProductEditClient({ id }: { id: string }) {
       initialProduct={product}
       onComplete={async (updatedProduct) => {
         await mutate();
-        router.push(`/admin/products/${updatedProduct.id}`);
+        router.push(`/admin/online-products/${updatedProduct.id}`);
       }}
     />
   );

@@ -130,7 +130,7 @@ export default function AdminCategoriesPage() {
           <h1 data-i18n="categories">Categories</h1>
           <p className="text-muted">Manage navigation groupings and featured collections</p>
         </div>
-        <Link href="/admin/categories/new" className="btn btn--primary">
+        <Link href="/admin/online-categories/new" className="btn btn--primary">
           + New Category
         </Link>
       </div>
@@ -169,7 +169,7 @@ export default function AdminCategoriesPage() {
                 if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
                   return;
                 }
-                router.push(`/admin/categories/${category.id}`);
+                router.push(`/admin/online-categories/${category.id}`);
               }}
             >
               <div className="category-meta">
@@ -204,7 +204,7 @@ export default function AdminCategoriesPage() {
                     ⋯
                   </button>
                   <div className="actions-dropdown-menu" role="menu">
-                    <Link href={`/admin/categories/${category.id}`} role="menuitem">
+                    <Link href={`/admin/online-categories/${category.id}`} role="menuitem">
                       Edit
                     </Link>
                     <button type="button" role="menuitem" onClick={() => handleStatusChange(category)}>

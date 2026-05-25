@@ -11,7 +11,7 @@ import {
   salesOrdersApi,
   SalesOfflineOrderSummary,
   authenticatedFetch,
-  adminCategoriesApi,
+  offlineCategoriesApi,
   AdminCategorySummary,
   suppliersApi,
   Supplier,
@@ -498,7 +498,7 @@ export default function SalesOrdersPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'config' | 'dashboard'>('orders');
 
   // 配置管理状态
-  const [configTab, setConfigTab] = useState<'colors' | 'products' | 'size-fees'>('colors');
+  const [configTab, setConfigTab] = useState<'colors' | 'products' | 'size-fees' | 'categories'>('colors');
   const [colors, setColors] = useState<Color[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [newColorName, setNewColorName] = useState('');
@@ -1038,8 +1038,8 @@ export default function SalesOrdersPage() {
   );
 
   const { data: categoriesData, mutate: mutateCategories } = useSWR(
-    activeTab === 'config' && configTab === 'products' ? 'offline-products-categories' : null,
-    () => adminCategoriesApi.list({ status: 'active', limit: 200, page: 1 }),
+    activeTab === 'config' && (configTab === 'products' || configTab === 'categories') ? 'offline-categories' : null,
+    () => offlineCategoriesApi.list({ status: 'active', limit: 200, page: 1 }),
   );
   const categories: AdminCategorySummary[] = categoriesData?.data || [];
 
@@ -1559,6 +1559,13 @@ export default function SalesOrdersPage() {
                 onClick={() => setConfigTab('size-fees')}
               >
                 {t('sizePriceManagement')}
+              </button>
+              <button
+                type="button"
+                className={`config-sub-tab ${configTab === 'categories' ? 'active' : ''}`}
+                onClick={() => setConfigTab('categories')}
+              >
+                {t('categoryManagement') || 'Categories'}
               </button>
             </div>
 
@@ -2339,6 +2346,78 @@ export default function SalesOrdersPage() {
                 </div>
               </div>
             )}
+
+            {configTab === 'categories' && (
+              <div className="config-tab-panel">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  <div>
+                    <h2>{t('categoryManagement') || 'Category Management'}</h2>
+                    <p className="config-desc">管理线下订单商品分类，独立于线上商品分类。</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="config-btn config-btn-primary"
+                    onClick={() => {
+                      setCategoryForm({ id: undefined, name: '', slug: '', parentId: undefined });
+                      setIsCategoryModalOpen(true);
+                    }}
+                  >
+                    {t('addCategory') || '新增分类'}
+                  </button>
+                </div>
+                <div className="config-list">
+                  {categories.length === 0 ? (
+                    <p className="text-sm text-gray-500 py-4 text-center">暂无分类，点击右上角新增。</p>
+                  ) : (
+                    <table className="config-table w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-gray-500 border-b">
+                          <th className="py-2 pr-4">名称</th>
+                          <th className="py-2 pr-4">父级分类</th>
+                          <th className="py-2 pr-4">排序</th>
+                          <th className="py-2">操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {categories.map((cat: AdminCategorySummary) => (
+                          <tr key={cat.id} className="border-b hover:bg-gray-50">
+                            <td className="py-2 pr-4 font-medium">{cat.name}</td>
+                            <td className="py-2 pr-4 text-gray-500">{(cat as any).parent?.name || '—'}</td>
+                            <td className="py-2 pr-4 text-gray-500">{cat.sortOrder}</td>
+                            <td className="py-2 flex gap-2">
+                              <button
+                                type="button"
+                                className="text-xs text-blue-600 hover:underline"
+                                onClick={() => {
+                                  setCategoryForm({ id: cat.id, name: cat.name, slug: cat.slug, parentId: (cat as any).parent?.id });
+                                  setIsCategoryModalOpen(true);
+                                }}
+                              >
+                                编辑
+                              </button>
+                              <button
+                                type="button"
+                                className="text-xs text-red-600 hover:underline"
+                                onClick={async () => {
+                                  try {
+                                    await offlineCategoriesApi.archive(cat.id);
+                                    await mutateCategories();
+                                  } catch (err: any) {
+                                    setError(err.message || '停用失败');
+                                  }
+                                }}
+                              >
+                                停用
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -2870,13 +2949,13 @@ export default function SalesOrdersPage() {
                     try {
                       const autoSlug = categoryForm.slug?.trim() || `cat-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
                       if (categoryForm.id) {
-                        await adminCategoriesApi.update(categoryForm.id, {
+                        await offlineCategoriesApi.update(categoryForm.id, {
                           name: categoryForm.name.trim(),
                           slug: autoSlug,
                           parentId: categoryForm.parentId || null,
                         });
                       } else {
-                        await adminCategoriesApi.create({
+                        await offlineCategoriesApi.create({
                           name: categoryForm.name.trim(),
                           slug: autoSlug,
                           parentId: categoryForm.parentId || null,
@@ -2935,7 +3014,7 @@ export default function SalesOrdersPage() {
                               type="button"
                               onClick={async () => {
                                 try {
-                                  await adminCategoriesApi.archive(category.id);
+                                  await offlineCategoriesApi.archive(category.id);
                                   await mutateCategories();
                                 } catch (err: any) {
                                   setError(err.message || t('archiveCategoryFailed') || '停用分类失败');
@@ -2964,7 +3043,7 @@ export default function SalesOrdersPage() {
                                       type="button"
                                       onClick={async () => {
                                         try {
-                                          await adminCategoriesApi.archive(child.id);
+                                          await offlineCategoriesApi.archive(child.id);
                                           await mutateCategories();
                                         } catch (err: any) {
                                           setError(err.message || t('archiveCategoryFailed') || '停用分类失败');

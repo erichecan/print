@@ -228,6 +228,7 @@ app.use('/api/user/designs', require('./routes/userDesigns')); // User designs r
 const offlineOrderProductsPublicRouter = require('./routes/offlineOrderProductsPublic');
 logger.info('[App] Loading route: /api/offline-orders/products');
 app.use('/api/offline-orders/products', offlineOrderProductsPublicRouter);
+app.use('/api/offline-orders/categories', require('./routes/offlineOrderCategories')); // Offline category management
 app.use('/api/offline-orders', require('./routes/offlineOrders'));
 app.use('/api/admin/offline-orders', require('./routes/adminOfflineOrders'));
 // PRD v2.0: 线下订单配置数据管理路由
@@ -239,13 +240,13 @@ app.use('/api/admin/offline-order-product-color-sizes', require('./routes/offlin
 // Sales 线下订单查看接口（基于 OfflineOrder）
 app.use('/api/sales/orders', require('./routes/salesOrders'));
 app.use('/api/admin/cost-management', require('./routes/adminCostManagement')); // Cost management routes
-app.use('/api/admin/products', require('./routes/adminProducts')); // Admin product management routes
+app.use('/api/admin/online-products', require('./routes/adminProducts')); // Admin online product management routes
 // Inventory alerts routes - create a simple router that forwards to adminProducts
 const inventoryAlertsRouter = express.Router();
 inventoryAlertsRouter.use(require('./middleware/auth').requireAdmin);
 inventoryAlertsRouter.get('/alerts', require('./controllers/inventoryController').getInventoryAlerts);
 app.use('/api/admin/inventory', inventoryAlertsRouter);
-app.use('/api/admin/categories', require('./routes/adminCategories')); // Admin category management routes
+app.use('/api/admin/online-categories', require('./routes/adminCategories')); // Admin online category management routes
 app.use('/api/admin/orders', require('./routes/adminOrders')); // Admin order management routes
 app.use('/api/admin/all-orders', require('./routes/unifiedOrders')); // Unified order management routes (online + offline)
 app.use('/api/admin/users', require('./routes/adminUsers')); // Admin user management routes

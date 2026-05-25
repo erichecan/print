@@ -128,7 +128,7 @@ export function AdminProductCard({ product, onDelete, onStatusChange }: AdminPro
       {/* Middle: Info */}
       <div className="card-info">
         <div className="info-header">
-           <Link href={`/admin/products/${product.id}`} className="product-title">
+           <Link href={`/admin/online-products/${product.id}`} className="product-title">
              {product.name}
            </Link>
            <span className={`status-badge ${product.isActive ? 'active' : 'inactive'}`}>
@@ -151,7 +151,7 @@ export function AdminProductCard({ product, onDelete, onStatusChange }: AdminPro
         </div>
 
         <div className="info-actions">
-           <Link href={`/admin/products/${product.id}`} className="action-link">
+           <Link href={`/admin/online-products/${product.id}`} className="action-link">
              📝 Edit
            </Link>
            {/* Additional actions... */}

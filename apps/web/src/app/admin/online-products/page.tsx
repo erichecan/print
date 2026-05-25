@@ -152,7 +152,7 @@ export default function AdminProductsPage() {
             {t('productsSubtitle')}
           </p>
         </div>
-        <Link href="/admin/products/new" className="btn btn--primary" data-i18n="newProduct">
+        <Link href="/admin/online-products/new" className="btn btn--primary" data-i18n="newProduct">
           {t('newProduct')}
         </Link>
       </header>
@@ -315,7 +315,7 @@ export default function AdminProductsPage() {
                         )}
                       </div>
                       <div className="product-info">
-                        <Link href={`/admin/products/${product.id}`} className="font-medium hover:underline">
+                        <Link href={`/admin/online-products/${product.id}`} className="font-medium hover:underline">
                           {product.name}
                         </Link>
                       </div>
@@ -357,7 +357,7 @@ export default function AdminProductsPage() {
                         {product.isActive ? t('deactivateProduct') : t('activateProduct')}
                       </button>
                       <Link
-                        href={`/admin/products/${product.id}`}
+                        href={`/admin/online-products/${product.id}`}
                         className="btn btn--outline btn--xs"
                         data-i18n="editProduct"
                       >
