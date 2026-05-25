@@ -142,7 +142,7 @@ export function CheckoutSuccessClient() {
         }
         .card {
           background: #ffffff;
-          border-radius: 16px;
+          border-radius: 0;
           padding: 3rem 2rem;
           text-align: center;
           box-shadow: 0 32px 64px rgba(15, 23, 42, 0.1);
@@ -165,7 +165,7 @@ export function CheckoutSuccessClient() {
           margin-top: 1.5rem;
           padding: 1rem;
           background: #f8fafc;
-          border-radius: 8px;
+          border-radius: 0;
           border: 1px solid #e2e8f0;
         }
         .order-number-label {
@@ -188,7 +188,7 @@ export function CheckoutSuccessClient() {
           padding: 0.375rem 0.75rem;
           background: #ffffff;
           border: 1px solid #d4d7de;
-          border-radius: 6px;
+          border-radius: 0;
           font-size: 0.875rem;
           color: #475569;
           cursor: pointer;
@@ -215,7 +215,7 @@ export function CheckoutSuccessClient() {
           display: inline-block;
           padding: 0.85rem 1.5rem;
           border-radius: 999px;
-          background: #ff1f3d;
+          background: #B40C1C;
           color: #fff;
           font-weight: 600;
           text-decoration: none;

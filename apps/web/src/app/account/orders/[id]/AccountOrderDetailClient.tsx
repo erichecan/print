@@ -156,10 +156,10 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
           style={{
             display: 'inline-block',
             padding: '12px 24px',
-            backgroundColor: '#2563eb',
+            backgroundColor: '#000000',
             color: '#ffffff',
             textDecoration: 'none',
-            borderRadius: '6px',
+            borderRadius: '0',
           }}
         >
           返回订单列表
@@ -179,10 +179,10 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
           onClick={() => loadOrder()}
           style={{
             padding: '12px 24px',
-            backgroundColor: '#2563eb',
+            backgroundColor: '#000000',
             color: '#ffffff',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '0',
             cursor: 'pointer',
           }}
         >
@@ -459,8 +459,8 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
                         style={{
                           padding: '12px',
                           backgroundColor: index === 0 ? '#f0f9ff' : '#f8fafc',
-                          borderRadius: '6px',
-                          borderLeft: index === 0 ? '3px solid #2563eb' : '3px solid #e2e8f0',
+                          borderRadius: '0',
+                          borderLeft: index === 0 ? '3px solid #000' : '3px solid var(--color-border, #DBDBDB)',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -528,8 +528,8 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
           color: #b45309;
         }
         .status-processing {
-          background: rgba(59, 130, 246, 0.15);
-          color: #1d4ed8;
+          background: rgba(0, 0, 0, 0.06);
+          color: var(--color-text, #121212);
         }
         .status-shipped {
           background: rgba(16, 185, 129, 0.15);
@@ -572,7 +572,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
           font-weight: 600;
           cursor: pointer;
           text-decoration: none;
-          background: #ff1f3d;
+          background: #B40C1C;
           color: #fff;
         }
         .btn:disabled {
@@ -586,7 +586,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
         }
         .btn--text {
           background: transparent;
-          color: #2563eb;
+          color: var(--color-accent, #B40C1C);
           padding: 0.75rem;
         }
         .order-grid {
@@ -602,12 +602,12 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
           display: flex;
           gap: 16px;
           border: 1px solid #e2e8f0;
-          border-radius: 12px;
+          border-radius: 0;
           padding: 16px;
           background: #fff;
         }
         .item-thumb {
-          border-radius: 8px;
+          border-radius: 0;
           object-fit: cover;
         }
         .item-meta h3 {
@@ -641,7 +641,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
         .summary-card,
         .address-card,
         .tracking-card {
-          border-radius: 12px;
+          border-radius: 0;
           border: 1px solid #e2e8f0;
           background: #f8fafc;
           padding: 20px;
@@ -688,7 +688,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
         }
         .modal-content {
           background: #ffffff;
-          border-radius: 16px;
+          border-radius: 0;
           padding: 24px;
           max-width: 500px;
           width: 100%;
@@ -706,7 +706,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
           width: 100%;
           padding: 12px;
           border: 1px solid #d4d7de;
-          border-radius: 8px;
+          border-radius: 0;
           font-size: 0.95rem;
           font-family: inherit;
           resize: vertical;
@@ -714,8 +714,8 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
         }
         .cancel-reason-input:focus {
           outline: none;
-          border-color: #2563eb;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+          border-color: var(--color-text, #121212);
+          box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
         }
         .modal-actions {
           display: flex;
@@ -732,7 +732,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
           padding: 4px 12px;
           background: #ffffff;
           border: 1px solid #d4d7de;
-          border-radius: 6px;
+          border-radius: 0;
           font-size: 0.875rem;
           color: #475569;
           cursor: pointer;

@@ -1,6 +1,5 @@
 /**
- * Product Detail Page - Redbubble Style with Tailwind CSS
-* 完全使用 Tailwind CSS 重新实现
+ * Product Detail Page - Discovery Style
  */
 'use client';
 
@@ -16,7 +15,7 @@ import { useBuyNow } from '@/hooks/useBuyNow';
 import { SocialShareMenu, ShareConfig } from '@/components/social-share';
 import { StructuredData } from '@/components/seo/StructuredData';
 import { generateProductSchema } from '@/lib/seo';
-import { CategorySidebar } from '@/components/catalog/CategorySidebar'; // 商品详情页左侧分类导航
+import { CategorySidebar } from '@/components/catalog/CategorySidebar';
 
 interface ProductVariant {
   id: string;
@@ -77,7 +76,6 @@ export function ProductDetailContent() {
   const { success, error: showError } = useToast();
   const { addToCart, isLoading: isAddingToCart } = useAddToCart({
     onSuccess: (cartCount) => {
-      // 购物车数量已更新，无需额外操作
       console.log('[ProductDetail] Added to cart, count:', cartCount);
     },
     onError: (error) => {
@@ -99,26 +97,21 @@ export function ProductDetailContent() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-// 移除 Print Location 状态（模块已移除）
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
-// 悬停预览颜色状态
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
 
-  // Get unique colors and sizes from variants
   const colors = Array.from(new Set(product?.variants.map(v => v.color).filter(Boolean))) as string[];
   const sizes = Array.from(new Set(product?.variants.map(v => v.size).filter(Boolean))) as string[];
   const colorVariants = product?.variants.filter(v => v.color) || [];
 
-  // Find selected variant
   const selectedVariant = product?.variants.find(
     v =>
       (selectedColor ? v.color === selectedColor : !v.color) &&
       (selectedSize ? v.size === selectedSize : !v.size)
   );
 
-  // Auto-select first variant
   useEffect(() => {
     if (!product) return;
     if (selectedColor || selectedSize) return;
@@ -146,7 +139,6 @@ export function ProductDetailContent() {
     fetchProduct();
   }, [slug]);
 
-  // Fetch related products
   useEffect(() => {
     if (!slug || !product) return;
     async function fetchRelated() {
@@ -163,7 +155,6 @@ export function ProductDetailContent() {
     fetchRelated();
   }, [slug, product]);
 
-// 开始设计 - 跳转到原生 HTML 版本的 Design Lab（功能完整）
   const handleStartDesign = () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
@@ -172,7 +163,6 @@ export function ProductDetailContent() {
     window.location.href = `/design-lab-native.html?variantId=${selectedVariant.id}`;
   };
 
-// 使用 useAddToCart hook - 包含防抖、错误处理和埋点
   const handleAddToCart = async () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
@@ -185,7 +175,6 @@ export function ProductDetailContent() {
     await addToCart(selectedVariant.id, quantity);
   };
 
-// 使用 useBuyNow hook - 包含防抖、错误处理和埋点
   const handleBuyNow = async () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
@@ -201,7 +190,7 @@ export function ProductDetailContent() {
   if (loading) {
     return (
       <div className="max-w-container mx-auto px-4 py-6">
-        <div className="text-center py-12 text-lg text-gray-600">Loading product...</div>
+        <div className="text-center py-12 text-lg" style={{ color: 'var(--color-text-muted)' }}>Loading product...</div>
       </div>
     );
   }
@@ -209,27 +198,23 @@ export function ProductDetailContent() {
   if (error || !product) {
     return (
       <div className="max-w-container mx-auto px-4 py-6">
-        <div className="text-center py-12 text-lg text-gray-600">{error || 'Product not found'}</div>
-        <Link href="/products" className="text-blue-600 hover:underline">Back to Products</Link>
+        <div className="text-center py-12 text-lg" style={{ color: 'var(--color-text-muted)' }}>{error || 'Product not found'}</div>
+        <Link href="/products" style={{ color: 'var(--color-text)', textDecoration: 'underline' }}>Back to Products</Link>
       </div>
     );
   }
 
   const fallbackImage = '/assets/hero/hero-card-tee.jpg';
-// 颜色切换图片逻辑：
-  // 1. 如果悬停在某个颜色上，显示该颜色的 variant 图片（预览）
-  // 2. 如果选中了颜色，显示选中 variant 的图片
-  // 3. 否则显示产品主图片
   const getImageForColor = (colorName: string | null) => {
     if (!colorName) return null;
     const variant = product.variants.find(v => v.color === colorName);
     return variant?.imageUrl || null;
   };
-  
+
   const previewImage = hoveredColor ? getImageForColor(hoveredColor) : null;
   const selectedImage = selectedVariant?.imageUrl || null;
-  const currentImage = previewImage 
-    ? previewImage 
+  const currentImage = previewImage
+    ? previewImage
     : (selectedImage || product.images[selectedImageIndex]?.url || product.images[0]?.url || fallbackImage);
   const price = selectedVariant
     ? Number(product.basePrice) + Number(selectedVariant.priceAdjustment || 0)
@@ -237,11 +222,10 @@ export function ProductDetailContent() {
   const salePrice = product.price?.sale || price;
   const originalPrice = product.price?.base || price;
   const isOnSale = product.price?.onSale && salePrice < originalPrice;
-  const discountPercent = isOnSale 
+  const discountPercent = isOnSale
     ? Math.round(((originalPrice - salePrice) / originalPrice) * 100)
     : 0;
 
-  // Get unique colors with hex values
   const COLOR_HEX_MAP: Record<string, string> = {
     'Black': '#1a1a1a', 'White': '#FFFFFF', 'Navy': '#1B2A4A', 'Red': '#CC2222',
     'Royal': '#2255AA', 'Forest Green': '#2D6A2D', 'Charcoal': '#4A4A4A',
@@ -263,7 +247,6 @@ export function ProductDetailContent() {
     ).values()
   );
 
-// 生成产品结构化数据 for Issue #154
   const productSchema = product ? generateProductSchema({
     name: product.name,
     description: product.description || `${product.name} - Custom apparel from suvernire plus`,
@@ -275,7 +258,6 @@ export function ProductDetailContent() {
     availability: selectedVariant && selectedVariant.stockQuantity > 0 ? 'InStock' : 'OutOfStock',
   }) : null;
 
-// 添加评分结构化数据 for Issue #154
   const aggregateRatingSchema = product && product.rating.count > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'AggregateRating',
@@ -287,368 +269,474 @@ export function ProductDetailContent() {
 
   return (
     <div className="max-w-container mx-auto px-4 py-6">
-{/* 结构化数据 (JSON-LD) for Issue #154 */}
       {productSchema && <StructuredData data={[productSchema, ...(aggregateRatingSchema ? [aggregateRatingSchema] : [])]} />}
-      
-{/* 商品详情页布局：左侧分类导航 + 右侧产品内容 */}
+
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start">
-{/* 左侧分类导航（只显示有产品的分类） */}
         <aside className="hidden lg:block">
           <CategorySidebar currentCategorySlug={product.category?.slug ? String(product.category.slug) : undefined} />
         </aside>
-        
+
         {/* Main Product Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-12 items-start w-full">
-        {/* Left: Image Gallery */}
-        <div className="flex flex-col md:flex-row gap-4 items-start">
-          {/* Thumbnails - Vertical on desktop, horizontal on mobile */}
-          {/* Desktop: Vertical on left */}
-          <div className="hidden md:flex flex-col gap-3 max-h-[600px] overflow-y-auto flex-shrink-0">
-            {product.images.length > 0 ? (
-              product.images.map((img, index) => (
-                <button
-                  key={img.id}
-                  className={`w-20 h-20 rounded border-2 overflow-hidden bg-white p-0 transition-colors ${
-                    index === selectedImageIndex ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedImageIndex(index)}
-                  aria-label={`View image ${index + 1}`}
-                >
-                  <SafeImage src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
-                </button>
-              ))
-            ) : (
-              <div className="w-20 h-20 rounded border-2 border-gray-300 bg-gray-100 flex items-center justify-center">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-400">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx="8.5" cy="8.5" r="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            )}
-          </div>
 
-          {/* Main Image - 始终显示灰色框，固定尺寸 */}
-          <div className="relative w-full md:w-[500px] md:h-[666px] aspect-[3/4] md:aspect-auto flex-shrink-0 rounded overflow-hidden bg-gray-100">
-            {product.images.length > 0 ? (
-              <>
-                <button 
-                  className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 border border-gray-300 flex items-center justify-center cursor-pointer z-10 hover:bg-white hover:scale-110 transition-all" 
-                  aria-label="Add to favorites" 
-                  title="Add to favorites"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="stroke-gray-800">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                </button>
-                <SafeImage
-                  src={currentImage}
-                  alt={product.images[selectedImageIndex]?.alt || product.name}
-                  width={600}
-                  height={800}
-                  priority
-                  className="w-full h-full object-cover"
-                />
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300 rounded text-gray-400">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-gray-300">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <circle cx="8.5" cy="8.5" r="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            )}
-          </div>
-          
-{/* 移动端缩略图：底部横向滑动 */}
-          {product.images.length > 1 && (
-            <div className="md:hidden w-full overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'thin' }}>
-              <div className="flex gap-3" style={{ width: 'max-content' }}>
-                {product.images.map((img, index) => (
+          {/* Left: Image Gallery */}
+          <div className="flex flex-col md:flex-row gap-4 items-start">
+            {/* Desktop: Vertical thumbnails */}
+            <div className="hidden md:flex flex-col gap-3 max-h-[600px] overflow-y-auto flex-shrink-0">
+              {product.images.length > 0 ? (
+                product.images.map((img, index) => (
                   <button
                     key={img.id}
-                    className={`w-20 h-20 rounded border-2 overflow-hidden bg-white p-0 transition-colors flex-shrink-0 ${
-                      index === selectedImageIndex ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
+                    className={`w-20 h-20 overflow-hidden bg-white p-0 transition-colors border-2 ${
+                      index === selectedImageIndex ? 'border-black' : 'border-transparent hover:border-[#DBDBDB]'
                     }`}
+                    style={{ borderRadius: 0 }}
                     onClick={() => setSelectedImageIndex(index)}
                     aria-label={`View image ${index + 1}`}
                   >
                     <SafeImage src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
                   </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Product Details */}
-        <div className="max-w-[500px] flex flex-col gap-5 product-details-mobile">
-          {/* Title */}
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-3xl font-bold leading-tight text-gray-900 flex-1">{product.name}</h1>
-{/* 社交媒体分享按钮 for Issue #142 */}
-            {typeof window !== 'undefined' && (
-              <SocialShareMenu
-                config={{
-                  url: window.location.href,
-                  title: product.name,
-                  description: product.description || `Check out ${product.name} on Suvernire Plus`,
-                  image: currentImage.startsWith('http') ? currentImage : `${window.location.origin}${currentImage}`,
-                  hashtags: ['CustomPrint', 'CustomMerch', 'SuvernirePlus'],
-                }}
-                onShare={(platform) => {
-// 分享统计（可选）for Issue #142
-console.log(` Shared to ${platform}:`, product.name);
-                  // TODO: 发送分享统计到后端 API
-                }}
-              />
-            )}
-          </div>
-
-          {/* Brand/Artist Info */}
-          {product.brand && (
-            <div className="text-sm text-gray-600">
-              Designed and sold by <Link href={`/products?brand=${product.brand.slug}`} className="text-blue-600 no-underline font-medium hover:underline">{product.brand.name}</Link>
-            </div>
-          )}
-
-          {/* Price - 始终显示价格区域 */}
-          <div className="flex flex-col gap-2 my-2">
-            {isOnSale ? (
-              <>
-                <div className="flex items-baseline gap-3 flex-wrap">
-                  <span className="text-3xl font-bold text-gray-900">{currencyFormatter.format(salePrice / 100)}</span>
-                  <span className="text-lg text-gray-400 line-through">{currencyFormatter.format(originalPrice / 100)}</span>
+                ))
+              ) : (
+                <div className="w-20 h-20 border border-[#DBDBDB] flex items-center justify-center" style={{ background: 'var(--color-bg-sand)', borderRadius: 0 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--color-text-muted)' }}>
+                    <rect x="3" y="3" width="18" height="18" rx="0" ry="0" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="8.5" cy="8.5" r="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-                <span className="text-sm text-red-600 font-semibold">{discountPercent}% off ends soon</span>
-              </>
-            ) : (
-              <span className="text-3xl font-bold text-gray-900">{currencyFormatter.format(price / 100)}</span>
-            )}
-          </div>
-
-          {/* Rating - 始终显示评分区域 */}
-          <div className="flex items-center gap-2 flex-wrap text-sm my-2">
-            {product.rating.count > 0 ? (
-              <>
-                <span className="font-semibold text-gray-900 text-base">{product.rating.average.toFixed(2)}</span>
-                <span className="text-yellow-400 text-base tracking-wide">
-                  {'★'.repeat(Math.floor(product.rating.average))}
-                  {'☆'.repeat(5 - Math.floor(product.rating.average))}
-                </span>
-                <span className="text-gray-600">({product.rating.count} reviews)</span>
-              </>
-            ) : (
-              <span className="text-gray-400 italic">No reviews yet</span>
-            )}
-          </div>
-
-          {/* Color Selection - 始终显示颜色区域 */}
-          <div className="flex flex-col gap-3">
-            <label className="font-bold text-sm text-gray-900 block">Color: {selectedColor || 'Select a color'}</label>
-            {uniqueColors.length > 0 ? (
-              <div className="flex flex-wrap gap-3">
-                {uniqueColors.map((color, index) => {
-                  const variantForColor = product.variants.find(v => v.color === color.name);
-                  const isAvailable = variantForColor && variantForColor.stockQuantity > 0;
-                  const isSelected = selectedColor === color.name;
-                  return (
-                    <button
-                      key={index}
-                      type="button"
-                      className={`w-9 h-9 rounded-full border-2 cursor-pointer relative p-0 transition-all flex-shrink-0 ${
-                        isSelected 
-                          ? 'border-blue-600 border-[3px] scale-110' 
-                          : isAvailable
-                          ? 'border-gray-300 hover:border-blue-600 hover:scale-110'
-                          : 'border-gray-300 opacity-40 cursor-not-allowed'
-                      } ${!isAvailable ? 'opacity-40' : ''}`}
-                      style={{ backgroundColor: color.hex }}
-                      onClick={() => {
-                        if (isAvailable) {
-                          setSelectedColor(color.name);
-                          // Auto-select first available size
-                          const availableSizes = product.variants
-                            .filter(v => v.color === color.name && v.stockQuantity > 0)
-                            .map(v => v.size)
-                            .filter(Boolean);
-                          if (availableSizes.length > 0 && !selectedSize) {
-                            setSelectedSize(availableSizes[0] as string);
-                          }
-                        }
-                      }}
-                      onMouseEnter={() => {
-// 鼠标悬停时预览该颜色的图片
-                        if (isAvailable) {
-                          setHoveredColor(color.name);
-                        }
-                      }}
-                      onMouseLeave={() => {
-// 鼠标离开时恢复显示选中颜色的图片
-                        setHoveredColor(null);
-                      }}
-                      disabled={!isAvailable}
-                      title={color.name ?? undefined}
-                    >
-                      {isSelected && (
-                        <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-lg font-bold drop-shadow pointer-events-none">
-                          ✓
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-gray-400 italic text-sm py-2">No colors available</div>
-            )}
-          </div>
-
-          {/* Size Selection */}
-          {sizes.length > 0 && selectedColor && (
-            <div className="flex flex-col gap-3">
-              <label className="font-bold text-sm text-gray-900 block">Size</label>
-              <div className="flex flex-wrap gap-2">
-                {sizes.map((size) => {
-                  const variantForSize = product.variants.find(
-                    v => v.color === selectedColor && v.size === size
-                  );
-                  const isAvailable = variantForSize && variantForSize.stockQuantity > 0;
-                  const isSelected = selectedSize === size;
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      className={`px-5 py-2.5 border-2 rounded bg-white text-sm font-medium cursor-pointer transition-all min-w-[50px] text-center ${
-                        isSelected
-                          ? 'border-blue-600 text-blue-600 bg-blue-50'
-                          : isAvailable
-                          ? 'border-gray-300 hover:border-blue-600 hover:bg-blue-50'
-                          : 'border-gray-300 opacity-40 cursor-not-allowed line-through'
-                      } ${!isAvailable ? 'opacity-40' : ''}`}
-                      onClick={() => {
-                        if (isAvailable) {
-                          setSelectedSize(size);
-                        } else {
-                          showError(`Size ${size} is out of stock for ${selectedColor}`);
-                        }
-                      }}
-                      disabled={!isAvailable}
-                    >
-                      {size}
-                    </button>
-                  );
-                })}
-              </div>
+              )}
             </div>
-          )}
 
-{/* 移除 Print Location 模块（按需求） */}
+            {/* Main Image */}
+            <div className="relative w-full md:w-[500px] md:h-[666px] aspect-[3/4] md:aspect-auto flex-shrink-0 overflow-hidden" style={{ background: 'var(--color-bg-sand)', borderRadius: 0 }}>
+              {product.images.length > 0 ? (
+                <>
+                  {/* Favorite button — circular exception */}
+                  <button
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 border border-[#DBDBDB] flex items-center justify-center cursor-pointer z-10 hover:bg-white transition-colors"
+                    aria-label="Add to favorites"
+                    title="Add to favorites"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--color-text)' }}>
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                  </button>
+                  <SafeImage
+                    src={currentImage}
+                    alt={product.images[selectedImageIndex]?.alt || product.name}
+                    width={600}
+                    height={800}
+                    priority
+                    className="w-full h-full object-cover"
+                  />
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center border border-dashed border-[#DBDBDB]" style={{ background: 'var(--color-bg-sand)', borderRadius: 0 }}>
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: 'var(--color-border)' }}>
+                    <rect x="3" y="3" width="18" height="18" rx="0" ry="0" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="8.5" cy="8.5" r="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              )}
+            </div>
 
-          {/* Action Buttons - 3 buttons in a row */}
-          <div className="flex gap-3 flex-col sm:flex-row product-actions-mobile">
-            {/* Start Design Button */}
-            <button
-              type="button"
-              className="flex-1 px-4 py-4 rounded border-2 border-blue-600 bg-white text-blue-600 text-base font-semibold text-center cursor-pointer transition-all hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
-              onClick={handleStartDesign}
-              disabled={!selectedVariant}
-            >
-              Start Design
-            </button>
-
-            {/* Add to Cart Button */}
-            <button
-              type="button"
-              className="flex-1 px-4 py-4 rounded border-2 border-gray-300 bg-white text-gray-900 text-base font-semibold text-center cursor-pointer transition-all hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
-              onClick={handleAddToCart}
-              disabled={isAddingToCart || !selectedVariant}
-            >
-              {isAddingToCart ? 'Adding...' : 'Add to cart'}
-            </button>
-
-            {/* Buy Now Button */}
-            <button
-              type="button"
-              className="flex-1 px-4 py-4 rounded bg-red-600 text-white text-base font-semibold text-center cursor-pointer transition-all border-none hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
-              onClick={handleBuyNow}
-              disabled={isAddingToCart || !selectedVariant}
-            >
-              {isBuyingNow ? 'Processing...' : 'Buy Now'}
-            </button>
+            {/* Mobile thumbnails */}
+            {product.images.length > 1 && (
+              <div className="md:hidden w-full overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'thin' }}>
+                <div className="flex gap-3" style={{ width: 'max-content' }}>
+                  {product.images.map((img, index) => (
+                    <button
+                      key={img.id}
+                      className={`w-20 h-20 overflow-hidden bg-white p-0 transition-colors flex-shrink-0 border-2 ${
+                        index === selectedImageIndex ? 'border-black' : 'border-transparent hover:border-[#DBDBDB]'
+                      }`}
+                      style={{ borderRadius: 0 }}
+                      onClick={() => setSelectedImageIndex(index)}
+                      aria-label={`View image ${index + 1}`}
+                    >
+                      <SafeImage src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Delivery Info */}
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-gray-600 m-0 leading-relaxed">
-              Estimated delivery: <strong className="text-gray-900 font-semibold">by 24 November</strong><br />
-              between 20-23 November
-            </p>
-            <Link href="/shipping-info" className="text-sm text-blue-600 no-underline hover:underline">Give a digital gift card</Link>
-          </div>
+          {/* Right: Product Details */}
+          <div className="max-w-[500px] flex flex-col gap-5 product-details-mobile">
 
-          {/* Returns Policy */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-green-600 text-lg font-bold">✓</span>
-            <span className="text-gray-900">Super-easy returns</span>
-          </div>
+            {/* Title + Share */}
+            <div className="flex items-start justify-between gap-4">
+              <h1
+                className="flex-1 leading-tight m-0"
+                style={{
+                  fontFamily: 'var(--font-heading), Marcellus, serif',
+                  fontWeight: 400,
+                  fontSize: 'clamp(1.5rem, 2vw + 0.5rem, 2rem)',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--color-text)',
+                }}
+              >
+                {product.name}
+              </h1>
+              {typeof window !== 'undefined' && (
+                <SocialShareMenu
+                  config={{
+                    url: window.location.href,
+                    title: product.name,
+                    description: product.description || `Check out ${product.name} on Suvernire Plus`,
+                    image: currentImage.startsWith('http') ? currentImage : `${window.location.origin}${currentImage}`,
+                    hashtags: ['CustomPrint', 'CustomMerch', 'SuvernirePlus'],
+                  }}
+                  onShare={(platform) => {
+                    console.log(`Shared to ${platform}:`, product.name);
+                  }}
+                />
+              )}
+            </div>
 
-          {/* Product Features */}
-          <div className="mt-2">
-            <h3 className="text-lg font-bold m-0 mb-3 text-gray-900">Product Features</h3>
-            <ul className="flex flex-col gap-2 list-none p-0 m-0">
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                Premium oversized crewneck
-              </li>
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                Versatile unisex silhouette
-              </li>
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                7 oz heavyweight 100% ring spun cotton jersey fabric
-              </li>
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                Dropped shoulders
-              </li>
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                Single heavy, large stitched ribban collar
-              </li>
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                Ethical production standards
-              </li>
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                Better Cotton Initiative
-              </li>
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                OEKO-TEX certified
-              </li>
-              <li className="text-sm text-gray-600 pl-5 relative leading-relaxed before:content-['•'] before:absolute before:left-0 before:text-blue-600 before:font-bold before:text-lg">
-                Fair Labor Association
-              </li>
-            </ul>
+            {/* Brand */}
+            {product.brand && (
+              <div className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                Designed and sold by{' '}
+                <Link
+                  href={`/products?brand=${product.brand.slug}`}
+                  style={{ color: 'var(--color-text)', fontWeight: 500, textDecoration: 'underline' }}
+                >
+                  {product.brand.name}
+                </Link>
+              </div>
+            )}
+
+            {/* Price */}
+            <div className="flex flex-col gap-2 my-2">
+              {isOnSale ? (
+                <>
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <span style={{ fontSize: '28px', fontWeight: 600, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>
+                      {currencyFormatter.format(salePrice / 100)}
+                    </span>
+                    <span style={{ fontSize: '18px', color: 'var(--color-text-muted)', textDecoration: 'line-through' }}>
+                      {currencyFormatter.format(originalPrice / 100)}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      background: 'var(--color-accent)',
+                      color: '#fff',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      width: 'fit-content',
+                    }}
+                  >
+                    {discountPercent}% off
+                  </span>
+                </>
+              ) : (
+                <span style={{ fontSize: '28px', fontWeight: 600, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>
+                  {currencyFormatter.format(price / 100)}
+                </span>
+              )}
+            </div>
+
+            {/* Rating */}
+            <div className="flex items-center gap-2 flex-wrap text-sm my-2">
+              {product.rating.count > 0 ? (
+                <>
+                  <span style={{ fontWeight: 600, color: 'var(--color-text)', fontSize: '14px' }}>
+                    {product.rating.average.toFixed(2)}
+                  </span>
+                  <span style={{ color: 'var(--color-accent)', fontSize: '15px', letterSpacing: '0.05em' }}>
+                    {'★'.repeat(Math.floor(product.rating.average))}
+                    {'☆'.repeat(5 - Math.floor(product.rating.average))}
+                  </span>
+                  <span style={{ color: 'var(--color-text-muted)' }}>({product.rating.count} reviews)</span>
+                </>
+              ) : (
+                <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>No reviews yet</span>
+              )}
+            </div>
+
+            {/* Color Selection */}
+            <div className="flex flex-col gap-3">
+              <label
+                className="block text-sm"
+                style={{ fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text)' }}
+              >
+                Color: {selectedColor || 'Select a color'}
+              </label>
+              {uniqueColors.length > 0 ? (
+                <div className="flex flex-wrap gap-3">
+                  {uniqueColors.map((color, index) => {
+                    const variantForColor = product.variants.find(v => v.color === color.name);
+                    const isAvailable = variantForColor && variantForColor.stockQuantity > 0;
+                    const isSelected = selectedColor === color.name;
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        className="w-9 h-9 rounded-full border-2 cursor-pointer relative p-0 flex-shrink-0 transition-colors"
+                        style={{
+                          backgroundColor: color.hex,
+                          borderColor: isSelected ? '#000' : 'transparent',
+                          boxShadow: isSelected ? '0 0 0 2px #fff, 0 0 0 3px #000' : 'none',
+                          opacity: isAvailable ? 1 : 0.35,
+                          cursor: isAvailable ? 'pointer' : 'not-allowed',
+                        }}
+                        onClick={() => {
+                          if (isAvailable) {
+                            setSelectedColor(color.name);
+                            const availableSizes = product.variants
+                              .filter(v => v.color === color.name && v.stockQuantity > 0)
+                              .map(v => v.size)
+                              .filter(Boolean);
+                            if (availableSizes.length > 0 && !selectedSize) {
+                              setSelectedSize(availableSizes[0] as string);
+                            }
+                          }
+                        }}
+                        onMouseEnter={() => {
+                          if (isAvailable) setHoveredColor(color.name);
+                        }}
+                        onMouseLeave={() => setHoveredColor(null)}
+                        disabled={!isAvailable}
+                        title={color.name ?? undefined}
+                      >
+                        {isSelected && (
+                          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-lg pointer-events-none" style={{ fontWeight: 700, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                            ✓
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm py-2" style={{ color: 'var(--color-text-muted)', fontStyle: 'italic' }}>No colors available</div>
+              )}
+            </div>
+
+            {/* Size Selection */}
+            {sizes.length > 0 && selectedColor && (
+              <div className="flex flex-col gap-3">
+                <label
+                  className="block text-sm"
+                  style={{ fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-text)' }}
+                >
+                  Size
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {sizes.map((size) => {
+                    const variantForSize = product.variants.find(
+                      v => v.color === selectedColor && v.size === size
+                    );
+                    const isAvailable = variantForSize && variantForSize.stockQuantity > 0;
+                    const isSelected = selectedSize === size;
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        className="px-4 py-2 text-sm cursor-pointer transition-colors min-w-[50px] text-center"
+                        style={{
+                          border: `1px solid ${isSelected ? '#000' : 'var(--color-border)'}`,
+                          borderRadius: 0,
+                          background: isSelected ? '#000' : '#fff',
+                          color: isSelected ? '#fff' : 'var(--color-text)',
+                          fontWeight: 500,
+                          opacity: isAvailable ? 1 : 0.4,
+                          cursor: isAvailable ? 'pointer' : 'not-allowed',
+                        }}
+                        onClick={() => {
+                          if (isAvailable) {
+                            setSelectedSize(size);
+                          } else {
+                            showError(`Size ${size} is out of stock for ${selectedColor}`);
+                          }
+                        }}
+                        disabled={!isAvailable}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 flex-col sm:flex-row product-actions-mobile mt-1">
+              {/* Start Design */}
+              <button
+                type="button"
+                className="flex-1 min-h-[44px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  padding: '12px 16px',
+                  background: '#fff',
+                  color: '#000',
+                  border: '1px solid #4B4B4B',
+                  borderRadius: 0,
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  cursor: selectedVariant ? 'pointer' : 'not-allowed',
+                }}
+                onMouseEnter={e => { if (selectedVariant) { (e.currentTarget as HTMLButtonElement).style.background = '#000'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; } }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#fff'; (e.currentTarget as HTMLButtonElement).style.color = '#000'; }}
+                onClick={handleStartDesign}
+                disabled={!selectedVariant}
+              >
+                Start Design
+              </button>
+
+              {/* Add to Cart — primary CTA */}
+              <button
+                type="button"
+                className="flex-1 min-h-[44px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  padding: '12px 16px',
+                  background: '#000',
+                  color: '#fff',
+                  border: '1px solid #000',
+                  borderRadius: 0,
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  cursor: (isAddingToCart || !selectedVariant) ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={e => { if (!isAddingToCart && selectedVariant) { (e.currentTarget as HTMLButtonElement).style.background = '#fff'; (e.currentTarget as HTMLButtonElement).style.color = '#000'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#4B4B4B'; } }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#000'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#000'; }}
+                onClick={handleAddToCart}
+                disabled={isAddingToCart || !selectedVariant}
+              >
+                {isAddingToCart ? 'Adding...' : 'Add to Cart'}
+              </button>
+
+              {/* Buy Now */}
+              <button
+                type="button"
+                className="flex-1 min-h-[44px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  padding: '12px 16px',
+                  background: '#fff',
+                  color: '#000',
+                  border: '1px solid #4B4B4B',
+                  borderRadius: 0,
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  cursor: (isAddingToCart || !selectedVariant) ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={e => { if (!isAddingToCart && selectedVariant) { (e.currentTarget as HTMLButtonElement).style.background = '#000'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; } }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#fff'; (e.currentTarget as HTMLButtonElement).style.color = '#000'; }}
+                onClick={handleBuyNow}
+                disabled={isAddingToCart || !selectedVariant}
+              >
+                {isBuyingNow ? 'Processing...' : 'Buy Now'}
+              </button>
+            </div>
+
+            {/* Delivery Info */}
+            <div className="flex flex-col gap-2">
+              <p className="text-sm m-0 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                Estimated delivery: <strong style={{ color: 'var(--color-text)', fontWeight: 600 }}>by 24 November</strong><br />
+                between 20-23 November
+              </p>
+              <Link href="/shipping-info" className="text-sm hover:underline" style={{ color: 'var(--color-text)', textDecoration: 'none' }}>
+                Give a digital gift card
+              </Link>
+            </div>
+
+            {/* Returns */}
+            <div className="flex items-center gap-2 text-sm">
+              <span style={{ color: 'var(--color-text)', fontWeight: 700 }}>✓</span>
+              <span style={{ color: 'var(--color-text)' }}>Super-easy returns</span>
+            </div>
+
+            {/* Product Features */}
+            <div className="mt-2">
+              <h3
+                className="m-0 mb-3"
+                style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text)', letterSpacing: '0.02em' }}
+              >
+                Product Features
+              </h3>
+              <ul className="flex flex-col gap-2 list-none p-0 m-0">
+                {[
+                  'Premium oversized crewneck',
+                  'Versatile unisex silhouette',
+                  '7 oz heavyweight 100% ring spun cotton jersey fabric',
+                  'Dropped shoulders',
+                  'Single heavy, large stitched ribban collar',
+                  'Ethical production standards',
+                  'Better Cotton Initiative',
+                  'OEKO-TEX certified',
+                  'Fair Labor Association',
+                ].map((feature) => (
+                  <li
+                    key={feature}
+                    className="text-sm pl-5 relative leading-relaxed"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    <span
+                      className="absolute left-0"
+                      style={{ color: 'var(--color-accent)', fontWeight: 700, fontSize: '16px' }}
+                    >
+                      •
+                    </span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
-      </div>
 
-{/* 相关产品推荐 */}
+      {/* Related Products */}
       {relatedProducts.length > 0 && (
-        <section className="bg-white border-t border-gray-200 pt-12 pb-12 mt-12">
+        <section className="pt-12 pb-12 mt-12" style={{ background: '#fff', borderTop: '1px solid var(--color-border)' }}>
           <div className="max-w-container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-8 text-gray-900 text-center">You may also like</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <h2
+              className="mb-8 text-center"
+              style={{
+                fontFamily: 'var(--font-heading), Marcellus, serif',
+                fontSize: 'clamp(1.75rem, 2.5vw + 0.5rem, 2.5rem)',
+                fontWeight: 400,
+                color: 'var(--color-text)',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              You may also like
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1" style={{ border: '1px solid var(--color-border)' }}>
               {relatedProducts.map((related) => {
                 const relatedImage = related.images?.[0]?.url || related.primaryImage?.url || fallbackImage;
                 const relatedPrice = related.price?.sale || related.price?.base || related.basePrice;
                 return (
-                  <Link key={related.id} href={`/products/${related.slug}`} className="block no-underline text-inherit transition-transform hover:-translate-y-1">
-                    <div className="flex flex-col gap-3">
-                      <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
+                  <Link
+                    key={related.id}
+                    href={`/products/${related.slug}`}
+                    className="block no-underline"
+                    style={{ color: 'inherit' }}
+                  >
+                    <div className="flex flex-col gap-0 transition-colors hover:bg-[#F1EEE9]">
+                      <div className="w-full aspect-[3/4] overflow-hidden" style={{ background: 'var(--color-bg-sand)', borderRadius: 0 }}>
                         <SafeImage src={relatedImage} alt={related.name} width={280} height={350} className="w-full h-full object-cover" />
                       </div>
-                      <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{related.name}</h3>
-                      <div className="text-lg font-bold text-gray-900">
-                        {currencyFormatter.format(Number(relatedPrice) / 100)}
+                      <div className="p-4 border-t border-[#DBDBDB]">
+                        <h3 className="text-sm font-medium m-0 leading-snug" style={{ color: 'var(--color-text)', letterSpacing: '0.02em' }}>{related.name}</h3>
+                        <div className="text-sm mt-1" style={{ fontWeight: 600, color: 'var(--color-text)' }}>
+                          {currencyFormatter.format(Number(relatedPrice) / 100)}
+                        </div>
                       </div>
                     </div>
                   </Link>
@@ -659,24 +747,42 @@ console.log(` Shared to ${platform}:`, product.name);
         </section>
       )}
 
-{/* 设计师/品牌推荐 */}
+      {/* More from brand */}
       {product.brand && relatedProducts.filter(p => p.brand?.slug === product.brand?.slug).length > 0 && (
-        <section className="bg-gray-50 border-t border-gray-200 pt-12 pb-12">
+        <section className="pt-12 pb-12" style={{ background: 'var(--color-bg-sand)', borderTop: '1px solid var(--color-border)' }}>
           <div className="max-w-container mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-8 text-gray-900 text-center">More from {product.brand.name}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <h2
+              className="mb-8 text-center"
+              style={{
+                fontFamily: 'var(--font-heading), Marcellus, serif',
+                fontSize: 'clamp(1.75rem, 2.5vw + 0.5rem, 2.5rem)',
+                fontWeight: 400,
+                color: 'var(--color-text)',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              More from {product.brand.name}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1" style={{ border: '1px solid var(--color-border)' }}>
               {relatedProducts.filter(p => p.brand?.slug === product.brand?.slug).slice(0, 4).map((brandProduct) => {
                 const brandImage = brandProduct.images?.[0]?.url || brandProduct.primaryImage?.url || fallbackImage;
                 const brandPrice = brandProduct.price?.sale || brandProduct.price?.base || brandProduct.basePrice;
                 return (
-                  <Link key={brandProduct.id} href={`/products/${brandProduct.slug}`} className="block no-underline text-inherit transition-transform hover:-translate-y-1">
-                    <div className="flex flex-col gap-3">
-                      <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
+                  <Link
+                    key={brandProduct.id}
+                    href={`/products/${brandProduct.slug}`}
+                    className="block no-underline"
+                    style={{ color: 'inherit' }}
+                  >
+                    <div className="flex flex-col gap-0 transition-colors hover:bg-white">
+                      <div className="w-full aspect-[3/4] overflow-hidden" style={{ background: '#fff', borderRadius: 0 }}>
                         <SafeImage src={brandImage} alt={brandProduct.name} width={280} height={350} className="w-full h-full object-cover" />
                       </div>
-                      <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{brandProduct.name}</h3>
-                      <div className="text-lg font-bold text-gray-900">
-                        {currencyFormatter.format(Number(brandPrice) / 100)}
+                      <div className="p-4 border-t border-[#DBDBDB]">
+                        <h3 className="text-sm font-medium m-0 leading-snug" style={{ color: 'var(--color-text)', letterSpacing: '0.02em' }}>{brandProduct.name}</h3>
+                        <div className="text-sm mt-1" style={{ fontWeight: 600, color: 'var(--color-text)' }}>
+                          {currencyFormatter.format(Number(brandPrice) / 100)}
+                        </div>
                       </div>
                     </div>
                   </Link>

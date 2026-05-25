@@ -9,6 +9,9 @@ const router = express.Router();
 // 筛选选项API（必须在 / 之前，避免被 :slug 匹配）
 router.get('/filters/options', productController.getFilterOptions);
 
+// Tag 分类体系（含每个 tag 的产品数量）
+router.get('/tag-taxonomy', productController.getTagTaxonomy);
+
 // 产品列表
 router.get('/', productController.getProducts);
 

@@ -77,7 +77,7 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
           url: initialProduct.images[0].url,
           alt: initialProduct.images[0].alt || undefined,
         } : undefined,
-        tags: [], // TODO: Extract from product if tags are stored
+        tags: initialProduct.tags || [],
         slug: initialProduct.slug,
         publishOption: initialProduct.isActive ? 'publish' : 'draft',
         // Load variant combinations

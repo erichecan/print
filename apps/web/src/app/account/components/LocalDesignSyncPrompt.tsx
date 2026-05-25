@@ -138,8 +138,8 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
       style={{
         padding: '16px',
         backgroundColor: '#eff6ff',
-        border: '1px solid #3b82f6',
-        borderRadius: '8px',
+        border: '1px solid var(--color-border, #DBDBDB)',
+        borderRadius: '0',
         marginBottom: '24px',
       }}
     >
@@ -185,7 +185,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
               width: '100%',
               height: '8px',
               backgroundColor: '#dbeafe',
-              borderRadius: '4px',
+              borderRadius: '0',
               overflow: 'hidden',
             }}
           >
@@ -193,7 +193,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
               style={{
                 width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
                 height: '100%',
-                backgroundColor: '#3b82f6',
+                backgroundColor: '#000000',
                 transition: 'width 0.3s',
               }}
             />
@@ -207,10 +207,10 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
           disabled={isUploading}
           style={{
             padding: '8px 16px',
-            backgroundColor: '#3b82f6',
+            backgroundColor: '#000000',
             color: '#fff',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '0',
             fontSize: '0.875rem',
             fontWeight: '500',
             cursor: isUploading ? 'not-allowed' : 'pointer',
@@ -225,9 +225,9 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
           style={{
             padding: '8px 16px',
             backgroundColor: 'transparent',
-            color: '#3b82f6',
-            border: '1px solid #3b82f6',
-            borderRadius: '6px',
+            color: 'var(--color-accent, #B40C1C)',
+            border: '1px solid var(--color-border, #DBDBDB)',
+            borderRadius: '0',
             fontSize: '0.875rem',
             fontWeight: '500',
             cursor: isUploading ? 'not-allowed' : 'pointer',

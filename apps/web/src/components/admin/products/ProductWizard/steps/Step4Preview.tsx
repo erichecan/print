@@ -84,6 +84,7 @@ export function Step4Preview() {
       isCustomizable: variants.length > 0,
       weight: wizardData.weight,
       dimensions: wizardData.dimensions,
+      tags: wizardData.tags || [],
       variants: variants.length > 0 ? variants : undefined,
       images: images.length > 0 ? images : undefined,
       printableArea: wizardData.printableArea || undefined,

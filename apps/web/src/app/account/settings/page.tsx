@@ -133,17 +133,17 @@ export default function SettingsPage() {
             </div>
 
             {/* Password Change Section */}
-            <section style={{ background: '#f9f9f9', padding: '24px', borderRadius: '8px', marginBottom: '32px' }}>
+            <section style={{ background: 'var(--color-bg-sand, #F1EEE9)', padding: '24px', borderRadius: '0', marginBottom: '32px' }}>
               <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Change Password</h2>
 
               {error && (
-                <div style={{ padding: '12px', background: '#ffe5e5', color: '#ff1f3d', borderRadius: '4px', marginBottom: '16px' }}>
+                <div style={{ padding: '12px', background: '#fef2f2', color: '#B40C1C', borderRadius: '0', marginBottom: '16px' }}>
                   {error}
                 </div>
               )}
 
               {success && (
-                <div style={{ padding: '12px', background: '#e5f5e5', color: '#1f7d3d', borderRadius: '4px', marginBottom: '16px' }}>
+                <div style={{ padding: '12px', background: 'var(--color-bg-sand, #F1EEE9)', color: 'var(--color-text, #121212)', borderRadius: '0', marginBottom: '16px' }}>
                   ✅ Password changed successfully!
                 </div>
               )}
@@ -159,7 +159,7 @@ export default function SettingsPage() {
                     required
                     value={passwordForm.currentPassword}
                     onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                    style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
                   />
                 </div>
 
@@ -178,8 +178,8 @@ export default function SettingsPage() {
                     style={{
                       width: '100%',
                       padding: '8px',
-                      border: passwordValidation && !passwordValidation.valid ? '1px solid #ff1f3d' : '1px solid #ddd',
-                      borderRadius: '4px',
+                      border: passwordValidation && !passwordValidation.valid ? '1px solid #B40C1C' : '1px solid var(--color-border, #DBDBDB)',
+                      borderRadius: '0',
                     }}
                   />
                   {passwordValidation && (
@@ -217,19 +217,19 @@ export default function SettingsPage() {
                       <div style={{ fontSize: '13px', color: '#666' }}>
                         <div style={{ marginBottom: '4px' }}>Password Requirements:</div>
                         <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
-                          <li style={{ color: passwordValidation.requirements.length ? '#1f7d3d' : '#666' }}>
+                          <li style={{ color: passwordValidation.requirements.length ? 'var(--color-text, #121212)' : '#666' }}>
                             {passwordValidation.requirements.length ? '✓' : '○'} At least 8 characters, max 128
                           </li>
-                          <li style={{ color: passwordValidation.requirements.uppercase ? '#1f7d3d' : '#666' }}>
+                          <li style={{ color: passwordValidation.requirements.uppercase ? 'var(--color-text, #121212)' : '#666' }}>
                             {passwordValidation.requirements.uppercase ? '✓' : '○'} At least one uppercase letter
                           </li>
-                          <li style={{ color: passwordValidation.requirements.lowercase ? '#1f7d3d' : '#666' }}>
+                          <li style={{ color: passwordValidation.requirements.lowercase ? 'var(--color-text, #121212)' : '#666' }}>
                             {passwordValidation.requirements.lowercase ? '✓' : '○'} At least one lowercase letter
                           </li>
-                          <li style={{ color: passwordValidation.requirements.number ? '#1f7d3d' : '#666' }}>
+                          <li style={{ color: passwordValidation.requirements.number ? 'var(--color-text, #121212)' : '#666' }}>
                             {passwordValidation.requirements.number ? '✓' : '○'} At least one number
                           </li>
-                          <li style={{ color: passwordValidation.requirements.special ? '#1f7d3d' : '#666' }}>
+                          <li style={{ color: passwordValidation.requirements.special ? 'var(--color-text, #121212)' : '#666' }}>
                             {passwordValidation.requirements.special ? '✓' : '○'} At least one special character
                           </li>
                         </ul>
@@ -257,15 +257,15 @@ export default function SettingsPage() {
                         passwordForm.confirmPassword &&
                           passwordForm.newPassword &&
                           passwordForm.confirmPassword !== passwordForm.newPassword
-                          ? '1px solid #ff1f3d'
-                          : '1px solid #ddd',
-                      borderRadius: '4px',
+                          ? '1px solid #B40C1C'
+                          : '1px solid var(--color-border, #DBDBDB)',
+                      borderRadius: '0',
                     }}
                   />
                   {passwordForm.confirmPassword &&
                     passwordForm.newPassword &&
                     passwordForm.confirmPassword !== passwordForm.newPassword && (
-                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#ff1f3d' }}>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#B40C1C' }}>
                         Passwords do not match
                       </p>
                     )}
@@ -276,11 +276,11 @@ export default function SettingsPage() {
                   disabled={saving}
                   className="btn"
                   style={{
-                    background: '#ff1f3d',
+                    background: '#B40C1C',
                     color: 'white',
                     border: 'none',
                     padding: '12px 24px',
-                    borderRadius: '4px',
+                    borderRadius: '0',
                     cursor: saving ? 'not-allowed' : 'pointer',
                     opacity: saving ? 0.6 : 1,
                   }}
@@ -289,10 +289,10 @@ export default function SettingsPage() {
                 </button>
               </form>
 
-              <div style={{ marginTop: '16px', padding: '12px', background: '#fff3cd', borderRadius: '4px', fontSize: '14px' }}>
+              <div style={{ marginTop: '16px', padding: '12px', background: '#fff3cd', borderRadius: '0', fontSize: '14px' }}>
                 <p style={{ margin: 0 }}>
                   <strong>Forgot your password?</strong>{' '}
-                  <Link href="/forgot-password" style={{ color: '#ff1f3d', textDecoration: 'none' }}>
+                  <Link href="/forgot-password" style={{ color: '#B40C1C', textDecoration: 'none' }}>
                     Reset it here
                   </Link>
                 </p>
@@ -321,7 +321,7 @@ function NotificationPreferencesSection({
 }: any) {
   if (prefLoading) {
     return (
-      <section style={{ background: '#f9f9f9', padding: '24px', borderRadius: '8px' }}>
+      <section style={{ background: 'var(--color-bg-sand, #F1EEE9)', padding: '24px', borderRadius: '0' }}>
         <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Notification Preferences</h2>
         <p style={{ color: '#666', fontSize: '14px' }}>Loading preferences...</p>
       </section>
@@ -333,20 +333,20 @@ function NotificationPreferencesSection({
   }
 
   return (
-    <section style={{ background: '#f9f9f9', padding: '24px', borderRadius: '8px' }}>
+    <section style={{ background: 'var(--color-bg-sand, #F1EEE9)', padding: '24px', borderRadius: '0' }}>
       <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Notification Preferences</h2>
       <p style={{ color: '#666', fontSize: '14px', marginBottom: '24px' }}>
         Control how you receive updates about your orders and account.
       </p>
 
       {prefError && (
-        <div style={{ padding: '12px', background: '#ffe5e5', color: '#ff1f3d', borderRadius: '4px', marginBottom: '16px' }}>
+        <div style={{ padding: '12px', background: '#fef2f2', color: '#B40C1C', borderRadius: '0', marginBottom: '16px' }}>
           {prefError}
         </div>
       )}
 
       {prefSuccess && (
-        <div style={{ padding: '12px', background: '#e5f5e5', color: '#1f7d3d', borderRadius: '4px', marginBottom: '16px' }}>
+        <div style={{ padding: '12px', background: 'var(--color-bg-sand, #F1EEE9)', color: 'var(--color-text, #121212)', borderRadius: '0', marginBottom: '16px' }}>
           Preferences updated successfully!
         </div>
       )}

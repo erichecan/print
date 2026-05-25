@@ -1548,6 +1548,7 @@ export interface AdminProductDetail extends AdminProductSummary {
     'left-sleeve'?: { width: number; height: number; x: number; y: number };
     'right-sleeve'?: { width: number; height: number; x: number; y: number };
   } | null;
+  tags?: string[];
   colorImages?: Array<{
     id: string;
     productId: string | null;
@@ -1594,6 +1595,7 @@ export interface AdminProductPayload {
     alt?: string;
     sortOrder?: number;
   }>;
+  tags?: string[];
   collections?: string[];
   printableArea?: {
     front: { width: number; height: number; x: number; y: number };

@@ -114,18 +114,18 @@ export default function ProfilePage() {
       </div>
 
       {error && (
-        <div style={{ padding: '12px', background: '#ffe5e5', color: '#ff1f3d', borderRadius: '4px', marginBottom: '24px' }}>
+        <div style={{ padding: '12px', background: '#fef2f2', color: '#B40C1C', borderRadius: '0', marginBottom: '24px' }}>
           {error}
         </div>
       )}
 
       {success && (
-        <div style={{ padding: '12px', background: '#e5f5e5', color: '#1f7d3d', borderRadius: '4px', marginBottom: '24px' }}>
+        <div style={{ padding: '12px', background: 'var(--color-bg-sand, #F1EEE9)', color: 'var(--color-text, #121212)', borderRadius: '0', marginBottom: '24px' }}>
           Profile updated successfully!
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ background: '#f9f9f9', padding: '24px', borderRadius: '8px' }}>
+      <form onSubmit={handleSubmit} style={{ background: 'var(--color-bg-sand, #F1EEE9)', padding: '24px', borderRadius: '0' }}>
         <div style={{ marginBottom: '24px' }}>
           <label htmlFor="email" style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>
             Email
@@ -138,8 +138,8 @@ export default function ProfilePage() {
             style={{
               width: '100%',
               padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
+              border: '1px solid var(--color-border, #DBDBDB)',
+              borderRadius: '0',
               background: '#f5f5f5',
               color: '#666',
             }}
@@ -159,7 +159,7 @@ export default function ProfilePage() {
               type="text"
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-              style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
             />
           </div>
           <div>
@@ -171,7 +171,7 @@ export default function ProfilePage() {
               type="text"
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-              style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
             />
           </div>
         </div>
@@ -186,12 +186,12 @@ export default function ProfilePage() {
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             placeholder="+1 (555) 123-4567"
-            style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+            style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
           />
         </div>
 
         {profile?.createdAt && (
-          <div style={{ marginBottom: '24px', padding: '16px', background: 'white', borderRadius: '4px', fontSize: '14px', color: '#666' }}>
+          <div style={{ marginBottom: '24px', padding: '16px', background: 'white', borderRadius: '0', fontSize: '14px', color: '#666' }}>
             <p style={{ margin: '0 0 4px 0' }}>
               <strong>Member since:</strong> {new Date(profile.createdAt).toLocaleDateString()}
             </p>
@@ -209,11 +209,11 @@ export default function ProfilePage() {
             disabled={saving}
             className="btn"
             style={{
-              background: '#ff1f3d',
+              background: '#B40C1C',
               color: 'white',
               border: 'none',
               padding: '12px 24px',
-              borderRadius: '4px',
+              borderRadius: '0',
               cursor: saving ? 'not-allowed' : 'pointer',
               opacity: saving ? 0.6 : 1,
             }}
@@ -225,9 +225,9 @@ export default function ProfilePage() {
             className="btn btn--outline"
             style={{
               padding: '12px 24px',
-              borderRadius: '4px',
+              borderRadius: '0',
               cursor: 'pointer',
-              border: '1px solid #ddd',
+              border: '1px solid var(--color-border, #DBDBDB)',
               background: 'white',
               textDecoration: 'none',
               display: 'inline-block',

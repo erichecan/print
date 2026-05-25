@@ -11,6 +11,7 @@ import { useProductWizard } from '../ProductWizard';
 import { ProductCardPreview } from '../ProductCardPreview';
 import { adminCategoriesApi, AdminCategorySummary } from '@/lib/api';
 import useSWR from 'swr';
+import { TAG_TAXONOMY } from '@/lib/tag-taxonomy';
 
 export function Step1BasicInfo() {
   const { wizardData, updateWizardData, nextStep, saveDraft, isLoading } = useProductWizard();
@@ -65,10 +66,14 @@ export function Step1BasicInfo() {
     updateWizardData({ longDescription: e.target.value });
   };
 
-  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const tags = e.target.value.split(',').map((tag) => tag.trim()).filter(Boolean);
-    updateWizardData({ tags });
-  };
+  const activeTags: string[] = wizardData.tags || [];
+
+  function toggleTag(tag: string) {
+    const next = activeTags.includes(tag)
+      ? activeTags.filter((t) => t !== tag)
+      : [...activeTags, tag];
+    updateWizardData({ tags: next });
+  }
 
   const handleFileSelect = (file: File) => {
     // Validate file type
@@ -289,6 +294,40 @@ export function Step1BasicInfo() {
                 </div>
               )}
               {errors.image && <span className="form-field__error">{errors.image}</span>}
+            </div>
+
+            {/* Product Tags */}
+            <div className="form-field">
+              <label className="form-field__label">商品标签</label>
+              <p className="form-field__hint">为商品选择适当的标签，用于前台筛选分类</p>
+              <div className="tags-editor">
+                {Object.entries(TAG_TAXONOMY).map(([dimKey, dim]) => (
+                  <div key={dimKey} className="tags-dimension">
+                    <div className="tags-dimension__label">{dim.label}</div>
+                    <div className="tags-dimension__chips">
+                      {dim.tags.map((tag) => {
+                        const isOn = activeTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            className={`tag-chip${isOn ? ' tag-chip--on' : ''}`}
+                            onClick={() => toggleTag(tag)}
+                          >
+                            {isOn && <span className="tag-chip__check">✓</span>}
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {activeTags.length > 0 && (
+                <p className="form-field__hint">
+                  已选 {activeTags.length} 个：{activeTags.join(', ')}
+                </p>
+              )}
             </div>
 
           </div>
@@ -531,6 +570,65 @@ export function Step1BasicInfo() {
         .btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+
+        .tags-editor {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          padding: 12px;
+          border: 1px solid #e1e3e5;
+          border-radius: 6px;
+          background: #fafbfb;
+        }
+
+        .tags-dimension__label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #6d7175;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 6px;
+        }
+
+        .tags-dimension__chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .tag-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          border: 1px solid #c9cccf;
+          border-radius: 4px;
+          background: #fff;
+          color: #202223;
+          font-size: 13px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .tag-chip:hover {
+          border-color: #005bd3;
+          color: #005bd3;
+        }
+
+        .tag-chip--on {
+          background: #005bd3;
+          border-color: #005bd3;
+          color: #fff;
+        }
+
+        .tag-chip--on:hover {
+          background: #0047b3;
+          border-color: #0047b3;
+        }
+
+        .tag-chip__check {
+          font-size: 11px;
         }
       `}</style>
     </div>

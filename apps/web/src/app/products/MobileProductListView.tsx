@@ -101,7 +101,7 @@ export function MobileProductListView({
           margin: 0 16px 12px 16px;
         }
         .mobile-plp__breadcrumbs a {
-          color: #2563eb;
+          color: var(--color-accent, #B40C1C);
           text-decoration: none;
         }
         .separator {

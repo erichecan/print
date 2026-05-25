@@ -96,26 +96,26 @@ export function MobileDesignsView({
         .mobile-view__header h1 { font-size: 20px; font-weight: 700; margin: 0; }
         
         .mobile-view__filters { margin-bottom: 8px; }
-        .mobile-view__filters select { width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: #fff; }
+        .mobile-view__filters select { width: 100%; padding: 10px; border: 1px solid var(--color-border, #DBDBDB); border-radius: 0; font-size: 14px; background: #fff; }
         
         .mobile-designs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
-        .design-card-mobile { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+        .design-card-mobile { background: #fff; border: 1px solid var(--color-border, #DBDBDB); border-radius: 0; overflow: hidden; display: flex; flex-direction: column; }
         .design-card-mobile__thumbnail { aspect-ratio: 1; background: #f3f4f6; position: relative; cursor: pointer; }
         .design-card-mobile__thumbnail img { width: 100%; height: 100%; object-fit: cover; }
         .design-card-mobile__thumbnail .no-preview { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #9ca3af; }
         
-        .design-card-mobile__source { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .design-card-mobile__source { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); color: #fff; padding: 2px 6px; border-radius: 0; font-size: 10px; font-weight: 600; }
         
         .design-card-mobile__info { padding: 10px; flex: 1; display: flex; flex-direction: column; }
         .design-card-mobile__info h3 { font-size: 14px; font-weight: 700; margin: 0 0 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .design-card-mobile__info p { font-size: 12px; color: #6b7280; margin: 0 0 12px; }
         
         .design-card-mobile__actions { display: flex; gap: 8px; margin-top: auto; }
-        .design-card-mobile__actions button { flex: 1; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; padding: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .design-card-mobile__actions button { flex: 1; border: 1px solid #d1d5db; background: #fff; border-radius: 0; padding: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
         .design-card-mobile__actions .btn-delete { color: #dc2626; border-color: #fecaca; }
         
-        .mobile-view__btn { display: inline-flex; align-items: center; justify-content: center; background: #ff1f3d; color: #fff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; }
+        .mobile-view__btn { display: inline-flex; align-items: center; justify-content: center; background: #B40C1C; color: #fff; padding: 10px 16px; border-radius: 0; text-decoration: none; font-weight: 600; font-size: 14px; }
         .mobile-view__btn--small { padding: 4px 12px; font-size: 13px; }
         
         .mobile-view__loading, .mobile-view__empty { text-align: center; padding: 32px; color: #6b7280; }

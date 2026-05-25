@@ -37,12 +37,12 @@ export function MobileRewardsView() {
         
         .mobile-rewards-content { display: flex; flex-direction: column; gap: 16px; }
         
-        .mobile-rewards-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px 20px; text-align: center; }
+        .mobile-rewards-card { background: #fff; border: 1px solid var(--color-border, #DBDBDB); border-radius: 0; padding: 32px 20px; text-align: center; }
         .card-icon { font-size: 40px; margin-bottom: 12px; }
         .mobile-rewards-card h3 { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
         .mobile-rewards-card p { font-size: 14px; color: #6b7280; margin: 0; }
         
-        .mobile-rewards-info { background: #f9fafb; border-radius: 12px; padding: 20px; }
+        .mobile-rewards-info { background: var(--color-bg-sand, #F1EEE9); border-radius: 0; padding: 20px; }
         .mobile-rewards-info p { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
         .mobile-rewards-info ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
         .mobile-rewards-info li { font-size: 14px; color: #4b5563; }

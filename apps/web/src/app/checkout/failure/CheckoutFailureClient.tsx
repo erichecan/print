@@ -88,7 +88,7 @@ export function CheckoutFailureClient() {
         }
         .card {
           background: #ffffff;
-          border-radius: 16px;
+          border-radius: 0;
           padding: 3rem 2rem;
           text-align: center;
           box-shadow: 0 32px 64px rgba(15, 23, 42, 0.1);
@@ -111,7 +111,7 @@ export function CheckoutFailureClient() {
           margin: 1.5rem 0;
           padding: 1rem;
           background: #fef2f2;
-          border-radius: 8px;
+          border-radius: 0;
           border: 1px solid #fecaca;
         }
         .reason-label {
@@ -137,7 +137,7 @@ export function CheckoutFailureClient() {
           margin: 1.5rem 0;
           padding: 1rem;
           background: #f8fafc;
-          border-radius: 8px;
+          border-radius: 0;
           border: 1px solid #e2e8f0;
         }
         .help-section p {
@@ -145,7 +145,7 @@ export function CheckoutFailureClient() {
           font-size: 0.875rem;
         }
         .support-link {
-          color: #2563eb;
+          color: var(--color-accent, #B40C1C);
           text-decoration: none;
           font-weight: 600;
         }
@@ -162,7 +162,7 @@ export function CheckoutFailureClient() {
           display: inline-block;
           padding: 0.85rem 1.5rem;
           border-radius: 999px;
-          background: #ff1f3d;
+          background: #B40C1C;
           color: #fff;
           font-weight: 600;
           text-decoration: none;

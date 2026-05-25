@@ -16,7 +16,7 @@ export function AccountErrorState({ code, message, onRetry }: AccountErrorStateP
       padding: '48px',
       textAlign: 'center',
       backgroundColor: '#ffffff',
-      borderRadius: '8px',
+      borderRadius: '0',
       border: '1px solid #e0e0e0',
       maxWidth: '600px',
       margin: '0 auto',
@@ -51,20 +51,20 @@ export function AccountErrorState({ code, message, onRetry }: AccountErrorStateP
           onClick={onRetry}
           style={{
             padding: '12px 24px',
-            backgroundColor: '#2563eb',
+            backgroundColor: '#000000',
             color: '#ffffff',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '0',
             fontSize: '16px',
             fontWeight: 500,
             cursor: 'pointer',
             transition: 'background-color 0.2s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#1d4ed8';
+            e.currentTarget.style.backgroundColor = '#333333';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#2563eb';
+            e.currentTarget.style.backgroundColor = '#000000';
           }}
         >
           重试

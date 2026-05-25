@@ -57,7 +57,7 @@ export function AccountBreadcrumb() {
             <Link 
               href={item.href}
               style={{ 
-                color: '#2563eb', 
+                color: '#B40C1C', 
                 textDecoration: 'none',
                 transition: 'color 0.2s',
               }}

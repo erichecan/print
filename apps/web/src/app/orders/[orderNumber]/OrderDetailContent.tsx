@@ -206,7 +206,7 @@ export function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
         .status-badge,
         .payment-badge {
           padding: 0.5rem 1rem;
-          border-radius: 20px;
+          border-radius: 0;
           font-weight: 500;
         }
         .status-pending {
@@ -251,9 +251,9 @@ export function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
         .summary-card,
         .address-card,
         .tracking-card {
-          background: #f9f9f9;
+          background: var(--color-bg-sand, #F1EEE9);
           padding: 1.5rem;
-          border-radius: 8px;
+          border-radius: 0;
           margin-bottom: 1.5rem;
         }
         .summary-row {
@@ -280,11 +280,11 @@ export function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
         .btn {
           padding: 0.75rem 2rem;
           text-decoration: none;
-          border-radius: 4px;
+          border-radius: 0;
           display: inline-block;
         }
         .btn-primary {
-          background: #ff1f3d;
+          background: #B40C1C;
           color: white;
         }
         .btn-primary:disabled {
@@ -292,7 +292,7 @@ export function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
           cursor: not-allowed;
         }
         .btn-outline {
-          border: 1px solid #ddd;
+          border: 1px solid var(--color-border, #DBDBDB);
           color: #333;
         }
         @media (max-width: 968px) {

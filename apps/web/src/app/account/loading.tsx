@@ -8,7 +8,7 @@ export default function AccountLoading() {
     <div style={{ 
       padding: '24px',
       backgroundColor: '#ffffff',
-      borderRadius: '8px',
+      borderRadius: '0',
       border: '1px solid #e0e0e0',
     }}>
       <div style={{
@@ -28,7 +28,7 @@ export default function AccountLoading() {
             height: '20px',
             width: '200px',
             backgroundColor: '#e5e7eb',
-            borderRadius: '4px',
+            borderRadius: '0',
             marginBottom: '8px',
             opacity: 0.7,
           }} />
@@ -36,7 +36,7 @@ export default function AccountLoading() {
             height: '16px',
             width: '150px',
             backgroundColor: '#e5e7eb',
-            borderRadius: '4px',
+            borderRadius: '0',
             opacity: 0.7,
           }} />
         </div>
@@ -44,7 +44,7 @@ export default function AccountLoading() {
       <div style={{
         height: '200px',
         backgroundColor: '#e5e7eb',
-        borderRadius: '8px',
+        borderRadius: '0',
         opacity: 0.7,
       }} />
     </div>

@@ -17,7 +17,7 @@ export default function NotFoundPage() {
           style={{
             display: 'inline-block',
             marginTop: '2rem',
-            background: '#ff1f3d',
+            background: '#B40C1C',
             color: '#fff',
             padding: '0.75rem 1.5rem',
             borderRadius: '9999px',

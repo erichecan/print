@@ -238,7 +238,7 @@ export default function CartPage() {
         textAlign: 'center',
         padding: '48px 24px',
         background: 'var(--color-bg)',
-        borderRadius: '12px',
+        borderRadius: '0',
         border: '1px solid var(--color-border)',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
       }}>
@@ -266,7 +266,7 @@ export default function CartPage() {
             padding: '14px 32px',
             background: 'var(--color-primary)',
             color: '#fff',
-            borderRadius: '8px',
+            borderRadius: '0',
             fontWeight: 700,
             fontSize: '16px',
             textDecoration: 'none',

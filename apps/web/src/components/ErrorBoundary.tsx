@@ -94,7 +94,7 @@ export class ErrorBoundary extends Component<Props, State> {
               text-align: center;
               padding: 2rem;
               background: #ffffff;
-              border-radius: 12px;
+              border-radius: 0;
               box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             }
             h2 {
@@ -111,7 +111,7 @@ export class ErrorBoundary extends Component<Props, State> {
               text-align: left;
               background: #f8fafc;
               padding: 1rem;
-              border-radius: 8px;
+              border-radius: 0;
               border: 1px solid #e2e8f0;
             }
             .error-boundary__details summary {
@@ -134,10 +134,10 @@ export class ErrorBoundary extends Component<Props, State> {
             }
             .btn-primary {
               padding: 0.75rem 1.5rem;
-              background: #ff1f3d;
+              background: #B40C1C;
               color: #ffffff;
               border: none;
-              border-radius: 8px;
+              border-radius: 0;
               font-weight: 600;
               cursor: pointer;
               transition: background 0.2s ease;
@@ -150,7 +150,7 @@ export class ErrorBoundary extends Component<Props, State> {
               background: transparent;
               color: #475569;
               border: 1px solid #d4d7de;
-              border-radius: 8px;
+              border-radius: 0;
               font-weight: 600;
               cursor: pointer;
               transition: all 0.2s ease;

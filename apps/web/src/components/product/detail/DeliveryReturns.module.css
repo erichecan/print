@@ -43,14 +43,14 @@
 }
 
 .deliveryReturnsLink {
-  color: #3b82f6;
+  color: var(--color-accent, #B40C1C);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
 .deliveryReturnsLink:hover {
-  color: #2563eb;
+  color: var(--color-accent, #B40C1C);
   text-decoration: underline;
 }
 

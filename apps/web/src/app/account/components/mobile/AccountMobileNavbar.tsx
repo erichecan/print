@@ -77,11 +77,11 @@ export function AccountMobileNavbar() {
           color: #6b7280;
           min-width: 64px;
           padding: 8px 4px;
-          border-radius: 8px;
+          border-radius: 0;
           transition: all 0.2s;
         }
         .mobile-account-nav__item--active {
-          color: #2563eb;
+          color: #000;
           background-color: #eff6ff;
         }
         .mobile-account-nav__icon {

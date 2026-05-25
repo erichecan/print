@@ -16,7 +16,7 @@ export default function AccountNotFound() {
       padding: '48px',
       textAlign: 'center',
       backgroundColor: '#ffffff',
-      borderRadius: '8px',
+      borderRadius: '0',
       border: '1px solid #e0e0e0',
       maxWidth: '600px',
       margin: '0 auto',
@@ -30,7 +30,7 @@ export default function AccountNotFound() {
         内容未找到
       </h2>
       <p style={{
-        fontSize: '16px',
+        fontSize: '12px',
         color: '#666',
         marginBottom: '24px',
       }}>
@@ -41,19 +41,19 @@ export default function AccountNotFound() {
         style={{
           display: 'inline-block',
           padding: '12px 24px',
-          backgroundColor: '#2563eb',
+          backgroundColor: '#000000',
           color: '#ffffff',
           textDecoration: 'none',
-          borderRadius: '6px',
-          fontSize: '16px',
-          fontWeight: 500,
+          borderRadius: '0',
+          fontSize: '12px',
+          fontWeight: 700,
           transition: 'background-color 0.2s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = '#1d4ed8';
+          e.currentTarget.style.backgroundColor = '#333333';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#2563eb';
+          e.currentTarget.style.backgroundColor = '#000000';
         }}
       >
         返回我的账户

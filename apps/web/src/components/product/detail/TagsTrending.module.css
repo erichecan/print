@@ -13,8 +13,8 @@
 .tagsTrendingSearchForm {
   display: flex;
   max-width: 500px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border: 1px solid var(--color-border, #DBDBDB);
+  border-radius: 0;
   overflow: hidden;
   background: #fff;
 }
@@ -58,9 +58,9 @@
 
 .tagsTrendingTag {
   padding: 6px 12px;
-  background: #f3f4f6;
-  color: #374151;
-  border-radius: 20px;
+  background: var(--color-bg-sand, #F1EEE9);
+  color: var(--color-text, #121212);
+  border-radius: 999rem;
   font-size: 13px;
   text-decoration: none;
   transition: all 0.2s ease;
@@ -96,7 +96,7 @@
   padding: 8px 16px;
   background: #eff6ff;
   color: #1e40af;
-  border-radius: 6px;
+  border-radius: 0;
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;

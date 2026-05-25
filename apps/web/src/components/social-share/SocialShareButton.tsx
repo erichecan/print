@@ -161,7 +161,7 @@ export function SocialShareButton({
         alignItems: 'center',
         gap: '8px',
         padding: iconOnly ? '8px' : '10px 16px',
-        borderRadius: '8px',
+        borderRadius: '0',
         border: '1px solid #e5e7eb',
         background: '#ffffff',
         color: platformInfo.color,

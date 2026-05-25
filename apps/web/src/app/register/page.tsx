@@ -125,9 +125,17 @@ export default function RegisterPage() {
         }
         .auth-card {
           background: white;
-          padding: 2rem;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          padding: 2.5rem;
+          border-radius: 0;
+          border: 1px solid var(--color-border, #DBDBDB);
+        }
+        .auth-card h1 {
+          font-family: var(--font-heading, 'Marcellus', serif);
+          font-size: 1.75rem;
+          font-weight: 400;
+          letter-spacing: -0.02em;
+          color: var(--color-text, #121212);
+          margin: 0 0 1.5rem;
         }
         .form-row {
           display: grid;
@@ -135,54 +143,80 @@ export default function RegisterPage() {
           gap: 1rem;
         }
         .form-group {
-          margin-bottom: 1.5rem;
+          margin-bottom: 1.25rem;
         }
         .form-group label {
           display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
+          margin-bottom: 0.4rem;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--color-text, #121212);
         }
         .form-group input {
           width: 100%;
           padding: 0.75rem;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 1rem;
+          border: 1px solid var(--color-border, #DBDBDB);
+          border-radius: 0;
+          font-size: 0.9375rem;
+          color: var(--color-text, #121212);
+          background: #fff;
+          transition: border-color 0.15s;
+          box-sizing: border-box;
+        }
+        .form-group input:focus {
+          outline: none;
+          border-color: #000;
         }
         .form-group small {
           display: block;
           margin-top: 0.25rem;
-          color: #666;
-          font-size: 0.875rem;
+          color: var(--color-text-muted, #737373);
+          font-size: 12px;
         }
         .btn-primary {
           width: 100%;
-          padding: 0.75rem;
-          background: #ff1f3d;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          font-size: 1rem;
+          padding: 0.875rem;
+          background: #000;
+          color: #fff;
+          border: 1px solid #000;
+          border-radius: 0;
+          font-size: 12px;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
           cursor: pointer;
+          transition: background 0.2s, color 0.2s;
+        }
+        .btn-primary:hover:not(:disabled) {
+          background: #fff;
+          color: #000;
         }
         .btn-primary:disabled {
-          opacity: 0.6;
+          opacity: 0.4;
           cursor: not-allowed;
         }
         .error-message {
-          color: #ff1f3d;
+          color: var(--color-accent, #B40C1C);
           padding: 0.75rem;
-          background: #ffe5e5;
-          border-radius: 4px;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 0;
           margin-bottom: 1rem;
+          font-size: 14px;
         }
         .auth-links {
           margin-top: 1.5rem;
           text-align: center;
         }
         .auth-links a {
-          color: #ff1f3d;
-          text-decoration: none;
+          color: var(--color-text, #121212);
+          text-decoration: underline;
+          font-size: 13px;
+        }
+        .auth-links a:hover {
+          opacity: 0.7;
         }
         @media (max-width: 600px) {
           .form-row {

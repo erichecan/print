@@ -92,20 +92,22 @@ export default function ProductDetailError({
             onClick={reset}
             style={{
               padding: '0.75rem 1.5rem',
-              background: '#2563eb',
+              background: '#000',
               color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '1rem',
+              border: '1px solid #000',
+              borderRadius: '0',
+              fontSize: '12px',
               cursor: 'pointer',
-              fontWeight: 500,
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase' as const,
               transition: 'background-color 0.2s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#1d4ed8';
+              e.currentTarget.style.backgroundColor = '#333';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563eb';
+              e.currentTarget.style.backgroundColor = '#000';
             }}
           >
             重试
@@ -114,20 +116,23 @@ export default function ProductDetailError({
             href="/products"
             style={{
               padding: '0.75rem 1.5rem',
-              background: '#f1f5f9',
-              color: '#364152',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '1rem',
+              background: 'white',
+              color: '#000',
+              border: '1px solid var(--color-border, #DBDBDB)',
+              borderRadius: '0',
+              fontSize: '12px',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase' as const,
               textDecoration: 'none',
               display: 'inline-block',
               transition: 'background-color 0.2s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#e2e8f0';
+              e.currentTarget.style.backgroundColor = '#f5f5f5';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#f1f5f9';
+              e.currentTarget.style.backgroundColor = 'white';
             }}
           >
             返回商品列表

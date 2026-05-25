@@ -188,10 +188,10 @@ export default function AccountDesignsPage() {
           style={{
             marginTop: '16px',
             padding: '8px 16px',
-            backgroundColor: '#2563eb',
+            backgroundColor: '#000000',
             color: '#fff',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '0',
             cursor: 'pointer',
           }}
         >
@@ -209,10 +209,10 @@ export default function AccountDesignsPage() {
           href="/design-lab"
           style={{
             padding: '10px 20px',
-            backgroundColor: '#2563eb',
+            backgroundColor: '#000000',
             color: '#fff',
             textDecoration: 'none',
-            borderRadius: '6px',
+            borderRadius: '0',
             fontWeight: '500',
             fontSize: '0.875rem',
           }}
@@ -247,7 +247,7 @@ export default function AccountDesignsPage() {
             padding: '48px',
             textAlign: 'center',
             backgroundColor: '#f8fafc',
-            borderRadius: '8px',
+            borderRadius: '0',
             border: '1px solid #e0e0e0',
           }}
         >
@@ -261,10 +261,10 @@ export default function AccountDesignsPage() {
             style={{
               display: 'inline-block',
               padding: '12px 24px',
-              backgroundColor: '#2563eb',
+              backgroundColor: '#000000',
               color: '#fff',
               textDecoration: 'none',
-              borderRadius: '6px',
+              borderRadius: '0',
               fontWeight: '500',
             }}
           >

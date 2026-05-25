@@ -21,14 +21,14 @@
 
 .you-might-like-link {
   font-size: 14px;
-  color: #3b82f6;
+  color: var(--color-accent, #B40C1C);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
 .you-might-like-link:hover {
-  color: #2563eb;
+  color: var(--color-accent, #B40C1C);
   text-decoration: underline;
 }
 
@@ -51,7 +51,7 @@
 .you-might-like-image-wrapper {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
   background: #f9fafb;
   border: 1px solid #e5e7eb;

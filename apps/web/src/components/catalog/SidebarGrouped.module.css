@@ -70,7 +70,7 @@
 
 .child.active {
   font-weight: 600;
-  color: #2563eb;
+  color: var(--color-accent, #B40C1C);
 }
 
 .childName {
@@ -88,7 +88,7 @@
   padding: 4px 0;
   background: none;
   border: none;
-  color: #2563eb;
+  color: var(--color-accent, #B40C1C);
   font-size: 15px;
   cursor: pointer;
   text-align: left;

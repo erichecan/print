@@ -261,7 +261,7 @@ export function CategorySidebar({ currentCategorySlug }: CategorySidebarProps) {
         }
 
         .category-item.is-active .category-link {
-          color: #2563eb;
+          color: #B40C1C;
           font-weight: 600;
         }
 

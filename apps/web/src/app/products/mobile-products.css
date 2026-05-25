@@ -19,7 +19,7 @@
 }
 
 .mobile-plp-breadcrumbs a {
-    color: #2563eb;
+    color: var(--color-accent, #B40C1C);
     text-decoration: none;
 }
 
@@ -141,7 +141,7 @@
 .m-swatch {
     width: 24px;
     height: 24px;
-    border-radius: 4px;
+    border-radius: 0;
     border: 1px solid #ddd;
 }
 
@@ -192,7 +192,7 @@
 }
 
 .m-pricing-details {
-    color: #2563eb;
+    color: var(--color-accent, #B40C1C);
     text-decoration: none;
 }
 
@@ -207,7 +207,7 @@
     background: #f3f4f6;
     height: 19px;
     padding: 0 8px;
-    border-radius: 10px;
+    border-radius: 0;
     font-size: 11px;
     font-style: italic;
     display: flex;

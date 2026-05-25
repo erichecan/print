@@ -43,7 +43,7 @@ export function DesignTimeFilter({ value, onChange }: DesignTimeFilterProps) {
           padding: '8px 12px',
           fontSize: '0.875rem',
           border: '1px solid #d1d5db',
-          borderRadius: '6px',
+          borderRadius: '0',
           backgroundColor: '#fff',
           color: '#374151',
           cursor: 'pointer',

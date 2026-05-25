@@ -197,7 +197,7 @@ export default function AddressesPage() {
       </div>
 
       {error && (
-        <div style={{ padding: '12px', background: '#ffe5e5', color: '#ff1f3d', borderRadius: '4px', marginBottom: '24px' }}>
+        <div style={{ padding: '12px', background: '#fef2f2', color: '#B40C1C', borderRadius: '0', marginBottom: '24px' }}>
           {error}
         </div>
       )}
@@ -211,7 +211,7 @@ export default function AddressesPage() {
               setShowAddForm(true);
             }}
             className="btn"
-            style={{ background: '#ff1f3d', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ background: '#B40C1C', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '0', cursor: 'pointer' }}
           >
             + Add New Address
           </button>
@@ -219,7 +219,7 @@ export default function AddressesPage() {
       )}
 
       {showAddForm && (
-        <form onSubmit={handleSubmit} style={{ background: '#f9f9f9', padding: '24px', borderRadius: '8px', marginBottom: '32px' }}>
+        <form onSubmit={handleSubmit} style={{ background: 'var(--color-bg-sand, #F1EEE9)', padding: '24px', borderRadius: '0', marginBottom: '32px' }}>
           <h2 style={{ marginTop: 0 }}>{editingId ? 'Edit Address' : 'Add New Address'}</h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
@@ -233,7 +233,7 @@ export default function AddressesPage() {
                 required
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
               />
             </div>
             <div>
@@ -246,7 +246,7 @@ export default function AddressesPage() {
                 required
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
               />
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function AddressesPage() {
               type="text"
               value={formData.company}
               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-              style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
             />
           </div>
 
@@ -274,7 +274,7 @@ export default function AddressesPage() {
               required
               value={formData.address1}
               onChange={(e) => setFormData({ ...formData, address1: e.target.value })}
-              style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
             />
           </div>
 
@@ -287,7 +287,7 @@ export default function AddressesPage() {
               type="text"
               value={formData.address2}
               onChange={(e) => setFormData({ ...formData, address2: e.target.value })}
-              style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
             />
           </div>
 
@@ -302,7 +302,7 @@ export default function AddressesPage() {
                 required
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
               />
             </div>
             <div>
@@ -315,7 +315,7 @@ export default function AddressesPage() {
                 required
                 value={formData.province}
                 onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
               />
             </div>
             <div>
@@ -328,7 +328,7 @@ export default function AddressesPage() {
                 required
                 value={formData.postalCode}
                 onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
               />
             </div>
           </div>
@@ -343,7 +343,7 @@ export default function AddressesPage() {
                 required
                 value={formData.country}
                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
               >
                 <option value="CA">Canada</option>
                 <option value="US">United States</option>
@@ -358,7 +358,7 @@ export default function AddressesPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '8px', border: '1px solid var(--color-border, #DBDBDB)', borderRadius: '0' }}
               />
             </div>
           </div>
@@ -378,7 +378,7 @@ export default function AddressesPage() {
             <button
               type="submit"
               className="btn"
-              style={{ background: '#ff1f3d', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '4px', cursor: 'pointer' }}
+              style={{ background: '#B40C1C', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '0', cursor: 'pointer' }}
             >
               {editingId ? 'Update Address' : 'Add Address'}
             </button>
@@ -386,7 +386,7 @@ export default function AddressesPage() {
               type="button"
               onClick={handleCancel}
               className="btn btn--outline"
-              style={{ padding: '12px 24px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #ddd', background: 'white' }}
+              style={{ padding: '12px 24px', borderRadius: '0', cursor: 'pointer', border: '1px solid var(--color-border, #DBDBDB)', background: 'white' }}
             >
               Cancel
             </button>
@@ -395,7 +395,7 @@ export default function AddressesPage() {
       )}
 
       {addresses.length === 0 && !showAddForm ? (
-        <div style={{ textAlign: 'center', padding: '48px', background: '#f9f9f9', borderRadius: '8px' }}>
+        <div style={{ textAlign: 'center', padding: '48px', background: 'var(--color-bg-sand, #F1EEE9)', borderRadius: '0' }}>
           <p style={{ marginBottom: '16px' }}>You haven&apos;t saved any addresses yet.</p>
           <button
             type="button"
@@ -404,7 +404,7 @@ export default function AddressesPage() {
               setShowAddForm(true);
             }}
             className="btn"
-            style={{ background: '#ff1f3d', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '4px', cursor: 'pointer' }}
+            style={{ background: '#B40C1C', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '0', cursor: 'pointer' }}
           >
             Add Your First Address
           </button>
@@ -416,15 +416,15 @@ export default function AddressesPage() {
               key={address.id}
               style={{
                 padding: '20px',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
+                border: '1px solid var(--color-border, #DBDBDB)',
+                borderRadius: '0',
                 background: address.isDefault ? '#f0f8ff' : 'white',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                 <div>
                   {address.isDefault && (
-                    <span style={{ display: 'inline-block', padding: '4px 8px', background: '#ff1f3d', color: 'white', borderRadius: '4px', fontSize: '12px', marginBottom: '8px' }}>
+                    <span style={{ display: 'inline-block', padding: '4px 8px', background: '#B40C1C', color: 'white', borderRadius: '0', fontSize: '12px', marginBottom: '8px' }}>
                       Default
                     </span>
                   )}
@@ -448,7 +448,7 @@ export default function AddressesPage() {
                       type="button"
                       onClick={() => handleSetDefault(address.id)}
                       className="btn btn--outline"
-                      style={{ padding: '6px 12px', fontSize: '14px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', borderRadius: '4px' }}
+                      style={{ padding: '6px 12px', fontSize: '14px', border: '1px solid var(--color-border, #DBDBDB)', background: 'white', cursor: 'pointer', borderRadius: '0' }}
                     >
                       Set Default
                     </button>
@@ -457,7 +457,7 @@ export default function AddressesPage() {
                     type="button"
                     onClick={() => handleEdit(address)}
                     className="btn btn--outline"
-                    style={{ padding: '6px 12px', fontSize: '14px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', borderRadius: '4px' }}
+                    style={{ padding: '6px 12px', fontSize: '14px', border: '1px solid var(--color-border, #DBDBDB)', background: 'white', cursor: 'pointer', borderRadius: '0' }}
                   >
                     Edit
                   </button>
@@ -465,7 +465,7 @@ export default function AddressesPage() {
                     type="button"
                     onClick={() => handleDelete(address.id)}
                     className="btn btn--outline"
-                    style={{ padding: '6px 12px', fontSize: '14px', border: '1px solid #ff1f3d', color: '#ff1f3d', background: 'white', cursor: 'pointer', borderRadius: '4px' }}
+                    style={{ padding: '6px 12px', fontSize: '14px', border: '1px solid #B40C1C', color: '#B40C1C', background: 'white', cursor: 'pointer', borderRadius: '0' }}
                   >
                     Delete
                   </button>

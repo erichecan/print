@@ -94,9 +94,9 @@ export function OrderTimeline({ events, currentStatus, className = '' }: OrderTi
       <style jsx>{`
         .order-timeline {
           padding: 20px;
-          background: #f8fafc;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
+          background: var(--color-bg-sand, #F1EEE9);
+          border-radius: 0;
+          border: 1px solid var(--color-border, #DBDBDB);
         }
         h3 {
           margin: 0 0 20px 0;
@@ -128,7 +128,7 @@ export function OrderTimeline({ events, currentStatus, className = '' }: OrderTi
           color: #10b981;
         }
         .timeline-item.is-current .timeline-icon {
-          color: #2563eb;
+          color: var(--color-accent, #B40C1C);
           font-size: 1.25rem;
         }
         .timeline-marker {
@@ -165,7 +165,7 @@ export function OrderTimeline({ events, currentStatus, className = '' }: OrderTi
           color: #94a3b8;
         }
         .timeline-item.is-current .timeline-status {
-          color: #2563eb;
+          color: var(--color-accent, #B40C1C);
         }
       `}</style>
     </div>

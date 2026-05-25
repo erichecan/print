@@ -42,7 +42,7 @@ export function LoadingSpinner({
           width: ${spinnerSize};
           height: ${spinnerSize};
           border: 3px solid rgba(0, 0, 0, 0.1);
-          border-top-color: #ff1f3d;
+          border-top-color: #B40C1C;
           border-radius: 50%;
           animation: spin 0.8s linear infinite;
         }
@@ -120,7 +120,7 @@ export function Skeleton({ width = '100%', height = '1rem', className = '', line
             background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
             background-size: 400% 100%;
             animation: shimmer 1.6s infinite;
-            border-radius: 4px;
+            border-radius: 0;
           }
           @keyframes shimmer {
             0% {
@@ -145,7 +145,7 @@ export function Skeleton({ width = '100%', height = '1rem', className = '', line
           background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
           background-size: 400% 100%;
           animation: shimmer 1.6s infinite;
-          border-radius: 4px;
+          border-radius: 0;
         }
         @keyframes shimmer {
           0% {

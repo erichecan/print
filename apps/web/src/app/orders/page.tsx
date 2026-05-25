@@ -66,7 +66,7 @@ export default function SearchOrderPage() {
         .card {
           background: white;
           padding: 2.5rem;
-          border-radius: 16px;
+          border-radius: 0;
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
           width: 100%;
           max-width: 480px;
@@ -99,21 +99,21 @@ export default function SearchOrderPage() {
         .input {
           padding: 0.75rem 1rem;
           border: 1px solid #e2e8f0;
-          border-radius: 8px;
+          border-radius: 0;
           font-size: 1rem;
           width: 100%;
         }
         .input:focus {
           outline: none;
-          border-color: #2563eb;
+          border-color: #000;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
         .btn-primary {
-          background: #ff1f3d;
+          background: #B40C1C;
           color: white;
           border: none;
           padding: 0.875rem;
-          border-radius: 8px;
+          border-radius: 0;
           font-weight: 600;
           cursor: pointer;
           transition: background 0.2s;

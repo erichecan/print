@@ -103,7 +103,7 @@ function CheckoutSkeleton() {
         }
         .skeleton-card {
           min-height: 640px;
-          border-radius: 12px;
+          border-radius: 0;
           background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
           background-size: 400% 100%;
           animation: shimmer 1.6s infinite;
@@ -1438,7 +1438,7 @@ function CheckoutForm({
           padding: 32px;
           background: #ffffff;
           border: 1px solid #e2e8f0;
-          border-radius: 16px;
+          border-radius: 0;
         }
         .form-group {
           display: grid;
@@ -1453,7 +1453,7 @@ function CheckoutForm({
           width: 100%;
           padding: 12px 14px;
           border: 1px solid #d4d7de;
-          border-radius: 8px;
+          border-radius: 0;
           font-size: 0.95rem;
           transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
@@ -1470,7 +1470,7 @@ function CheckoutForm({
           border-left: 4px solid #ef4444;
           background: rgba(239, 68, 68, 0.08);
           padding: 16px 20px;
-          border-radius: 12px;
+          border-radius: 0;
           color: #991b1b;
           display: grid;
           gap: 8px;
@@ -1489,7 +1489,7 @@ function CheckoutForm({
           align-items: center;
           padding: 16px;
           border: 1px solid #e2e8f0;
-          border-radius: 12px;
+          border-radius: 0;
           background: #f8fafc;
           transition: border-color 0.2s ease, background 0.2s ease;
           cursor: pointer;
@@ -1529,13 +1529,13 @@ function CheckoutForm({
           gap: 12px;
           padding: 16px;
           border: 1px solid #e2e8f0;
-          border-radius: 12px;
+          border-radius: 0;
           background: #f8fafc;
         }
         .card-element {
           padding: 12px;
           border: 1px solid #d4d7de;
-          border-radius: 8px;
+          border-radius: 0;
           background: #ffffff;
           transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
@@ -1566,7 +1566,7 @@ function CheckoutForm({
         .payment-progress {
           padding: 12px 16px;
           background: #f8fafc;
-          border-radius: 8px;
+          border-radius: 0;
           border: 1px solid #e2e8f0;
         }
         .progress-step {
@@ -1595,11 +1595,11 @@ function CheckoutForm({
           gap: 16px;
           padding: 20px;
           border: 1px solid #e2e8f0;
-          border-radius: 12px;
+          border-radius: 0;
           background: #f8fafc;
         }
         .btn-primary {
-          background: #ff1f3d;
+          background: #B40C1C;
           color: #ffffff;
           border: none;
           border-radius: 999px;
@@ -1635,7 +1635,7 @@ function CheckoutForm({
           border-left: 4px solid #ef4444;
           background: rgba(239, 68, 68, 0.08);
           padding: 16px 20px;
-          border-radius: 12px;
+          border-radius: 0;
           color: #991b1b;
           display: grid;
           gap: 12px;
@@ -1663,7 +1663,7 @@ function CheckoutForm({
           gap: 12px;
           padding: 20px;
           border: 1px solid #e2e8f0;
-          border-radius: 12px;
+          border-radius: 0;
           background: #f8fafc;
         }
         .coupon-input-group {
@@ -1674,7 +1674,7 @@ function CheckoutForm({
           flex: 1;
           padding: 12px 14px;
           border: 1px solid #d4d7de;
-          border-radius: 8px;
+          border-radius: 0;
           font-size: 0.95rem;
           transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
@@ -1692,7 +1692,7 @@ function CheckoutForm({
           background: #2563eb;
           color: white;
           border: none;
-          border-radius: 8px;
+          border-radius: 0;
           font-size: 0.95rem;
           font-weight: 600;
           cursor: pointer;
@@ -1711,7 +1711,7 @@ function CheckoutForm({
           align-items: center;
           padding: 16px;
           background: #e8f5e9;
-          border-radius: 8px;
+          border-radius: 0;
           border: 1px solid #81c784;
         }
         .coupon-info {
@@ -1734,7 +1734,7 @@ function CheckoutForm({
           background: transparent;
           border: 1px solid #2e7d32;
           color: #2e7d32;
-          border-radius: 6px;
+          border-radius: 0;
           font-size: 0.875rem;
           font-weight: 600;
           cursor: pointer;
@@ -1749,7 +1749,7 @@ function CheckoutForm({
           padding: 12px;
           background: #fee;
           border: 1px solid #fcc;
-          border-radius: 6px;
+          border-radius: 0;
           color: #c33;
           font-size: 0.875rem;
         }
@@ -1802,19 +1802,23 @@ export default function CheckoutPage() {
     return (
       <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
         <h1>Checkout</h1>
-        <div style={{ margin: '2rem 0', padding: '2rem', background: '#f9fafb', borderRadius: '8px' }}>
+        <div style={{ margin: '2rem 0', padding: '2rem', background: 'var(--color-bg-sand, #F1EEE9)', borderRadius: '0', border: '1px solid var(--color-border, #DBDBDB)' }}>
           <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Your cart appears to be empty.</p>
-          <p style={{ color: '#666', marginBottom: '2rem' }}>This might be due to a session timeout or synchronization issue.</p>
+          <p style={{ color: 'var(--color-text-muted, #737373)', marginBottom: '2rem' }}>This might be due to a session timeout or synchronization issue.</p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
             <button
               onClick={() => window.location.reload()}
               style={{
                 padding: '0.75rem 1.5rem',
-                background: '#2563eb',
+                background: '#000',
                 color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer'
+                border: '1px solid #000',
+                borderRadius: '0',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase'
               }}
             >
               Refresh Page
@@ -1824,10 +1828,14 @@ export default function CheckoutPage() {
               style={{
                 padding: '0.75rem 1.5rem',
                 background: 'white',
-                color: '#2563eb',
-                border: '1px solid #2563eb',
-                borderRadius: '6px',
-                textDecoration: 'none'
+                color: '#000',
+                border: '1px solid var(--color-border, #DBDBDB)',
+                borderRadius: '0',
+                textDecoration: 'none',
+                fontSize: '12px',
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase'
               }}
             >
               Return to Cart

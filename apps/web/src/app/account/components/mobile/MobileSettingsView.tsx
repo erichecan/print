@@ -164,24 +164,24 @@ export function MobileSettingsView({
         .mobile-view__header h1 { font-size: 20px; font-weight: 700; margin: 0; }
         .mobile-view__header p { font-size: 14px; color: #6b7280; margin: 4px 0 0; }
         
-        .mobile-settings-section { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; }
+        .mobile-settings-section { background: #fff; padding: 20px; border-radius: 0; border: 1px solid var(--color-border, #DBDBDB); }
         .mobile-settings-section h2 { font-size: 16px; font-weight: 700; margin: 0 0 16px; }
         
-        .mobile-view__alert { padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+        .mobile-view__alert { padding: 10px; border-radius: 0; font-size: 13px; margin-bottom: 12px; }
         .mobile-view__alert--error { background: #fee2e2; color: #b91c1c; }
         .mobile-view__alert--success { background: #d1fae5; color: #065f46; }
         
         .mobile-settings-form { display: flex; flex-direction: column; gap: 12px; }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         .form-group label { font-size: 12px; font-weight: 600; color: #4b5563; }
-        .form-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+        .form-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 0; font-size: 14px; }
         
         .password-strength { margin-top: 4px; }
         .strength-row { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
         .strength-bar { height: 4px; background: #f3f4f6; border-radius: 2px; overflow: hidden; }
         .strength-bar-fill { height: 100%; transition: width 0.3s; }
         
-        .mobile-view__btn { margin-top: 8px; padding: 12px; background: #ff1f3d; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .mobile-view__btn { margin-top: 8px; padding: 12px; background: #B40C1C; color: #fff; border: none; border-radius: 0; font-weight: 600; cursor: pointer; }
         
         .preferences-list h3 { font-size: 13px; font-weight: 600; color: #9ca3af; text-transform: uppercase; margin: 0 0 8px; }
         .preferences-group { display: flex; flex-direction: column; gap: 12px; }

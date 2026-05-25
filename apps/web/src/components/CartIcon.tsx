@@ -74,9 +74,9 @@ export function CartIcon() {
           position: absolute;
           top: -8px;
           right: -8px;
-          background: #ff1f3d;
+          background: #B40C1C;
           color: white;
-          border-radius: 12px;
+          border-radius: 0;
           min-width: ${badgeWidth};
           height: 20px;
           display: flex;

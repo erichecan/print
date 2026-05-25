@@ -73,8 +73,8 @@
 }
 
 .group-order-hero__title-accent {
-  color: #ff1f3d;
-  -webkit-text-fill-color: #ff1f3d;
+  color: #B40C1C;
+  -webkit-text-fill-color: #B40C1C;
   position: relative;
 }
 
@@ -86,7 +86,7 @@
   right: 0;
   height: 8px;
   background: linear-gradient(90deg, transparent, rgba(255, 31, 61, 0.3), transparent);
-  border-radius: 4px;
+  border-radius: 0;
   z-index: -1;
 }
 
@@ -113,7 +113,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px 32px;
-  border-radius: 12px;
+  border-radius: 0;
   font-weight: 700;
   font-size: 18px;
   text-decoration: none;
@@ -140,7 +140,7 @@
 }
 
 .group-order-btn--primary {
-  background: linear-gradient(135deg, #ff1f3d 0%, #e3002b 100%);
+  background: linear-gradient(135deg, #B40C1C 0%, #8f0915 100%);
   color: #ffffff;
   box-shadow: 0 4px 16px rgba(255, 31, 61, 0.3);
 }
@@ -153,13 +153,13 @@
 
 .group-order-btn--secondary {
   background: #ffffff;
-  color: #ff1f3d;
-  border-color: #ff1f3d;
+  color: #B40C1C;
+  border-color: #B40C1C;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .group-order-btn--secondary:hover {
-  background: #ff1f3d;
+  background: #B40C1C;
   color: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(255, 31, 61, 0.3);
@@ -201,7 +201,7 @@
 
 .group-order-feature-card {
   background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-  border-radius: 24px;
+  border-radius: 0;
   padding: 40px 32px;
   border: 1px solid rgba(229, 231, 235, 0.8);
   box-shadow: 
@@ -232,7 +232,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #ff1f3d, #e3002b);
+  background: linear-gradient(90deg, #B40C1C, #e3002b);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.4s ease;
@@ -253,7 +253,7 @@
 .group-order-feature-card__icon {
   width: 80px;
   height: 80px;
-  border-radius: 20px;
+  border-radius: 0;
   background: linear-gradient(135deg, rgba(255, 31, 61, 0.1), rgba(227, 0, 43, 0.1));
   display: flex;
   align-items: center;
@@ -335,8 +335,8 @@
   transform: translateX(-50%);
   width: 80px;
   height: 5px;
-  background: linear-gradient(90deg, transparent, #ff1f3d, transparent);
-  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #B40C1C, transparent);
+  border-radius: 0;
 }
 
 .group-order-steps__grid {
@@ -347,7 +347,7 @@
 
 .group-order-step-card {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 0;
   padding: 48px 40px;
   border: 1px solid rgba(229, 231, 235, 0.8);
   box-shadow: 
@@ -372,7 +372,7 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ff1f3d 0%, #e3002b 100%);
+  background: linear-gradient(135deg, #B40C1C 0%, #8f0915 100%);
   color: #ffffff;
   font-size: 36px;
   font-weight: 900;
@@ -460,8 +460,8 @@
   transform: translateX(-50%);
   width: 80px;
   height: 5px;
-  background: linear-gradient(90deg, transparent, #ff1f3d, transparent);
-  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #B40C1C, transparent);
+  border-radius: 0;
 }
 
 .group-order-testimonials__grid {
@@ -472,7 +472,7 @@
 
 .group-order-testimonial-card {
   background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
-  border-radius: 24px;
+  border-radius: 0;
   padding: 40px;
   border: 1px solid rgba(229, 231, 235, 0.8);
   box-shadow: 
@@ -544,7 +544,7 @@
 /* CTA 区域 */
 .group-order-cta {
   padding: 100px 0;
-  background: linear-gradient(135deg, #ff1f3d 0%, #e3002b 100%);
+  background: linear-gradient(135deg, #B40C1C 0%, #8f0915 100%);
   position: relative;
   overflow: hidden;
 }
@@ -600,7 +600,7 @@
 
 .group-order-cta .group-order-btn--primary {
   background: #ffffff;
-  color: #ff1f3d;
+  color: #B40C1C;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 

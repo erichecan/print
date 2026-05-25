@@ -73,7 +73,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
   };
 
   return (
-    <section className="guest-book" id="guestbook" style={{ marginTop: '3rem', padding: '2rem', background: '#f8fafc', borderRadius: '8px' }}>
+    <section className="guest-book" id="guestbook" style={{ marginTop: '3rem', padding: '2rem', background: '#f8fafc', borderRadius: '0' }}>
       <h2 style={{ marginBottom: '1rem', fontSize: '1.5rem', fontWeight: 'bold' }}>Leave a Message</h2>
       <p style={{ marginBottom: '1.5rem', color: '#64748b' }}>
         Have a question or need help? Leave us a message and we&apos;ll get back to you as soon as possible.
@@ -85,7 +85,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
           marginBottom: '1.5rem', 
           background: '#d1fae5', 
           border: '1px solid #10b981', 
-          borderRadius: '4px',
+          borderRadius: '0',
           color: '#065f46'
         }}>
           ✅ Message submitted successfully! We&apos;ll get back to you soon.
@@ -98,7 +98,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
           marginBottom: '1.5rem', 
           background: '#fee2e2', 
           border: '1px solid #ef4444', 
-          borderRadius: '4px',
+          borderRadius: '0',
           color: '#991b1b'
         }}>
           ❌ {error}
@@ -122,7 +122,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
                 width: '100%',
                 padding: '0.75rem',
                 border: '1px solid #d1d5db',
-                borderRadius: '4px',
+                borderRadius: '0',
                 fontSize: '1rem',
               }}
             />
@@ -142,7 +142,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
                 width: '100%',
                 padding: '0.75rem',
                 border: '1px solid #d1d5db',
-                borderRadius: '4px',
+                borderRadius: '0',
                 fontSize: '1rem',
               }}
             />
@@ -164,7 +164,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
                 width: '100%',
                 padding: '0.75rem',
                 border: '1px solid #d1d5db',
-                borderRadius: '4px',
+                borderRadius: '0',
                 fontSize: '1rem',
               }}
             />
@@ -183,7 +183,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
                 width: '100%',
                 padding: '0.75rem',
                 border: '1px solid #d1d5db',
-                borderRadius: '4px',
+                borderRadius: '0',
                 fontSize: '1rem',
               }}
             />
@@ -205,7 +205,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
               width: '100%',
               padding: '0.75rem',
               border: '1px solid #d1d5db',
-              borderRadius: '4px',
+              borderRadius: '0',
               fontSize: '1rem',
             }}
           />
@@ -227,7 +227,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
               width: '100%',
               padding: '0.75rem',
               border: '1px solid #d1d5db',
-              borderRadius: '4px',
+              borderRadius: '0',
               fontSize: '1rem',
               fontFamily: 'inherit',
               resize: 'vertical',
@@ -240,10 +240,10 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
           disabled={isSubmitting}
           style={{
             padding: '0.75rem 1.5rem',
-            background: isSubmitting ? '#9ca3af' : '#ff1f3d',
+            background: isSubmitting ? '#9ca3af' : '#B40C1C',
             color: '#fff',
             border: 'none',
-            borderRadius: '4px',
+            borderRadius: '0',
             fontSize: '1rem',
             fontWeight: 'bold',
             cursor: isSubmitting ? 'not-allowed' : 'pointer',

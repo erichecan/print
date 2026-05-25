@@ -69,7 +69,7 @@ console.log(` Shared Design Gallery to ${platform}`);
             key={design.title}
             style={{
               border: '1px solid #e5e7eb',
-              borderRadius: '12px',
+              borderRadius: '0',
               padding: '20px',
               background: '#fff',
               position: 'relative',

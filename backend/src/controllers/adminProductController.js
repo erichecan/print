@@ -516,6 +516,7 @@ exports.createProduct = async (req, res) => {
       weight,
       dimensions,
       printableArea, // Added printableArea
+      tags = [],
       variants = [],
       images = [],
       collections = [],
@@ -576,7 +577,8 @@ exports.createProduct = async (req, res) => {
           isCustomizable,
           weight: weight ? convertToDecimal(weight) : null,
           dimensions: dimensions || null,
-          printableAreas: printableArea ? printableArea : undefined, // Add printableArea
+          printableAreas: printableArea ? printableArea : undefined,
+          tags: Array.isArray(tags) ? tags : [],
           variants: variants && variants.length > 0
             ? {
               create: variants
@@ -861,6 +863,7 @@ exports.updateProduct = async (req, res) => {
       isCustomizable,
       weight,
       dimensions,
+      tags,
       variants,
       images,
       collections,
@@ -935,6 +938,7 @@ exports.updateProduct = async (req, res) => {
         ...(isCustomizable !== undefined ? { isCustomizable } : {}),
         ...(weight !== undefined ? { weight: convertToDecimal(weight) } : {}),
         ...(dimensions !== undefined ? { dimensions } : {}),
+        ...(Array.isArray(tags) ? { tags } : {}),
       };
 
       await tx.product.update({

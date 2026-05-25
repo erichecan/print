@@ -41,7 +41,7 @@
   font-weight: 600;
   background: var(--color-primary);
   color: white;
-  border-radius: 8px;
+  border-radius: 0;
   text-decoration: none;
   transition: all 0.3s ease;
   border: none;
@@ -100,7 +100,7 @@
 .categoryCard {
   background: #fff;
   border: 1px solid var(--color-border);
-  border-radius: 16px;
+  border-radius: 0;
   box-shadow: var(--shadow-card);
   text-align: center;
   display: flex;
@@ -129,7 +129,7 @@
 .categoryCardImage {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 12px;
+  border-radius: 0;
   overflow: hidden;
   position: relative;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -208,7 +208,7 @@
 .faqItem {
   background: #fff;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 24px;
   transition: all 0.3s ease;
 }
@@ -290,7 +290,7 @@
   background: transparent;
   color: var(--color-primary);
   border: 2px solid var(--color-primary);
-  border-radius: 8px;
+  border-radius: 0;
   text-decoration: none;
   transition: all 0.3s ease;
   margin-top: 8px;

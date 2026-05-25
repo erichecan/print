@@ -55,7 +55,7 @@ export function ErrorMessage({ error, onDismiss, onRetry, className = '' }: Erro
           border-left: 4px solid #ef4444;
           background: rgba(239, 68, 68, 0.08);
           padding: 16px 20px;
-          border-radius: 12px;
+          border-radius: 0;
           color: #991b1b;
         }
         .error-message__content {
@@ -93,7 +93,7 @@ export function ErrorMessage({ error, onDismiss, onRetry, className = '' }: Erro
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 4px;
+          border-radius: 0;
           transition: background 0.2s ease;
         }
         .error-message__dismiss:hover {
@@ -108,7 +108,7 @@ export function ErrorMessage({ error, onDismiss, onRetry, className = '' }: Erro
           padding: 0.5rem 1rem;
           background: #ffffff;
           border: 1px solid #ef4444;
-          border-radius: 6px;
+          border-radius: 0;
           color: #991b1b;
           font-size: 0.875rem;
           font-weight: 600;

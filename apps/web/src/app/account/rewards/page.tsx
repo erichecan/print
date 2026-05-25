@@ -17,7 +17,7 @@ export default function RewardsPage() {
   return (
     <section style={{
       backgroundColor: '#ffffff',
-      borderRadius: '8px',
+      borderRadius: '0',
       border: '1px solid #e0e0e0',
       padding: '24px',
     }}>

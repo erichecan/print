@@ -195,29 +195,29 @@ export function MobileAddressesView({
         .mobile-view__header-row { display: flex; justify-content: space-between; align-items: center; }
         .mobile-view__header h1 { font-size: 20px; font-weight: 700; margin: 0; }
         
-        .mobile-address-form { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 16px; }
+        .mobile-address-form { background: #fff; padding: 20px; border-radius: 0; border: 1px solid var(--color-border, #DBDBDB); display: flex; flex-direction: column; gap: 16px; }
         .mobile-address-form h2 { font-size: 16px; margin: 0; }
         
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         .form-group label { font-size: 12px; font-weight: 600; color: #4b5563; }
-        .form-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; }
+        .form-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 0; font-size: 14px; }
         .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 14px; }
         
         .form-actions { display: flex; gap: 12px; margin-top: 8px; }
-        .mobile-view__btn { flex: 1; padding: 12px; background: #ff1f3d; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .mobile-view__btn { flex: 1; padding: 12px; background: #B40C1C; color: #fff; border: none; border-radius: 0; font-weight: 600; font-size: 14px; cursor: pointer; }
         .mobile-view__btn--outline { background: #fff; color: #374151; border: 1px solid #d1d5db; }
         .mobile-view__btn--small { flex: none; width: auto; padding: 4px 12px; }
         
-        .address-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; position: relative; }
-        .address-card--default { border-color: #ff1f3d; background: #fffafb; }
-        .default-tag { font-size: 10px; background: #ff1f3d; color: #fff; padding: 2px 6px; border-radius: 4px; position: absolute; top: 16px; right: 16px; text-transform: uppercase; }
+        .address-card { background: #fff; border: 1px solid var(--color-border, #DBDBDB); border-radius: 0; padding: 16px; position: relative; }
+        .address-card--default { border-color: #B40C1C; background: #fffafb; }
+        .default-tag { font-size: 10px; background: #B40C1C; color: #fff; padding: 2px 6px; border-radius: 0; position: absolute; top: 16px; right: 16px; text-transform: uppercase; }
         
         .address-card__name { font-weight: 700; margin: 0 0 8px; font-size: 15px; }
         .address-card__line { margin: 0; font-size: 14px; color: #4b5563; }
         
         .address-card__actions { display: flex; gap: 16px; margin-top: 16px; border-top: 1px solid #f3f4f6; padding-top: 12px; }
-        .address-card__actions button { background: none; border: none; font-size: 13px; font-weight: 600; color: #2563eb; cursor: pointer; padding: 0; }
+        .address-card__actions button { background: none; border: none; font-size: 13px; font-weight: 600; color: #B40C1C; cursor: pointer; padding: 0; }
         .address-card__actions .btn-delete { color: #dc2626; }
         .address-card__actions .btn-set-default { color: #059669; }
         

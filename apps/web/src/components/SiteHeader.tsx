@@ -14,6 +14,157 @@ import { contentApi, NavigationMenuItem } from '@/lib/api';
 import { CartIcon } from '@/components/CartIcon';
 import { useAuth } from '@/contexts/AuthContext'; // 使用认证状态
 import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // 使用路由映射
+import { CatalogMegaMenu } from '@/components/catalog/CatalogMegaMenu';
+import { TAG_TAXONOMY, GARMENT_SLUG_TO_TAG } from '@/lib/tag-taxonomy';
+
+const GARMENT_COLS = Object.entries(GARMENT_SLUG_TO_TAG);
+
+function MobileCatalogAccordion({ onClose }: { onClose: () => void }) {
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const [openAudience, setOpenAudience] = useState<string | null>(null);
+
+  return (
+    <li className="mobile-catalog-accordion">
+      <div className="mca__header">Shop</div>
+      {GARMENT_COLS.map(([slug, garmentTag]) => (
+        <div key={slug} className="mca__garment">
+          {/* Level 1: garment type */}
+          <div className="mca__row mca__row--l1">
+            <Link href={`/catalog/${slug}`} className="mca__main-link" onClick={onClose}>
+              {garmentTag}
+            </Link>
+            <button
+              type="button"
+              className="mca__toggle"
+              aria-expanded={openSlug === slug}
+              onClick={() => { setOpenSlug(openSlug === slug ? null : slug); setOpenAudience(null); }}
+            >
+              {openSlug === slug ? '−' : '+'}
+            </button>
+          </div>
+
+          {openSlug === slug && (
+            <div className="mca__children">
+              {TAG_TAXONOMY.audience.tags.map((audience) => (
+                <div key={audience} className="mca__audience">
+                  {/* Level 2: audience */}
+                  <div className="mca__row mca__row--l2">
+                    <Link
+                      href={`/catalog/${slug}?tags=${encodeURIComponent(audience)}`}
+                      className="mca__main-link"
+                      onClick={onClose}
+                    >
+                      {audience}
+                    </Link>
+                    <button
+                      type="button"
+                      className="mca__toggle"
+                      aria-expanded={openAudience === audience}
+                      onClick={() => setOpenAudience(openAudience === audience ? null : audience)}
+                    >
+                      {openAudience === audience ? '−' : '+'}
+                    </button>
+                  </div>
+
+                  {openAudience === audience && (
+                    <ul className="mca__necklines">
+                      {/* Level 3: neckline */}
+                      {TAG_TAXONOMY.neckline.tags.map((neckline) => (
+                        <li key={neckline}>
+                          <Link
+                            href={`/catalog/${slug}?tags=${encodeURIComponent(audience)},${encodeURIComponent(neckline)}`}
+                            className="mca__neckline-link"
+                            onClick={onClose}
+                          >
+                            {neckline}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      <style jsx>{`
+        .mobile-catalog-accordion {
+          border-bottom: 1px solid #e5e5e5;
+          padding-bottom: 4px;
+          margin-bottom: 4px;
+        }
+        .mca__header {
+          font-size: 0.6875rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #999;
+          padding: 12px 20px 6px;
+        }
+        .mca__garment {
+          border-top: 1px solid #f0f0f0;
+        }
+        .mca__row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .mca__row--l1 {
+          padding: 0 20px;
+        }
+        .mca__row--l2 {
+          padding: 0 20px 0 36px;
+        }
+        .mca__main-link {
+          flex: 1;
+          padding: 10px 0;
+          font-size: 0.9375rem;
+          color: #111;
+          text-decoration: none;
+          font-weight: 500;
+        }
+        .mca__row--l2 .mca__main-link {
+          font-size: 0.875rem;
+          font-weight: 400;
+          color: #444;
+        }
+        .mca__toggle {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: none;
+          border: none;
+          font-size: 1.25rem;
+          color: #999;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+        .mca__children {
+          background: #fafafa;
+        }
+        .mca__necklines {
+          list-style: none;
+          margin: 0;
+          padding: 0 20px 8px 52px;
+        }
+        .mca__neckline-link {
+          display: block;
+          padding: 6px 0;
+          font-size: 0.8125rem;
+          color: #666;
+          text-decoration: none;
+        }
+        .mca__neckline-link:hover {
+          color: #111;
+        }
+      `}</style>
+    </li>
+  );
+}
 
 export function SiteHeader() {
   const router = useRouter();
@@ -107,7 +258,7 @@ export function SiteHeader() {
       {/* 移动端顶部工具栏 - 参考截图 */}
       <div className="md:hidden bg-[#f9fafb] border-b border-gray-200 py-2 px-4 flex justify-between items-center text-[13px] text-gray-600">
         <div className="font-medium">Design Custom T-shirts & More</div>
-        <Link href="/help" className="flex items-center gap-1 hover:text-blue-600 transition-colors">
+        <Link href="/help" className="flex items-center gap-1 hover:text-black transition-colors">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
           </svg>
@@ -174,7 +325,7 @@ export function SiteHeader() {
         {/* 移动端搜索栏行 - 匹配截图 */}
         <div className="!block md:!hidden px-4 pb-3 bg-white">
           <form onSubmit={handleSearch} className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-500">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-black">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -182,7 +333,7 @@ export function SiteHeader() {
             <input
               type="search"
               name="q"
-              className="block w-full bg-gray-100 border-none rounded-full py-2 !pl-12 pr-4 leading-5 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:bg-white sm:text-sm"
+              className="block w-full bg-gray-100 border border-transparent rounded-none py-2 !pl-12 pr-4 leading-5 placeholder-gray-500 focus:ring-2 focus:ring-black focus:bg-white sm:text-sm"
               placeholder="Search for t-shirts, hoodies, koozies, and..."
               aria-label="Search query"
             />
@@ -250,7 +401,10 @@ export function SiteHeader() {
         {/* 桌面端导航 - 仅在桌面端显示 */}
         <nav className="primary-nav primary-nav--desktop !hidden md:!block" aria-label="Primary">
           <div className="container primary-nav__inner">
-            <ul className="mega">
+            <ul className="mega" style={{ position: 'relative' }}>
+              {/* Tag-driven catalog mega menu — always shown, independent of CMS */}
+              <CatalogMegaMenu />
+
               {/* 从 CMS 渲染导航菜单 */}
               {/* 隐藏 Custom Apparel 导航项 */}
               {navigation.length > 0 ? (
@@ -340,6 +494,9 @@ export function SiteHeader() {
           </button>
         </div>
         <ul className="mobile-nav__list">
+          {/* Tag-driven catalog accordion — always shown at top */}
+          <MobileCatalogAccordion onClose={() => setIsMobileMenuOpen(false)} />
+
           {/* 从 CMS 渲染移动端导航菜单 */}
           {/* 隐藏 Custom Apparel 导航项 */}
           {navigation.length > 0 ? (

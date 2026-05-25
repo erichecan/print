@@ -169,7 +169,7 @@ export function CatalogCategoryClient({ groupSlug, childSlug }: CatalogCategoryC
         }
 
         .breadcrumb-nav a {
-          color: #2563eb;
+          color: var(--color-accent, #B40C1C);
           text-decoration: none;
         }
 
@@ -179,8 +179,9 @@ export function CatalogCategoryClient({ groupSlug, childSlug }: CatalogCategoryC
 
         .plp-new__title {
           font-size: 32px;
-          font-weight: 700;
-          color: #1f2937;
+          font-weight: 400;
+          font-family: var(--font-heading, 'Marcellus', serif);
+          color: var(--color-text, #121212);
           margin: 0 0 8px 0;
         }
 
@@ -224,9 +225,9 @@ export function CatalogCategoryClient({ groupSlug, childSlug }: CatalogCategoryC
         .plp-new__product-image {
           width: 100%;
           aspect-ratio: 3/4;
-          border-radius: 8px;
+          border-radius: 0;
           overflow: hidden;
-          background: #f9fafb;
+          background: var(--color-bg-sand, #F1EEE9);
           margin-bottom: 12px;
         }
 

@@ -96,7 +96,7 @@
 .home-mobile__btn {
   display: inline-block;
   padding: 16px 32px;
-  border-radius: 8px;
+  border-radius: 0;
   font-size: 16px;
   font-weight: 600;
   text-align: center;
@@ -171,7 +171,7 @@
   flex-direction: column;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: 0;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
@@ -237,7 +237,7 @@
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 0;
   background: #e5e7eb;
 }
 
@@ -251,7 +251,7 @@
   background: #00b8a9;
   color: #fff;
   padding: 24px 16px;
-  border-radius: 8px;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -269,7 +269,7 @@
 .home-mobile__enterprise-card {
   background: #fff;
   border: 2px solid #0066cc;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 24px 16px;
   text-align: center;
 }
@@ -329,7 +329,7 @@
   transform: translateX(-50%);
   width: 50px;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #ff1f3d, transparent);
+  background: linear-gradient(90deg, transparent, #B40C1C, transparent);
   border-radius: 2px;
 }
 
@@ -342,7 +342,7 @@
 .home-mobile__brand-logo {
   background: #fff;
   border: 1px solid rgba(229, 231, 235, 0.8);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 16px;
   height: 70px;
   display: flex;
@@ -397,7 +397,7 @@
 
 .home-mobile__support-card {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 0;
   padding: 24px 16px;
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -482,7 +482,7 @@
 
 .home-mobile__testimonial-card {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 0;
   padding: 20px 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }

@@ -170,8 +170,8 @@ export function MobileOrdersView({
         .mobile-view__search input {
           width: 100%;
           padding: 10px 16px;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
+          border: 1px solid var(--color-border, #DBDBDB);
+          border-radius: 0;
           font-size: 14px;
         }
         .mobile-view__filters {
@@ -181,18 +181,18 @@ export function MobileOrdersView({
         .mobile-view__filters select {
           flex: 1;
           padding: 8px;
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
+          border: 1px solid var(--color-border, #DBDBDB);
+          border-radius: 0;
           font-size: 13px;
           background: #fff;
         }
         .order-card-mobile {
           background: #fff;
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
+          border: 1px solid var(--color-border, #DBDBDB);
+          border-radius: 0;
           padding: 16px;
           margin-bottom: 12px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          
         }
         .order-card-mobile__header {
           display: flex;
@@ -242,13 +242,13 @@ export function MobileOrdersView({
           align-items: center;
           justify-content: center;
           padding: 8px 12px;
-          border-radius: 6px;
+          border-radius: 0;
           font-weight: 600;
           font-size: 13px;
           text-decoration: none;
           cursor: pointer;
           border: none;
-          background: #ff1f3d;
+          background: #B40C1C;
           color: #fff;
         }
         .mobile-view__btn--outline {
@@ -264,7 +264,7 @@ export function MobileOrdersView({
         }
         .mobile-view__pagination button {
           padding: 6px 12px;
-          border-radius: 6px;
+          border-radius: 0;
           border: 1px solid #d1d5db;
           background: #fff;
           font-size: 13px;

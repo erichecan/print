@@ -71,7 +71,7 @@ export default function PromotionsClient() {
                 key={coupon.id}
                 style={{
                   border: '2px solid #e3f2fd',
-                  borderRadius: '12px',
+                  borderRadius: '0',
                   padding: '24px',
                   background: '#f8f9fa',
                   position: 'relative',
@@ -102,7 +102,7 @@ export default function PromotionsClient() {
                         color: '#2196f3',
                         background: 'white',
                         padding: '8px 16px',
-                        borderRadius: '6px',
+                        borderRadius: '0',
                         letterSpacing: '2px',
                       }}
                     >
@@ -134,7 +134,7 @@ export default function PromotionsClient() {
                       padding: '10px 20px',
                       background: '#2196f3',
                       color: 'white',
-                      borderRadius: '6px',
+                      borderRadius: '0',
                       textDecoration: 'none',
                       fontWeight: 600,
                       fontSize: '0.9rem',
@@ -153,7 +153,7 @@ export default function PromotionsClient() {
       <section style={{ display: 'grid', gap: '20px' }}>
         <h2>Special Offers</h2>
         <div style={{ display: 'grid', gap: '16px' }}>
-          <article style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
+          <article style={{ border: '1px solid #e5e7eb', borderRadius: '0', padding: '20px' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span>📦</span>
               Team Pack Bundle
@@ -171,7 +171,7 @@ export default function PromotionsClient() {
             </Link>
           </article>
           
-          <article style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
+          <article style={{ border: '1px solid #e5e7eb', borderRadius: '0', padding: '20px' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span>❤️</span>
               Nonprofit Pricing
@@ -184,7 +184,7 @@ export default function PromotionsClient() {
             </Link>
           </article>
           
-          <article style={{ border: '1px solid #e5e7eb', borderRadius: '12px', padding: '20px' }}>
+          <article style={{ border: '1px solid #e5e7eb', borderRadius: '0', padding: '20px' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span>🎁</span>
               Refer & Save
@@ -204,7 +204,7 @@ export default function PromotionsClient() {
         style={{
           background: '#e3f2fd',
           padding: '24px',
-          borderRadius: '12px',
+          borderRadius: '0',
           border: '1px solid #90caf9',
         }}
       >

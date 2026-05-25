@@ -63,7 +63,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
             fontSize: '0.75rem',
             backgroundColor: '#dbeafe',
             color: '#1e40af',
-            borderRadius: '4px',
+            borderRadius: '0',
             marginRight: '4px',
           }}
         >
@@ -81,7 +81,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
             fontSize: '0.75rem',
             backgroundColor: '#f3f4f6',
             color: '#374151',
-            borderRadius: '4px',
+            borderRadius: '0',
           }}
         >
           Local
@@ -95,7 +95,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
     <div
       style={{
         border: '1px solid #e0e0e0',
-        borderRadius: '8px',
+        borderRadius: '0',
         padding: '16px',
         backgroundColor: '#fff',
         transition: 'box-shadow 0.2s',
@@ -120,7 +120,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
             width: '100%',
             height: '200px',
             objectFit: 'cover',
-            borderRadius: '4px',
+            borderRadius: '0',
             marginBottom: '12px',
           }}
         />
@@ -130,7 +130,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
             width: '100%',
             height: '200px',
             backgroundColor: '#f3f4f6',
-            borderRadius: '4px',
+            borderRadius: '0',
             marginBottom: '12px',
             display: 'flex',
             alignItems: 'center',
@@ -196,20 +196,20 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
           style={{
             flex: 1,
             padding: '8px 16px',
-            backgroundColor: '#2563eb',
+            backgroundColor: '#000000',
             color: '#fff',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '0',
             fontSize: '0.875rem',
             fontWeight: '500',
             cursor: 'pointer',
             transition: 'background-color 0.2s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#1d4ed8';
+            e.currentTarget.style.backgroundColor = '#333333';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#2563eb';
+            e.currentTarget.style.backgroundColor = '#000000';
           }}
         >
           Edit
@@ -222,7 +222,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
               backgroundColor: 'transparent',
               color: '#ef4444',
               border: '1px solid #ef4444',
-              borderRadius: '6px',
+              borderRadius: '0',
               fontSize: '0.875rem',
               fontWeight: '500',
               cursor: 'pointer',

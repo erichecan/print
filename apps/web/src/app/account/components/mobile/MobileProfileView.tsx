@@ -107,7 +107,7 @@ export function MobileProfileView({
         }
         .mobile-view__alert {
           padding: 12px;
-          border-radius: 8px;
+          border-radius: 0;
           font-size: 14px;
         }
         .mobile-view__alert--error { background: #fee2e2; color: #b91c1c; }
@@ -119,8 +119,8 @@ export function MobileProfileView({
           gap: 16px;
           background: #fff;
           padding: 20px;
-          border-radius: 12px;
-          border: 1px solid #e5e7eb;
+          border-radius: 0;
+          border: 1px solid var(--color-border, #DBDBDB);
         }
         .form-group {
           display: flex;
@@ -140,7 +140,7 @@ export function MobileProfileView({
         .form-input {
           padding: 10px 12px;
           border: 1px solid #d1d5db;
-          border-radius: 8px;
+          border-radius: 0;
           font-size: 15px;
           width: 100%;
         }
@@ -156,10 +156,10 @@ export function MobileProfileView({
         .mobile-view__btn {
           margin-top: 8px;
           padding: 14px;
-          background: #ff1f3d;
+          background: #B40C1C;
           color: #fff;
           border: none;
-          border-radius: 8px;
+          border-radius: 0;
           font-weight: 700;
           font-size: 15px;
           cursor: pointer;

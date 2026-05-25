@@ -63,10 +63,10 @@ export function EmptyState({
           onClick={action.onClick}
           style={{
             padding: '0.75rem 1.5rem',
-            background: '#ff1f3d',
+            background: '#B40C1C',
             color: '#ffffff',
             border: 'none',
-            borderRadius: '8px',
+            borderRadius: '0',
             fontSize: '1rem',
             fontWeight: '600',
             cursor: 'pointer',
@@ -76,7 +76,7 @@ export function EmptyState({
             e.currentTarget.style.background = '#e3002b';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.background = '#ff1f3d';
+            e.currentTarget.style.background = '#B40C1C';
           }}
         >
           {action.label}

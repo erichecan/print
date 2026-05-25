@@ -36,13 +36,13 @@ export default function ProductsError({
         </p>
 
         {isDevelopment && error.message && (
-          <div style={{ marginBottom: '1rem', padding: '1rem', background: '#fee', borderRadius: '8px' }}>
+          <div style={{ marginBottom: '1rem', padding: '1rem', background: '#fee', borderRadius: '0' }}>
             <p style={{ color: '#c00' }}>{error.message}</p>
           </div>
         )}
 
         {error.digest && (
-          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f1f5f9', borderRadius: '8px' }}>
+          <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f1f5f9', borderRadius: '0' }}>
             <p style={{ fontSize: '0.875rem', color: '#52606d' }}>
               <strong>错误摘要:</strong> <code>{error.digest}</code>
             </p>
@@ -60,10 +60,10 @@ export default function ProductsError({
             onClick={reset}
             style={{
               padding: '0.75rem 1.5rem',
-              background: '#ff1f3d',
+              background: '#B40C1C',
               color: '#fff',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '0',
               fontSize: '1rem',
               cursor: 'pointer',
               fontWeight: 'bold',
@@ -78,7 +78,7 @@ export default function ProductsError({
               background: '#f1f5f9',
               color: '#364152',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '0',
               fontSize: '1rem',
               textDecoration: 'none',
               display: 'inline-block',

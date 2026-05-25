@@ -524,6 +524,7 @@ exports.getProducts = async (req, res) => {
     const colorFilter = req.query.color ? req.query.color.split(',') : [];
     const brandFilter = req.query.brand ? req.query.brand.split(',') : [];
     const sizeFilter = req.query.size ? req.query.size.split(',') : [];
+    const tagsFilter = req.query.tags ? req.query.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
     // Build where clause
     const where = {
@@ -638,6 +639,15 @@ exports.getProducts = async (req, res) => {
       });
     }
 
+    // Filter by tags (PostgreSQL array overlap: product must have ALL specified tags)
+    if (tagsFilter.length > 0) {
+      andConditions.push({
+        tags: {
+          hasEvery: tagsFilter,
+        },
+      });
+    }
+
     // Search by name, description, or SKU
     if (search) {
       andConditions.push({
@@ -665,6 +675,7 @@ exports.getProducts = async (req, res) => {
       color: colorFilter.join(',') || '',
       brand: brandFilter.join(',') || '',
       size: sizeFilter.join(',') || '',
+      tags: tagsFilter.join(',') || '',
       sort: isPriceSort ? 'price' : sortBy, // 价格排序时使用 'price'
       order: sortOrder,
       includeOutOfStock,
@@ -730,6 +741,7 @@ exports.getProducts = async (req, res) => {
             },
             orderBy: { stockQuantity: 'desc' },
           },
+          tags: true,
         },
       }),
       prisma.product.count({ where }),
@@ -834,6 +846,7 @@ exports.getProducts = async (req, res) => {
               imageUrl: finalImageUrl, // 包含变体图片URL
             };
           }),
+        tags: product.tags || [],
         rating: {
           average: 4.5, // 默认值，可以从reviews计算
           count: 10000, // 默认值
@@ -1686,5 +1699,71 @@ exports.getProductByVariantId = async (req, res) => {
       variantId,
     });
     res.status(500).json({ error: 'Failed to fetch product by variantId' });
+  }
+};
+/**
+ * GET /api/products/tag-taxonomy
+ * Returns the TAG_TAXONOMY config so frontend can build filter UI dynamically.
+ * Also returns per-tag product counts from the database.
+ */
+exports.getTagTaxonomy = async (req, res) => {
+  try {
+    const TAG_TAXONOMY = {
+      garmentType: {
+        label: '服装类型',
+        tags: ['T-Shirt', 'Hoodie', 'Crewneck Sweatshirt', 'Long-Sleeve T-Shirt', 'Polo Shirt', 'V-Neck T-Shirt'],
+      },
+      audience: {
+        label: '适用人群',
+        tags: ['Adult', "Women's", 'Youth', 'Unisex'],
+      },
+      neckline: {
+        label: '领型 / 款式',
+        tags: ['Crew Neck', 'V-Neck', 'Hooded', 'Polo'],
+      },
+      material: {
+        label: '材质',
+        tags: ['Cotton', 'Poly-Cotton'],
+      },
+      fit: {
+        label: '版型',
+        tags: ['Classic Fit', 'Fitted'],
+      },
+    };
+
+    // All unique tags across all dimensions
+    const allTags = Object.values(TAG_TAXONOMY).flatMap(d => d.tags);
+
+    // Count products per tag using Prisma hasSome
+    const tagCounts = {};
+    await Promise.all(
+      allTags.map(async (tag) => {
+        const count = await prisma.product.count({
+          where: {
+            isActive: true,
+            isSystem: false,
+            deleted: false,
+            tags: { has: tag },
+          },
+        });
+        tagCounts[tag] = count;
+      })
+    );
+
+    // Attach counts to each dimension
+    const result = Object.fromEntries(
+      Object.entries(TAG_TAXONOMY).map(([key, dim]) => [
+        key,
+        {
+          label: dim.label,
+          tags: dim.tags.map(tag => ({ tag, count: tagCounts[tag] ?? 0 })),
+        },
+      ])
+    );
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Failed to get tag taxonomy', { error: error.message });
+    res.status(500).json({ error: 'Failed to get tag taxonomy' });
   }
 };

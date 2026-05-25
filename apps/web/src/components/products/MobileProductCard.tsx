@@ -177,7 +177,7 @@ export function MobileProductCard({ product, index }: MobileProductCardProps) {
         .mobile-product-card__image-wrapper {
           position: relative;
           background: #F3F4F6;
-          border-radius: 8px;
+          border-radius: 0;
           overflow: hidden;
           width: 100%;
           height: 100%;

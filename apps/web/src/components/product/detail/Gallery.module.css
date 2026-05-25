@@ -48,23 +48,21 @@
   width: 80px;
   height: 80px;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
   background: #fff;
   padding: 0;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s;
   position: relative;
 }
 
 .galleryThumbnail:hover {
-  border-color: #d1d5db;
-  transform: scale(1.05);
+  border-color: var(--color-text-muted);
 }
 
 .galleryThumbnail.isActive {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: #000;
 }
 
 .galleryThumbnailImage {
@@ -83,15 +81,10 @@
   position: relative;
   width: 100%;
   aspect-ratio: 3/4;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
-  background: #f9fafb;
+  background: var(--color-bg-sand);
   cursor: zoom-in;
-  transition: transform 0.2s ease;
-}
-
-.galleryMainImageWrapper:hover {
-  transform: scale(1.02);
 }
 
 .galleryMainImageWrapper:hover .galleryZoomHint {
@@ -202,7 +195,7 @@
   max-width: 100%;
   max-height: 90vh;
   object-fit: contain;
-  border-radius: 8px;
+  border-radius: 0;
 }
 
 /* 移动端适配 */

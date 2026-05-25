@@ -21,14 +21,14 @@
 
 .more-by-artist-link {
   font-size: 14px;
-  color: #3b82f6;
+  color: var(--color-accent, #B40C1C);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
 }
 
 .more-by-artist-link:hover {
-  color: #2563eb;
+  color: var(--color-accent, #B40C1C);
   text-decoration: underline;
 }
 
@@ -88,7 +88,7 @@
 }
 
 .more-by-artist-item:focus {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--color-accent, #B40C1C);
   outline-offset: 2px;
 }
 
@@ -101,7 +101,7 @@
 .more-by-artist-image-wrapper {
   width: 100%;
   aspect-ratio: 3 / 2;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
