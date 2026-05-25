@@ -11,20 +11,37 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        heading: ['var(--font-heading)', 'Marcellus', 'serif'],
+        body: ['var(--font-body)', 'Instrument Sans', 'sans-serif'],
+        sans: ['var(--font-body)', 'Instrument Sans', 'sans-serif'],
+      },
       colors: {
         primary: {
-          DEFAULT: '#ff1f3d',
-          dark: '#cc1830',
-          light: '#ff5c75',
+          DEFAULT: '#000000',
+          dark: '#000000',
+          light: '#4B4B4B',
+        },
+        accent: {
+          DEFAULT: '#B40C1C',
+          dark: '#8B0916',
         },
         secondary: {
-          DEFAULT: '#1a1a1a',
-          light: '#333',
-          lighter: '#666',
+          DEFAULT: '#29272B',
+          light: '#4B4B4B',
+          lighter: '#737373',
         },
+        sand: '#F1EEE9',
+        blush: '#F3E7E7',
+        charcoal: '#29272B',
       },
       maxWidth: {
-        'container': '1400px',
+        container: '1700px',
+      },
+      letterSpacing: {
+        heading: '-0.02em',
+        wide: '0.05em',
+        wider: '0.1em',
       },
     },
   },

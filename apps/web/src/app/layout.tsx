@@ -5,7 +5,7 @@
 * Admin 路径不显示 header/footer
  */
 import type { Metadata } from 'next';
-import { Inter, Noto_Sans_SC, Noto_Sans_TC, Noto_Sans_JP, Noto_Sans_Devanagari } from 'next/font/google';
+import { Marcellus, Instrument_Sans, Noto_Sans_SC, Noto_Sans_TC, Noto_Sans_JP, Noto_Sans_Devanagari } from 'next/font/google';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { CartProvider } from '@/contexts/CartContext'; // Next.js 15: 直接导入客户端组件，无需 dynamic
@@ -20,10 +20,19 @@ import './globals-mobile.css';
 // 启动时环境变量校验
 import '@/server/env-check';
 
-const inter = Inter({
+const marcellus = Marcellus({
   subsets: ['latin'],
+  weight: '400',
   display: 'swap',
-}); // Ensure Inter font served via next/font for CLS stability
+  variable: '--font-heading',
+});
+
+const instrumentSans = Instrument_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  display: 'swap',
+  variable: '--font-body',
+});
 
 // 加载多语言字体支持
 const notoSansSC = Noto_Sans_SC({
@@ -105,7 +114,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${notoSansSC.variable} ${notoSansTC.variable} ${notoSansJP.variable} ${notoSansDevanagari.variable}`}>
+      <body className={`${marcellus.variable} ${instrumentSans.variable} ${notoSansSC.variable} ${notoSansTC.variable} ${notoSansJP.variable} ${notoSansDevanagari.variable}`}>
         <GlobalErrorFilter /> {/* 过滤不相关的浏览器错误 */}
         <StripeConfigValidator /> {/* Stripe 配置验证 */}
 
