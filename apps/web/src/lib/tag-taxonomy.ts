@@ -35,15 +35,15 @@ export const TAG_TAXONOMY = {
     tags: ['Adult', "Women's", 'Youth', 'Unisex'],
   },
   neckline: {
-    label: '领型 / 款式',
+    label: 'Neckline',
     tags: ['Crew Neck', 'V-Neck', 'Hooded', 'Polo'],
   },
   material: {
-    label: '材质',
+    label: 'Material',
     tags: ['Cotton', 'Poly-Cotton'],
   },
   fit: {
-    label: '版型',
+    label: 'Fit',
     tags: ['Classic Fit', 'Fitted'],
   },
 } as const satisfies Record<string, TagDimension>;

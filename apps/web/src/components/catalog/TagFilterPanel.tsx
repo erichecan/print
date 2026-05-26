@@ -3,8 +3,8 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { TAG_TAXONOMY, type DimensionKey, serializeTagsParam, parseTagsParam } from '@/lib/tag-taxonomy';
 
-// audience is handled by the nav tree L2; expose only the remaining dimensions here
-const FILTER_DIMS: DimensionKey[] = ['neckline', 'material', 'fit'];
+// audience is handled by the nav tree L2; only show neckline (material/fit tags not yet in product data)
+const FILTER_DIMS: DimensionKey[] = ['neckline'];
 
 const ITEM_BASE: React.CSSProperties = {
   display: 'flex',

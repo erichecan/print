@@ -9,48 +9,6 @@ const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
 const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
 const NECKLINES = TAG_TAXONOMY.neckline.tags as unknown as string[];
 
-const LINK_BASE: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  width: '100%',
-  textDecoration: 'none',
-  padding: '3px 8px',
-  borderRadius: '6px',
-  border: '1px solid transparent',
-  boxSizing: 'border-box',
-  transition: 'background 0.12s, color 0.12s',
-};
-
-const L1_STYLE: React.CSSProperties = { ...LINK_BASE, fontSize: '0.8125rem', fontWeight: 600, color: '#333' };
-const L2_STYLE: React.CSSProperties = { ...LINK_BASE, fontSize: '0.8125rem', color: '#555' };
-const L3_STYLE: React.CSSProperties = { ...LINK_BASE, fontSize: '0.75rem', color: '#777' };
-const ACTIVE_OVERRIDE: React.CSSProperties = { background: '#111', color: '#fff', borderColor: '#111' };
-
-const LIST_L1_STYLE: React.CSSProperties = {
-  listStyle: 'none',
-  padding: 0,
-  margin: '4px 0 0',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-};
-const LIST_L2_STYLE: React.CSSProperties = {
-  listStyle: 'none',
-  paddingLeft: '10px',
-  margin: '4px 0',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-};
-const LIST_L3_STYLE: React.CSSProperties = {
-  listStyle: 'none',
-  paddingLeft: '10px',
-  margin: '4px 0',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '4px',
-};
-
 function buildTagsHref(tags: string[]): string {
   if (tags.length === 0) return '/products';
   return `/products?tags=${encodeURIComponent(tags.join(','))}`;
@@ -68,11 +26,19 @@ export function TagNavTree() {
 
   return (
     <nav className="tnt">
-      <Link href="/products" className={`tnt__root${isRoot ? ' tnt__root--active' : ''}`}>
-        All Products
-      </Link>
+      {/* Header — mirrors tfp__head */}
+      <div className="tnt__head">
+        <span>Categories</span>
+      </div>
 
-      <ul className="tnt__l1" style={LIST_L1_STYLE}>
+      <ul className="tnt__l1">
+        {/* All Products */}
+        <li>
+          <Link href="/products" className={`tnt__item${isRoot ? ' tnt__item--active' : ''}`}>
+            All Products
+          </Link>
+        </li>
+
         {GARMENT_TYPES.map((garment) => {
           const isL1Active = activeGarment === garment;
           const tagsWithoutTree = activeTags.filter(
@@ -85,14 +51,14 @@ export function TagNavTree() {
             <li key={garment}>
               <Link
                 href={l1Href}
-                className="tnt__link"
-                style={isL1Active ? { ...L1_STYLE, ...ACTIVE_OVERRIDE } : L1_STYLE}
+                className={`tnt__item tnt__item--l1${isL1Active ? ' tnt__item--active' : ''}`}
               >
-                {garment}
+                <span>{garment}</span>
+                <span className="tnt__icon" aria-hidden="true">{isL1Active ? '−' : '+'}</span>
               </Link>
 
               {isL1Active && (
-                <ul className="tnt__l2" style={LIST_L2_STYLE}>
+                <ul className="tnt__l2">
                   {AUDIENCES.map((audience) => {
                     const isL2Active = activeAudience === audience;
                     const tagsWithoutAudience = activeTags.filter((t) => !AUDIENCES.includes(t));
@@ -105,14 +71,14 @@ export function TagNavTree() {
                       <li key={audience}>
                         <Link
                           href={l2Href}
-                          className="tnt__link"
-                          style={isL2Active ? { ...L2_STYLE, ...ACTIVE_OVERRIDE } : L2_STYLE}
+                          className={`tnt__item${isL2Active ? ' tnt__item--active' : ''}`}
                         >
-                          {audience}
+                          <span>{audience}</span>
+                          <span className="tnt__icon" aria-hidden="true">{isL2Active ? '−' : '+'}</span>
                         </Link>
 
                         {isL2Active && (
-                          <ul className="tnt__l3" style={LIST_L3_STYLE}>
+                          <ul className="tnt__l3">
                             {NECKLINES.map((neckline) => {
                               const isL3Active = activeTags.includes(neckline);
                               const tagsWithoutNecklines = activeTags.filter(
@@ -127,8 +93,7 @@ export function TagNavTree() {
                                 <li key={neckline}>
                                   <Link
                                     href={l3Href}
-                                    className="tnt__link"
-                                    style={isL3Active ? { ...L3_STYLE, ...ACTIVE_OVERRIDE } : L3_STYLE}
+                                    className={`tnt__item tnt__item--l3${isL3Active ? ' tnt__item--active' : ''}`}
                                   >
                                     {neckline}
                                   </Link>
@@ -150,50 +115,101 @@ export function TagNavTree() {
       <style jsx>{`
         .tnt {
           font-size: 0.875rem;
-          padding-bottom: 1rem;
-          margin-bottom: 0.25rem;
-          border-bottom: 1px solid #e5e5e5;
         }
 
-        .tnt__root {
-          display: block;
+        /* Header — mirrors tfp__head */
+        .tnt__head {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
           font-weight: 700;
           font-size: 0.9375rem;
-          text-decoration: none;
           color: #111;
           padding-bottom: 0.75rem;
           margin-bottom: 0.25rem;
           border-bottom: 2px solid #111;
         }
 
-        .tnt__root--active {
-          opacity: 0.6;
-        }
-
+        /* Lists */
         .tnt__l1,
         .tnt__l2,
         .tnt__l3 {
           list-style: none;
           padding: 0;
           margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .tnt__l1 {
+          margin-top: 8px;
         }
 
         .tnt__l2 {
-          padding-left: 0.625rem;
-          margin: 1px 0 4px;
+          padding-left: 10px;
+          margin: 2px 0 4px;
         }
 
         .tnt__l3 {
-          padding-left: 0.625rem;
-          margin: 1px 0 4px;
+          padding-left: 10px;
+          margin: 2px 0 4px;
         }
 
-        .tnt__link:hover {
+        /* Item links — match tfp__item style */
+        .tnt__item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 3px 8px;
+          border-radius: 6px;
+          border: 1px solid transparent;
+          box-sizing: border-box;
+          transition: background 0.12s, color 0.12s;
+          text-decoration: none;
+          font-size: 0.8125rem;
+          color: #555;
+        }
+
+        .tnt__item--l1 {
+          font-weight: 600;
+          color: #333;
+        }
+
+        .tnt__item--l3 {
+          font-size: 0.75rem;
+          color: #777;
+        }
+
+        .tnt__item:hover {
           background: #f5f5f5;
           border-color: #ddd;
           color: #111;
         }
 
+        .tnt__item--active {
+          background: #111;
+          color: #fff;
+          border-color: #111;
+        }
+
+        .tnt__item--active:hover {
+          background: #333;
+          border-color: #333;
+          color: #fff;
+        }
+
+        /* +/- icon */
+        .tnt__icon {
+          font-size: 16px;
+          color: inherit;
+          font-weight: 300;
+          line-height: 1;
+          width: 16px;
+          text-align: center;
+          flex-shrink: 0;
+        }
       `}</style>
     </nav>
   );
