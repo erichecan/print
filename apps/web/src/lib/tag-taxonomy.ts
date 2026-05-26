@@ -27,6 +27,7 @@ export const TAG_TAXONOMY = {
       'Long-Sleeve T-Shirt',
       'Polo Shirt',
       'V-Neck T-Shirt',
+      'Cap',
     ],
   },
   audience: {
@@ -57,6 +58,7 @@ export const GARMENT_SLUG_TO_TAG: Record<string, string> = {
   'long-sleeve': 'Long-Sleeve T-Shirt',
   'polo-shirts': 'Polo Shirt',
   'v-neck-shirts': 'V-Neck T-Shirt',
+  'caps': 'Cap',
 };
 
 export const GARMENT_TAG_TO_SLUG: Record<string, string> = Object.fromEntries(
