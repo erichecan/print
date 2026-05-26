@@ -195,6 +195,16 @@ export default function ProductsClient({
     'tie-dye': '#CC44AA',
   };
 
+  const resolveColorHex = (name: string, hexFromDb?: string | null): string => {
+    if (hexFromDb) return hexFromDb;
+    const lower = name.toLowerCase();
+    if (COLOR_MAP[lower]) return COLOR_MAP[lower];
+    for (const word of lower.split(/[\s-]+/).reverse()) {
+      if (COLOR_MAP[word]) return COLOR_MAP[word];
+    }
+    return '#CCCCCC';
+  };
+
   // 生成产品标签（示例数据）
   const getProductBadge = (index: number) => {
     const badges = ['Best Seller', 'Customer Fave', 'Staff Pick'];
@@ -257,16 +267,24 @@ export default function ProductsClient({
               || fallbackImage;
           };
 
+          const allVariantUrls = (product.variants || []).map(v => v.imageUrl).filter((u): u is string => !!u);
+          const hasPerColorVariantImages = new Set(allVariantUrls).size > 1;
+
+          const getGalleryImageForColor = (colorName: string): string | null => {
+            const galleryImgs = product.images || [];
+            const front = galleryImgs.find(gi => {
+              const alt = gi.alt || '';
+              return alt.includes(colorName) && alt.toLowerCase().includes('front');
+            });
+            return front?.url || galleryImgs.find(gi => (gi.alt || '').includes(colorName))?.url || null;
+          };
+
           let img = getDefaultImage();
 
-          // 颜色悬停切换逻辑：当悬停时优先使用变体图片，如果没有则回退到产品图片
           if (hoveredColor) {
-            // 修复颜色匹配逻辑：支持中文显示名称和英文原始名称的双向匹配
             const colorVariant = product.variants?.find(v => {
               const originalColor = (v.color || '').trim();
               const displayName = COLOR_NAME_MAP_FOR_MATCH[originalColor] || originalColor;
-              // 匹配逻辑：hoveredColor 可能是中文"黑"/"白"，也可能是英文"Black"/"White"
-              // 需要同时匹配显示名称和原始名称
               return displayName === hoveredColor ||
                 originalColor === hoveredColor ||
                 originalColor.toLowerCase() === hoveredColor.toLowerCase() ||
@@ -274,12 +292,11 @@ export default function ProductsClient({
                 (hoveredColor === '白' && (originalColor === 'White' || originalColor === 'white'));
             });
 
-            if (colorVariant?.imageUrl) {
-              // 如果变体有 imageUrl，使用变体的图片
+            if (hasPerColorVariantImages && colorVariant?.imageUrl) {
               img = colorVariant.imageUrl;
             } else {
-              // 如果变体没有 imageUrl，回退到默认主图
-              img = getDefaultImage();
+              const lookupColor = colorVariant?.color || hoveredColor;
+              img = getGalleryImageForColor(lookupColor) || getDefaultImage();
             }
           }
           const alt = product.primaryImage?.alt || product.name;
@@ -315,25 +332,21 @@ export default function ProductsClient({
             'white': '白',
           };
 
-          // 显示所有颜色（当前数据库只有黑白，未来会有更多颜色）
           const productColors = product.variants?.filter(v => v.color && v.color.trim() !== '') || [];
-          // 去重并保留所有颜色，每个颜色包含名称、hex值和图片URL
           const uniqueColors = Array.from(
             new Map(
               productColors.map(v => {
                 const originalColorName = (v.color || '').trim();
-                // 将英文颜色名称映射到中文显示名称
                 const displayColorName = COLOR_NAME_MAP[originalColorName] || originalColorName;
-                // 如果colorHex存在则使用，否则从COLOR_MAP查找，最后根据颜色名称推断
-                const hex = v.colorHex || COLOR_MAP[originalColorName.toLowerCase()] ||
-                  (displayColorName === '黑' || originalColorName.toLowerCase() === 'black' ? '#000000' :
-                    displayColorName === '白' || originalColorName.toLowerCase() === 'white' ? '#FFFFFF' :
-                      '#CCCCCC'); // 默认灰色
+                const hex = resolveColorHex(originalColorName, v.colorHex);
+                const colorImage = hasPerColorVariantImages
+                  ? (v.imageUrl || null)
+                  : getGalleryImageForColor(originalColorName);
                 return [displayColorName, {
-                  name: displayColorName, // 使用中文显示名称
-                  originalName: originalColorName, // 保留原始名称用于匹配
+                  name: displayColorName,
+                  originalName: originalColorName,
                   hex,
-                  imageUrl: v.imageUrl || null
+                  imageUrl: colorImage
                 }];
               })
             ).values()

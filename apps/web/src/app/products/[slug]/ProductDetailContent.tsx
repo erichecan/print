@@ -205,14 +205,54 @@ export function ProductDetailContent() {
   }
 
   const fallbackImage = '/assets/hero/hero-card-tee.jpg';
-  const getImageForColor = (colorName: string | null) => {
+
+  const COLOR_HEX_MAP: Record<string, string> = {
+    'Black': '#1a1a1a', 'White': '#FFFFFF', 'Navy': '#1B2A4A', 'Red': '#CC2222',
+    'Royal': '#2255AA', 'True Royal': '#4169E1', 'Forest Green': '#2D6A2D', 'Charcoal': '#4A4A4A',
+    'Dark Heather': '#5A5A5A', 'Dark Heather Grey': '#5A5A5A', 'Sport Grey': '#AAAAAA', 'Ash': '#D0CEC8',
+    'Cardinal Red': '#9B1B30', 'Gold': '#E8B400', 'Orange': '#E85D00',
+    'Purple': '#5C2D91', 'Maroon': '#6B1E2E', 'Light Blue': '#7FB8E0',
+    'Sand': '#D4B896', 'Natural': '#F5EDD8', 'Daisy': '#FFD700',
+    'Azalea': '#E87EA1', 'Heliconia': '#E8457A', 'Irish Green': '#2D9B4A',
+    'Sapphire': '#1A5FA8', 'Antique Cherry Red': '#8B2020', 'Military Green': '#4A5D2A',
+    'Tweed': '#8B7355', 'Smoke': '#8A8A8A', 'Graphite Heather': '#6B6B6B',
+    'Russet': '#8B4513', 'Midnight': '#191970', 'Cherry Red': '#BB1122',
+    'Athletic Heather': '#BBBBBB', 'Team Navy': '#001F5B', 'Jet Black': '#1a1a1a',
+    'Heather': '#BBBBBB', 'Carolina Blue': '#56A0D3', 'Kelly Green': '#4CBB17',
+  };
+
+  const resolveColorHex = (colorName: string, colorHex: string | null): string => {
+    if (colorHex) return colorHex;
+    if (COLOR_HEX_MAP[colorName]) return COLOR_HEX_MAP[colorName];
+    for (const word of colorName.split(/[\s-]+/).reverse()) {
+      if (COLOR_HEX_MAP[word]) return COLOR_HEX_MAP[word];
+    }
+    return '#CCCCCC';
+  };
+
+  const allVariantImageUrls = colorVariants.map(v => v.imageUrl).filter((u): u is string => !!u);
+  const hasPerColorVariantImages = new Set(allVariantImageUrls).size > 1;
+
+  const getGalleryImageForColor = (colorName: string): string | null => {
+    const imgs = product.images || [];
+    const front = imgs.find(img => {
+      const alt = img.alt || '';
+      return alt.includes(colorName) && alt.toLowerCase().includes('front');
+    });
+    return front?.url || imgs.find(img => (img.alt || '').includes(colorName))?.url || null;
+  };
+
+  const getImageForColor = (colorName: string | null): string | null => {
     if (!colorName) return null;
-    const variant = product.variants.find(v => v.color === colorName);
-    return variant?.imageUrl || null;
+    if (hasPerColorVariantImages) {
+      const variant = product.variants.find(v => v.color === colorName);
+      if (variant?.imageUrl) return variant.imageUrl;
+    }
+    return getGalleryImageForColor(colorName);
   };
 
   const previewImage = hoveredColor ? getImageForColor(hoveredColor) : null;
-  const selectedImage = selectedVariant?.imageUrl || null;
+  const selectedImage = selectedColor ? getImageForColor(selectedColor) : null;
   const currentImage = previewImage
     ? previewImage
     : (selectedImage || product.images[selectedImageIndex]?.url || product.images[0]?.url || fallbackImage);
@@ -226,23 +266,17 @@ export function ProductDetailContent() {
     ? Math.round(((originalPrice - salePrice) / originalPrice) * 100)
     : 0;
 
-  const COLOR_HEX_MAP: Record<string, string> = {
-    'Black': '#1a1a1a', 'White': '#FFFFFF', 'Navy': '#1B2A4A', 'Red': '#CC2222',
-    'Royal': '#2255AA', 'Forest Green': '#2D6A2D', 'Charcoal': '#4A4A4A',
-    'Dark Heather': '#5A5A5A', 'Sport Grey': '#AAAAAA', 'Ash': '#D0CEC8',
-    'Cardinal Red': '#9B1B30', 'Gold': '#E8B400', 'Orange': '#E85D00',
-    'Purple': '#5C2D91', 'Maroon': '#6B1E2E', 'Light Blue': '#7FB8E0',
-    'Sand': '#D4B896', 'Natural': '#F5EDD8', 'Daisy': '#FFD700',
-    'Azalea': '#E87EA1', 'Heliconia': '#E8457A', 'Irish Green': '#2D9B4A',
-    'Sapphire': '#1A5FA8', 'Antique Cherry Red': '#8B2020', 'Military Green': '#4A5D2A',
-    'Tweed': '#8B7355', 'Smoke': '#8A8A8A', 'Graphite Heather': '#6B6B6B',
-    'Russet': '#8B4513', 'Midnight': '#191970', 'Cherry Red': '#BB1122',
-  };
   const uniqueColors = Array.from(
     new Map(
       colorVariants.map(v => [
         v.color,
-        { name: v.color, hex: v.colorHex || COLOR_HEX_MAP[v.color as string] || '#CCCCCC', imageUrl: v.imageUrl || null },
+        {
+          name: v.color,
+          hex: resolveColorHex(v.color as string, v.colorHex),
+          imageUrl: hasPerColorVariantImages
+            ? (v.imageUrl || null)
+            : getGalleryImageForColor(v.color as string)
+        },
       ])
     ).values()
   );
