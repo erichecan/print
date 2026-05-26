@@ -173,7 +173,7 @@ export function SiteFooter() {
           </div>
 
           {/* Mobile layout — accordion */}
-          <div className="md:hidden" style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+          <div className="md:hidden" style={{ flexDirection: 'column', gap: '0' }}>
             {/* Brand block */}
             <div style={{ padding: '0 0 32px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
               <Link href="/" aria-label="Suvernire Plus home">

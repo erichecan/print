@@ -1,7 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import SortSelect from './SortSelect';
+import { parseTagsParam, TAG_TAXONOMY } from '@/lib/tag-taxonomy';
 
 const TagNavTree = dynamic(
   () => import('@/components/catalog/TagNavTree').then((mod) => ({ default: mod.TagNavTree })),
@@ -13,10 +15,34 @@ const ProductsClient = dynamic(() => import('./ProductsClient'), { ssr: false })
 type Collection = { id: string; name: string; slug: string };
 type Brand = { name: string; slug?: string };
 
+const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
+const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
+
+function usePageTitle(collections: Collection[], fallback: string): string {
+  const params = useSearchParams();
+  const collection = params?.get('collection') || '';
+  const category = params?.get('category') || '';
+  const tagsParam = params?.get('tags') || '';
+
+  if (collection) {
+    return collections.find((c) => c.slug === collection)?.name || fallback;
+  }
+  if (category) {
+    return category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ');
+  }
+
+  const activeTags = parseTagsParam(tagsParam);
+  const activeGarment = GARMENT_TYPES.find((g) => activeTags.includes(g)) ?? null;
+  const activeAudience = AUDIENCES.find((a) => activeTags.includes(a)) ?? null;
+
+  if (activeGarment && activeAudience) return `${activeGarment} > ${activeAudience}`;
+  if (activeGarment) return activeGarment;
+  return 'All Products';
+}
+
 export function PLPLayoutClient({
   collections,
   currentSort,
-  currentCategoryName,
 }: {
   collections: Collection[];
   currentSort: string;
@@ -27,12 +53,14 @@ export function PLPLayoutClient({
   groupSlug?: string;
   categorySlug?: string;
 }) {
+  const title = usePageTitle(collections, 'All Products');
+
   return (
     <div className="plp-layout">
       {/* 工具栏：标题 + 排序 */}
       <div className="plp-toolbar hidden md:block">
         <div className="plp-toolbar__row">
-          <h1 className="plp-new__title">{currentCategoryName}</h1>
+          <h1 className="plp-new__title">{title}</h1>
           <div className="plp-toolbar__actions">
             <SortSelect defaultValue={currentSort} />
           </div>
@@ -48,7 +76,7 @@ export function PLPLayoutClient({
         <div className="plp-new__main">
           <ProductsClient
             collections={collections}
-            initialCategoryName={currentCategoryName}
+            initialCategoryName={title}
           />
         </div>
       </div>

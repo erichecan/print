@@ -339,10 +339,10 @@ export default async function ProductsPage({
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   const currentCategoryName = currentCollection
-    ? (collections.find(c => c.slug === currentCollection)?.name || 'T-shirts')
+    ? (collections.find(c => c.slug === currentCollection)?.name || 'All Products')
     : (normalizedParams.category
       ? (normalizedParams.category.charAt(0).toUpperCase() + (normalizedParams.category as string).slice(1).replace(/-/g, ' '))
-      : 'T-shirts');
+      : 'All Products');
 
   return (
     <div className="catalog-page">

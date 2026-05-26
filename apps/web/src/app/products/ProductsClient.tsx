@@ -11,7 +11,7 @@ import useSWR from 'swr';
 import Link from 'next/link';
 import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api-config';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Pagination } from '@/components/ui/Pagination'; // 分页组件
 import { promotionApi, Promotion } from '@/lib/api'; // 促销活动 API
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -43,12 +43,13 @@ const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((r)
 
 export default function ProductsClient({
   collections = [],
-  initialCategoryName = 'T-shirts'
+  initialCategoryName = 'All Products'
 }: {
   collections?: any[],
   initialCategoryName?: string
 }) {
   const params = useSearchParams();
+  const router = useRouter();
   const page = params?.get('page') || '1';
   const limit = params?.get('limit') || '12';
   const search = params?.get('search') || '';
@@ -406,8 +407,12 @@ export default function ProductsClient({
                     <span
                       key={colorIndex}
                       className="color-dot"
-                      style={!color.imageUrl ? { backgroundColor: color.hex } : undefined}
+                      style={!color.imageUrl ? { backgroundColor: color.hex, cursor: 'pointer' } : { cursor: 'pointer' }}
                       title={color.name}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        router.push(`/products/${product.slug}?color=${encodeURIComponent(color.originalName)}`);
+                      }}
                       onMouseEnter={() => {
                         setHoveredColors(prev => ({ ...prev, [product.id]: color.name }));
                       }}
