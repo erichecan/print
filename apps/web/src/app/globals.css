@@ -3913,6 +3913,7 @@ details:not([open]) .filter-toggle-icon::before {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
+  align-items: start;
 }
 
 .product-card-new {
