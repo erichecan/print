@@ -9,12 +9,22 @@ const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
 const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
 const NECKLINES = TAG_TAXONOMY.neckline.tags as unknown as string[];
 
-const ACTIVE_STYLE: React.CSSProperties = {
-  background: '#111',
-  color: '#fff',
-  borderColor: '#111',
+const LINK_BASE: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
+  textDecoration: 'none',
+  padding: '3px 8px',
   borderRadius: '6px',
+  border: '1px solid transparent',
+  boxSizing: 'border-box',
+  transition: 'background 0.12s, color 0.12s',
 };
+
+const L1_STYLE: React.CSSProperties = { ...LINK_BASE, fontSize: '0.8125rem', fontWeight: 600, color: '#333' };
+const L2_STYLE: React.CSSProperties = { ...LINK_BASE, fontSize: '0.8125rem', color: '#555' };
+const L3_STYLE: React.CSSProperties = { ...LINK_BASE, fontSize: '0.75rem', color: '#777' };
+const ACTIVE_OVERRIDE: React.CSSProperties = { background: '#111', color: '#fff', borderColor: '#111' };
 
 function buildTagsHref(tags: string[]): string {
   if (tags.length === 0) return '/products';
@@ -52,8 +62,8 @@ export function TagNavTree() {
             <li key={garment}>
               <Link
                 href={l1Href}
-                className="tnt__link tnt__link--l1"
-                style={isL1Active ? ACTIVE_STYLE : undefined}
+                className="tnt__link"
+                style={isL1Active ? { ...L1_STYLE, ...ACTIVE_OVERRIDE } : L1_STYLE}
               >
                 {garment}
               </Link>
@@ -72,8 +82,8 @@ export function TagNavTree() {
                       <li key={audience}>
                         <Link
                           href={l2Href}
-                          className="tnt__link tnt__link--l2"
-                          style={isL2Active ? ACTIVE_STYLE : undefined}
+                          className="tnt__link"
+                          style={isL2Active ? { ...L2_STYLE, ...ACTIVE_OVERRIDE } : L2_STYLE}
                         >
                           {audience}
                         </Link>
@@ -91,8 +101,8 @@ export function TagNavTree() {
                                 <li key={neckline}>
                                   <Link
                                     href={l3Href}
-                                    className="tnt__link tnt__link--l3"
-                                    style={isL3Active ? ACTIVE_STYLE : undefined}
+                                    className="tnt__link"
+                                    style={isL3Active ? { ...L3_STYLE, ...ACTIVE_OVERRIDE } : L3_STYLE}
                                   >
                                     {neckline}
                                   </Link>
@@ -150,33 +160,6 @@ export function TagNavTree() {
         .tnt__l3 {
           padding-left: 0.625rem;
           margin: 1px 0 4px;
-        }
-
-        .tnt__link {
-          display: flex;
-          align-items: center;
-          width: 100%;
-          text-decoration: none;
-          padding: 0.28rem 0.5rem;
-          border-radius: 6px;
-          border: 1px solid transparent;
-          transition: background 0.12s, color 0.12s, border-color 0.12s;
-        }
-
-        .tnt__link--l1 {
-          font-size: 0.8125rem;
-          font-weight: 600;
-          color: #333;
-        }
-
-        .tnt__link--l2 {
-          font-size: 0.8125rem;
-          color: #555;
-        }
-
-        .tnt__link--l3 {
-          font-size: 0.75rem;
-          color: #777;
         }
 
         .tnt__link:hover {
