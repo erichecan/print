@@ -36,7 +36,6 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
-  align-items: start;
 }
 
 .you-might-like-item {
@@ -79,6 +78,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 12px 14px;
+  flex-grow: 1;
 }
 
 .you-might-like-title-text {
