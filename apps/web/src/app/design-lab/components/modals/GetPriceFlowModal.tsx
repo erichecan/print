@@ -289,14 +289,14 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   const womensSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'], []); // 女性尺码
   const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示女性尺码
 
-  // 初始化尺码数量
+  // 初始化尺码数量 — 仅在 modal 已打开后执行，确保 initialSize 已就绪
   React.useEffect(() => {
-    if (currentStep === 'quantity' && sizeQuantities.length === 0 && orderingOptions.sizesQuantities === 'i-know-sizes') {
+    if (isOpen && currentStep === 'quantity' && sizeQuantities.length === 0 && orderingOptions.sizesQuantities === 'i-know-sizes') {
       setSizeQuantities(
         allSizes.map(size => ({ size, quantity: initialSize === size ? 1 : 0 }))
       );
     }
-  }, [currentStep, orderingOptions.sizesQuantities, allSizes, sizeQuantities.length, initialSize]);
+  }, [isOpen, currentStep, orderingOptions.sizesQuantities, allSizes, sizeQuantities.length, initialSize]);
 
   // 检查是否有上传的图片（用于 Content Check）
   React.useEffect(() => {

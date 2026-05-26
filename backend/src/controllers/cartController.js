@@ -410,14 +410,19 @@ exports.addItem = async (req, res) => {
     }
 
 // Calculate price in dollars for priceSnapshot
-    // 参考 productController.js: price = (basePrice + priceAdjustment) / 100
-    // basePrice 是 cents (Int), priceAdjustment 是 Decimal(10,2) 但实际存储的值是 cents 的数值
-    // priceSnapshot should be stored in dollars (Decimal) for cart items
-    // 与 productController.js 保持一致的计算方式
-    const basePriceInCents = Number(variant.product.basePrice) || 0;
-    const priceAdjustmentInCents = Number(variant.priceAdjustment || 0); // priceAdjustment 存储的是 cents 的数值
-    const priceInCents = basePriceInCents + priceAdjustmentInCents;
-    const price = priceInCents / 100; // Convert to dollars for priceSnapshot (Decimal)
+    // If the item was added via the Get Price flow, quoteData contains the already-calculated
+    // per-unit price (including size surcharges, sides/layer fees, and quantity discounts).
+    // Use that price so the cart shows the same number the user saw in the quote.
+    const quotedUnitPrice = metadata?.quoteData?.discountedUnitPrice ?? metadata?.quoteData?.unitPrice;
+    let price;
+    if (quotedUnitPrice && quotedUnitPrice > 0) {
+      price = Number(quotedUnitPrice);
+    } else {
+      // Fallback: derive from variant base price (cents) + size adjustment (cents)
+      const basePriceInCents = Number(variant.product.basePrice) || 0;
+      const priceAdjustmentInCents = Number(variant.priceAdjustment || 0);
+      price = (basePriceInCents + priceAdjustmentInCents) / 100;
+    }
 
 // Get or create cart
     const cart = await getOrCreateCart(userId, sessionId);
