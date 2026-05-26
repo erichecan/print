@@ -376,7 +376,7 @@ export default function ProductsClient({
                     <span
                       key={colorIndex}
                       className="color-dot"
-                      style={{ backgroundColor: color.hex }}
+                      style={!color.imageUrl ? { backgroundColor: color.hex } : undefined}
                       title={color.name}
                       onMouseEnter={() => {
                         setHoveredColors(prev => ({ ...prev, [product.id]: color.name }));
@@ -388,7 +388,11 @@ export default function ProductsClient({
                           return newState;
                         });
                       }}
-                    />
+                    >
+                      {color.imageUrl && (
+                        <img src={color.imageUrl} alt={color.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block' }} />
+                      )}
+                    </span>
                   ))}
                   {moreColors > 0 && (
                     <span className="color-more">+{moreColors}</span>

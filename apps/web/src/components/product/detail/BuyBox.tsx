@@ -284,7 +284,7 @@ export function BuyBox({
         <span className={styles.buyboxRatingCount}>({rating.count} reviews)</span>
       </div>
 
-      {/* 参考图一位置：Color 圆形色块 */}
+      {/* 参考图一位置：Color 色块 */}
       <div className={styles.buyboxField}>
         <label className={styles.buyboxLabel}>Color</label>
         <div className={styles.buyboxColors} role="radiogroup" aria-label="Select color">
@@ -296,9 +296,14 @@ export function BuyBox({
               disabled={!color.available}
               aria-label={`Select color ${color.name}`}
               aria-pressed={activeColor === color.name}
-              style={{ backgroundColor: color.hex }}
               title={color.name}
-            />
+            >
+              {color.imageUrl ? (
+                <img src={color.imageUrl} alt={color.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ) : (
+                <span style={{ display: 'block', width: '100%', height: '100%', backgroundColor: color.hex }} />
+              )}
+            </button>
           ))}
         </div>
       </div>

@@ -4034,6 +4034,7 @@ details:not([open]) .filter-toggle-icon::before {
   cursor: pointer;
   transition: transform 0.2s;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .color-dot:hover {

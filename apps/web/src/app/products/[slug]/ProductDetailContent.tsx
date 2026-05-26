@@ -242,7 +242,7 @@ export function ProductDetailContent() {
     new Map(
       colorVariants.map(v => [
         v.color,
-        { name: v.color, hex: v.colorHex || COLOR_HEX_MAP[v.color as string] || '#CCCCCC' },
+        { name: v.color, hex: v.colorHex || COLOR_HEX_MAP[v.color as string] || '#CCCCCC', imageUrl: v.imageUrl || null },
       ])
     ).values()
   );
@@ -481,10 +481,9 @@ export function ProductDetailContent() {
                       <button
                         key={index}
                         type="button"
-                        className="w-9 h-9 rounded-full border-2 cursor-pointer relative p-0 flex-shrink-0 transition-colors"
+                        className="w-10 h-10 rounded-sm border-2 cursor-pointer relative p-0 flex-shrink-0 transition-all overflow-hidden"
                         style={{
-                          backgroundColor: color.hex,
-                          borderColor: isSelected ? '#000' : 'transparent',
+                          borderColor: isSelected ? '#000' : '#e5e7eb',
                           boxShadow: isSelected ? '0 0 0 2px #fff, 0 0 0 3px #000' : 'none',
                           opacity: isAvailable ? 1 : 0.35,
                           cursor: isAvailable ? 'pointer' : 'not-allowed',
@@ -508,9 +507,14 @@ export function ProductDetailContent() {
                         disabled={!isAvailable}
                         title={color.name ?? undefined}
                       >
+                        {color.imageUrl ? (
+                          <SafeImage src={color.imageUrl} alt={color.name ?? ''} width={40} height={40} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full" style={{ backgroundColor: color.hex }} />
+                        )}
                         {isSelected && (
-                          <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-lg pointer-events-none" style={{ fontWeight: 700, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                            ✓
+                          <span className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ backgroundColor: 'rgba(0,0,0,0.18)' }}>
+                            <span className="text-white text-base" style={{ fontWeight: 700, textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>✓</span>
                           </span>
                         )}
                       </button>
@@ -717,7 +721,7 @@ export function ProductDetailContent() {
             >
               You may also like
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1" style={{ border: '1px solid var(--color-border)' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {relatedProducts.map((related) => {
                 const relatedImage = related.images?.[0]?.url || related.primaryImage?.url || fallbackImage;
                 const relatedPrice = related.price?.sale || related.price?.base || related.basePrice;
@@ -728,11 +732,14 @@ export function ProductDetailContent() {
                     className="block no-underline"
                     style={{ color: 'inherit' }}
                   >
-                    <div className="flex flex-col gap-0 transition-colors hover:bg-[#F1EEE9]">
-                      <div className="w-full aspect-[3/4] overflow-hidden" style={{ background: 'var(--color-bg-sand)', borderRadius: 0 }}>
+                    <div className="flex flex-col gap-0 overflow-hidden" style={{ borderRadius: 12, background: 'var(--color-bg-subtle)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', transition: 'box-shadow 0.3s ease' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px rgba(0,0,0,0.14)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
+                    >
+                      <div className="w-full aspect-[3/4] overflow-hidden" style={{ background: 'var(--color-bg-subtle)' }}>
                         <SafeImage src={relatedImage} alt={related.name} width={280} height={350} className="w-full h-full object-cover" />
                       </div>
-                      <div className="p-4 border-t border-[#DBDBDB]">
+                      <div className="p-4">
                         <h3 className="text-sm font-medium m-0 leading-snug" style={{ color: 'var(--color-text)', letterSpacing: '0.02em' }}>{related.name}</h3>
                         <div className="text-sm mt-1" style={{ fontWeight: 600, color: 'var(--color-text)' }}>
                           {currencyFormatter.format(Number(relatedPrice) / 100)}
@@ -763,7 +770,7 @@ export function ProductDetailContent() {
             >
               More from {product.brand.name}
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1" style={{ border: '1px solid var(--color-border)' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {relatedProducts.filter(p => p.brand?.slug === product.brand?.slug).slice(0, 4).map((brandProduct) => {
                 const brandImage = brandProduct.images?.[0]?.url || brandProduct.primaryImage?.url || fallbackImage;
                 const brandPrice = brandProduct.price?.sale || brandProduct.price?.base || brandProduct.basePrice;
@@ -774,11 +781,14 @@ export function ProductDetailContent() {
                     className="block no-underline"
                     style={{ color: 'inherit' }}
                   >
-                    <div className="flex flex-col gap-0 transition-colors hover:bg-white">
-                      <div className="w-full aspect-[3/4] overflow-hidden" style={{ background: '#fff', borderRadius: 0 }}>
+                    <div className="flex flex-col gap-0 overflow-hidden" style={{ borderRadius: 12, background: 'var(--color-bg-subtle)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', transition: 'box-shadow 0.3s ease' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 6px 20px rgba(0,0,0,0.14)'}
+                      onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
+                    >
+                      <div className="w-full aspect-[3/4] overflow-hidden" style={{ background: 'var(--color-bg-subtle)' }}>
                         <SafeImage src={brandImage} alt={brandProduct.name} width={280} height={350} className="w-full h-full object-cover" />
                       </div>
-                      <div className="p-4 border-t border-[#DBDBDB]">
+                      <div className="p-4">
                         <h3 className="text-sm font-medium m-0 leading-snug" style={{ color: 'var(--color-text)', letterSpacing: '0.02em' }}>{brandProduct.name}</h3>
                         <div className="text-sm mt-1" style={{ fontWeight: 600, color: 'var(--color-text)' }}>
                           {currencyFormatter.format(Number(brandPrice) / 100)}

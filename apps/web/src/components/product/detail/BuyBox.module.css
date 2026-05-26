@@ -137,14 +137,16 @@
 }
 
 .buyboxColor {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid transparent;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 2px solid #e5e7eb;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
   position: relative;
   outline: none;
+  overflow: hidden;
+  padding: 0;
 }
 
 .buyboxColor:hover:not(.isUnavailable) {
