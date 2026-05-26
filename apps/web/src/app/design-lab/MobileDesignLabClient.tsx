@@ -949,7 +949,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
         message: error.message,
         stack: error.stack,
       });
-      alert(`Failed to save design: ${error.message || error} `);
+      console.error('[DesignLab 5.0] Save error displayed to user:', error.message || error);
       console.log('[DesignLab 5.0] ===== SAVE ERROR =====');
       throw error;
     }
@@ -1190,9 +1190,8 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       }
 
       if (!finalVariantId) {
-        // Ultimate fallback (e.g. for default tee if not fully loaded)
-        finalVariantId = '5ead334f-82b1-4bc0-bb50-957541bb2070';
-        console.warn('[handleAddToCart] Using hardcoded fallback variant ID:', finalVariantId);
+        finalVariantId = 'default';
+        console.warn('[handleAddToCart] Using "default" — backend will auto-resolve variant');
       }
 
       // 调用加入购物车 API

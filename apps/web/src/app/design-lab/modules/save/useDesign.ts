@@ -85,12 +85,8 @@ const [designName, setDesignName] = useState(propDesignName); // Use prop value
           console.error('[useDesign] Missing or invalid productVariantId:', productVariantId);
           console.log('[useDesign] Using fallback variant ID from database...');
 
-// FINAL FIX: Use actual variant ID from database
-          // This is a valid variant ID from the 'Classic Crew Tee' product (White, S)
-          // Query: SELECT v.id FROM variants v JOIN products p ON v.product_id = p.id 
-          //        WHERE p.is_customizable = true AND p.is_active = true LIMIT 1
-          validProductVariantId = '5ead334f-82b1-4bc0-bb50-957541bb2070';
-          console.log('[useDesign] ✅ Using fallback variant ID:', validProductVariantId, '(Classic Crew Tee - White, S)');
+          validProductVariantId = 'default';
+          console.log('[useDesign] Using "default" — backend will auto-resolve to first customizable variant');
         }
 
         console.log('[useDesign] Creating design with productVariantId:', validProductVariantId);
