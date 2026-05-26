@@ -3,7 +3,6 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { TAG_TAXONOMY, type DimensionKey, serializeTagsParam, parseTagsParam } from '@/lib/tag-taxonomy';
 
-// All dimensions shown flat — standard faceted filter
 const DIMENSIONS: DimensionKey[] = ['audience', 'neckline', 'material', 'fit'];
 
 interface TagFilterSidebarProps {
@@ -74,15 +73,7 @@ export function TagFilterSidebar({ fixedTag }: TagFilterSidebarProps) {
           <details key={dimKey} className="tfs__group" open={groupHasActive}>
             <summary className="tfs__summary">
               <span>{dim.label}</span>
-              <svg className="tfs__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path
-                  d="M2 4l4 4 4-4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <span className="tfs__toggle-icon" aria-hidden="true" />
             </summary>
             <ul className="tfs__list">
               {dim.tags.map((tag) => {
@@ -95,9 +86,7 @@ export function TagFilterSidebar({ fixedTag }: TagFilterSidebarProps) {
                       onClick={() => handleTagClick(tag)}
                       aria-pressed={isActive}
                     >
-                      <span className="tfs__check" aria-hidden="true">
-                        {isActive ? '✓' : ''}
-                      </span>
+                      <span className="tfs__check" aria-hidden="true" />
                       {tag}
                     </button>
                   </li>
@@ -120,21 +109,32 @@ export function TagFilterSidebar({ fixedTag }: TagFilterSidebarProps) {
           justify-content: space-between;
           align-items: baseline;
           padding-bottom: 0.75rem;
-          margin-bottom: 0.25rem;
+          margin-bottom: 0;
           border-bottom: 2px solid #111;
         }
+
         .tfs__title {
           font-weight: 700;
           font-size: 0.9375rem;
+          color: #121212;
         }
+
         .tfs__clear {
-          font-size: 0.75rem;
-          color: #888;
-          text-decoration: underline;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #737373;
+          text-decoration: none;
           background: none;
           border: none;
           cursor: pointer;
           padding: 0;
+          transition: color 0.15s;
+        }
+
+        .tfs__clear:hover {
+          color: #121212;
         }
 
         .tfs__chips {
@@ -143,6 +143,7 @@ export function TagFilterSidebar({ fixedTag }: TagFilterSidebarProps) {
           gap: 0.4rem;
           margin: 0.5rem 0 0.75rem;
         }
+
         .tfs__chip {
           display: inline-flex;
           align-items: center;
@@ -150,83 +151,125 @@ export function TagFilterSidebar({ fixedTag }: TagFilterSidebarProps) {
           padding: 0.2rem 0.55rem;
           background: #eee;
           border: none;
-          border-radius: 999px;
+          border-radius: 0;
           font-size: 0.75rem;
           color: #333;
           cursor: pointer;
+          transition: background 0.15s;
         }
+
         .tfs__chip:hover {
           background: #ddd;
         }
 
         .tfs__group {
-          border-top: 1px solid #e5e5e5;
+          border-bottom: 1px solid #DBDBDB;
+          padding: 16px 0;
         }
+
+        .tfs__group:last-of-type {
+          border-bottom: none;
+        }
+
         .tfs__summary {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0.65rem 0;
+          padding: 0;
           cursor: pointer;
-          font-weight: 600;
           list-style: none;
           user-select: none;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #121212;
+          line-height: 1.4;
         }
+
         .tfs__summary::-webkit-details-marker {
           display: none;
         }
-        details[open] .tfs__chevron {
-          transform: rotate(180deg);
-        }
-        .tfs__chevron {
-          transition: transform 0.2s;
-          color: #888;
+
+        .tfs__toggle-icon {
+          font-size: 16px;
+          color: #737373;
+          font-weight: 300;
+          line-height: 1;
+          width: 16px;
+          text-align: center;
           flex-shrink: 0;
+        }
+
+        details:not([open]) .tfs__toggle-icon::before {
+          content: '+';
+        }
+
+        details[open] .tfs__toggle-icon::before {
+          content: '−';
         }
 
         .tfs__list {
           list-style: none;
-          margin: 0 0 0.75rem;
+          margin: 14px 0 0;
           padding: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 0.3rem;
+          display: grid;
+          gap: 10px;
         }
 
         .tfs__tag {
           display: flex;
           align-items: center;
-          gap: 0.45rem;
+          gap: 10px;
           width: 100%;
-          padding: 0.3rem 0.5rem;
+          padding: 1px 0;
           background: none;
-          border: 1px solid transparent;
-          border-radius: 6px;
+          border: none;
           cursor: pointer;
-          font-size: 0.8125rem;
-          color: #333;
+          font-size: 13px;
+          color: #737373;
           text-align: left;
-          transition: background 0.12s, border-color 0.12s;
+          transition: color 0.15s;
+          font-family: "Instrument Sans", sans-serif;
+          line-height: 1.4;
         }
+
         .tfs__tag:hover {
-          background: #f5f5f5;
-          border-color: #ddd;
+          color: #121212;
         }
+
         .tfs__tag--on {
-          background: #111;
-          color: #fff;
-          border-color: #111;
-        }
-        .tfs__tag--on:hover {
-          background: #333;
-          border-color: #333;
+          color: #121212;
         }
 
         .tfs__check {
-          width: 14px;
+          display: inline-block;
+          width: 15px;
+          height: 15px;
+          border: 1px solid #737373;
+          border-radius: 0;
           flex-shrink: 0;
-          text-align: center;
-          font-size: 0.75rem;
+          position: relative;
+          transition: border-color 0.15s, background 0.15s;
+          box-sizing: border-box;
+        }
+
+        .tfs__tag--on .tfs__check {
+          background-color: #000;
+          border-color: #000;
+        }
+
+        .tfs__tag--on .tfs__check::after {
+          content: '';
+          position: absolute;
+          left: 4px;
+          top: 1px;
+          width: 5px;
+          height: 9px;
+          border: 2px solid #fff;
+          border-top: none;
+          border-left: none;
+          transform: rotate(45deg);
         }
       `}</style>
     </aside>
