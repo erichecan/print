@@ -714,6 +714,8 @@ exports.getProducts = async (req, res) => {
       brand: brandFilter.join(',') || '',
       size: sizeFilter.join(',') || '',
       tags: tagsFilter.join(',') || '',
+      minPrice: minPriceFilter ?? '',
+      maxPrice: maxPriceFilter ?? '',
       sort: isPriceSort ? 'price' : sortBy, // 价格排序时使用 'price'
       order: sortOrder,
       includeOutOfStock,
