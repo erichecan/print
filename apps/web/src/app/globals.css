@@ -3520,36 +3520,23 @@ select {
   color: #000;
 }
 
-/* ── 商品区网格（默认无筛选栏）── */
+/* ── 商品区网格（侧边栏常驻）── */
 .plp-new__grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 260px 1fr;
   gap: 32px;
 }
 
-/* ── 筛选栏打开时：露出侧边栏，商品改 2 列 ── */
-.plp-layout--sidebar-open .plp-new__grid {
-  grid-template-columns: 280px 1fr;
-}
-
-.plp-layout--sidebar-open .plp-new__sidebar {
-  display: block;
-}
-
-.plp-layout--sidebar-open .product-grid-new {
-  grid-template-columns: repeat(2, 1fr) !important;
-}
-
-/* ── 左侧筛选器 — 默认隐藏 ── */
+/* ── 左侧导航树 — 常驻显示 ── */
 .plp-new__sidebar {
-  display: none;
+  display: block;
   position: sticky;
   top: 96px;
   align-self: start;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
   overflow-x: hidden;
-  width: 280px;
+  width: 260px;
 }
 
 .filters-new {
@@ -3911,8 +3898,8 @@ details:not([open]) .filter-toggle-icon::before {
 /* 产品网格 */
 .product-grid-new {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
   align-items: start;
 }
 
@@ -4103,10 +4090,7 @@ details:not([open]) .filter-toggle-icon::before {
 
 /* 急单 + No Min 同行 */
 .product-card-new__meta {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  display: none;
 }
 
 .meta-rush {
@@ -4123,23 +4107,22 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* 响应式设计 */
-/* 桌面端：3-4列布局 */
 @media (min-width: 1024px) {
   .product-grid-new {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (min-width: 1400px) {
   .product-grid-new {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
-/* 平板端：2列布局 */
+/* 平板端：侧边栏折叠，商品 3 列 */
 @media (min-width: 768px) and (max-width: 1023px) {
   .product-grid-new {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
   }
 }
@@ -4150,8 +4133,7 @@ details:not([open]) .filter-toggle-icon::before {
   }
 
   .plp-new__sidebar {
-    position: static;
-    max-height: none;
+    display: none;
   }
 }
 
@@ -12235,6 +12217,7 @@ select {
     font-size: 7pt !important;
   }
 }
+
 /* 2026-04-21: 全局禁用 number 输入框上下箭头（spinner）— 见 CLAUDE.md UI 约定 */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

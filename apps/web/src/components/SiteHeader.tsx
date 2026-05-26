@@ -14,157 +14,6 @@ import { contentApi, NavigationMenuItem } from '@/lib/api';
 import { CartIcon } from '@/components/CartIcon';
 import { useAuth } from '@/contexts/AuthContext'; // 使用认证状态
 import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // 使用路由映射
-import { CatalogMegaMenu } from '@/components/catalog/CatalogMegaMenu';
-import { TAG_TAXONOMY, GARMENT_SLUG_TO_TAG } from '@/lib/tag-taxonomy';
-
-const GARMENT_COLS = Object.entries(GARMENT_SLUG_TO_TAG);
-
-function MobileCatalogAccordion({ onClose }: { onClose: () => void }) {
-  const [openSlug, setOpenSlug] = useState<string | null>(null);
-  const [openAudience, setOpenAudience] = useState<string | null>(null);
-
-  return (
-    <li className="mobile-catalog-accordion">
-      <div className="mca__header">Shop</div>
-      {GARMENT_COLS.map(([slug, garmentTag]) => (
-        <div key={slug} className="mca__garment">
-          {/* Level 1: garment type */}
-          <div className="mca__row mca__row--l1">
-            <Link href={`/catalog/${slug}`} className="mca__main-link" onClick={onClose}>
-              {garmentTag}
-            </Link>
-            <button
-              type="button"
-              className="mca__toggle"
-              aria-expanded={openSlug === slug}
-              onClick={() => { setOpenSlug(openSlug === slug ? null : slug); setOpenAudience(null); }}
-            >
-              {openSlug === slug ? '−' : '+'}
-            </button>
-          </div>
-
-          {openSlug === slug && (
-            <div className="mca__children">
-              {TAG_TAXONOMY.audience.tags.map((audience) => (
-                <div key={audience} className="mca__audience">
-                  {/* Level 2: audience */}
-                  <div className="mca__row mca__row--l2">
-                    <Link
-                      href={`/catalog/${slug}?tags=${encodeURIComponent(audience)}`}
-                      className="mca__main-link"
-                      onClick={onClose}
-                    >
-                      {audience}
-                    </Link>
-                    <button
-                      type="button"
-                      className="mca__toggle"
-                      aria-expanded={openAudience === audience}
-                      onClick={() => setOpenAudience(openAudience === audience ? null : audience)}
-                    >
-                      {openAudience === audience ? '−' : '+'}
-                    </button>
-                  </div>
-
-                  {openAudience === audience && (
-                    <ul className="mca__necklines">
-                      {/* Level 3: neckline */}
-                      {TAG_TAXONOMY.neckline.tags.map((neckline) => (
-                        <li key={neckline}>
-                          <Link
-                            href={`/catalog/${slug}?tags=${encodeURIComponent(audience)},${encodeURIComponent(neckline)}`}
-                            className="mca__neckline-link"
-                            onClick={onClose}
-                          >
-                            {neckline}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-
-      <style jsx>{`
-        .mobile-catalog-accordion {
-          border-bottom: 1px solid #e5e5e5;
-          padding-bottom: 4px;
-          margin-bottom: 4px;
-        }
-        .mca__header {
-          font-size: 0.6875rem;
-          font-weight: 700;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #999;
-          padding: 12px 20px 6px;
-        }
-        .mca__garment {
-          border-top: 1px solid #f0f0f0;
-        }
-        .mca__row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .mca__row--l1 {
-          padding: 0 20px;
-        }
-        .mca__row--l2 {
-          padding: 0 20px 0 36px;
-        }
-        .mca__main-link {
-          flex: 1;
-          padding: 10px 0;
-          font-size: 0.9375rem;
-          color: #111;
-          text-decoration: none;
-          font-weight: 500;
-        }
-        .mca__row--l2 .mca__main-link {
-          font-size: 0.875rem;
-          font-weight: 400;
-          color: #444;
-        }
-        .mca__toggle {
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: none;
-          border: none;
-          font-size: 1.25rem;
-          color: #999;
-          cursor: pointer;
-          flex-shrink: 0;
-        }
-        .mca__children {
-          background: #fafafa;
-        }
-        .mca__necklines {
-          list-style: none;
-          margin: 0;
-          padding: 0 20px 8px 52px;
-        }
-        .mca__neckline-link {
-          display: block;
-          padding: 6px 0;
-          font-size: 0.8125rem;
-          color: #666;
-          text-decoration: none;
-        }
-        .mca__neckline-link:hover {
-          color: #111;
-        }
-      `}</style>
-    </li>
-  );
-}
 
 export function SiteHeader() {
   const router = useRouter();
@@ -401,10 +250,7 @@ export function SiteHeader() {
         {/* 桌面端导航 - 仅在桌面端显示 */}
         <nav className="primary-nav primary-nav--desktop !hidden md:!block" aria-label="Primary">
           <div className="container primary-nav__inner">
-            <ul className="mega" style={{ position: 'relative' }}>
-              {/* Tag-driven catalog mega menu — always shown, independent of CMS */}
-              <CatalogMegaMenu />
-
+            <ul className="mega">
               {/* 从 CMS 渲染导航菜单 */}
               {/* 隐藏 Custom Apparel 导航项 */}
               {navigation.length > 0 ? (
@@ -494,9 +340,6 @@ export function SiteHeader() {
           </button>
         </div>
         <ul className="mobile-nav__list">
-          {/* Tag-driven catalog accordion — always shown at top */}
-          <MobileCatalogAccordion onClose={() => setIsMobileMenuOpen(false)} />
-
           {/* 从 CMS 渲染移动端导航菜单 */}
           {/* 隐藏 Custom Apparel 导航项 */}
           {navigation.length > 0 ? (

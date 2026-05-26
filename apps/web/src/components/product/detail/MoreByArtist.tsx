@@ -47,7 +47,7 @@ export function MoreByArtist({ artistName, artistShopUrl, products }: MoreByArti
         )}
       </div>
       <ul className={styles['more-by-artist-grid']}>
-        {products.map((product) => (
+        {products.slice(0, 8).map((product) => (
           <li key={product.id}>
             <Link
               href={product.link}

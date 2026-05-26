@@ -185,6 +185,7 @@ model Product {
   giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
   variants           Variant[]
   shippingTemplates  ShippingTemplateProduct[] // Shipping templates that apply to this product
+  tags               String[]                   @default([])
 
   @@index([slug])
   @@index([categoryId])
@@ -192,6 +193,7 @@ model Product {
   @@index([isActive])
   @@index([createdAt], map: "idx_products_created_at")
   @@index([name(ops: raw("gin_trgm_ops"))], map: "idx_products_name_trgm", type: Gin)
+  @@index([tags], map: "idx_products_tags", type: Gin)
   @@map("products")
 }
 

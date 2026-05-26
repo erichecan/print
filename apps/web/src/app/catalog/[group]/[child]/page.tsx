@@ -7,9 +7,8 @@ import { generateSEOMetadata } from '@/lib/seo';
 import dynamic from 'next/dynamic';
 import { CatalogCategoryClient } from './CatalogCategoryClient';
 
-// 动态导入客户端组件
-const SidebarGrouped = dynamic(
-  () => import('@/components/catalog/SidebarGrouped').then((mod) => mod.SidebarGrouped),
+const TagNavTree = dynamic(
+  () => import('@/components/catalog/TagNavTree').then((mod) => mod.TagNavTree),
   { ssr: false }
 );
 
@@ -42,9 +41,7 @@ export default async function CatalogCategoryPage({ params }: Props) {
         <div className="container plp-new__grid">
           {/* 左侧导航 */}
           <aside className="plp-new__sidebar">
-            <SidebarGrouped
-              selected={{ groupSlug: group, childSlug: child }}
-            />
+            <TagNavTree />
           </aside>
 
           {/* 主内容区 */}

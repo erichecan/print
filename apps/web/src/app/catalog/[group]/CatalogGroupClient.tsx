@@ -4,10 +4,15 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { API_BASE_URL } from '@/lib/api-config';
 import useSWR from 'swr';
-import { TagFilterSidebar } from '@/components/catalog/TagFilterSidebar';
 import { GARMENT_SLUG_TO_TAG, parseTagsParam } from '@/lib/tag-taxonomy';
+
+const TagNavTree = dynamic(
+  () => import('@/components/catalog/TagNavTree').then((mod) => ({ default: mod.TagNavTree })),
+  { ssr: false }
+);
 
 interface Product {
   id: string;
@@ -61,7 +66,9 @@ export function CatalogGroupClient({ groupSlug }: CatalogGroupClientProps) {
 
   return (
     <div className="cg-layout">
-      <TagFilterSidebar fixedTag={garmentTag} />
+      <aside className="cg-sidebar">
+        <TagNavTree />
+      </aside>
 
       <div className="cg-main">
         <nav className="breadcrumb-nav">
@@ -149,6 +156,10 @@ export function CatalogGroupClient({ groupSlug }: CatalogGroupClientProps) {
           display: flex;
           gap: 32px;
           align-items: flex-start;
+        }
+        .cg-sidebar {
+          width: 210px;
+          flex-shrink: 0;
         }
         .cg-main {
           flex: 1;

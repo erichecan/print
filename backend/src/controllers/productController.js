@@ -639,13 +639,35 @@ exports.getProducts = async (req, res) => {
       });
     }
 
-    // Filter by tags (PostgreSQL array overlap: product must have ALL specified tags)
+    // Filter by tags — OR within each dimension, AND across dimensions
+    // e.g. (Adult OR Youth) AND (Crew Neck OR V-Neck)
     if (tagsFilter.length > 0) {
-      andConditions.push({
-        tags: {
-          hasEvery: tagsFilter,
-        },
-      });
+      const TAG_DIMENSIONS = {
+        audience: ["Adult", "Women's", "Youth", "Unisex"],
+        neckline: ['Crew Neck', 'V-Neck', 'Hooded', 'Polo'],
+        material: ['Cotton', 'Polyester', 'Fleece', 'Blend'],
+        fit: ['Regular', 'Slim', 'Relaxed', 'Oversized'],
+      };
+      const byDim = {};
+      const unmatched = [];
+      for (const tag of tagsFilter) {
+        let found = false;
+        for (const [dim, dimTags] of Object.entries(TAG_DIMENSIONS)) {
+          if (dimTags.includes(tag)) {
+            if (!byDim[dim]) byDim[dim] = [];
+            byDim[dim].push(tag);
+            found = true;
+            break;
+          }
+        }
+        if (!found) unmatched.push(tag);
+      }
+      for (const dimTags of Object.values(byDim)) {
+        andConditions.push({ tags: { hasSome: dimTags } });
+      }
+      for (const tag of unmatched) {
+        andConditions.push({ tags: { has: tag } });
+      }
     }
 
     // Search by name, description, or SKU

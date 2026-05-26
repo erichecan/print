@@ -54,6 +54,7 @@ export default function ProductsClient({
   const search = params?.get('search') || '';
   const collection = params?.get('collection') || '';
   const sort = params?.get('sort') || '';
+  const tags = params?.get('tags') || '';
 
   // 状态管理：跟踪每个商品悬停的颜色
   const [hoveredColors, setHoveredColors] = useState<Record<string, string | null>>({});
@@ -83,6 +84,7 @@ export default function ProductsClient({
   if (collection) apiUrl.searchParams.set('collection', collection);
   if (sortField) apiUrl.searchParams.set('sort', sortField);
   if (sortOrder) apiUrl.searchParams.set('order', sortOrder);
+  if (tags) apiUrl.searchParams.set('tags', tags);
 
   // 添加所有筛选参数到 API 请求
   if (params) {
@@ -416,11 +418,6 @@ export default function ProductsClient({
                   </div>
                 </div>
 
-                <div className="product-card-new__meta">
-                  <span className="meta-rush">⚡ 3-Day Rush</span>
-                  <span className="meta-sep">·</span>
-                  <span className="meta-min">No Min</span>
-                </div>
               </div>
             </article>
           );
