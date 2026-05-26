@@ -3,8 +3,11 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { TAG_TAXONOMY, type DimensionKey, serializeTagsParam, parseTagsParam } from '@/lib/tag-taxonomy';
 
-// audience is handled by the nav tree L2; only show neckline (material/fit tags not yet in product data)
-const FILTER_DIMS: DimensionKey[] = ['neckline'];
+// audience is handled by the nav tree L2; artTheme surfaces art print categories
+const FILTER_DIMS: DimensionKey[] = ['neckline', 'artTheme'];
+
+// dimensions where only one tag can be active at a time
+const SINGLE_SELECT_DIMS = new Set<DimensionKey>(['artTheme']);
 
 const SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
 
@@ -53,6 +56,14 @@ export function TagFilterPanel() {
     const next = activeTags.includes(tag)
       ? activeTags.filter((t) => t !== tag)
       : [...activeTags, tag];
+    applyTags(next);
+  }
+
+  function selectSingleTag(dimKey: DimensionKey, tag: string) {
+    const dimTags = TAG_TAXONOMY[dimKey].tags as unknown as string[];
+    // remove all tags from this dimension, then add the clicked one (unless it was already active)
+    const withoutDim = activeTags.filter((t) => !dimTags.includes(t));
+    const next = activeTags.includes(tag) ? withoutDim : [...withoutDim, tag];
     applyTags(next);
   }
 
@@ -117,12 +128,13 @@ export function TagFilterPanel() {
               <ul className="tfp__list">
                 {dimTags.map((tag) => {
                   const isActive = activeTags.includes(tag);
+                  const isSingle = SINGLE_SELECT_DIMS.has(dimKey);
                   return (
                     <li key={tag}>
                       <button
                         type="button"
                         className={`tfp__item${isActive ? ' tfp__item--active' : ''}`}
-                        onClick={() => toggleTag(tag)}
+                        onClick={() => isSingle ? selectSingleTag(dimKey, tag) : toggleTag(tag)}
                         aria-pressed={isActive}
                       >
                         {tag}

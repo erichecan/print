@@ -206,12 +206,6 @@ export default function ProductsClient({
     return '#CCCCCC';
   };
 
-  // 生成产品标签（示例数据）
-  const getProductBadge = (index: number) => {
-    const badges = ['Best Seller', 'Customer Fave', 'Staff Pick'];
-    return badges[index % badges.length];
-  };
-
   const pagination = data?.pagination || { page: 1, limit: 12, total: 0, totalPages: 1 };
 
   // 从产品数据中提取品牌列表
@@ -321,7 +315,6 @@ export default function ProductsClient({
             finalPrice = Math.max(0, basePrice - discountAmount);
           }
 
-          const badge = index < 3 ? getProductBadge(index) : null;
           const rating = product.rating?.average || 4.5;
           const reviewCount = product.rating?.count || 10000;
           // 从产品variants中获取所有颜色信息（不限制为黑白，支持后续添加其他颜色）
@@ -383,16 +376,6 @@ export default function ProductsClient({
                       {bestPromotion.discountType === 'percentage'
                         ? `${bestPromotion.discountValue}% OFF`
                         : `$${bestPromotion.discountValue.toFixed(2)} OFF`}
-                    </span>
-                  )}
-                  {badge && (
-                    <span className={`product-badge product-badge--${badge.toLowerCase().replace(/\s+/g, '-')}`}>
-                      {badge}
-                    </span>
-                  )}
-                  {index % 2 === 0 && (
-                    <span className="product-badge product-badge--eco">
-                      <span className="eco-icon">🌿</span> Eco-friendly
                     </span>
                   )}
                 </div>

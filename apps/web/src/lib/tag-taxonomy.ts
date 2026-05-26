@@ -46,6 +46,19 @@ export const TAG_TAXONOMY = {
     label: 'Fit',
     tags: ['Classic Fit', 'Fitted'],
   },
+  artTheme: {
+    label: 'Art Theme',
+    tags: [
+      'Floral & Botanical',
+      'Nature & Landscape',
+      'Animals & Wildlife',
+      'Cute & Kawaii',
+      'Portraits & Figures',
+      'Religious & Spiritual',
+      'City & Life',
+      'Art & Abstract',
+    ],
+  },
 } as const satisfies Record<string, TagDimension>;
 
 export type DimensionKey = keyof typeof TAG_TAXONOMY;

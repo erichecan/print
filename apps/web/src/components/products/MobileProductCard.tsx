@@ -71,9 +71,6 @@ export function MobileProductCard({ product, index }: MobileProductCardProps) {
   const rating = product.rating?.average || 4.5;
   const reviewCount = product.rating?.count || 1000;
 
-  const badges = ['Best Seller', 'Customer Fave', 'Staff Pick'];
-  const badge = index < 3 ? badges[index % badges.length] : null;
-
   const productColors = product.variants?.filter(v => v.color && v.color.trim() !== '') || [];
   const uniqueColors = Array.from(
     new Map(
@@ -102,17 +99,6 @@ export function MobileProductCard({ product, index }: MobileProductCardProps) {
               sizes="125px"
               priority={index < 4}
             />
-            {badge && (
-              <div className={`mobile-product-card__badge mobile-product-card__badge--${badge.toLowerCase().replace(/\s+/g, '-')}`}>
-                {badge}
-              </div>
-            )}
-            <div className="mobile-product-card__eco">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2d5a27" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8a7 7 0 0 1-7 7c0 1.25-.75 3-3 3z" />
-                <path d="M11 20c-1.78 0-3.22-3.39-3.5-5" />
-              </svg>
-            </div>
           </div>
         </div>
 

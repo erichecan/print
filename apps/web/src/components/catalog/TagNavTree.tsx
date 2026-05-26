@@ -76,7 +76,6 @@ export function TagNavTree() {
 
         {GARMENT_TYPES.map((garment) => {
           const isL1Active = activeGarment === garment;
-          // strip all tree tags so L1 href is clean
           const tagsWithoutTree = activeTags.filter(
             (t) => !GARMENT_TYPES.includes(t) && !AUDIENCES.includes(t) && !NECKLINES.includes(t)
           );
@@ -100,7 +99,6 @@ export function TagNavTree() {
 
                     return (
                       <li key={audience}>
-                        {/* L2 = expand-only, does not filter */}
                         <button
                           type="button"
                           style={ITEM_BTN}
