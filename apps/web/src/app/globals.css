@@ -3862,6 +3862,7 @@ details:not([open]) .filter-toggle-icon::before {
 .plp-new__main {
   display: grid;
   gap: 20px;
+  align-self: start;
 }
 
 .plp-new__title {
@@ -4043,6 +4044,7 @@ details:not([open]) .filter-toggle-icon::before {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  margin-top: auto;
 }
 
 /* 评分 */

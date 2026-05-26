@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { parseTagsParam, TAG_TAXONOMY } from '@/lib/tag-taxonomy';
@@ -9,7 +9,39 @@ const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
 const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
 const NECKLINES = TAG_TAXONOMY.neckline.tags as unknown as string[];
 
-const ACTIVE_STYLE: React.CSSProperties = { background: '#111', color: '#fff', borderColor: '#111' };
+const ITEM_BASE: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  width: '100%',
+  padding: '3px 8px',
+  borderRadius: '6px',
+  border: '1px solid transparent',
+  boxSizing: 'border-box',
+  transition: 'background 0.12s, color 0.12s',
+  textDecoration: 'none',
+  fontSize: '0.8125rem',
+  color: '#555',
+};
+
+const ITEM_L1: React.CSSProperties = { ...ITEM_BASE, fontWeight: 600, color: '#333' };
+const ITEM_L3: React.CSSProperties = { ...ITEM_BASE, fontSize: '0.75rem', color: '#777' };
+const ITEM_BTN: React.CSSProperties = {
+  ...ITEM_BASE,
+  background: 'none',
+  cursor: 'pointer',
+  textAlign: 'left',
+  fontFamily: 'inherit',
+};
+const ACTIVE: React.CSSProperties = { background: '#111', color: '#fff', borderColor: '#111' };
+const ICON_STYLE: React.CSSProperties = {
+  fontSize: '16px',
+  fontWeight: 300,
+  lineHeight: 1,
+  width: '16px',
+  textAlign: 'center',
+  flexShrink: 0,
+};
 
 function buildTagsHref(tags: string[]): string {
   if (tags.length === 0) return '/products';
@@ -19,27 +51,24 @@ function buildTagsHref(tags: string[]): string {
 export function TagNavTree() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [expandedAudience, setExpandedAudience] = useState<string | null>(null);
 
   const activeTags = parseTagsParam(searchParams?.get('tags') ?? null);
   const activeGarment = GARMENT_TYPES.find((g) => activeTags.includes(g)) ?? null;
-  const activeAudience = AUDIENCES.find((a) => activeTags.includes(a)) ?? null;
 
   const isRoot = pathname === '/products' && !activeGarment;
 
   return (
     <nav className="tnt">
-      {/* Header — mirrors tfp__head */}
       <div className="tnt__head">
         <span>Categories</span>
       </div>
 
       <ul className="tnt__l1">
-        {/* All Products */}
         <li>
           <Link
             href="/products"
-            className="tnt__item"
-            style={isRoot ? ACTIVE_STYLE : undefined}
+            style={isRoot ? { ...ITEM_BASE, ...ACTIVE } : ITEM_BASE}
           >
             All Products
           </Link>
@@ -47,6 +76,7 @@ export function TagNavTree() {
 
         {GARMENT_TYPES.map((garment) => {
           const isL1Active = activeGarment === garment;
+          // strip all tree tags so L1 href is clean
           const tagsWithoutTree = activeTags.filter(
             (t) => !GARMENT_TYPES.includes(t) && !AUDIENCES.includes(t) && !NECKLINES.includes(t)
           );
@@ -57,35 +87,30 @@ export function TagNavTree() {
             <li key={garment}>
               <Link
                 href={l1Href}
-                className="tnt__item tnt__item--l1"
-                style={isL1Active ? ACTIVE_STYLE : undefined}
+                style={isL1Active ? { ...ITEM_L1, ...ACTIVE } : ITEM_L1}
               >
                 <span>{garment}</span>
-                <span className="tnt__icon" aria-hidden="true">{isL1Active ? '−' : '+'}</span>
+                <span style={ICON_STYLE} aria-hidden="true">{isL1Active ? '−' : '+'}</span>
               </Link>
 
               {isL1Active && (
                 <ul className="tnt__l2">
                   {AUDIENCES.map((audience) => {
-                    const isL2Active = activeAudience === audience;
-                    const tagsWithoutAudience = activeTags.filter((t) => !AUDIENCES.includes(t));
-                    const l2Tags = isL2Active
-                      ? tagsWithoutAudience
-                      : [...tagsWithoutAudience, audience];
-                    const l2Href = buildTagsHref(l2Tags);
+                    const isExpanded = expandedAudience === audience;
 
                     return (
                       <li key={audience}>
-                        <Link
-                          href={l2Href}
-                          className="tnt__item"
-                          style={isL2Active ? ACTIVE_STYLE : undefined}
+                        {/* L2 = expand-only, does not filter */}
+                        <button
+                          type="button"
+                          style={ITEM_BTN}
+                          onClick={() => setExpandedAudience(isExpanded ? null : audience)}
                         >
                           <span>{audience}</span>
-                          <span className="tnt__icon" aria-hidden="true">{isL2Active ? '−' : '+'}</span>
-                        </Link>
+                          <span style={ICON_STYLE} aria-hidden="true">{isExpanded ? '−' : '+'}</span>
+                        </button>
 
-                        {isL2Active && (
+                        {isExpanded && (
                           <ul className="tnt__l3">
                             {NECKLINES.map((neckline) => {
                               const isL3Active = activeTags.includes(neckline);
@@ -101,8 +126,7 @@ export function TagNavTree() {
                                 <li key={neckline}>
                                   <Link
                                     href={l3Href}
-                                    className="tnt__item tnt__item--l3"
-                                    style={isL3Active ? ACTIVE_STYLE : undefined}
+                                    style={isL3Active ? { ...ITEM_L3, ...ACTIVE } : ITEM_L3}
                                   >
                                     {neckline}
                                   </Link>
@@ -126,7 +150,6 @@ export function TagNavTree() {
           font-size: 0.875rem;
         }
 
-        /* Header — mirrors tfp__head */
         .tnt__head {
           display: flex;
           justify-content: space-between;
@@ -139,7 +162,6 @@ export function TagNavTree() {
           border-bottom: 2px solid #111;
         }
 
-        /* Lists */
         .tnt__l1,
         .tnt__l2,
         .tnt__l3 {
@@ -163,49 +185,6 @@ export function TagNavTree() {
         .tnt__l3 {
           padding-left: 10px;
           margin: 2px 0 4px;
-        }
-
-        /* Item links — match tfp__item style */
-        .tnt__item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-          padding: 3px 8px;
-          border-radius: 6px;
-          border: 1px solid transparent;
-          box-sizing: border-box;
-          transition: background 0.12s, color 0.12s;
-          text-decoration: none;
-          font-size: 0.8125rem;
-          color: #555;
-        }
-
-        .tnt__item--l1 {
-          font-weight: 600;
-          color: #333;
-        }
-
-        .tnt__item--l3 {
-          font-size: 0.75rem;
-          color: #777;
-        }
-
-        .tnt__item:hover {
-          background: #f5f5f5;
-          border-color: #ddd;
-          color: #111;
-        }
-
-        /* +/- icon */
-        .tnt__icon {
-          font-size: 16px;
-          color: inherit;
-          font-weight: 300;
-          line-height: 1;
-          width: 16px;
-          text-align: center;
-          flex-shrink: 0;
         }
       `}</style>
     </nav>

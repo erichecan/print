@@ -373,10 +373,9 @@ export default function ProductsClient({
                   <Image
                     src={img}
                     alt={alt || product.name}
-                    width={480}
-                    height={600}
+                    fill
                     sizes="(max-width: 768px) 100vw, 320px"
-                    style={{ transition: 'opacity 0.3s ease-in-out' }} // 添加过渡效果
+                    style={{ objectFit: 'cover', transition: 'opacity 0.3s ease-in-out' }}
                   />
                   {/* 显示促销活动标签 */}
                   {bestPromotion && (

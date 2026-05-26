@@ -1611,25 +1611,38 @@ exports.getProductByVariantId = async (req, res) => {
       (product.images && product.images[0]?.url ? optimizeImageUrl(product.images[0].url, req) : null) ||
       '/assets/hero/hero-card-tee.jpg';
 
-    // Filter product images by color name using alt text pattern: "product-name - color-name - view"
-    const getColorImages = (colorName) => {
-      if (!colorName) return [];
-      return (product.images || []).filter((img) => {
-        if (!img.alt) return false;
-        const parts = img.alt.split(' - ');
-        return parts.length >= 3 &&
-          parts[parts.length - 2].toLowerCase() === colorName.toLowerCase();
-      });
+    // Extract "{style_code}_{color_code}" prefix from image URL filename
+    // e.g. "000045_040" from "https://cdn/.../000045_040_front_UUID.jpg"
+    const getColorPrefix = (imageUrl) => {
+      if (!imageUrl) return null;
+      const filename = imageUrl.split('/').pop().split('?')[0];
+      const parts = filename.split('_');
+      if (parts.length < 3) return null;
+      return parts[0] + '_' + parts[1];
+    };
+
+    const getColorImages = (colorPrefix) => {
+      if (!colorPrefix) return [];
+      return (product.images || []).filter(
+        (img) => img.url && img.url.includes('/' + colorPrefix + '_')
+      );
     };
 
     const getViewUrl = (colorImages, view) => {
-      const img = colorImages.find(
-        (i) => (i.alt || '').split(' - ').pop()?.toLowerCase() === view
-      );
+      // Prefer regular (non-women's-fit) image: filename ends with _view.png / _view.jpg
+      const exactImg = colorImages.find((i) => {
+        if (!i.url) return false;
+        const filename = i.url.split('/').pop().split('?')[0];
+        return filename.endsWith('_' + view + '.png') || filename.endsWith('_' + view + '.jpg');
+      });
+      if (exactImg) return optimizeImageUrl(exactImg.url, req);
+      // Fallback: any image containing _view_ (e.g. _front_f.png)
+      const img = colorImages.find((i) => i.url && i.url.includes('_' + view + '_'));
       return img?.url ? optimizeImageUrl(img.url, req) : null;
     };
 
-    const variantColorImages = getColorImages(variant.color);
+    const variantColorPrefix = getColorPrefix(variant.imageUrl);
+    const variantColorImages = getColorImages(variantColorPrefix);
     const baseImages = {
       front: getViewUrl(variantColorImages, 'front') || fallbackImage,
       back: getViewUrl(variantColorImages, 'back') || null,
@@ -1672,16 +1685,23 @@ exports.getProductByVariantId = async (req, res) => {
       }
     });
 
-    // 转换为数组格式，附带每个颜色的 imageUrls
-    colorMap.forEach((colorInfo) => {
-      const imgs = getColorImages(colorInfo.name);
+    // 转换为数组格式，附带每个颜色的 imageUrls（通过 filename prefix 匹配）
+    colorMap.forEach((colorInfo, colorName) => {
+      const colorVariant = (product.variants || []).find(
+        (v) => v.color === colorName && v.imageUrl
+      );
+      const prefix = getColorPrefix(colorVariant?.imageUrl);
+      const imgs = prefix ? getColorImages(prefix) : [];
+      const frontFromVariant = colorVariant?.imageUrl
+        ? optimizeImageUrl(colorVariant.imageUrl, req)
+        : null;
       colorDetails.push({
         name: colorInfo.name,
         hex: colorInfo.hex,
         availableSizes: Array.from(colorInfo.sizes).sort(),
         isAvailable: colorInfo.isAvailable,
         imageUrls: {
-          front: getViewUrl(imgs, 'front'),
+          front: getViewUrl(imgs, 'front') || frontFromVariant,
           back: getViewUrl(imgs, 'back'),
           left_sleeve: getViewUrl(imgs, 'left'),
           right_sleeve: getViewUrl(imgs, 'right'),

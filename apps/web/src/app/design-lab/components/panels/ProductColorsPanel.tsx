@@ -86,27 +86,42 @@ const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
 
         {/* Colors Section - Styled like Add Text Color Picker */}
         <div className="dl-colors-section">
-          {/* Selected Color Header - Matches uploaded_image_0 */}
+          {/* Selected Color Header */}
           <div className="dl-color-picker__header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Selected Swatch Preview */}
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                backgroundColor: currentColorObj?.hex || '#ccc',
-                borderRadius: '6px', // Slightly rounded
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-              }}
-            />
+            {currentColorObj?.imageUrls?.front ? (
+              <img
+                src={currentColorObj.imageUrls.front}
+                alt={currentColorObj.name}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  objectFit: 'cover',
+                  borderRadius: '6px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  backgroundColor: currentColorObj?.hex || '#ccc',
+                  borderRadius: '6px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                }}
+              />
+            )}
             <span className="dl-color-picker__title" style={{ fontSize: '16px', fontWeight: '500', color: '#111' }}>
               {currentColorObj?.name || selectedColor || 'Select Color'}
             </span>
           </div>
 
-          {/* Color Grid - Matching Add Text style via updated CSS */}
+          {/* Color Grid - thumbnail images as swatches */}
           <div className="dl-product-colors-panel__colors-grid" style={{ gap: '5px' }}>
             {colors.map((color) => {
               const isSelected = selectedColor === color.name;
+              const thumbUrl = color.imageUrls?.front;
 
               return (
                 <button
@@ -117,8 +132,13 @@ const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
                   title={color.name}
                   className={`dl-product-colors-panel__color-swatch ${isSelected ? 'is-selected' : ''}`}
                   style={{
-                    backgroundColor: color.hex || '#ccc',
-                    opacity: color.isAvailable ? 1 : 0.3
+                    backgroundColor: thumbUrl ? 'transparent' : (color.hex || '#ccc'),
+                    backgroundImage: thumbUrl ? `url(${thumbUrl})` : undefined,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    opacity: color.isAvailable ? 1 : 0.3,
+                    padding: 0,
+                    overflow: 'hidden',
                   }}
                 />
               );

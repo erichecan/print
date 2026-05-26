@@ -187,8 +187,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     const productId = searchParams?.get('productId') || undefined;
     const colorId = searchParams?.get('colorId') || undefined;
     const variantId = searchParams?.get('variantId') || undefined;
+    const sizeParam = searchParams?.get('size') || undefined;
 
-    console.log('[DesignLab 5.0] 功能2 - URL 参数:', { productId, colorId, variantId });
+    console.log('[DesignLab 5.0] 功能2 - URL 参数:', { productId, colorId, variantId, size: sizeParam });
+
+    if (sizeParam) {
+      setInitialSize(sizeParam);
+    }
 
     // 如果有 variantId，优先从服务端预取的数据中获取
     if (initialProductData && variantId) {
@@ -580,6 +585,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   });
   const [getPriceSizeQuantities, setGetPriceSizeQuantities] = useState<SizeQuantity[]>([]);
   const [getPriceEstimatedQuantity, setGetPriceEstimatedQuantity] = useState<number>(1);
+  const [initialSize, setInitialSize] = useState<string | null>(null);
   const [getPriceQuoteData, setGetPriceQuoteData] = useState<any>(null);
 
   // 5.0 版本：功能叠加 - 视图切换功能
@@ -829,7 +835,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     try {
       // Fetch product detail (supports both slug and variantId via getProduct)
       // Fix: Use getProduct which handles slug -> id mapping correctly
-      const productDetail = await getProduct(productId);
+      let productDetail = await getProduct(productId);
+
+      // If slug lookup returned no variantId/colorDetails, re-fetch via first variant
+      // to get color-specific baseImages and full colorDetails (same as entering via product detail page)
+      if (productDetail && !productDetail.variantId && productDetail.variants?.length) {
+        try {
+          const firstVariantId = productDetail.variants[0].id;
+          productDetail = await getProductByVariant(firstVariantId);
+        } catch (e) {
+          // Fall through with partial data from slug lookup
+        }
+      }
 
       if (productDetail) {
         const color = productDetail.color || 'White';
@@ -4421,6 +4438,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         getQuoteData={getQuoteDataInternal}
         productName={productInfo.productName}
         variants={productInfo.variants}
+        initialSize={initialSize}
         // Pass persistent states
         currentStep={getPriceStep}
         setCurrentStep={setGetPriceStep}

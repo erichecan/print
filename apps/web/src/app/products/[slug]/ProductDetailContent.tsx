@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import SafeImage from '@/components/SafeImage';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
@@ -72,7 +72,9 @@ const currencyFormatter = new Intl.NumberFormat('en-CA', {
 export function ProductDetailContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const slug = params?.slug as string;
+  const colorParam = searchParams?.get('color') ?? null;
   const { success, error: showError } = useToast();
   const { addToCart, isLoading: isAddingToCart } = useAddToCart({
     onSuccess: (cartCount) => {
@@ -115,12 +117,26 @@ export function ProductDetailContent() {
   useEffect(() => {
     if (!product) return;
     if (selectedColor || selectedSize) return;
+
+    if (colorParam) {
+      const matched = product.variants.find(v => v.color === colorParam);
+      if (matched) {
+        setSelectedColor(matched.color);
+        const firstSize = product.variants
+          .filter(v => v.color === matched.color && v.stockQuantity > 0)
+          .map(v => v.size)
+          .filter(Boolean)[0];
+        if (firstSize) setSelectedSize(firstSize as string);
+        return;
+      }
+    }
+
     const firstVariant = product.variants[0];
     if (firstVariant) {
       setSelectedColor(firstVariant.color || null);
       setSelectedSize(firstVariant.size || null);
     }
-  }, [product, selectedColor, selectedSize]);
+  }, [product, selectedColor, selectedSize, colorParam]);
 
   useEffect(() => {
     if (!slug) return;

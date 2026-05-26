@@ -23,6 +23,7 @@ interface GetPriceFlowModalProps {
   getQuoteData?: () => Promise<{ sidesUsed: string[]; layerCount: number }> | { sidesUsed: string[]; layerCount: number };
   productName?: string;
   variants?: any[]; // Added variants prop
+  initialSize?: string | null; // Pre-selected size from product detail page
   // States lifted from parent for persistence
   currentStep: GetPriceFlowStep;
   setCurrentStep: React.Dispatch<React.SetStateAction<GetPriceFlowStep>>;
@@ -55,7 +56,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   onAddToCart,
   getQuoteData,
   productName = 'Design Item',
-  variants, // Destructure variants
+  variants,
+  initialSize,
   currentStep,
   setCurrentStep,
   orderingOptions,
@@ -291,10 +293,10 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   React.useEffect(() => {
     if (currentStep === 'quantity' && sizeQuantities.length === 0 && orderingOptions.sizesQuantities === 'i-know-sizes') {
       setSizeQuantities(
-        allSizes.map(size => ({ size, quantity: 0 }))
+        allSizes.map(size => ({ size, quantity: initialSize === size ? 1 : 0 }))
       );
     }
-  }, [currentStep, orderingOptions.sizesQuantities, allSizes, sizeQuantities.length]);
+  }, [currentStep, orderingOptions.sizesQuantities, allSizes, sizeQuantities.length, initialSize]);
 
   // 检查是否有上传的图片（用于 Content Check）
   React.useEffect(() => {
