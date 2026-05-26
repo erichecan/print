@@ -172,6 +172,7 @@ model Product {
   isSystem           Boolean             @default(false) @map("is_system")
   deleted            Boolean             @default(false)
   deletedAt          DateTime?           @map("deleted_at")
+  tags               String[]            @default([])
   collectionProducts CollectionProduct[]
   productCategories  ProductCategory[]
   colorImages        ProductColorImage[]
