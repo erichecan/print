@@ -146,22 +146,53 @@ export default function ProductsClient({
 
   // 颜色映射表（用于将颜色名称映射到hex值，如果没有colorHex）
   const COLOR_MAP: Record<string, string> = {
-    'black': '#000000',
-    'blue': '#0066CC',
+    'black': '#1a1a1a',
     'white': '#FFFFFF',
     'grey': '#808080',
     'gray': '#808080',
-    'green': '#00CC00',
-    'red': '#CC0000',
-    'pink': '#FF99CC',
-    'purple': '#9933CC',
+    'charcoal': '#4a4a4a',
+    'dark heather': '#5a5a5a',
+    'heather grey': '#AAAAAA',
+    'heather': '#BBBBBB',
+    'navy': '#001F5B',
+    'dark navy': '#001040',
+    'royal': '#4169E1',
+    'sapphire': '#0F52BA',
+    'blue': '#0066CC',
+    'light blue': '#87CEEB',
+    'carolina blue': '#56A0D3',
+    'antique sapphire': '#4E5D8A',
+    'red': '#CC2200',
+    'cardinal': '#AA0000',
+    'maroon': '#800000',
+    'sport scarlet red': '#CC1111',
+    'orange': '#FF6600',
+    'gold': '#FFB300',
+    'daisy': '#FFDD00',
     'yellow': '#FFCC00',
-    'orange': '#FF9900',
-    'brown': '#996633',
-    'heather': '#CCCCCC',
-    'camo': '#4A5D23',
-    'tie-dye': '#FF00FF',
+    'green': '#2E7D32',
+    'forest green': '#1B5E20',
+    'irish green': '#3A9D23',
+    'sage': '#8FAF6E',
+    'military green': '#4B5320',
+    'kelly': '#4CBB17',
+    'purple': '#6A0DAD',
+    'lilac': '#C8A2C8',
+    'violet': '#8B00FF',
+    'pink': '#E91E8C',
+    'light pink': '#FFB6C1',
+    'azalea': '#F28DB3',
+    'heliconia': '#DF3A7A',
+    'brown': '#795548',
+    'chocolate': '#4E2222',
     'sand': '#D7C6A4',
+    'natural': '#F5F0E8',
+    'cream': '#FFFDD0',
+    'ash': '#D3D3D3',
+    'sport grey': '#C0C0C0',
+    'ice grey': '#E8E8E8',
+    'camo': '#4A5D23',
+    'tie-dye': '#CC44AA',
   };
 
   // 生成产品标签（示例数据）
@@ -218,28 +249,12 @@ export default function ProductsClient({
           };
           const hoveredColor = hoveredColors[product.id];
 
-          // 主图选择逻辑：优先显示白色变体图片，无白色则用黑色，最后回退到 primaryImage
+          // 主图选择逻辑：优先使用产品主图，回退到第一个变体图
           const getDefaultImage = () => {
-            // 1. 优先查找白色变体的 imageUrl
-            const whiteVariant = product.variants?.find(v => {
-              const color = (v.color || '').trim();
-              return color === 'White' || color === 'white' || color === '白';
-            });
-            if (whiteVariant?.imageUrl) {
-              return whiteVariant.imageUrl;
-            }
-
-            // 2. 如果没有白色，查找黑色变体的 imageUrl
-            const blackVariant = product.variants?.find(v => {
-              const color = (v.color || '').trim();
-              return color === 'Black' || color === 'black' || color === '黑';
-            });
-            if (blackVariant?.imageUrl) {
-              return blackVariant.imageUrl;
-            }
-
-            // 3. 如果都没有，使用产品主图或第一张图片
-            return product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
+            return product.primaryImage?.url
+              || product.images?.[0]?.url
+              || product.variants?.[0]?.imageUrl
+              || fallbackImage;
           };
 
           let img = getDefaultImage();
