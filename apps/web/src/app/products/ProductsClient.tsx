@@ -75,7 +75,7 @@ export default function ProductsClient({
   const filterParams = [
     'fit', 'decoration', 'color', 'size', 'material', 'type', 'style',
     'neckline', 'feature', 'price', 'brand', 'rushDelivery',
-    'multiAddress', 'noMinimum', 'category'
+    'multiAddress', 'noMinimum', 'category', 'minPrice', 'maxPrice'
   ];
 
   const apiUrl = new URL(`${API_BASE_URL}/products`);

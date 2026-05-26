@@ -525,6 +525,8 @@ exports.getProducts = async (req, res) => {
     const brandFilter = req.query.brand ? req.query.brand.split(',') : [];
     const sizeFilter = req.query.size ? req.query.size.split(',') : [];
     const tagsFilter = req.query.tags ? req.query.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const minPriceFilter = req.query.minPrice !== undefined ? parseFloat(req.query.minPrice) : null;
+    const maxPriceFilter = req.query.maxPrice !== undefined ? parseFloat(req.query.maxPrice) : null;
 
     // Build where clause
     const where = {
@@ -637,6 +639,20 @@ exports.getProducts = async (req, res) => {
           },
         },
       });
+    }
+
+    // Filter by price range (basePrice is stored in cents)
+    if (minPriceFilter !== null || maxPriceFilter !== null) {
+      const priceCondition = {};
+      if (minPriceFilter !== null && !isNaN(minPriceFilter)) {
+        priceCondition.gte = Math.round(minPriceFilter * 100);
+      }
+      if (maxPriceFilter !== null && !isNaN(maxPriceFilter)) {
+        priceCondition.lte = Math.round(maxPriceFilter * 100);
+      }
+      if (Object.keys(priceCondition).length > 0) {
+        andConditions.push({ basePrice: priceCondition });
+      }
     }
 
     // Filter by tags — OR within each dimension, AND across dimensions
