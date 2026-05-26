@@ -36,26 +36,31 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
+  align-items: start;
 }
 
 .you-might-like-item {
   text-decoration: none;
   color: inherit;
-  transition: transform 0.2s ease;
+  background: var(--color-bg-subtle, #f8f8f8);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .you-might-like-item:hover {
-  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.14);
 }
 
 .you-might-like-image-wrapper {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 0;
   overflow: hidden;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  margin-bottom: 12px;
+  background: var(--color-bg-subtle, #f8f8f8);
+  flex-shrink: 0;
 }
 
 .you-might-like-image {
@@ -66,13 +71,14 @@
 }
 
 .you-might-like-item:hover .you-might-like-image {
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .you-might-like-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 12px 14px;
 }
 
 .you-might-like-title-text {
