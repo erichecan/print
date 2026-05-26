@@ -9,6 +9,8 @@ const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
 const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
 const NECKLINES = TAG_TAXONOMY.neckline.tags as unknown as string[];
 
+const ACTIVE_STYLE: React.CSSProperties = { background: '#111', color: '#fff', borderColor: '#111' };
+
 function buildTagsHref(tags: string[]): string {
   if (tags.length === 0) return '/products';
   return `/products?tags=${encodeURIComponent(tags.join(','))}`;
@@ -34,7 +36,11 @@ export function TagNavTree() {
       <ul className="tnt__l1">
         {/* All Products */}
         <li>
-          <Link href="/products" className={`tnt__item${isRoot ? ' tnt__item--active' : ''}`}>
+          <Link
+            href="/products"
+            className="tnt__item"
+            style={isRoot ? ACTIVE_STYLE : undefined}
+          >
             All Products
           </Link>
         </li>
@@ -51,7 +57,8 @@ export function TagNavTree() {
             <li key={garment}>
               <Link
                 href={l1Href}
-                className={`tnt__item tnt__item--l1${isL1Active ? ' tnt__item--active' : ''}`}
+                className="tnt__item tnt__item--l1"
+                style={isL1Active ? ACTIVE_STYLE : undefined}
               >
                 <span>{garment}</span>
                 <span className="tnt__icon" aria-hidden="true">{isL1Active ? '−' : '+'}</span>
@@ -71,7 +78,8 @@ export function TagNavTree() {
                       <li key={audience}>
                         <Link
                           href={l2Href}
-                          className={`tnt__item${isL2Active ? ' tnt__item--active' : ''}`}
+                          className="tnt__item"
+                          style={isL2Active ? ACTIVE_STYLE : undefined}
                         >
                           <span>{audience}</span>
                           <span className="tnt__icon" aria-hidden="true">{isL2Active ? '−' : '+'}</span>
@@ -93,7 +101,8 @@ export function TagNavTree() {
                                 <li key={neckline}>
                                   <Link
                                     href={l3Href}
-                                    className={`tnt__item tnt__item--l3${isL3Active ? ' tnt__item--active' : ''}`}
+                                    className="tnt__item tnt__item--l3"
+                                    style={isL3Active ? ACTIVE_STYLE : undefined}
                                   >
                                     {neckline}
                                   </Link>
@@ -186,18 +195,6 @@ export function TagNavTree() {
           background: #f5f5f5;
           border-color: #ddd;
           color: #111;
-        }
-
-        .tnt__item--active {
-          background: #111;
-          color: #fff;
-          border-color: #111;
-        }
-
-        .tnt__item--active:hover {
-          background: #333;
-          border-color: #333;
-          color: #fff;
         }
 
         /* +/- icon */
