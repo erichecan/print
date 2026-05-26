@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { parseTagsParam, TAG_TAXONOMY } from '@/lib/tag-taxonomy';
@@ -7,6 +8,13 @@ import { parseTagsParam, TAG_TAXONOMY } from '@/lib/tag-taxonomy';
 const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
 const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
 const NECKLINES = TAG_TAXONOMY.neckline.tags as unknown as string[];
+
+const ACTIVE_STYLE: React.CSSProperties = {
+  background: '#111',
+  color: '#fff',
+  borderColor: '#111',
+  borderRadius: '6px',
+};
 
 function buildTagsHref(tags: string[]): string {
   if (tags.length === 0) return '/products';
@@ -44,7 +52,8 @@ export function TagNavTree() {
             <li key={garment}>
               <Link
                 href={l1Href}
-                className={`tnt__link tnt__link--l1${isL1Active ? ' tnt__link--active' : ''}`}
+                className="tnt__link tnt__link--l1"
+                style={isL1Active ? ACTIVE_STYLE : undefined}
               >
                 {garment}
               </Link>
@@ -63,7 +72,8 @@ export function TagNavTree() {
                       <li key={audience}>
                         <Link
                           href={l2Href}
-                          className={`tnt__link tnt__link--l2${isL2Active ? ' tnt__link--active' : ''}`}
+                          className="tnt__link tnt__link--l2"
+                          style={isL2Active ? ACTIVE_STYLE : undefined}
                         >
                           {audience}
                         </Link>
@@ -81,7 +91,8 @@ export function TagNavTree() {
                                 <li key={neckline}>
                                   <Link
                                     href={l3Href}
-                                    className={`tnt__link tnt__link--l3${isL3Active ? ' tnt__link--active' : ''}`}
+                                    className="tnt__link tnt__link--l3"
+                                    style={isL3Active ? ACTIVE_STYLE : undefined}
                                   >
                                     {neckline}
                                   </Link>
@@ -174,16 +185,6 @@ export function TagNavTree() {
           color: #111;
         }
 
-        .tnt__link--active {
-          background: #111 !important;
-          color: #fff !important;
-          border-color: #111 !important;
-        }
-
-        .tnt__link--active:hover {
-          background: #333 !important;
-          border-color: #333 !important;
-        }
       `}</style>
     </nav>
   );
