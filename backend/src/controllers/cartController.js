@@ -311,7 +311,7 @@ exports.getCart = async (req, res) => {
 // POST /api/cart/items - Add item to cart
 exports.addItem = async (req, res) => {
   try {
-    const { variantId, designId, quantity = 1, sizeBreakdown, metadata } = req.body;
+    let { variantId, designId, quantity = 1, sizeBreakdown, metadata } = req.body;
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
@@ -333,8 +333,28 @@ exports.addItem = async (req, res) => {
       return res.status(400).json({ error: 'Quantity must be at least 1' });
     }
 
-// Verify variant exists and get price
-    // 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
+// Auto-resolve 'default' variant (same logic as designController)
+    if (variantId === 'default') {
+      try {
+        const defaultVariant = await prisma.variant.findFirst({
+          where: {
+            product: {
+              isActive: true,
+              isCustomizable: true,
+            },
+          },
+          include: { product: true },
+        });
+        if (defaultVariant) {
+          variantId = defaultVariant.id;
+          logger.info('Auto-resolved default variant', { resolvedVariantId: variantId });
+        }
+      } catch (err) {
+        logger.error('Error resolving default variant:', err);
+      }
+    }
+
+    // Verify variant exists and get price
     const variant = await prisma.variant.findUnique({
       where: { id: variantId },
       include: {
