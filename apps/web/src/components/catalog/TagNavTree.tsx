@@ -26,6 +26,31 @@ const L2_STYLE: React.CSSProperties = { ...LINK_BASE, fontSize: '0.8125rem', col
 const L3_STYLE: React.CSSProperties = { ...LINK_BASE, fontSize: '0.75rem', color: '#777' };
 const ACTIVE_OVERRIDE: React.CSSProperties = { background: '#111', color: '#fff', borderColor: '#111' };
 
+const LIST_L1_STYLE: React.CSSProperties = {
+  listStyle: 'none',
+  padding: 0,
+  margin: '4px 0 0',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+};
+const LIST_L2_STYLE: React.CSSProperties = {
+  listStyle: 'none',
+  paddingLeft: '10px',
+  margin: '4px 0',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+};
+const LIST_L3_STYLE: React.CSSProperties = {
+  listStyle: 'none',
+  paddingLeft: '10px',
+  margin: '4px 0',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+};
+
 function buildTagsHref(tags: string[]): string {
   if (tags.length === 0) return '/products';
   return `/products?tags=${encodeURIComponent(tags.join(','))}`;
@@ -47,11 +72,9 @@ export function TagNavTree() {
         All Products
       </Link>
 
-      <ul className="tnt__l1">
+      <ul className="tnt__l1" style={LIST_L1_STYLE}>
         {GARMENT_TYPES.map((garment) => {
           const isL1Active = activeGarment === garment;
-
-          // Toggle: selecting an active garment removes it and all child tags
           const tagsWithoutTree = activeTags.filter(
             (t) => !GARMENT_TYPES.includes(t) && !AUDIENCES.includes(t) && !NECKLINES.includes(t)
           );
@@ -69,7 +92,7 @@ export function TagNavTree() {
               </Link>
 
               {isL1Active && (
-                <ul className="tnt__l2">
+                <ul className="tnt__l2" style={LIST_L2_STYLE}>
                   {AUDIENCES.map((audience) => {
                     const isL2Active = activeAudience === audience;
                     const tagsWithoutAudience = activeTags.filter((t) => !AUDIENCES.includes(t));
@@ -89,12 +112,15 @@ export function TagNavTree() {
                         </Link>
 
                         {isL2Active && (
-                          <ul className="tnt__l3">
+                          <ul className="tnt__l3" style={LIST_L3_STYLE}>
                             {NECKLINES.map((neckline) => {
                               const isL3Active = activeTags.includes(neckline);
+                              const tagsWithoutNecklines = activeTags.filter(
+                                (t) => !NECKLINES.includes(t)
+                              );
                               const l3Tags = isL3Active
-                                ? activeTags.filter((t) => t !== neckline)
-                                : [...activeTags, neckline];
+                                ? tagsWithoutNecklines
+                                : [...tagsWithoutNecklines, neckline];
                               const l3Href = buildTagsHref(l3Tags);
 
                               return (
