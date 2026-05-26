@@ -1605,23 +1605,37 @@ exports.getProductByVariantId = async (req, res) => {
     });
 
     const product = variant.product;
-    const optimizedImages = (product.images || [])
-      .map((img) => (img?.url ? optimizeImageUrl(img.url, req) : null))
-      .filter(Boolean);
 
     const fallbackImage =
       variant.imageUrl ||
-      optimizedImages[0] ||
+      (product.images && product.images[0]?.url ? optimizeImageUrl(product.images[0].url, req) : null) ||
       '/assets/hero/hero-card-tee.jpg';
 
-    // Use exact indices from uploaded order
-    // 0: Front, 1: Back, 2: Left Sleeve, 3: Right Sleeve
+    // Filter product images by color name using alt text pattern: "product-name - color-name - view"
+    const getColorImages = (colorName) => {
+      if (!colorName) return [];
+      return (product.images || []).filter((img) => {
+        if (!img.alt) return false;
+        const parts = img.alt.split(' - ');
+        return parts.length >= 3 &&
+          parts[parts.length - 2].toLowerCase() === colorName.toLowerCase();
+      });
+    };
+
+    const getViewUrl = (colorImages, view) => {
+      const img = colorImages.find(
+        (i) => (i.alt || '').split(' - ').pop()?.toLowerCase() === view
+      );
+      return img?.url ? optimizeImageUrl(img.url, req) : null;
+    };
+
+    const variantColorImages = getColorImages(variant.color);
     const baseImages = {
-      front: optimizedImages[0] || fallbackImage,
-      back: optimizedImages[1] || null, // Don't fallback to front
-      sleeve: optimizedImages[2] || null, // Legacy support
-      'left-sleeve': optimizedImages[2] || null,
-      'right-sleeve': optimizedImages[3] || null,
+      front: getViewUrl(variantColorImages, 'front') || fallbackImage,
+      back: getViewUrl(variantColorImages, 'back') || null,
+      sleeve: getViewUrl(variantColorImages, 'left') || null,
+      'left-sleeve': getViewUrl(variantColorImages, 'left') || null,
+      'right-sleeve': getViewUrl(variantColorImages, 'right') || null,
     };
 
     const colors = Array.from(
@@ -1658,13 +1672,20 @@ exports.getProductByVariantId = async (req, res) => {
       }
     });
 
-    // 转换为数组格式
+    // 转换为数组格式，附带每个颜色的 imageUrls
     colorMap.forEach((colorInfo) => {
+      const imgs = getColorImages(colorInfo.name);
       colorDetails.push({
         name: colorInfo.name,
         hex: colorInfo.hex,
         availableSizes: Array.from(colorInfo.sizes).sort(),
         isAvailable: colorInfo.isAvailable,
+        imageUrls: {
+          front: getViewUrl(imgs, 'front'),
+          back: getViewUrl(imgs, 'back'),
+          left_sleeve: getViewUrl(imgs, 'left'),
+          right_sleeve: getViewUrl(imgs, 'right'),
+        },
       });
     });
 
@@ -1679,7 +1700,7 @@ exports.getProductByVariantId = async (req, res) => {
       colors,
       colorDetails, // 添加颜色详细信息
       baseImages,
-      gallery: optimizedImages,
+      gallery: (product.images || []).map((img) => img?.url ? optimizeImageUrl(img.url, req) : null).filter(Boolean),
       variants: product.variants.map((v) => {
         // Synchronize with global size fee config
         const globalFee = v.size ? globalFeeMap[v.size] : undefined;

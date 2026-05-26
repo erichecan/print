@@ -109,6 +109,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     colorId?: string; // CRITICAL: This is the productVariantId
     productName?: string;
     variants?: Array<{ id: string; color: string; }>;
+    colorDetails?: Array<{
+      name: string;
+      hex: string;
+      availableSizes: string[];
+      isAvailable: boolean;
+      imageUrls?: { front: string | null; back: string | null; left_sleeve: string | null; right_sleeve: string | null; };
+    }>;
     printableArea?: {
       front: { width: number; height: number; x: number; y: number };
       back: { width: number; height: number; x: number; y: number };
@@ -139,8 +146,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         slug: initialProductData.slug,
         colorId: initialProductData.variantId, // CRITICAL: Set colorId from variantId
         productName: initialProductData.productName || initialProductData.name,
-
         variants: initialProductData.variants,
+        colorDetails: initialProductData.colorDetails || [],
         printableArea: initialProductData.printableArea,
       };
     }
@@ -215,6 +222,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         colorId: initialProductData.variantId || initialProductData.colorId || variantId,
         productName: initialProductData.productName || initialProductData.name,
         variants: initialProductData.variants || [],
+        colorDetails: initialProductData.colorDetails || [],
       });
       return;
     }
@@ -233,19 +241,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             let resolvedColor = product.color || 'White';
             let resolvedVariantId = product.variantId;
 
-            // 改进：根据颜色名称查找对应的 variantId
-            if (colorId) {
-              const matchedColor = PRODUCT_COLORS.find(c => c.name.toLowerCase() === colorId.toLowerCase());
-              if (matchedColor) {
-                resolvedColor = matchedColor.name;
-                // 尝试从 variants 中找到匹配该颜色的 ID
-                if (product.variants && product.variants.length > 0) {
-                  // 优先找 exact match
-                  const variant = product.variants.find(v => v.color?.toLowerCase() === resolvedColor.toLowerCase());
-                  if (variant) {
-                    resolvedVariantId = variant.id;
-                  }
-                }
+            // 根据 URL colorId 参数匹配产品实际颜色和 variantId
+            if (colorId && product.variants && product.variants.length > 0) {
+              const matchedVariant = product.variants.find(
+                (v) => v.color?.toLowerCase() === colorId.toLowerCase()
+              );
+              if (matchedVariant) {
+                resolvedColor = matchedVariant.color || resolvedColor;
+                resolvedVariantId = matchedVariant.id;
               }
             }
 
@@ -298,8 +301,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 'left-sleeve': images['left-sleeve'],
                 'right-sleeve': images['right-sleeve'],
               },
-              variants: (product.variants || []).map(v => ({ ...v, color: v.color || '' })), // 保存 variants 列表
-              printableArea: product.printableArea, // Add dynamic printable area
+              variants: (product.variants || []).map(v => ({ ...v, color: v.color || '' })),
+              colorDetails: product.colorDetails || [],
+              printableArea: product.printableArea,
             }));
 
             // 更新 URL 参数以包含 variantId (可选)
@@ -484,28 +488,20 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 5.0 Version: Dynamic Color Mapping State
   const [dynamicColors, setDynamicColors] = useState<any[]>([]);
 
-  // [2026-03-03 14:55:00] 使用 preview-from-settings：直接读取 settings.site.colorMappings，保证 Product & Color 与 admin Color Mapping 一致
+  // 从产品原生 colorDetails 派生 dynamicColors（不再使用 colorMapping API）
   useEffect(() => {
-    fetch('/api/proxy/product-color-images/preview-from-settings')
-      .then(res => res.json())
-      .then(res => {
-        const data = res.data || [];
-        if (Array.isArray(data)) {
-          const mapped = data.map((d: any) => ({
-            name: d.name ?? d.colorName,
-            hex: d.hex ?? '#cccccc',
-            externalColorId: d.externalColorId,
-            availableSizes: ["S", "M", "L", "XL", "2XL", "3XL"],
-            isAvailable: d.isActive !== false,
-            imageUrls: d.imageUrls
-          }));
-          mapped.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-          console.log('[DesignLab 5.0] Loaded dynamic colors from mapping API:', mapped.length);
-          setDynamicColors(mapped);
-        }
-      })
-      .catch(err => console.error('[DesignLab 5.0] Failed to load color mapping:', err));
-  }, []);
+    const details = productInfo.colorDetails;
+    if (details && details.length > 0) {
+      const colors = details.map((c) => ({
+        name: c.name,
+        hex: c.hex,
+        availableSizes: c.availableSizes,
+        isAvailable: c.isAvailable,
+        imageUrls: c.imageUrls,
+      }));
+      setDynamicColors(colors);
+    }
+  }, [productInfo.colorDetails]);
 
   // 保存模块：设计名称状态（独立管理，因为 SaveShareModal 需要可编辑）
   const [designName, setDesignName] = useState<string>('Untitled Design');
@@ -849,10 +845,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           color,
           baseImages,
           productId: productDetail.productId,
-          slug: productDetail.slug, // Capture slug
-          colorId: productDetail.variantId, // CRITICAL: Set colorId from variantId
+          slug: productDetail.slug,
+          colorId: productDetail.variantId,
           productName: productDetail.productName,
-          variants: (productDetail.variants || []).map(v => ({ ...v, color: v.color || '' })), // Fix type mismatch
+          variants: (productDetail.variants || []).map(v => ({ ...v, color: v.color || '' })),
+          colorDetails: (productDetail.colorDetails || []) as any,
           printableArea: productDetail.printableArea,
         };
 
@@ -903,54 +900,55 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     await handleProductSelect(product.id);
   };
 
-  // 颜色选择处理 - 简化版：仅依靠后台 Color Mapping 数据
+  // 颜色选择处理 - 使用产品原生 colorDetails 数据（不依赖 colorMapping）
   const handleColorSelect = async (colorName: string) => {
-    console.log('[DesignLab 5.0] handleColorSelect (Simplified):', colorName);
+    console.log('[DesignLab 5.0] handleColorSelect:', colorName);
 
-    // 从 dynamicColors 中寻找匹配项
-    const colorObj = dynamicColors.find(c =>
-      c.name.toLowerCase() === colorName.toLowerCase()
+    const colorObj = dynamicColors.find(
+      (c) => c.name.toLowerCase() === colorName.toLowerCase()
     );
 
     if (colorObj && colorObj.imageUrls) {
-      console.log('[DesignLab 5.0] Updating productInfo from color mapping:', colorName);
-
       let newBaseImages = {
         front: colorObj.imageUrls.front || productInfo.baseImages.front,
         back: colorObj.imageUrls.back || productInfo.baseImages.back,
-        sleeve: colorObj.imageUrls.left_sleeve || colorObj.imageUrls.sleeve || productInfo.baseImages.sleeve,
-        'left-sleeve': colorObj.imageUrls.left_sleeve || colorObj.imageUrls.sleeve,
-        'right-sleeve': colorObj.imageUrls.right_sleeve || colorObj.imageUrls.sleeve,
+        sleeve: colorObj.imageUrls.left_sleeve || productInfo.baseImages.sleeve,
+        'left-sleeve': colorObj.imageUrls.left_sleeve || null,
+        'right-sleeve': colorObj.imageUrls.right_sleeve || null,
       };
 
-      // CRITICAL FIX: Force use local high-res assets for White sleeves (Demo Quality)
+      // Force local high-res assets for White sleeves
       if (colorName.toLowerCase() === 'white') {
         const defaults = getDefaultProductBaseImages('White');
         newBaseImages = {
           ...newBaseImages,
           'left-sleeve': defaults['left-sleeve'],
           'right-sleeve': defaults['right-sleeve'],
-          'sleeve': defaults['sleeve']
+          'sleeve': defaults['sleeve'],
         };
-        console.log('[DesignLab 5.0] Force-applied high-res local assets for White sleeves (Color Select)');
       }
 
-      setProductInfo(prev => ({
+      // Find a variant ID for this color from the product's own variants
+      const matchedVariant = productInfo.variants?.find(
+        (v) => v.color?.toLowerCase() === colorName.toLowerCase()
+      );
+      const resolvedColorId = matchedVariant?.id || productInfo.colorId;
+
+      setProductInfo((prev) => ({
         ...prev,
         color: colorName,
-        colorId: colorObj.externalColorId, // 使用映射表中的 ID
-        baseImages: newBaseImages
+        colorId: resolvedColorId,
+        baseImages: newBaseImages,
       }));
 
-      // 更新浏览器 URL
-      if (typeof window !== 'undefined' && colorObj.externalColorId) {
+      if (typeof window !== 'undefined') {
         const url = new URL(window.location.href);
         url.searchParams.set('colorId', colorName);
-        url.searchParams.set('variantId', colorObj.externalColorId);
+        if (resolvedColorId) url.searchParams.set('variantId', resolvedColorId);
         window.history.replaceState({}, '', url.toString());
       }
     } else {
-      console.warn('[DesignLab 5.0] Color not found in mapping or missing images:', colorName);
+      console.warn('[DesignLab 5.0] Color not found in product colorDetails or missing imageUrls:', colorName);
     }
   };
 

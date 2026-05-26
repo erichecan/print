@@ -18,6 +18,12 @@ export interface ProductColor {
   hex: string;
   availableSizes: string[];
   isAvailable: boolean;
+  imageUrls?: {
+    front: string | null;
+    back: string | null;
+    left_sleeve: string | null;
+    right_sleeve: string | null;
+  };
 }
 
 export interface ProductDetail {
