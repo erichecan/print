@@ -10,6 +10,11 @@ const TagNavTree = dynamic(
   { ssr: false }
 );
 
+const TagFilterPanel = dynamic(
+  () => import('@/components/catalog/TagFilterPanel').then((mod) => ({ default: mod.TagFilterPanel })),
+  { ssr: false }
+);
+
 const ProductsClient = dynamic(() => import('./ProductsClient'), { ssr: false });
 
 type Collection = { id: string; name: string; slug: string };
@@ -71,6 +76,7 @@ export function PLPLayoutClient({
       <div className="plp-new__grid">
         <aside className="plp-new__sidebar">
           <TagNavTree />
+          <TagFilterPanel />
         </aside>
 
         <div className="plp-new__main">
