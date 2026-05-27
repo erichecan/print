@@ -5,6 +5,7 @@
 * Admin 路径不显示 header/footer
  */
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Marcellus, Instrument_Sans, Noto_Sans_SC, Noto_Sans_TC, Noto_Sans_JP, Noto_Sans_Devanagari } from 'next/font/google';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
@@ -117,6 +118,24 @@ export default function RootLayout({
       <body className={`${marcellus.variable} ${instrumentSans.variable} ${notoSansSC.variable} ${notoSansTC.variable} ${notoSansJP.variable} ${notoSansDevanagari.variable}`}>
         <GlobalErrorFilter /> {/* 过滤不相关的浏览器错误 */}
         <StripeConfigValidator /> {/* Stripe 配置验证 */}
+
+        <Script
+          id="tawk-to"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+              (function(){
+                var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+                s1.async=true;
+                s1.src='https://embed.tawk.to/6a173b8f3f9e9f1c33fcd582/1jplc19pb';
+                s1.charset='UTF-8';
+                s1.setAttribute('crossorigin','*');
+                s0.parentNode.insertBefore(s1,s0);
+              })();
+            `,
+          }}
+        />
 
         <AuthProvider>
           <CartProvider>
