@@ -245,6 +245,13 @@ export default function ContactClient() {
                     <p className="mt-1 text-sm text-gray-500">
                       Available in the Design Lab and Help Center for real-time collaboration.
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => (window as any).Tawk_API?.maximize()}
+                      className="mt-2 text-sm font-medium text-red-600 hover:text-red-800 cursor-pointer bg-transparent border-none p-0"
+                    >
+                      Start Live Chat →
+                    </button>
                   </div>
                 </li>
               </ul>

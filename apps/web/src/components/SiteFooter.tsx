@@ -53,11 +53,11 @@ export function SiteFooter() {
       title: 'Contact',
       links: [
         { label: '416-916-6352', href: 'tel:4169166352' },
-        { label: 'Live Chat', href: '/help#chat' },
+        { label: 'Live Chat', href: '#', onClick: () => (window as any).Tawk_API?.maximize() },
         { label: 'Email Us', href: '/contact' },
       ],
     },
-  ];
+  ] as { title: string; links: { label: string; href: string; onClick?: () => void }[] }[];
 
   return (
     <footer style={{ background: '#29272B', color: '#fff' }} className="font-sans">
@@ -157,14 +157,26 @@ export function SiteFooter() {
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {col.links.map((link) => (
                     <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', textDecoration: 'none', transition: 'color 0.2s' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.75)')}
-                      >
-                        {link.label}
-                      </Link>
+                      {link.onClick ? (
+                        <button
+                          type="button"
+                          onClick={link.onClick}
+                          style={{ background: 'none', border: 'none', padding: 0, fontSize: '14px', color: 'rgba(255,255,255,0.75)', textDecoration: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.75)')}
+                        >
+                          {link.label}
+                        </button>
+                      ) : (
+                        <Link
+                          href={link.href}
+                          style={{ fontSize: '14px', color: 'rgba(255,255,255,0.75)', textDecoration: 'none', transition: 'color 0.2s' }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.75)')}
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -222,12 +234,22 @@ export function SiteFooter() {
                   <ul style={{ listStyle: 'none', padding: '0 0 20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {col.links.map((link) => (
                       <li key={link.label}>
-                        <Link
-                          href={link.href}
-                          style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}
-                        >
-                          {link.label}
-                        </Link>
+                        {link.onClick ? (
+                          <button
+                            type="button"
+                            onClick={link.onClick}
+                            style={{ background: 'none', border: 'none', padding: 0, fontSize: '14px', color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}
+                          >
+                            {link.label}
+                          </button>
+                        ) : (
+                          <Link
+                            href={link.href}
+                            style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}
+                          >
+                            {link.label}
+                          </Link>
+                        )}
                       </li>
                     ))}
                   </ul>
