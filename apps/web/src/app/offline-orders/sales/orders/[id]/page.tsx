@@ -498,9 +498,27 @@ export default function SalesOrderDetailPage() {
         }
         .print-specs {
           font-size: 7pt; background: #fefce8; border: 1px solid #fde047;
-          padding: 2px 4px; margin: 2px 0; border-radius: 2px;
+          padding: 4px 6px; margin: 3px 0 4px 0; border-radius: 2px;
         }
-        .print-specs span { margin-right: 8px; }
+        .print-specs-label {
+          font-weight: 700; color: #854d0e; margin-bottom: 3px;
+          display: flex; align-items: center; gap: 4px;
+        }
+        .pos-table { width: 100%; border-collapse: collapse; font-size: 7pt; }
+        .pos-table th {
+          text-align: left; color: #92400e; font-weight: 600;
+          padding: 1px 5px 2px 0; border-bottom: 1px solid #fde68a; white-space: nowrap;
+        }
+        .pos-table td { padding: 1.5px 5px 1.5px 0; color: #713f12; vertical-align: top; }
+        .pos-table tr:not(:last-child) td { border-bottom: 1px solid #fef9c3; }
+        .logo-size-cell {
+          font-family: monospace; color: #1d4ed8; background: #eff6ff;
+          padding: 0 3px; border-radius: 2px; white-space: nowrap; font-size: 6.5pt;
+        }
+        .method-badge {
+          display: inline-block; background: #fff; border: 1px solid #fde68a;
+          border-radius: 2px; padding: 0 3px; font-size: 6pt; color: #92400e;
+        }
         .color-block { margin-top: 2px; }
         .color-line {
           display: flex;
@@ -658,14 +676,48 @@ export default function SalesOrderDetailPage() {
                     </span>
                   </div>
 
-                  {/* 印刷概览（简单拼一行） */}
-                  {printPositionsByProduct[productId] && (
+                  {/* 印刷位置详情表格（含 Logo Size） */}
+                  {printPositionsByProduct[productId] && printPositionsByProduct[productId].length > 0 && (
                     <div className="print-specs">
-                      <span>🛠️ {t('printPositions') || 'Print Positions'}:</span>
-                      {(printPositionsByProduct[productId] || [])
-                        .map((pos: any) => pos.positionName || pos.positionKey || '')
-                        .filter(Boolean)
-                        .join(' / ')}
+                      <div className="print-specs-label">🛠️ {t('printPositions') || 'Print Positions'}:</div>
+                      <table className="pos-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: '18%' }}>Position</th>
+                            <th style={{ width: '18%' }}>Method</th>
+                            <th style={{ width: '28%' }}>Logo Size</th>
+                            <th>Notes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {printPositionsByProduct[productId].map((pos: any, idx: number) => {
+                            const posName = pos.positionName || pos.position || pos.positionKey || '—';
+                            const method = pos.method || pos.printingStyle || '—';
+                            const logoSize = (() => {
+                              if (pos.widthMm || pos.heightMm) {
+                                const parts = [];
+                                if (pos.widthMm) parts.push(`W: ${pos.widthMm}mm`);
+                                if (pos.heightMm) parts.push(`H: ${pos.heightMm}mm`);
+                                return parts.join(' × ');
+                              }
+                              const w = pos.width;
+                              const h = pos.height;
+                              if (w && h && w !== '0' && h !== '0') return `W: ${w}" × H: ${h}"`;
+                              if (w && w !== '0') return `W: ${w}"`;
+                              if (h && h !== '0') return `H: ${h}"`;
+                              return null;
+                            })();
+                            return (
+                              <tr key={idx}>
+                                <td><strong>{posName}</strong></td>
+                                <td>{method !== '—' ? <span className="method-badge">{method}</span> : '—'}</td>
+                                <td>{logoSize ? <span className="logo-size-cell">{logoSize}</span> : '—'}</td>
+                                <td>{pos.notes || '—'}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   )}
 
