@@ -240,9 +240,14 @@ export function SiteHeader() {
               </svg>
               <div>
                 <span className="label">Chat with a Real Person</span>
-                <Link className="value" href="/help#guestbook">
+                <button
+                  type="button"
+                  className="value"
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'inherit' }}
+                  onClick={() => (window as any).Tawk_API?.maximize()}
+                >
                   Chat now
-                </Link>
+                </button>
               </div>
             </div>
           </div>

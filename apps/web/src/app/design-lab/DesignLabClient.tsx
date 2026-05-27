@@ -4166,9 +4166,7 @@ return (
           <a href="tel:4169166352" className="dl-header__link" aria-label="Talk to a Real Person">
             📞 Talk to a Real Person: 416 916 6352
           </a>
-          {/* 修复：Chat Now 链接到留言本 */}
-          {/* 修复：Chat Now 在新窗口打开 */}
-          <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now" target="_blank" rel="noopener noreferrer">Chat Now</Link>
+          <button type="button" className="dl-header__btn" aria-label="Chat Now" onClick={() => (window as any).Tawk_API?.maximize()}>Chat Now</button>
           <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
         </div>
       </div>

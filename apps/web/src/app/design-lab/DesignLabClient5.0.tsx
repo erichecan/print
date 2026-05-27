@@ -3723,7 +3723,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 </span>
                 <div className="dl-header__text-group">
                   <span className="dl-header__label">Chat with a Real Person</span>
-                  <a href="/help#guestbook" className="dl-header__action" target="_blank" rel="noopener noreferrer">Chat now</a>
+                  <button type="button" className="dl-header__action" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', color: 'inherit' }} onClick={() => (window as any).Tawk_API?.maximize()}>Chat now</button>
                 </div>
               </div>
             </div>
