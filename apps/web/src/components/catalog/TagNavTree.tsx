@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { parseTagsParam, TAG_TAXONOMY } from '@/lib/tag-taxonomy';
@@ -8,6 +8,7 @@ import { parseTagsParam, TAG_TAXONOMY } from '@/lib/tag-taxonomy';
 const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
 const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
 const NECKLINES = TAG_TAXONOMY.neckline.tags as unknown as string[];
+const ART_THEMES = TAG_TAXONOMY.artTheme.tags as unknown as string[];
 
 const ITEM_BASE: React.CSSProperties = {
   display: 'flex',
@@ -26,13 +27,6 @@ const ITEM_BASE: React.CSSProperties = {
 
 const ITEM_L1: React.CSSProperties = { ...ITEM_BASE, fontWeight: 600, color: '#333' };
 const ITEM_L3: React.CSSProperties = { ...ITEM_BASE, fontSize: '0.75rem', color: '#777' };
-const ITEM_BTN: React.CSSProperties = {
-  ...ITEM_BASE,
-  background: 'none',
-  cursor: 'pointer',
-  textAlign: 'left',
-  fontFamily: 'inherit',
-};
 const ACTIVE: React.CSSProperties = { background: '#111', color: '#fff', borderColor: '#111' };
 const ICON_STYLE: React.CSSProperties = {
   fontSize: '16px',
@@ -51,10 +45,10 @@ function buildTagsHref(tags: string[]): string {
 export function TagNavTree() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [expandedAudience, setExpandedAudience] = useState<string | null>(null);
 
   const activeTags = parseTagsParam(searchParams?.get('tags') ?? null);
   const activeGarment = GARMENT_TYPES.find((g) => activeTags.includes(g)) ?? null;
+  const activeAudience = AUDIENCES.find((a) => activeTags.includes(a)) ?? null;
 
   const isRoot = pathname === '/products' && !activeGarment;
 
@@ -77,7 +71,7 @@ export function TagNavTree() {
         {GARMENT_TYPES.map((garment) => {
           const isL1Active = activeGarment === garment;
           const tagsWithoutTree = activeTags.filter(
-            (t) => !GARMENT_TYPES.includes(t) && !AUDIENCES.includes(t) && !NECKLINES.includes(t)
+            (t) => !GARMENT_TYPES.includes(t) && !AUDIENCES.includes(t) && !NECKLINES.includes(t) && !ART_THEMES.includes(t)
           );
           const l1Tags = isL1Active ? tagsWithoutTree : [garment, ...tagsWithoutTree];
           const l1Href = buildTagsHref(l1Tags);
@@ -95,20 +89,26 @@ export function TagNavTree() {
               {isL1Active && (
                 <ul className="tnt__l2">
                   {AUDIENCES.map((audience) => {
-                    const isExpanded = expandedAudience === audience;
+                    const isL2Active = activeAudience === audience;
+                    const tagsWithoutAudNeck = activeTags.filter(
+                      (t) => !AUDIENCES.includes(t) && !NECKLINES.includes(t)
+                    );
+                    const l2Tags = isL2Active
+                      ? tagsWithoutAudNeck
+                      : [...tagsWithoutAudNeck, audience];
+                    const l2Href = buildTagsHref(l2Tags);
 
                     return (
                       <li key={audience}>
-                        <button
-                          type="button"
-                          style={ITEM_BTN}
-                          onClick={() => setExpandedAudience(isExpanded ? null : audience)}
+                        <Link
+                          href={l2Href}
+                          style={isL2Active ? { ...ITEM_BASE, ...ACTIVE } : ITEM_BASE}
                         >
                           <span>{audience}</span>
-                          <span style={ICON_STYLE} aria-hidden="true">{isExpanded ? '−' : '+'}</span>
-                        </button>
+                          <span style={ICON_STYLE} aria-hidden="true">{isL2Active ? '−' : '+'}</span>
+                        </Link>
 
-                        {isExpanded && (
+                        {isL2Active && (
                           <ul className="tnt__l3">
                             {NECKLINES.map((neckline) => {
                               const isL3Active = activeTags.includes(neckline);

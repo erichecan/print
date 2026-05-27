@@ -292,24 +292,15 @@ exports.getFilterOptions = async (req, res) => {
       })
     );
 
-    // 获取颜色统计（从variants）
-    // color是String（必填），colorHex是String?（可选），只需过滤空字符串
-    // 使用 prismaClient 而不是 prisma
+    // 获取颜色统计（从variants）— 只按 color 分组，不依赖 colorHex（大量变体没有 hex）
     const colorStats = await prismaClient.variant.groupBy({
-      by: ['color', 'colorHex'],
+      by: ['color'],
       where: {
         product: baseWhere,
-        color: {
-          not: '',
-        },
-        colorHex: {
-          not: '',
-        },
+        color: { not: '' },
       },
-      _count: {
-        _all: true,
-      },
-    }).catch(() => []); // 如果查询失败，返回空数组
+      _count: { _all: true },
+    }).catch(() => []);
 
     // 获取尺寸统计（从variants）
     // size是String（必填），只需过滤空字符串
@@ -379,22 +370,10 @@ exports.getFilterOptions = async (req, res) => {
       };
     });
 
-    // 格式化颜色数据：返回固定颜色列表，即使数量为0
-    // 创建颜色统计映射
-    const colorStatsMap = new Map(
-      colorStats.map((stat) => [stat.color.toLowerCase(), stat._count._all])
-    );
-
-    // 返回固定颜色列表，填充数量
-    const colorOptions = FIXED_COLOR_LIST.map((fixedColor) => {
-      const count = colorStatsMap.get(fixedColor.name.toLowerCase()) || 0;
-      return {
-        name: fixedColor.name,
-        hex: fixedColor.hex,
-        pattern: fixedColor.pattern || false,
-        count: count,
-      };
-    });
+    // 格式化颜色数据：按变体数量降序排列，hex 由前端准确映射表提供
+    const colorOptions = colorStats
+      .map((stat) => ({ name: stat.color, hex: '', count: stat._count._all }))
+      .sort((a, b) => b.count - a.count);
 
     // 格式化尺寸数据
     const sizeOptions = sizeStats
@@ -461,13 +440,8 @@ exports.getFilterOptions = async (req, res) => {
     // 返回默认的筛选选项数据，确保前端能正常渲染
     const defaultFilterData = {
       categories: [],
-      brands: FIXED_COLOR_LIST.map(() => ({ name: '', slug: '', count: 0 })), // 空品牌列表
-      colors: FIXED_COLOR_LIST.map((color) => ({
-        name: color.name,
-        hex: color.hex,
-        pattern: color.pattern || false,
-        count: 0,
-      })),
+      brands: [],
+      colors: [],
       sizes: [],
       priceRanges: [
         { name: '$', count: 0 },
@@ -621,7 +595,7 @@ exports.getProducts = async (req, res) => {
         variants: {
           some: {
             color: {
-              in: colorFilter.map(c => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()), // 首字母大写
+              in: colorFilter.map(c => c.trim()), // exact match; frontend sends correct casing
             },
           },
         },
