@@ -1038,26 +1038,26 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
       const creatorWhereRaw = rawConditionsWithTableAlias(rawConditions, 'o');
       const creatorWhere = creatorWhereRaw.length ? creatorWhereRaw.join(' AND ') : '1=1';
       const creatorResult = await prisma.$queryRawUnsafe(
-        `SELECT 
+        `SELECT
            COALESCE(o.metadata->>'submittedByUserId', 'unknown') AS creator_id,
-           COALESCE(u.first_name, '') AS first_name,
-           COALESCE(u.last_name, '') AS last_name,
-           u.email AS email,
+           MAX(COALESCE(u.first_name, '')) AS first_name,
+           MAX(COALESCE(u.last_name, '')) AS last_name,
+           MAX(u.email) AS email,
            COUNT(*)::int AS order_count,
            COALESCE(SUM(
-             CASE 
-               WHEN (o.configuration->'pricing'->>'total') IS NOT NULL 
+             CASE
+               WHEN (o.configuration->'pricing'->>'total') IS NOT NULL
                     AND (o.configuration->'pricing'->>'total') ~ '^-?[0-9]+\\.?[0-9]*$'
-               THEN (o.configuration->'pricing'->>'total')::numeric 
-               ELSE 0 
+               THEN (o.configuration->'pricing'->>'total')::numeric
+               ELSE 0
              END
            ), 0)::float AS revenue,
            COALESCE(SUM(
-             CASE 
-               WHEN (o.configuration->'pricing'->>'costTotal') IS NOT NULL 
+             CASE
+               WHEN (o.configuration->'pricing'->>'costTotal') IS NOT NULL
                     AND (o.configuration->'pricing'->>'costTotal') ~ '^-?[0-9]+\\.?[0-9]*$'
-               THEN (o.configuration->'pricing'->>'costTotal')::numeric 
-               ELSE 0 
+               THEN (o.configuration->'pricing'->>'costTotal')::numeric
+               ELSE 0
              END
            ), 0)::float AS cost
          FROM offline_orders o
@@ -1066,7 +1066,7 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
           AND (o.metadata->>'submittedByUserId') <> ''
           AND u.id::text = o.metadata->>'submittedByUserId'
          WHERE ${creatorWhere}
-         GROUP BY COALESCE(o.metadata->>'submittedByUserId', 'unknown'), u.first_name, u.last_name, u.email
+         GROUP BY COALESCE(o.metadata->>'submittedByUserId', 'unknown')
          ORDER BY revenue DESC`,
         ...rawParams
       );
