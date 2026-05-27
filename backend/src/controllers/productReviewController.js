@@ -1,204 +1,265 @@
 /**
  * Product Review Controller
-* 产品评价管理
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
-const { getCache, setCache } = require('../config/redis');
+const { uploadBufferToGcs, buildObjectPath } = require('../utils/gcsStorage');
+const multer = require('multer');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
 
-const PRODUCT_REVIEW_CACHE_TTL = 600; // 10 minutes
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only jpg, png, webp images are allowed'));
+  },
+});
 
-// GET /api/products/:id/reviews - 获取产品评价列表
+exports.uploadMiddleware = upload.array('images', 5);
+
+// POST /api/reviews/images/upload
+exports.uploadReviewImages = async (req, res) => {
+  try {
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No images provided' });
+    }
+
+    const urls = await Promise.all(
+      files.map(async (file) => {
+        const ext = path.extname(file.originalname) || '.jpg';
+        const filename = `${uuidv4()}${ext}`;
+        const objectPath = buildObjectPath('reviews', ['temp', filename]);
+        const url = await uploadBufferToGcs(file.buffer, objectPath, { contentType: file.mimetype });
+        return url;
+      })
+    );
+
+    res.json({ urls });
+  } catch (error) {
+    logger.error('[uploadReviewImages]', error);
+    res.status(500).json({ error: 'Failed to upload images' });
+  }
+};
+
+// GET /api/products/:id/reviews
 exports.getProductReviews = async (req, res) => {
   try {
     const { id: productId } = req.params;
     const { page = 1, limit = 10, rating, sort = 'newest' } = req.query;
-    
+
     const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     const take = parseInt(limit, 10);
-    
-    const where = {
-      productId,
-    };
-    
-    if (rating) {
-      where.rating = parseInt(rating, 10);
+
+    const settings = await prisma.productReviewSettings.findUnique({ where: { productId } });
+    if (settings && !settings.reviewsEnabled) {
+      return res.json({
+        data: [],
+        pagination: { page: 1, limit: take, total: 0, totalPages: 0 },
+        stats: { average: 0, count: 0, distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } },
+        reviewsEnabled: false,
+      });
     }
-    
-    const orderBy = sort === 'helpful'
-      ? { helpfulCount: 'desc' }
-      : sort === 'oldest'
-      ? { createdAt: 'asc' }
+
+    const where = { productId, status: 'APPROVED' };
+    if (rating) where.rating = parseInt(rating, 10);
+
+    const orderBy =
+      sort === 'helpful' ? { helpfulCount: 'desc' }
+      : sort === 'oldest' ? { createdAt: 'asc' }
       : { createdAt: 'desc' };
-    
-    const cacheKey = `product:${productId}:reviews:${page}:${limit}:${rating || 'all'}:${sort}`;
-    const cached = await getCache(cacheKey);
-    
-    if (cached) {
-      return res.json(cached);
-    }
-    
-// Removed user include due to missing relation; frontend handles anonymous data
+
+    const maxDisplay = settings?.maxDisplayCount > 0 ? settings.maxDisplayCount : null;
+
+    const effectiveTake = maxDisplay ? Math.min(take, Math.max(0, maxDisplay - skip)) : take;
+
     const [reviews, total] = await Promise.all([
       prisma.productReview.findMany({
         where,
-        take,
+        take: effectiveTake > 0 ? effectiveTake : 0,
         skip,
         orderBy,
       }),
       prisma.productReview.count({ where }),
     ]);
-    
-    // 计算平均评分和评分分布
+
+    const effectiveTotal = maxDisplay ? Math.min(total, maxDisplay) : total;
+
     const ratingStats = await prisma.productReview.groupBy({
       by: ['rating'],
-      where: { productId },
+      where: { productId, status: 'APPROVED' },
       _count: true,
     });
-    
-    const ratingDistribution = {
-      5: 0,
-      4: 0,
-      3: 0,
-      2: 0,
-      1: 0,
-    };
-    
-    ratingStats.forEach((stat) => {
-      ratingDistribution[stat.rating] = stat._count;
-    });
-    
-    const avgRating = await prisma.productReview.aggregate({
-      where: { productId },
+
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    ratingStats.forEach((s) => { distribution[s.rating] = s._count; });
+
+    const agg = await prisma.productReview.aggregate({
+      where: { productId, status: 'APPROVED' },
       _avg: { rating: true },
       _count: true,
     });
-    
-    const response = {
+
+    res.json({
       data: reviews,
       pagination: {
         page: parseInt(page, 10),
         limit: take,
-        total,
-        totalPages: Math.ceil(total / take),
+        total: effectiveTotal,
+        totalPages: Math.ceil(effectiveTotal / take),
       },
       stats: {
-        average: Number(avgRating._avg.rating || 0),
-        count: Number(avgRating._count || 0),
-        distribution: ratingDistribution,
+        average: Number((agg._avg.rating || 0).toFixed(1)),
+        count: Number(agg._count),
+        distribution,
       },
-    };
-    
-    await setCache(cacheKey, response, PRODUCT_REVIEW_CACHE_TTL);
-    res.json(response);
+      reviewsEnabled: true,
+    });
   } catch (error) {
-    logger.error('Error fetching product reviews:', error);
+    logger.error('[getProductReviews]', error);
     res.status(500).json({ error: 'Failed to fetch reviews' });
   }
 };
 
-// POST /api/products/:id/reviews - 提交产品评价
+// GET /api/products/:id/review-summary
+exports.getProductReviewSummary = async (req, res) => {
+  try {
+    const { id: productId } = req.params;
+
+    const settings = await prisma.productReviewSettings.findUnique({ where: { productId } });
+    if (settings && !settings.reviewsEnabled) {
+      return res.json({
+        average: 0,
+        count: 0,
+        distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        reviewsEnabled: false,
+      });
+    }
+
+    const [agg, ratingStats] = await Promise.all([
+      prisma.productReview.aggregate({
+        where: { productId, status: 'APPROVED' },
+        _avg: { rating: true },
+        _count: true,
+      }),
+      prisma.productReview.groupBy({
+        by: ['rating'],
+        where: { productId, status: 'APPROVED' },
+        _count: true,
+      }),
+    ]);
+
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    ratingStats.forEach((s) => { distribution[s.rating] = s._count; });
+
+    res.json({
+      average: Number((agg._avg.rating || 0).toFixed(1)),
+      count: Number(agg._count),
+      distribution,
+      reviewsEnabled: true,
+    });
+  } catch (error) {
+    logger.error('[getProductReviewSummary]', error);
+    res.status(500).json({ error: 'Failed to fetch review summary' });
+  }
+};
+
+// POST /api/products/:id/reviews
 exports.createProductReview = async (req, res) => {
   try {
     const { id: productId } = req.params;
-    const { rating, title, comment, orderId } = req.body;
-    const userId = req.user?.id || null;
-    
-    if (!rating || rating < 1 || rating > 5) {
+    const { rating, title, comment, images = [] } = req.body;
+    const userId = req.user?.id;
+    const isAdmin = req.user?.role === 'ADMIN' || req.user?.role === 'admin';
+
+    if (!userId) return res.status(401).json({ error: 'Login required' });
+    if (!rating || rating < 1 || rating > 5)
       return res.status(400).json({ error: 'Rating must be between 1 and 5' });
-    }
-    
-    if (!title || title.trim().length === 0) {
+    if (!title || title.trim().length === 0)
       return res.status(400).json({ error: 'Review title is required' });
-    }
-    
-    if (!comment || comment.trim().length === 0) {
+    if (!comment || comment.trim().length === 0)
       return res.status(400).json({ error: 'Review comment is required' });
+    if (title.trim().length > 100)
+      return res.status(400).json({ error: 'Title must be 100 characters or less' });
+    if (comment.trim().length > 1000)
+      return res.status(400).json({ error: 'Comment must be 1000 characters or less' });
+
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const settings = await prisma.productReviewSettings.findUnique({ where: { productId } });
+    if (settings && !settings.reviewsEnabled) {
+      return res.status(403).json({ error: 'Reviews are disabled for this product' });
     }
-    
-    // 验证产品存在
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    // 如果已登录，检查是否已经评价过
-    if (userId) {
-      const existingReview = await prisma.productReview.findFirst({
-        where: {
-          productId,
-          userId,
-        },
-      });
-      
-      if (existingReview) {
-        return res.status(400).json({ error: 'You have already reviewed this product' });
-      }
-    }
-    
-    // 如果提供了订单 ID，验证订单并标记为已验证购买
+
+    const existing = await prisma.productReview.findFirst({ where: { productId, userId } });
+    if (existing) return res.status(400).json({ error: 'You have already reviewed this product' });
+
     let isVerifiedPurchase = false;
-    if (orderId && userId) {
-      const order = await prisma.order.findFirst({
+    if (!isAdmin) {
+      const purchasedOrder = await prisma.order.findFirst({
         where: {
-          id: orderId,
           userId,
-          items: {
-            some: {
-              variant: {
-                productId,
-              },
-            },
-          },
+          status: { in: ['DELIVERED', 'SHIPPED', 'COMPLETED'] },
+          items: { some: { variant: { productId } } },
         },
       });
-      
-      if (order) {
-        isVerifiedPurchase = true;
+      if (!purchasedOrder) {
+        return res.status(403).json({ error: 'You must purchase this product before reviewing it' });
       }
+      isVerifiedPurchase = true;
     }
-    
-// Create review without eager-loading user relation
+
     const review = await prisma.productReview.create({
       data: {
         productId,
         userId,
-        orderId: orderId || null,
         rating: parseInt(rating, 10),
         title: title.trim(),
         comment: comment.trim(),
+        images: Array.isArray(images) ? images.slice(0, 5) : [],
         isVerifiedPurchase,
+        status: 'PENDING',
       },
     });
-    
-    // 清除缓存
-    const cachePattern = `product:${productId}:reviews:*`;
-    // 这里需要使用 Redis 的 keys 命令或使用更精细的缓存策略
-    
+
     res.status(201).json({ data: review });
   } catch (error) {
-    logger.error('Error creating product review:', error);
+    logger.error('[createProductReview]', error);
     res.status(500).json({ error: 'Failed to create review' });
   }
 };
 
-// POST /api/reviews/:id/helpful - 标记评价为有用
-exports.markReviewHelpful = async (req, res) => {
+// GET /api/reviews/mine
+exports.getMyReviews = async (req, res) => {
   try {
-    const { id } = req.params;
-    
-    await prisma.productReview.update({
-      where: { id },
-      data: { helpfulCount: { increment: 1 } },
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Login required' });
+
+    const reviews = await prisma.productReview.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: { product: { select: { id: true, name: true, slug: true } } },
     });
-    
-    res.json({ message: 'Review marked as helpful' });
+
+    res.json({ data: reviews });
   } catch (error) {
-    logger.error('Error marking review helpful:', error);
-    res.status(500).json({ error: 'Failed to mark review as helpful' });
+    logger.error('[getMyReviews]', error);
+    res.status(500).json({ error: 'Failed to fetch reviews' });
   }
 };
 
+// POST /api/reviews/:id/helpful
+exports.markReviewHelpful = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.productReview.update({ where: { id }, data: { helpfulCount: { increment: 1 } } });
+    res.json({ message: 'Review marked as helpful' });
+  } catch (error) {
+    logger.error('[markReviewHelpful]', error);
+    res.status(500).json({ error: 'Failed to mark review as helpful' });
+  }
+};

@@ -1273,9 +1273,7 @@ exports.uploadProductImages = async (req, res) => {
 
     const existingCount = await prisma.productImage.count({ where: { productId: id } });
 
-    const useShopifyCdn = isShopifyCdnConfigured();
-
-    // 并行上传所有图片（优先 Shopify CDN，回退到 GCS）
+    // 并行上传所有图片到 GCS
     const createPayload = await Promise.all(
       files.map(async (file, index) => {
         const timestamp = Date.now();
@@ -1287,23 +1285,11 @@ exports.uploadProductImages = async (req, res) => {
         const altText = sanitizeAltText(providedAlt, fallbackAlt);
 
         try {
-          let imageUrl;
-
-          if (useShopifyCdn) {
-            imageUrl = await uploadBufferToShopifyCdn(
-              file.buffer,
-              fileName,
-              file.mimetype,
-              altText
-            );
-            logger.info(`[uploadProductImages] Uploaded to Shopify CDN: ${fileName}`);
-          } else {
-            const objectPath = buildObjectPath('products', [id, fileName]);
-            imageUrl = await uploadBufferToGcs(file.buffer, objectPath, {
-              contentType: file.mimetype,
-            });
-            logger.info(`[uploadProductImages] Uploaded to GCS: ${fileName}`);
-          }
+          const objectPath = buildObjectPath('products', [id, fileName]);
+          const imageUrl = await uploadBufferToGcs(file.buffer, objectPath, {
+            contentType: file.mimetype,
+          });
+          logger.info(`[uploadProductImages] Uploaded to GCS: ${fileName}`);
 
           return {
             productId: id,

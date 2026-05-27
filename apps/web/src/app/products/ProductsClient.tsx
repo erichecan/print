@@ -315,8 +315,8 @@ export default function ProductsClient({
             finalPrice = Math.max(0, basePrice - discountAmount);
           }
 
-          const rating = product.rating?.average || 4.5;
-          const reviewCount = product.rating?.count || 10000;
+          const rating = product.rating?.average ?? 0;
+          const reviewCount = product.rating?.count ?? 0;
           // 从产品variants中获取所有颜色信息（不限制为黑白，支持后续添加其他颜色）
           // 颜色名称映射：将英文颜色名称映射到中文显示名称
           const COLOR_NAME_MAP: Record<string, string> = {
@@ -417,10 +417,12 @@ export default function ProductsClient({
                 </div>
 
                 <div className="product-card-new__price-row">
-                  <div className="product-card-new__rating">
-                    <span className="rating-stars">{'★'.repeat(Math.floor(rating))}{'☆'.repeat(5 - Math.floor(rating))}</span>
-                    <span className="rating-value">{rating.toFixed(1)}</span>
-                  </div>
+                  {rating > 0 && (
+                    <div className="product-card-new__rating">
+                      <span className="rating-stars">{'★'.repeat(Math.floor(rating))}{'☆'.repeat(5 - Math.floor(rating))}</span>
+                      <span className="rating-value">{rating.toFixed(1)}</span>
+                    </div>
+                  )}
                   <div className="product-card-new__price">
                     {bestPromotion && basePrice !== finalPrice ? (
                       <>

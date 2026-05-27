@@ -147,8 +147,8 @@ const NAV_LINKS: NavItem[] = [
   { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts', sub: true },
   { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' },
   { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials', sub: true },
+  { href: '/admin/reviews', label: 'Reviews', icon: 'testimonials', i18n: 'reviews', sub: true },
   { href: '/admin/settings/shipping', label: 'Shipping', icon: 'shipping', i18n: 'shipping' },
-  { href: '/admin/settings/color-mapping', label: 'Color Mapping', icon: 'settings', i18n: 'colorMapping' },
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];
 

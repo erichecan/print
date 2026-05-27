@@ -4016,5 +4016,32 @@ export const shippingTemplateApi = {
     }),
 };
 
+export const adminReviewsApi = {
+  list: (params: { page?: number; limit?: number; status?: string; sort?: string; search?: string }) => {
+    const q = new URLSearchParams();
+    if (params.page) q.set('page', String(params.page));
+    if (params.limit) q.set('limit', String(params.limit));
+    if (params.status && params.status !== 'all') q.set('status', params.status);
+    if (params.sort) q.set('sort', params.sort);
+    if (params.search) q.set('search', params.search);
+    return api<{ data: any[]; pagination: any }>(`/admin/reviews?${q.toString()}`);
+  },
+
+  updateStatus: (id: string, action: 'approve' | 'reject' | 'hide' | 'restore') =>
+    api<{ review: any }>(`/admin/reviews/${id}/status`, { method: 'PATCH', body: { action } }),
+
+  reply: (id: string, reply: string) =>
+    api<{ review: any }>(`/admin/reviews/${id}/reply`, { method: 'POST', body: { reply } }),
+
+  delete: (id: string) =>
+    api<{ success: boolean }>(`/admin/reviews/${id}`, { method: 'DELETE' }),
+
+  getSettings: (productId: string) =>
+    api<{ reviewsEnabled: boolean; maxDisplayCount: number }>(`/admin/products/${productId}/review-settings`),
+
+  updateSettings: (productId: string, data: { reviewsEnabled: boolean; maxDisplayCount: number }) =>
+    api<{ settings: any }>(`/admin/products/${productId}/review-settings`, { method: 'PUT', body: data }),
+};
+
 // End of file
 

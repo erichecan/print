@@ -341,16 +341,10 @@ exports.uploadColorImage = async (req, res) => {
     // Note: We use a fixed product folder for now as per frontend requirement
     const objectPath = `design-lab-products/gildan-softstyle-tshirt/${colorSlug}/${fileName}`;
 
-    let imageUrl;
-    if (isShopifyCdnConfigured()) {
-      const shopifyFilename = `design-lab-${colorSlug}-${fileName}`;
-      imageUrl = await uploadBufferToShopifyCdn(file.buffer, shopifyFilename, 'image/png', colorName);
-    } else {
-      imageUrl = await uploadBufferToGcs(file.buffer, objectPath, {
-        contentType: 'image/png',
-        isPublic: true,
-      });
-    }
+    const imageUrl = await uploadBufferToGcs(file.buffer, objectPath, {
+      contentType: 'image/png',
+      isPublic: true,
+    });
 
     res.json({
       success: true,
