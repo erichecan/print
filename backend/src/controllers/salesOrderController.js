@@ -267,13 +267,20 @@ exports.getSalesCreators = async (req, res) => {
       orderBy: { createdAt: 'asc' }
     });
 
+    const nameCount = {};
+    creators.forEach(u => {
+      const base = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : null;
+      if (base) nameCount[base] = (nameCount[base] || 0) + 1;
+    });
+
     res.json({
-      data: creators.map(u => ({
-        id: u.id,
-        email: u.email,
-        name: u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email,
-        role: u.role
-      }))
+      data: creators.map(u => {
+        const base = u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : null;
+        const name = base
+          ? (nameCount[base] > 1 ? `${base} (${u.email})` : base)
+          : u.email;
+        return { id: u.id, email: u.email, name, role: u.role };
+      })
     });
 
   } catch (error) {
