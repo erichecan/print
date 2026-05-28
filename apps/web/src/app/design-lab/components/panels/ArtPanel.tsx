@@ -165,11 +165,6 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
         ))}
       </div>
 
-      {/* 计数 */}
-      <div className="dl-art-panel__count">
-        {!isLoading && `${total} artwork${total !== 1 ? 's' : ''}`}
-      </div>
-
       {/* 艺术品网格 */}
       <div className="dl-art-panel__assets" ref={assetsRef}>
         {isLoading && <div className="dl-art-panel__loading">Loading...</div>}
