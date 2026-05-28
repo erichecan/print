@@ -387,11 +387,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       if (!productInfo.productId && !defaultLoadingRef.current) {
         defaultLoadingRef.current = true; // 防止 Strict Mode 第二次 effect 重复触发
         console.log('[DesignLab init] starting default tee load');
-        getProduct('gildan-8000-g8000')
+        getProduct('design-lab-default-tee')
           .then((detail: ProductDetail) => {
             if (detail) {
               console.log('[DesignLab init] default tee confirmed, calling handleProductSelect');
-              handleProductSelect('gildan-8000-g8000');
+              handleProductSelect('design-lab-default-tee');
             }
           })
           .catch((err: any) => {
@@ -417,6 +417,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [canvasInitialized, setCanvasInitialized] = useState(false); // 用于触发图片加载的 state
   const [isLoadingDesign, setIsLoadingDesign] = useState(false); // 防止加载设计时重新添加产品图片
   const cleanupMouseListenerRef = useRef<(() => void) | null>(null); // 保存鼠标监听器清理函数
+  const handleAddArtRef = useRef<((url: string, name: string) => void) | null>(null); // Gallery → Design Lab 自动添加 art
   // viewStates removed in favor of useDesignStore for persistence <!-- id: 360 -->
 
   // 调试：监听 canvasInitialized 变化
@@ -1699,6 +1700,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         }
 
         fabricCanvasRef.current = fabricCanvas;
+
+        // Gallery → Design Lab：URL 带 artUrl 参数时，canvas 就绪后自动添加图片
+        const autoArtUrl = new URLSearchParams(window.location.search).get('artUrl');
+        const autoArtName = new URLSearchParams(window.location.search).get('artName') || 'Artwork';
+        if (autoArtUrl) {
+          setTimeout(() => {
+            handleAddArtRef.current?.(decodeURIComponent(autoArtUrl), decodeURIComponent(autoArtName));
+          }, 800);
+        }
 
         // 初始化打印区域参考线 (Initial call)
         addPrintableArea(currentView);
@@ -3693,6 +3703,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
     imgElement.src = imageUrl;
   };
+  handleAddArtRef.current = handleAddArt;
 
   // 5.0 版本：获取当前视图的图片 URL
   // 5.0 版本：获取当前视图的图片 URL
