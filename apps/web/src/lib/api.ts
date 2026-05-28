@@ -4043,5 +4043,38 @@ export const adminReviewsApi = {
     api<{ settings: any }>(`/admin/products/${productId}/review-settings`, { method: 'PUT', body: data }),
 };
 
+export const factoryQueueApi = {
+  list: (params?: { status?: string; search?: string; page?: number; limit?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.status && params.status !== 'all') q.set('status', params.status);
+    if (params?.search) q.set('search', params.search);
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    const qs = q.toString();
+    return api<{ data: any[]; pagination: any; stats: any }>(`/admin/factory-queue${qs ? `?${qs}` : ''}`);
+  },
+
+  sendToFactory: (id: string, printSpecs?: { positions: string[]; method: string; widthCm?: number; heightCm?: number; notes?: string }) =>
+    api<{ success: boolean; order: any; qrCode: string; printToken: string }>(
+      `/admin/factory-queue/${id}/send-to-factory`,
+      { method: 'POST', body: printSpecs ? { printSpecs } : undefined }
+    ),
+
+  updateProductionStatus: (id: string, productionStatus: string) =>
+    api<{ success: boolean; order: any }>(`/admin/factory-queue/${id}/production-status`, {
+      method: 'PATCH',
+      body: { productionStatus },
+    }),
+
+  getFilmSheetData: (id: string) =>
+    api<{ order: any; qrCode: string }>(`/admin/factory-queue/${id}/film-sheet`),
+
+  getQR: (id: string) =>
+    api<{ qrCode: string; printToken: string }>(`/admin/factory-queue/${id}/qr`),
+
+  getGangSheetData: (ids: string[]) =>
+    api<{ data: any[] }>(`/admin/factory-queue/gang-sheet?ids=${ids.join(',')}`),
+};
+
 // End of file
 

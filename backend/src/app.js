@@ -248,6 +248,8 @@ inventoryAlertsRouter.get('/alerts', require('./controllers/inventoryController'
 app.use('/api/admin/inventory', inventoryAlertsRouter);
 app.use('/api/admin/online-categories', require('./routes/adminCategories')); // Admin online category management routes
 app.use('/api/admin/orders', require('./routes/adminOrders')); // Admin order management routes
+app.use('/api/admin/factory-queue', require('./routes/adminFactoryQueue')); // Factory production queue routes
+app.use('/api/factory', require('./routes/factoryScan')); // Public factory scan routes (token-auth)
 app.use('/api/admin/all-orders', require('./routes/unifiedOrders')); // Unified order management routes (online + offline)
 app.use('/api/admin/users', require('./routes/adminUsers')); // Admin user management routes
 app.use('/api/admin/coupons', require('./routes/adminCoupons')); // Admin coupon management routes
@@ -262,6 +264,8 @@ app.use('/api/admin/shipping-templates', require('./routes/adminShippingTemplate
 app.use('/api/admin/fix-images', require('./routes/adminFixImages')); // 临时：修复商品图片记录
 app.use('/api/admin/analytics', require('./routes/adminAnalytics')); // Admin analytics routes for Issue #160
 app.use('/api/admin/sql', require('./routes/adminSql')); // Read-only SQL preview API (admin only)
+app.use('/api/admin/reviews', require('./routes/adminReviews')); // Admin review moderation
+app.use('/api/admin/products', require('./routes/adminReviewSettings')); // Admin product review settings
 app.use('/api/designs', require('./routes/designs')); // Design Lab public routes
 app.use('/api/designs', require('./routes/designComments')); // Design comment routes
 app.use('/api/templates', require('./routes/templates')); // Design template routes
