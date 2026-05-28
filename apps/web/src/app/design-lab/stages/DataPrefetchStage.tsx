@@ -12,7 +12,7 @@
 
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useState, useRef, ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { productsApi, designLabApi } from '@/lib/api';
 
@@ -26,8 +26,13 @@ export function DataPrefetchStage({ children, initialProductData }: DataPrefetch
   const [dataStatus, setDataStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<Error | null>(null);
   const [prefetchedData, setPrefetchedData] = useState<any>(null);
+  // Prevent re-fetching when DesignLabClient writes productId/variantId back to the URL via
+  // window.history.replaceState — Next.js intercepts replaceState and updates useSearchParams,
+  // which would otherwise trigger this effect again and make a redundant API call.
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;
     const loadData = async () => {
       try {
         const productId = searchParams.get('productId');
@@ -68,12 +73,14 @@ export function DataPrefetchStage({ children, initialProductData }: DataPrefetch
           }
         }
 
+        hasFetchedRef.current = true;
         setPrefetchedData(data);
         setDataStatus('ready');
       } catch (err) {
         console.error('[Data Prefetch Stage] 数据预取失败:', err);
         setError(err instanceof Error ? err : new Error(String(err)));
         // 数据预取失败不影响初始化，使用默认数据
+        hasFetchedRef.current = true;
         setPrefetchedData(null);
         setDataStatus('ready');
       }

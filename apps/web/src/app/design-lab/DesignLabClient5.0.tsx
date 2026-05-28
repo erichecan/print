@@ -44,9 +44,10 @@ import SaveShareModal from './components/modals/SaveShareModal';
 import { useDesign } from './modules/save/useDesign';
 // 报价模块：导入报价相关组件和 hooks
 import GetPriceFlowModal, {
-  OrderingOptions,
   SizeQuantity,
-  GetPriceFlowStep
+  GetPriceFlowStep,
+  PrintMethod,
+  PrintSize,
 } from './components/modals/GetPriceFlowModal';
 import { usePricing } from './modules/pricing/usePricing';
 import './design-lab.css';
@@ -74,6 +75,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
   const searchParams = useSearchParams();
 
+  // Tracks the product UUID that was just written to URL via replaceState in handleProductSelect.
+  // Prevents the initialization effect from re-running when useSearchParams picks up that URL change.
+  const replaceStateProductIdRef = useRef<string | null>(null);
+
+  // Prevents React Strict Mode (dev) from calling handleProductSelect twice.
+  // In dev, effects run twice before the first async call finishes updating state,
+  // so productInfo.productId is still '' on the second run — this ref blocks that.
+  const defaultLoadingRef = useRef(false);
+
   // Use Global Store
   const {
     document: designDoc, // Rename to avoid shadowing global document
@@ -91,6 +101,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 5.0 版本：只保留最基本的 state
   // const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve'>('front');
   const [zoomLevel, setZoomLevel] = useState(1); // Zoom state (1=100%, 1.2=120%, 1.5=150%)
+
+  // Designer mode (美工模式): ?mode=designer&orderId=xxx
+  const isDesignerMode = searchParams?.get('mode') === 'designer';
+  const designerOrderId = searchParams?.get('orderId') ?? '';
+  const [designerOrderInfo, setDesignerOrderInfo] = useState<any>(null);
+  const [designerSyncLoading, setDesignerSyncLoading] = useState(false);
+  const [designerSyncDone, setDesignerSyncDone] = useState(false);
+  const [designerShowReject, setDesignerShowReject] = useState(false);
+  const [designerRejectNote, setDesignerRejectNote] = useState('');
+  const [designerRejectLoading, setDesignerRejectLoading] = useState(false);
+  const [designerActionError, setDesignerActionError] = useState('');
 
   // 5.0 版本：功能2 - 改为 useState，支持动态更新
   // 修复：初始状态使用默认白色 T 恤图片，确保用户直接从导航进入时也能正常显示
@@ -181,6 +202,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     init();
   }, [productInfo.productId, productInfo.colorId]);
 
+  // Designer mode: load order info when orderId is present
+  useEffect(() => {
+    if (!isDesignerMode || !designerOrderId) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/api/admin/orders/${designerOrderId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => r.json())
+      .then((data) => setDesignerOrderInfo(data.order || data))
+      .catch(() => {});
+  }, [isDesignerMode, designerOrderId]);
+
   // 5.0 版本：功能2 - 从 URL 参数加载商品信息
   // 修复：添加默认图片机制，如果用户直接从导航进入，显示默认白色 T 恤
   useEffect(() => {
@@ -189,7 +222,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     const variantId = searchParams?.get('variantId') || undefined;
     const sizeParam = searchParams?.get('size') || undefined;
 
-    console.log('[DesignLab 5.0] 功能2 - URL 参数:', { productId, colorId, variantId, size: sizeParam });
+    console.log('[DesignLab init] effect triggered — URL params:', { productId, variantId, colorId }, '| replaceStateRef:', replaceStateProductIdRef.current, '| currentProductId:', productInfo.productId);
 
     if (sizeParam) {
       setInitialSize(sizeParam);
@@ -235,7 +268,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     // 如果有 productId，尝试从 API 获取完整产品信息（包括 variantId）
     // 修复：优先处理 productId，并允许 colorId覆盖默认颜色
     if (productId && !initialProductData) {
-      console.log('[DesignLab 5.0] 功能2 - 从 API 获取指定产品信息:', { productId });
+      // Guard: if handleProductSelect just wrote this productId to URL via replaceState,
+      // skip re-loading — the product is already loaded. Ref is synchronous so it's reliable
+      // regardless of whether React has flushed the state update yet.
+      if (replaceStateProductIdRef.current === productId) {
+        console.log('[DesignLab init guard] Skipping re-fetch — productId matches replaceState ref:', productId);
+        // Do NOT clear the ref here — React Strict Mode fires this effect twice back-to-back.
+        // Clearing on the first run lets the second run slip through the guard.
+        // The ref is naturally overwritten by the next handleProductSelect call, or reset on unmount.
+        return;
+      }
+      console.log('[DesignLab init] loading product from URL param:', { productId, variantId });
 
       getProduct(productId)
         .then((product: ProductDetail) => {
@@ -335,25 +378,25 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
 
     // 修复：如果 URL 中没有 productId（无论是否有 colorId），都加载默认产品
-    // 改进：加载特定的系统内置 Design Lab 默认产品 (design-lab-default-tee)
+    // 改进：使用 gildan-8000-g8000 作为默认产品，直接复用其真实颜色和图片
     // Fix: Do NOT load default product if we are loading a design (designId present)
     const hasDesignId = searchParams.get('designId');
     if (!productId && !initialProductData && !hasDesignId) {
-      console.log('[DesignLab 5.0] No product selected and no design loaded, fetching SYSTEM DEFAULT Design Lab product...');
+      console.log('[DesignLab init] no productId — defaultLoadingRef:', defaultLoadingRef.current, '| productInfo.productId:', productInfo.productId);
 
-      if (!productInfo.productId) {
-        // 直接通过 Slug 获取系统商品，不再通过搜索（搜索已过滤系统商品）
-        getProduct('design-lab-default-tee')
+      if (!productInfo.productId && !defaultLoadingRef.current) {
+        defaultLoadingRef.current = true; // 防止 Strict Mode 第二次 effect 重复触发
+        console.log('[DesignLab init] starting default tee load');
+        getProduct('gildan-8000-g8000')
           .then((detail: ProductDetail) => {
             if (detail) {
-              console.log('[DesignLab 5.0] Loaded system default product:', detail.productName);
-              // 由于 detail 格式与 handleProductSelect 预期一致，我们可以直接更新
-              // 但为了保持一致，我们调用 handleProductSelect（它现在也能处理 slug/id）
-              handleProductSelect('design-lab-default-tee');
+              console.log('[DesignLab init] default tee confirmed, calling handleProductSelect');
+              handleProductSelect('gildan-8000-g8000');
             }
           })
           .catch((err: any) => {
-            console.warn('[DesignLab 5.0] Failed to load system default product, trying any active product...', err);
+            defaultLoadingRef.current = false; // 失败时重置，允许重试
+            console.warn('[DesignLab init] default tee load failed, falling back to first catalog product:', err);
             getProducts({ limit: 1 }).then((res: any) => {
               if (res.data && res.data.length > 0) {
                 handleProductSelect(res.data[0].id);
@@ -576,13 +619,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 报价模块：GetPriceFlowModal 状态
   const [showGetPriceModal, setShowGetPriceModal] = useState(false);
   // Persistent state for GetPriceFlow
-  const [getPriceStep, setGetPriceStep] = useState<GetPriceFlowStep>('quantity');
-  const [getPriceOrderingOptions, setGetPriceOrderingOptions] = useState<OrderingOptions>({
-    orderType: 'buy-ship',
-    shipping: 'single-address',
-    sizesQuantities: 'i-know-sizes',
-    payment: 'i-pay',
-  });
+  const [getPriceStep, setGetPriceStep] = useState<GetPriceFlowStep>('print-method');
+  const [getPricePrintMethod, setGetPricePrintMethod] = useState<PrintMethod>('dtf');
+  const [getPricePrintSize, setGetPricePrintSize] = useState<PrintSize>('medium');
   const [getPriceSizeQuantities, setGetPriceSizeQuantities] = useState<SizeQuantity[]>([]);
   const [getPriceEstimatedQuantity, setGetPriceEstimatedQuantity] = useState<number>(1);
   const [initialSize, setInitialSize] = useState<string | null>(null);
@@ -837,12 +876,16 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       // Fix: Use getProduct which handles slug -> id mapping correctly
       let productDetail = await getProduct(productId);
 
-      // If slug lookup returned no variantId/colorDetails, re-fetch via first variant
+      // If slug lookup returned no variantId/colorDetails, re-fetch via a specific variant
       // to get color-specific baseImages and full colorDetails (same as entering via product detail page)
+      // Prefer White variant as the default; fall back to first variant alphabetically.
       if (productDetail && !productDetail.variantId && productDetail.variants?.length) {
         try {
-          const firstVariantId = productDetail.variants[0].id;
-          productDetail = await getProductByVariant(firstVariantId);
+          const whiteVariant = productDetail.variants.find(
+            (v) => v.color?.toLowerCase() === 'white'
+          );
+          const targetVariantId = (whiteVariant ?? productDetail.variants[0]).id;
+          productDetail = await getProductByVariant(targetVariantId);
         } catch (e) {
           // Fall through with partial data from slug lookup
         }
@@ -850,7 +893,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
       if (productDetail) {
         const color = productDetail.color || 'White';
-        const baseImages = productDetail.baseImages || getDefaultProductBaseImages(color);
+        const rawBaseImages = productDetail.baseImages || getDefaultProductBaseImages(color);
+        // If the backend returned the static fallback (variant has no imageUrl in DB),
+        // use the GCS-generated defaults so the canvas doesn't flash hero-card-tee.jpg.
+        const baseImages = rawBaseImages.front?.includes('hero-card-tee.jpg')
+          ? getDefaultProductBaseImages(color)
+          : rawBaseImages;
 
         console.log('[DesignLab 5.0] Adding NEW product:', {
           name: productDetail.productName,
@@ -885,8 +933,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           // Update product identity in existing design store
           updateProductInfo(newProductInfo.productId, newProductInfo.colorId);
         } else {
-          console.log('[DesignLab 5.0] Adding NEW product to inventory');
-          setProductList(prev => [...prev, newProductInfo]);
+          setProductList(prev => {
+            const alreadyExists = prev.some(p => p.productId === newProductInfo.productId);
+            if (alreadyExists) return prev;
+            return [...prev, newProductInfo];
+          });
         }
 
         // 2. Set as active
@@ -897,13 +948,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         // The background image (product) will be updated by the useEffect watching productInfo.
         // So inheritance is automatic for Art/Text.
 
-        // Update URL to reflect the NEW active product
+        // Update URL to reflect the NEW active product.
+        // Mark the productId in the ref BEFORE replaceState so the initialization effect
+        // can detect and skip the spurious re-run caused by useSearchParams reacting to this.
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.set('productId', productDetail.productId);
           if (productDetail.variantId) {
             url.searchParams.set('variantId', productDetail.variantId);
           }
+          console.log('[DesignLab replaceState] writing productId to URL, setting ref:', productDetail.productId);
+          replaceStateProductIdRef.current = productDetail.productId;
           window.history.replaceState({}, '', url.toString());
         }
       }
@@ -4002,11 +4057,99 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           )}
         </div>
 
+        {/* Designer Mode Banner */}
+        {isDesignerMode && (
+          <div style={{
+            gridColumn: '1 / -1',
+            background: '#1E3A5F',
+            color: '#fff',
+            padding: '10px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            fontSize: 13,
+            flexWrap: 'wrap',
+            zIndex: 100,
+          }}>
+            <span style={{ fontWeight: 700, fontSize: 14, background: '#F59E0B', color: '#000', padding: '3px 10px', borderRadius: 6 }}>
+              美工模式
+            </span>
+            {designerOrderInfo && (
+              <span style={{ opacity: 0.85 }}>
+                订单 <strong>{designerOrderInfo.orderNumber}</strong>
+                {designerOrderInfo.user?.name && ` · ${designerOrderInfo.user.name}`}
+              </span>
+            )}
+            <span style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
+              {designerActionError && (
+                <span style={{ color: '#FCA5A5', fontSize: 12 }}>{designerActionError}</span>
+              )}
+              {designerSyncDone ? (
+                <span style={{ background: '#D1FAE5', color: '#065F46', padding: '6px 14px', borderRadius: 8, fontWeight: 700, fontSize: 13 }}>
+                  ✓ 已同步
+                </span>
+              ) : (
+                <button
+                  disabled={designerSyncLoading || !designerOrderId}
+                  onClick={async () => {
+                    if (!designerOrderId) return;
+                    setDesignerSyncLoading(true);
+                    setDesignerActionError('');
+                    try {
+                      const canvas = fabricCanvasRef.current;
+                      let mockupUrl = '';
+                      if (canvas) {
+                        mockupUrl = canvas.toDataURL({ format: 'png', quality: 0.85 });
+                      }
+                      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                      const res = await fetch(
+                        `${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/api/admin/orders/${designerOrderId}/design-review/sync`,
+                        {
+                          method: 'PATCH',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                          },
+                          body: JSON.stringify({ mockupUrl }),
+                        }
+                      );
+                      if (!res.ok) throw new Error('同步失败');
+                      setDesignerSyncDone(true);
+                    } catch (e: any) {
+                      setDesignerActionError(e.message || '同步失败');
+                    } finally {
+                      setDesignerSyncLoading(false);
+                    }
+                  }}
+                  style={{
+                    padding: '7px 18px', background: '#10B981', color: '#fff',
+                    border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13,
+                    cursor: designerSyncLoading ? 'not-allowed' : 'pointer',
+                    opacity: designerSyncLoading ? 0.6 : 1,
+                  }}
+                >
+                  {designerSyncLoading ? '同步中…' : '同步设计'}
+                </button>
+              )}
+              <button
+                onClick={() => { setDesignerShowReject(true); setDesignerRejectNote(''); setDesignerActionError(''); }}
+                style={{
+                  padding: '7px 16px', background: 'transparent', color: '#FCA5A5',
+                  border: '1px solid #FCA5A5', borderRadius: 8, fontWeight: 600, fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                退回顾客
+              </button>
+            </span>
+          </div>
+        )}
+
         {/* 4. Canvas - 中央画布区域 */}
         {/* 5.0 版本：添加 ref 用于调试 */}
         {/* 步骤2 - 替换为 Fabric.js canvas */}
         <section className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
-          <div className="dl-canvas__preview">
+          <div className="dl-canvas__preview" style={{ position: 'relative' }}>
             <canvas
               ref={canvasRef}
               className="dl-canvas__fabric"
@@ -4017,8 +4160,141 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               canvas={fabricCanvasRef.current}
               fabricModule={fabricRef.current}
             />
+            {/* Designer Mode: ruler overlay (pointer-events:none, purely visual) */}
+            {isDesignerMode && (
+              <div
+                style={{
+                  position: 'absolute', inset: 0, pointerEvents: 'none',
+                  overflow: 'hidden', zIndex: 10,
+                }}
+              >
+                {/* Top ruler */}
+                <div style={{
+                  position: 'absolute', top: 0, left: 20, right: 0, height: 20,
+                  background: 'rgba(30,58,95,0.85)',
+                  display: 'flex', alignItems: 'center',
+                }}>
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <div key={i} style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.3)', height: i % 5 === 0 ? 12 : 6, alignSelf: 'flex-end', position: 'relative' }}>
+                      {i % 5 === 0 && (
+                        <span style={{ position: 'absolute', bottom: 14, left: 2, fontSize: 8, color: '#94A3B8', whiteSpace: 'nowrap' }}>
+                          {i * 5}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {/* Left ruler */}
+                <div style={{
+                  position: 'absolute', top: 20, left: 0, bottom: 0, width: 20,
+                  background: 'rgba(30,58,95,0.85)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                }}>
+                  {Array.from({ length: 20 }).map((_, i) => (
+                    <div key={i} style={{ flex: 1, borderTop: '1px solid rgba(255,255,255,0.3)', width: i % 5 === 0 ? 12 : 6, alignSelf: 'flex-end', position: 'relative' }}>
+                      {i % 5 === 0 && (
+                        <span style={{ position: 'absolute', right: 14, top: 2, fontSize: 8, color: '#94A3B8', writingMode: 'vertical-rl', whiteSpace: 'nowrap' }}>
+                          {i * 5}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {/* DPI warning label */}
+                <div style={{
+                  position: 'absolute', bottom: 8, right: 8,
+                  background: 'rgba(30,58,95,0.85)', color: '#fff',
+                  padding: '4px 10px', borderRadius: 6, fontSize: 11,
+                }}>
+                  300 DPI 推荐 · cm 单位
+                </div>
+              </div>
+            )}
           </div>
         </section>
+
+        {/* Designer Mode: Reject Modal */}
+        {isDesignerMode && designerShowReject && (
+          <div
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setDesignerShowReject(false); }}
+          >
+            <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: 460, maxWidth: '90vw' }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700 }}>退回设计稿给顾客</h3>
+              {designerOrderInfo && (
+                <p style={{ margin: '0 0 20px', fontSize: 13, color: '#6B7280' }}>
+                  订单 {designerOrderInfo.orderNumber}
+                </p>
+              )}
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                退回原因 <span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <select
+                value={designerRejectNote}
+                onChange={(e) => setDesignerRejectNote(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, marginBottom: 12 }}
+              >
+                <option value="">请选择原因</option>
+                <option value="图片分辨率太低，印刷效果差，建议替换高清图片（300DPI 以上）">图片分辨率太低（建议 300DPI 以上）</option>
+                <option value="设计超出印刷区域，请调整到安全框内">设计超出印刷区域</option>
+                <option value="文字太小，印刷后难以辨认，建议放大">文字太小，难以辨认</option>
+                <option value="颜色与面料色系冲突，建议调整设计颜色">颜色与面料色系冲突</option>
+              </select>
+              {designerActionError && (
+                <p style={{ margin: '0 0 12px', fontSize: 13, color: '#EF4444' }}>{designerActionError}</p>
+              )}
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setDesignerShowReject(false)}
+                  style={{ padding: '10px 20px', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 9, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+                >
+                  取消
+                </button>
+                <button
+                  disabled={designerRejectLoading || !designerRejectNote}
+                  onClick={async () => {
+                    if (!designerOrderId || !designerRejectNote) return;
+                    setDesignerRejectLoading(true);
+                    setDesignerActionError('');
+                    try {
+                      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                      const res = await fetch(
+                        `${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/api/admin/orders/${designerOrderId}/design-review/reject`,
+                        {
+                          method: 'PATCH',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                          },
+                          body: JSON.stringify({ note: designerRejectNote }),
+                        }
+                      );
+                      if (!res.ok) throw new Error('退回失败');
+                      setDesignerShowReject(false);
+                      setDesignerRejectNote('');
+                      alert(`已退回订单 ${designerOrderInfo?.orderNumber || ''}`);
+                    } catch (e: any) {
+                      setDesignerActionError(e.message || '退回失败');
+                    } finally {
+                      setDesignerRejectLoading(false);
+                    }
+                  }}
+                  style={{
+                    padding: '10px 20px', background: '#EF4444', color: '#fff',
+                    border: 'none', borderRadius: 9, fontWeight: 700, fontSize: 14,
+                    cursor: (!designerRejectNote || designerRejectLoading) ? 'not-allowed' : 'pointer',
+                    opacity: (!designerRejectNote || designerRejectLoading) ? 0.5 : 1,
+                  }}
+                >
+                  {designerRejectLoading ? '退回中…' : '确认退回'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 5. Sidebar - 右侧视图切换面板 (Desktop Only) */}
         {/* 5.0 版本：与 4.0 版本 UI 一致 - Sidebar 完整内容 */}
@@ -4434,7 +4710,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         isOpen={showGetPriceModal}
         onClose={() => setShowGetPriceModal(false)}
         designId={designId || null}
-        onAddToCart={handleAddToCart}
+        variantId={productInfo.colorId || productInfo.variants?.[0]?.id || null}
         getQuoteData={getQuoteDataInternal}
         productName={productInfo.productName}
         variants={productInfo.variants}
@@ -4442,14 +4718,16 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         // Pass persistent states
         currentStep={getPriceStep}
         setCurrentStep={setGetPriceStep}
-        orderingOptions={getPriceOrderingOptions}
-        setOrderingOptions={setGetPriceOrderingOptions}
         sizeQuantities={getPriceSizeQuantities}
         setSizeQuantities={setGetPriceSizeQuantities}
         estimatedQuantity={getPriceEstimatedQuantity}
         setEstimatedQuantity={setGetPriceEstimatedQuantity}
         quoteData={getPriceQuoteData}
         setQuoteData={setGetPriceQuoteData}
+        printMethod={getPricePrintMethod}
+        setPrintMethod={setGetPricePrintMethod}
+        printSize={getPricePrintSize}
+        setPrintSize={setGetPricePrintSize}
       />
 
       <ColorSelectorModal
