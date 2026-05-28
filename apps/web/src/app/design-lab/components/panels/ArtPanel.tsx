@@ -1,15 +1,21 @@
 /**
  * Art Panel - 艺术素材面板
- * 显示带 artTheme 标签的产品，单屏：搜索 + 主题 pills + 3列网格 + 分页
+ * 显示带 artTheme 标签的产品，单屏：搜索 + 主题 pills + 3列网格 + 数字分页
+ * 页面大小由 ResizeObserver 动态计算，保证不出现纵向滚动条
  */
 'use client';
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { TAG_TAXONOMY } from '@/lib/tag-taxonomy';
 import { API_BASE_URL } from '@/lib/api-config';
 import useSWR from 'swr';
 
 const ART_THEMES = TAG_TAXONOMY.artTheme.tags as unknown as string[];
+
+const ITEM_H = 88;  // px，与 CSS height 一致
+const ITEM_GAP = 6; // px，与 CSS gap 一致
+const COLS = 3;
+const MIN_ROWS = 2;
 
 type ArtProduct = {
   id: string;
@@ -25,13 +31,25 @@ type ProductsResponse = {
   pagination: { page: number; limit: number; total: number; totalPages: number };
 };
 
-const PAGE_SIZE = 20;
-
 const fetcher = (url: string) =>
   fetch(url, { credentials: 'include' }).then((r) => {
     if (!r.ok) throw new Error(`${r.status}`);
     return r.json();
   });
+
+function getPageRange(current: number, total: number): (number | 'ellipsis-l' | 'ellipsis-r')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  let start = Math.max(2, current - 1);
+  let end = Math.min(total - 1, current + 1);
+  if (current <= 3) { start = 2; end = Math.min(total - 1, 5); }
+  if (current >= total - 2) { end = total - 1; start = Math.max(2, total - 4); }
+  const result: (number | 'ellipsis-l' | 'ellipsis-r')[] = [1];
+  if (start > 2) result.push('ellipsis-l');
+  for (let i = start; i <= end; i++) result.push(i);
+  if (end < total - 1) result.push('ellipsis-r');
+  result.push(total);
+  return result;
+}
 
 interface ArtPanelProps {
   onSelectArt: (artUrl: string, artName: string) => void;
@@ -43,13 +61,30 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const assetsRef = useRef<HTMLDivElement>(null);
 
-  // 构建 API URL，和 GalleryClient 逻辑一致
+  // ResizeObserver: 动态计算每页显示的图片数量，让内容恰好填满不出滚动条
+  useEffect(() => {
+    const el = assetsRef.current;
+    if (!el) return;
+    const recalc = () => {
+      const h = el.clientHeight;
+      const rows = Math.max(MIN_ROWS, Math.floor((h + ITEM_GAP) / (ITEM_H + ITEM_GAP)));
+      setPageSize(rows * COLS);
+    };
+    recalc();
+    const obs = new ResizeObserver(recalc);
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  // 构建 API URL
   const tags = activeTheme || ART_THEMES.join(',');
   const params = new URLSearchParams({
     tags,
-    limit: String(PAGE_SIZE),
+    limit: String(pageSize),
     page: String(page),
     includeOutOfStock: 'true',
   });
@@ -85,6 +120,8 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   const getImageUrl = (product: ArtProduct): string | null => {
     return product.primaryImage?.url || product.images?.[0]?.url || null;
   };
+
+  const pageRange = getPageRange(page, totalPages);
 
   return (
     <div className="dl-art-panel">
@@ -134,7 +171,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
       </div>
 
       {/* 艺术品网格 */}
-      <div className="dl-art-panel__assets">
+      <div className="dl-art-panel__assets" ref={assetsRef}>
         {isLoading && <div className="dl-art-panel__loading">Loading...</div>}
         {!isLoading && error && <div className="dl-art-panel__error">Failed to load artworks</div>}
         {!isLoading && !error && artworks.length === 0 && (
@@ -161,7 +198,6 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                   ) : (
                     <div className="dl-art-panel__asset-placeholder">🎨</div>
                   )}
-                  <div className="dl-art-panel__asset-name">{artwork.name}</div>
                 </button>
               );
             })}
@@ -169,14 +205,38 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
         )}
       </div>
 
-      {/* 分页 */}
+      {/* 数字分页 */}
       {totalPages > 1 && (
         <div className="dl-art-panel__pagination">
-          <button type="button" onClick={() => setPage(p => p - 1)} disabled={page <= 1}>
+          <button
+            type="button"
+            className="dl-art-panel__page-btn"
+            onClick={() => setPage(p => p - 1)}
+            disabled={page <= 1}
+          >
             ‹
           </button>
-          <span>{page} / {totalPages}</span>
-          <button type="button" onClick={() => setPage(p => p + 1)} disabled={page >= totalPages}>
+          {pageRange.map((item, idx) =>
+            item === 'ellipsis-l' || item === 'ellipsis-r' ? (
+              <span key={item} className="dl-art-panel__page-ellipsis">…</span>
+            ) : (
+              <button
+                key={`p-${item}`}
+                type="button"
+                className={`dl-art-panel__page-btn ${item === page ? 'is-current' : ''}`}
+                onClick={() => setPage(item as number)}
+                disabled={item === page}
+              >
+                {item}
+              </button>
+            )
+          )}
+          <button
+            type="button"
+            className="dl-art-panel__page-btn"
+            onClick={() => setPage(p => p + 1)}
+            disabled={page >= totalPages}
+          >
             ›
           </button>
         </div>

@@ -1888,9 +1888,8 @@
 .dl-art-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--dl-space-4);
   height: 100%;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* Art Panel子分类导航样式 */
@@ -2080,28 +2079,23 @@
 /* Art Panel: category filter pills */
 .dl-art-panel__pills {
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: var(--dl-space-2);
+  flex-wrap: wrap;
+  gap: 4px;
   padding: 0 var(--dl-space-4) var(--dl-space-2);
-  scrollbar-width: none;
-}
-
-.dl-art-panel__pills::-webkit-scrollbar {
-  display: none;
+  flex-shrink: 0;
 }
 
 .dl-art-panel__pill {
-  flex-shrink: 0;
-  padding: 4px 12px;
+  padding: 2px 8px;
   border: 1px solid var(--dl-border-color);
   border-radius: 999px;
   background: var(--dl-bg-primary);
   color: var(--dl-text-secondary);
-  font-size: var(--dl-font-sm);
+  font-size: 11px;
   cursor: pointer;
   transition: all var(--dl-transition-base);
   white-space: nowrap;
+  line-height: 1.6;
 }
 
 .dl-art-panel__pill:hover {
@@ -2121,6 +2115,7 @@
   font-size: var(--dl-font-sm);
   color: var(--dl-text-secondary);
   min-height: 18px;
+  flex-shrink: 0;
 }
 
 /* Art Panel: pagination */
@@ -2128,81 +2123,93 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--dl-space-3);
-  padding: var(--dl-space-3) var(--dl-space-4);
+  gap: 4px;
+  padding: 6px var(--dl-space-4);
   border-top: 1px solid var(--dl-border-color);
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
-.dl-art-panel__pagination button {
-  width: 28px;
-  height: 28px;
+.dl-art-panel__page-btn {
+  min-width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 4px;
   border: 1px solid var(--dl-border-color);
   border-radius: var(--dl-radius-sm);
   background: var(--dl-bg-primary);
   color: var(--dl-text-primary);
-  font-size: 18px;
+  font-size: 12px;
   cursor: pointer;
   transition: all var(--dl-transition-base);
   line-height: 1;
 }
 
-.dl-art-panel__pagination button:hover:not(:disabled) {
+.dl-art-panel__page-btn:hover:not(:disabled) {
   border-color: var(--dl-color-primary);
   color: var(--dl-color-primary);
 }
 
-.dl-art-panel__pagination button:disabled {
+.dl-art-panel__page-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.dl-art-panel__pagination span {
-  font-size: var(--dl-font-sm);
+.dl-art-panel__page-btn.is-current {
+  background: var(--dl-color-primary);
+  border-color: var(--dl-color-primary);
+  color: #fff;
+  cursor: default;
+}
+
+.dl-art-panel__page-ellipsis {
+  min-width: 20px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
   color: var(--dl-text-secondary);
-  min-width: 60px;
-  text-align: center;
 }
 
 .dl-art-panel__assets {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 var(--dl-space-4);
 }
 
 .dl-art-panel__assets-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--dl-space-2);
+  gap: 6px;
+  align-content: start;
 }
 
 .dl-art-panel__asset-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--dl-space-1);
-  padding: var(--dl-space-2);
+  display: block;
+  padding: 0;
   background: var(--dl-bg-primary);
   border: 1px solid var(--dl-border-color);
   border-radius: var(--dl-radius-sm);
   cursor: pointer;
   transition: all var(--dl-transition-base);
-  min-height: 100px;
+  height: 88px;
+  overflow: hidden;
 }
 
 .dl-art-panel__asset-item:hover {
-  background: var(--dl-bg-panel);
   border-color: var(--dl-color-primary);
   box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
 }
 
 .dl-art-panel__asset-item img {
   width: 100%;
-  height: 60px;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .dl-art-panel__asset-placeholder {
