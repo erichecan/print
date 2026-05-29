@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:3001/api';
@@ -37,7 +37,7 @@ const NEXT_STATUS: Record<string, { status: string; label: string; bg: string }>
   IN_PRODUCTION: { status: 'DONE', label: 'Mark as Done', bg: '#10B981' },
 };
 
-export default function FactoryScanPage() {
+function FactoryScanContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
@@ -218,6 +218,20 @@ export default function FactoryScanPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FactoryScanPage() {
+  return (
+    <Suspense fallback={
+      <div style={pageStyle}>
+        <div style={cardStyle}>
+          <p style={{ color: '#6B7280', textAlign: 'center', fontSize: 16 }}>Loading…</p>
+        </div>
+      </div>
+    }>
+      <FactoryScanContent />
+    </Suspense>
   );
 }
 
