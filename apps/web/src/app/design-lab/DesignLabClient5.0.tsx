@@ -4068,42 +4068,44 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           )}
         </div>
 
-        {/* Designer Mode Banner */}
+        {/* Designer Mode Banner — fixed floating top bar */}
         {isDesignerMode && (
           <div style={{
-            gridColumn: '1 / -1',
+            position: 'fixed', top: 70, left: 0, right: 0,
             background: '#1E3A5F',
             color: '#fff',
-            padding: '10px 24px',
+            padding: '5px 16px',
             display: 'flex',
             alignItems: 'center',
-            gap: 16,
-            fontSize: 13,
-            flexWrap: 'wrap',
-            zIndex: 100,
+            gap: 12,
+            fontSize: 12,
+            zIndex: 9999,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
           }}>
-            <span style={{ fontWeight: 700, fontSize: 14, background: '#F59E0B', color: '#000', padding: '3px 10px', borderRadius: 6 }}>
+            <span style={{ fontWeight: 700, fontSize: 11, background: '#F59E0B', color: '#000', height: 20, display: 'inline-flex', alignItems: 'center', padding: '0 8px', borderRadius: 4, whiteSpace: 'nowrap', letterSpacing: '0.03em' }}>
               美工模式
             </span>
             {designerOrderInfo && (
-              <span style={{ opacity: 0.85 }}>
+              <span style={{ opacity: 0.8, fontSize: 12 }}>
                 订单 <strong>{designerOrderInfo.orderNumber}</strong>
                 {designerOrderInfo.user?.name && ` · ${designerOrderInfo.user.name}`}
               </span>
             )}
-            <span style={{ marginLeft: 'auto', display: 'flex', gap: 10, alignItems: 'center' }}>
+            <span style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
               {designerActionError && (
-                <span style={{ color: '#FCA5A5', fontSize: 12 }}>{designerActionError}</span>
+                <span style={{ color: '#FCA5A5', fontSize: 11 }}>{designerActionError}</span>
               )}
               {designerSyncDone ? (
-                <span style={{ background: '#D1FAE5', color: '#065F46', padding: '6px 14px', borderRadius: 8, fontWeight: 700, fontSize: 13 }}>
+                <span style={{ background: '#D1FAE5', color: '#065F46', height: 20, display: 'inline-flex', alignItems: 'center', padding: '0 8px', borderRadius: 4, fontWeight: 700, fontSize: 11 }}>
                   ✓ 已同步
                 </span>
               ) : (
-                <button
-                  disabled={designerSyncLoading || !designerOrderId}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-disabled={designerSyncLoading || !designerOrderId}
                   onClick={async () => {
-                    if (!designerOrderId) return;
+                    if (designerSyncLoading || !designerOrderId) return;
                     setDesignerSyncLoading(true);
                     setDesignerActionError('');
                     try {
@@ -4133,25 +4135,31 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     }
                   }}
                   style={{
-                    padding: '7px 18px', background: '#10B981', color: '#fff',
-                    border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13,
+                    height: 20, display: 'inline-flex', alignItems: 'center', padding: '0 8px',
+                    background: '#10B981', color: '#fff',
+                    borderRadius: 4, fontWeight: 700, fontSize: 11,
                     cursor: designerSyncLoading ? 'not-allowed' : 'pointer',
                     opacity: designerSyncLoading ? 0.6 : 1,
+                    userSelect: 'none',
                   }}
                 >
                   {designerSyncLoading ? '同步中…' : '同步设计'}
-                </button>
+                </span>
               )}
-              <button
+              <span
+                role="button"
+                tabIndex={0}
                 onClick={() => { setDesignerShowReject(true); setDesignerRejectNote(''); setDesignerActionError(''); }}
                 style={{
-                  padding: '7px 16px', background: 'transparent', color: '#FCA5A5',
-                  border: '1px solid #FCA5A5', borderRadius: 8, fontWeight: 600, fontSize: 13,
+                  height: 20, display: 'inline-flex', alignItems: 'center', padding: '0 8px',
+                  background: 'transparent', color: '#FCA5A5',
+                  border: '1px solid #FCA5A5', borderRadius: 4, fontWeight: 600, fontSize: 11,
                   cursor: 'pointer',
+                  userSelect: 'none',
                 }}
               >
                 退回顾客
-              </button>
+              </span>
             </span>
           </div>
         )}

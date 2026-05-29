@@ -48,8 +48,8 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   useEffect(() => {
     if (data) {
       setForm({
-        status: data.status,
-        paymentStatus: data.paymentStatus,
+        status: data.status?.toUpperCase(),
+        paymentStatus: data.paymentStatus?.toUpperCase(),
         trackingNumber: data.shipments?.[0]?.trackingNumber || '',
         carrier: data.shipments?.[0]?.carrier || '',
         estimatedDelivery: data.shipments?.[0]?.createdAt
@@ -92,7 +92,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
       setShowRatesModal(true);
     } catch (err: any) {
       console.error(' 加载运费报价失败', err);
-      setMessage('获取运费报价失败，将使用默认设置生成标签');
+      setMessage('Failed to get shipping rates, generating label with defaults.');
       // Continue with label generation without rate selection
       handleGenerateLabel();
     } finally {
@@ -120,10 +120,10 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
       await mutate();
       setShowRatesModal(false);
       setSelectedRateId('');
-      setMessage(`发货标签已生成！跟踪号：${result.trackingNumber || 'N/A'}`);
+      setMessage(`Shipping label created! Tracking: ${result.trackingNumber || 'N/A'}`);
     } catch (err: any) {
       console.error(' 生成发货标签失败', err);
-      const errorMsg = err?.message || err?.error || '生成发货标签失败，请稍后重试';
+      const errorMsg = err?.message || err?.error || 'Failed to generate shipping label. Please try again.';
       setMessage(errorMsg);
     } finally {
       setGeneratingLabel(false);
@@ -139,23 +139,23 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
     const amount = refundAmount.trim() ? parseFloat(refundAmount) : orderTotal;
 
     if (isNaN(amount) || amount <= 0) {
-      setMessage('请输入有效的退款金额');
+      setMessage('Please enter a valid refund amount.');
       return;
     }
 
     if (amount > orderTotal) {
-      setMessage(`退款金额不能超过订单总额 $${orderTotal.toFixed(2)}`);
+      setMessage(`Refund amount cannot exceed order total $${orderTotal.toFixed(2)}.`);
       return;
     }
 
     // Check if order can be refunded
-    if (data.paymentStatus !== 'COMPLETED') {
-      setMessage('只有已支付的订单才能退款');
+    if (data.paymentStatus?.toUpperCase() !== 'COMPLETED') {
+      setMessage('Only paid orders can be refunded.');
       return;
     }
 
-    if (data.status === 'REFUNDED') {
-      setMessage('该订单已经退款');
+    if (data.status?.toUpperCase() === 'REFUNDED') {
+      setMessage('This order has already been refunded.');
       return;
     }
 
@@ -181,15 +181,15 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
       setShowRefundModal(false);
       await mutate();
       const successMsg = isFullRefund
-        ? `订单 ${data.orderNumber} 已全额退款 $${amount.toFixed(2)}`
-        : `订单 ${data.orderNumber} 已部分退款 $${amount.toFixed(2)}`;
+        ? `Order ${data.orderNumber} fully refunded $${amount.toFixed(2)}`
+        : `Order ${data.orderNumber} partially refunded $${amount.toFixed(2)}`;
       setMessage(successMsg);
       if (result.warning) {
-        setMessage(`${successMsg}。警告：${result.warning}`);
+        setMessage(`${successMsg}. Warning: ${result.warning}`);
       }
     } catch (err: any) {
-      console.error(' 退款处理失败', err);
-      const errorMsg = err?.message || err?.error || '退款处理失败，请稍后重试';
+      console.error('Refund failed', err);
+      const errorMsg = err?.message || err?.error || 'Failed to process refund. Please try again.';
       setMessage(errorMsg);
     } finally {
       setRefundLoading(false);
@@ -197,6 +197,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   };
 
   const order: AdminOrderSummary | undefined = data;
+  const orderAny = data as any;
   const formatCurrency = (value?: number) => `$${(value || 0).toFixed(2)}`;
 
   if (isLoading) {
@@ -207,245 +208,283 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
     return <div className="admin-table-placeholder error">Order not found.</div>;
   }
 
+  const shippingAddr = (() => {
+    try {
+      return typeof order.shippingAddress === 'string'
+        ? JSON.parse(order.shippingAddress)
+        : order.shippingAddress;
+    } catch {
+      return null;
+    }
+  })();
+
+  const customerName = shippingAddr?.firstName
+    ? `${shippingAddr.firstName} ${shippingAddr.lastName || ''}`.trim()
+    : '—';
+
+  const shippingAddrStr = shippingAddr?.addressLine1
+    ? [shippingAddr.addressLine1, shippingAddr.city, shippingAddr.province, shippingAddr.postalCode, shippingAddr.country]
+        .filter(Boolean)
+        .join(', ')
+    : '—';
+
   return (
-    <div style={{ marginTop: 24 }}>
-      <div className="admin-page-header">
-        <div>
-          <h1>Order #{order.orderNumber}</h1>
-          <p className="text-muted">
-            Placed {new Date(order.createdAt).toLocaleString()} · {order.itemCount} items
-          </p>
+    <div>
+      {/* Page header with breadcrumb */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 6 }}>
+          <Link href="/admin/online-orders" style={{ color: 'var(--color-text-muted)', textDecoration: 'none' }}>
+            Online Orders
+          </Link>
+          {' / '}#{order.orderNumber}
         </div>
-        <Link href="/admin/online-orders" className="btn btn--outline">
-          ← Back to Orders
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10, margin: 0 }}>
+            Order #{order.orderNumber}
+            <FulfillmentBadge status={order.status} />
+          </h1>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Link href="/admin/online-orders" className="btn btn--outline">
+              ← Back to List
+            </Link>
+          </div>
+        </div>
       </div>
 
+      {message && (
+        <div
+          className={`admin-alert ${message.includes('Warning') || message.includes('Failed') || message.includes('failed') || message.includes('Error') ? 'error' : ''}`}
+          style={{ marginBottom: 16 }}
+        >
+          {message}
+        </div>
+      )}
+
       <div className="order-detail-grid">
+        {/* Left column */}
         <div className="order-detail-main">
+
+          {/* Customer info card */}
           <div className="admin-form">
-            <h3>Order Status</h3>
-            <div className="admin-grid-two">
-              <div className="admin-form-group">
-                <label>Fulfillment Status</label>
-                <select
-                  value={form.status || ''}
-                  onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value || undefined }))}
-                >
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="admin-form-group">
-                <label>Payment Status</label>
-                <select
-                  value={form.paymentStatus || ''}
-                  onChange={(event) => {
-                    setForm((prev) => ({ ...prev, paymentStatus: event.target.value || undefined }));
-                  }}
-                >
-                  {PAYMENT_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="admin-grid-two">
-              <div className="admin-form-group">
-                <label>Tracking Number</label>
-                <input
-                  type="text"
-                  value={form.trackingNumber || ''}
-                  onChange={(event) => setForm((prev) => ({ ...prev, trackingNumber: event.target.value }))}
-                />
-              </div>
-              <div className="admin-form-group">
-                <label>Carrier</label>
-                <select
-                  value={form.carrier || ''}
-                  onChange={(event) => setForm((prev) => ({ ...prev, carrier: event.target.value }))}
-                >
-                  <option value="">Select Carrier</option>
-                  <option value="Canada Post">Canada Post</option>
-                  <option value="UPS">UPS</option>
-                  <option value="FedEx">FedEx</option>
-                  <option value="Purolator">Purolator</option>
-                  <option value="Canpar">Canpar</option>
-                  <option value="DHL">DHL</option>
-                  <option value="Pickup">Pickup</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-            <div className="admin-form-group">
-              <label>Estimated Delivery</label>
-              <input
-                type="date"
-                value={form.estimatedDelivery || ''}
-                onChange={(event) => setForm((prev) => ({ ...prev, estimatedDelivery: event.target.value }))}
+            <h3>Customer Info</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <InfoField label="Name" value={customerName} />
+              <InfoField label="Email" value={order.customerEmail || '—'} />
+              <InfoField label="Phone" value={shippingAddr?.phone || '—'} />
+              <InfoField
+                label="Order Date"
+                value={new Date(order.createdAt).toLocaleString('en-CA', {
+                  year: 'numeric', month: '2-digit', day: '2-digit',
+                  hour: '2-digit', minute: '2-digit',
+                })}
               />
-            </div>
-            <div className="admin-form-actions">
-              <button type="button" className="btn btn--primary" onClick={handleUpdate} disabled={updating}>
-                {updating ? '保存中…' : '保存更改'}
-              </button>
-              {/* Generate shipping label button */}
-              {/* Generate shipping label button - Disabled for Phase 1
-              {order.status !== 'CANCELLED' && order.status !== 'REFUNDED' && (
-                <button
-                  type="button"
-                  className="btn btn--outline"
-                  onClick={loadShippingRates}
-                  disabled={generatingLabel || loadingRates}
-                >
-                  {generatingLabel ? '生成中…' : loadingRates ? '加载报价…' : '生成发货标签'}
-                </button>
-              )}
-              */}
-              {/* Enhanced refund button with modal */}
-              {data.paymentStatus === 'COMPLETED' && data.status !== 'REFUNDED' && (
-                <button
-                  type="button"
-                  className="btn btn--outline"
-                  onClick={() => setShowRefundModal(true)}
-                  disabled={refundLoading}
-                >
-                  处理退款
-                </button>
-              )}
-            </div>
-            {message && (
-              <div className={`admin-alert ${message.includes('警告') || message.includes('失败') ? 'error' : ''}`}>
-                {message}
+              <div style={{ gridColumn: '1 / -1', marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
+                  Shipping Address
+                </div>
+                <div style={{ fontSize: 14 }}>{shippingAddrStr}</div>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Refund modal */}
-          {showRefundModal && (
-            <div
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000,
-              }}
-              onClick={() => !refundLoading && setShowRefundModal(false)}
-            >
-              <div
-                className="admin-form"
-                style={{
-                  backgroundColor: 'white',
-                  padding: '24px',
-                  borderRadius: '8px',
-                  maxWidth: '500px',
-                  width: '90%',
-                  maxHeight: '90vh',
-                  overflow: 'auto',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 style={{ marginTop: 0 }}>处理退款</h3>
-                <div className="admin-form-group">
-                  <label>
-                    退款金额 <span style={{ color: '#666', fontSize: '0.9em' }}>（订单总额：${formatCurrency(data.total)}）</span>
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max={data.total}
-                    value={refundAmount}
-                    onChange={(e) => setRefundAmount(e.target.value)}
-                    placeholder={`默认全额退款：${formatCurrency(data.total)}`}
-                    style={{ width: '100%', padding: '10px 12px', fontSize: '14px' }}
-                  />
-                  <p style={{ margin: '8px 0 0 0', fontSize: '0.85em', color: '#666' }}>
-                    留空或输入 {formatCurrency(data.total)} 表示全额退款
-                  </p>
-                </div>
-                <div className="admin-form-group">
-                  <label>退款原因（可选）</label>
-                  <textarea
-                    value={refundNote}
-                    onChange={(e) => setRefundNote(e.target.value)}
-                    placeholder="请输入退款原因..."
-                    rows={3}
-                    style={{ width: '100%', padding: '10px 12px', fontSize: '14px', resize: 'vertical' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                  <button
-                    type="button"
-                    className="btn btn--primary"
-                    onClick={handleRefund}
-                    disabled={refundLoading}
-                    style={{ flex: 1 }}
-                  >
-                    {refundLoading ? '处理中…' : '确认退款'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--outline"
-                    onClick={() => {
-                      setShowRefundModal(false);
-                      setRefundAmount('');
-                      setRefundNote('');
-                    }}
-                    disabled={refundLoading}
-                    style={{ flex: 1 }}
-                  >
-                    取消
-                  </button>
+          {/* Order items table */}
+          <div className="admin-table-wrapper" style={{ marginBottom: 16 }}>
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Variant</th>
+                  <th>Print Position</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(order.items || []).map((item: any) => {
+                  const imgUrl = item.variant?.product?.images?.[0]?.url;
+                  const printConfigs = item.variant?.product?.colors?.flatMap((c: any) => c.printConfigs || []) || [];
+                  const printPos = printConfigs.map((pc: any) => pc.position).filter(Boolean).join(', ') || '—';
+                  return (
+                    <tr key={item.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          {imgUrl ? (
+                            <img
+                              src={imgUrl}
+                              alt=""
+                              style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', border: '1px solid var(--color-border)', flexShrink: 0 }}
+                            />
+                          ) : (
+                            <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--color-bg-subtle)', border: '1px solid var(--color-border)', flexShrink: 0 }} />
+                          )}
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 600 }}>{item.productName}</div>
+                            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{item.variantDescription}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>{item.variantDescription || '—'}</td>
+                      <td style={{ fontSize: 13 }}>{printPos}</td>
+                      <td>{item.quantity}</td>
+                      <td style={{ fontWeight: 600 }}>{formatCurrency(item.unitPrice)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'flex-end', gap: 40, fontSize: 14, borderTop: '1px solid var(--color-border)' }}>
+              <div style={{ color: 'var(--color-text-muted)' }}>
+                Total (incl. shipping {formatCurrency(order.shippingCost)})
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>
+                {formatCurrency(order.total)} {order.currency}
+              </div>
+            </div>
+          </div>
+
+          {/* Design Review section */}
+          {(orderAny?.designReviewStatus || orderAny?.mockupUrl) && (
+            <div className="admin-form" style={{ marginBottom: 16 }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                设计审核
+                {orderAny.designReviewStatus && (
+                  <span style={{
+                    padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700,
+                    background: orderAny.designReviewStatus === 'SYNCED' ? '#D1FAE5' :
+                                orderAny.designReviewStatus === 'REJECTED' ? '#FEE2E2' :
+                                orderAny.designReviewStatus === 'IN_REVIEW' ? '#DBEAFE' : '#FEF3C7',
+                    color:  orderAny.designReviewStatus === 'SYNCED' ? '#065F46' :
+                            orderAny.designReviewStatus === 'REJECTED' ? '#991B1B' :
+                            orderAny.designReviewStatus === 'IN_REVIEW' ? '#1E40AF' : '#92400E',
+                  }}>
+                    {{ PENDING_REVIEW: '待审核', IN_REVIEW: '审核中', SYNCED: '已同步', REJECTED: '已退回' }[orderAny.designReviewStatus as string] || orderAny.designReviewStatus}
+                  </span>
+                )}
+              </h3>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                {orderAny.mockupUrl && (
+                  <a href={orderAny.mockupUrl} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={orderAny.mockupUrl}
+                      alt="设计稿"
+                      style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--color-border)', flexShrink: 0 }}
+                    />
+                  </a>
+                )}
+                <div style={{ flex: 1 }}>
+                  {orderAny.designReviewSyncedAt && (
+                    <InfoField label="同步时间" value={new Date(orderAny.designReviewSyncedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })} />
+                  )}
+                  {orderAny.designReviewNote && (
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>退回原因</div>
+                      <div style={{ fontSize: 13, color: '#DC2626' }}>{orderAny.designReviewNote}</div>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                    <Link
+                      href={`/design-lab?orderId=${data?.id}&mode=designer`}
+                      target="_blank"
+                      className="btn btn--outline"
+                      style={{ fontSize: 12 }}
+                    >
+                      在设计器中打开 ↗
+                    </Link>
+                    {orderAny.designReviewStatus === 'SYNCED' && orderAny.mockupUrl && (
+                      <Link
+                        href={`/admin/online-orders/${data?.id}/gang-sheet`}
+                        className="btn"
+                        style={{ fontSize: 12, background: '#111', color: '#fff', border: 'none' }}
+                      >
+                        查看生产单 →
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="admin-form">
-            <h3>Order Items</h3>
-            <div className="admin-table-wrapper">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(order.items || []).map((item: any) => (
-                    <tr key={item.id}>
-                      <td>
-                        <strong>{item.productName}</strong>
-                        <div className="text-muted">{item.variantDescription}</div>
-                      </td>
-                      <td>{item.quantity}</td>
-                      <td>{formatCurrency(item.unitPrice)}</td>
-                      <td>{formatCurrency(item.subtotal)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
 
+        {/* Right sidebar */}
         <aside className="order-detail-side">
+
+          {/* Order operations card */}
           <div className="admin-form">
-            <h3>Summary</h3>
+            <h3>Order Actions</h3>
+            <div className="admin-form-group">
+              <label>Fulfillment Status</label>
+              <select
+                value={form.status || ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value || undefined }))}
+              >
+                {STATUS_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="admin-form-group">
+              <label>Payment Status</label>
+              <select
+                value={form.paymentStatus || ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, paymentStatus: e.target.value || undefined }))}
+              >
+                {PAYMENT_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div className="admin-form-group">
+              <label>Tracking Number</label>
+              <input
+                type="text"
+                value={form.trackingNumber || ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, trackingNumber: e.target.value }))}
+              />
+            </div>
+            <div className="admin-form-group">
+              <label>Carrier</label>
+              <select
+                value={form.carrier || ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, carrier: e.target.value }))}
+              >
+                <option value="">Select carrier</option>
+                <option value="Canada Post">Canada Post</option>
+                <option value="UPS">UPS</option>
+                <option value="FedEx">FedEx</option>
+                <option value="Purolator">Purolator</option>
+                <option value="Canpar">Canpar</option>
+                <option value="DHL">DHL</option>
+                <option value="Pickup">Pickup</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="admin-form-group">
+              <label>Est. Delivery</label>
+              <input
+                type="date"
+                value={form.estimatedDelivery || ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, estimatedDelivery: e.target.value }))}
+              />
+            </div>
+            <div className="admin-form-actions">
+              <button type="button" className="btn btn--primary" onClick={handleUpdate} disabled={updating} style={{ width: '100%' }}>
+                {updating ? 'Saving…' : 'Save Changes'}
+              </button>
+              {data?.paymentStatus?.toUpperCase() === 'COMPLETED' && data?.status?.toUpperCase() !== 'REFUNDED' && (
+                <button
+                  type="button"
+                  className="btn btn--outline"
+                  onClick={() => setShowRefundModal(true)}
+                  disabled={refundLoading}
+                  style={{ width: '100%' }}
+                >
+                  Process Refund
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Amount summary */}
+          <div className="admin-form">
+            <h3>Order Summary</h3>
             <div className="order-summary">
               <div className="summary-row">
                 <span>Subtotal</span>
@@ -467,178 +506,156 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
               )}
               <div className="summary-row total">
                 <span>Total</span>
-                <strong>
-                  {formatCurrency(order.total)} {order.currency}
-                </strong>
+                <strong>{formatCurrency(order.total)} {order.currency}</strong>
               </div>
             </div>
           </div>
 
+          {/* Payment info */}
           <div className="admin-form">
-            <h3>Customer</h3>
-            <p className="text-muted">{order.customerEmail || '—'}</p>
-            <div className="address-block">
-              <h4>Shipping Address</h4>
-              <AddressBlock {...order.shippingAddress} />
+            <h3>Payment Info</h3>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Payment Status</div>
+              <PaymentBadge status={order.paymentStatus} />
             </div>
-            <div className="address-block">
-              <h4>Billing Address</h4>
-              <AddressBlock {...order.billingAddress} />
-            </div>
-          </div>
-
-          {/* Enhanced shipments section with label printing */}
-          {(order.shipments || []).length > 0 && (
-            <div className="admin-form">
-              <h3>发货信息</h3>
-              <div className="shipments-list">
-                {(order.shipments || []).map((shipment: any) => (
-                  <div key={shipment.id} className="shipment-card">
-                    <div className="shipment-meta">
-                      <strong>{shipment.status}</strong>
-                      <span>{new Date(shipment.createdAt).toLocaleString()}</span>
-                    </div>
-                    <p>承运商: {shipment.carrier || '—'}</p>
-                    <p>跟踪号: {shipment.trackingNumber || '—'}</p>
-                    {shipment.labelUrl && (
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                        <Link href={shipment.labelUrl} target="_blank" className="btn btn--outline btn--xs">
-                          下载标签
-                        </Link>
-                        <button
-                          type="button"
-                          className="btn btn--outline btn--xs"
-                          onClick={() => {
-                            window.open(shipment.labelUrl, '_blank');
-                            window.print();
-                          }}
-                        >
-                          打印标签
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Shipping rates modal */}
-          {/* Shipping rates modal - Disabled for Phase 1
-          {showRatesModal && (
-            <div
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000,
-              }}
-              onClick={() => !generatingLabel && setShowRatesModal(false)}
-            >
-              <div
-                className="admin-form"
-                style={{
-                  backgroundColor: 'white',
-                  padding: '24px',
-                  borderRadius: '8px',
-                  maxWidth: '600px',
-                  width: '90%',
-                  maxHeight: '90vh',
-                  overflow: 'auto',
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 style={{ marginTop: 0 }}>选择运费方案</h3>
-                {shippingRates.length === 0 ? (
-                  <p style={{ color: '#64748b' }}>暂无可用运费方案，将使用默认设置生成标签</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-                    {shippingRates.map((rate: any) => (
-                      <div
-                        key={rate.id}
-                        style={{
-                          padding: '12px',
-                          border: selectedRateId === rate.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          backgroundColor: selectedRateId === rate.id ? '#f0f9ff' : 'white',
-                        }}
-                        onClick={() => setSelectedRateId(rate.id)}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div>
-                            <p style={{ margin: '0 0 4px 0', fontWeight: 600 }}>
-                              {rate.courier} - {rate.service}
-                            </p>
-                            {rate.estimatedDeliveryDays && (
-                              <p style={{ margin: 0, fontSize: '0.85em', color: '#64748b' }}>
-                                预计 {rate.estimatedDeliveryDays} 天送达
-                              </p>
-                            )}
-                          </div>
-                          <strong style={{ fontSize: '1.1em' }}>
-                            {rate.currency} ${rate.price.toFixed(2)}
-                          </strong>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    type="button"
-                    className="btn btn--primary"
-                    onClick={() => handleGenerateLabel(selectedRateId || undefined)}
-                    disabled={generatingLabel}
-                    style={{ flex: 1 }}
-                  >
-                    {generatingLabel ? '生成中…' : '生成标签'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--outline"
-                    onClick={() => {
-                      setShowRatesModal(false);
-                      setSelectedRateId('');
-                    }}
-                    disabled={generatingLabel}
-                    style={{ flex: 1 }}
-                  >
-                    取消
-                  </button>
+            {orderAny?.paymentIntentId && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Transaction ID</div>
+                <div style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--color-text-muted)', wordBreak: 'break-all' }}>
+                  {orderAny.paymentIntentId}
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* Shipments */}
+          {(order.shipments || []).length > 0 && (
+            <div className="admin-form">
+              <h3>Shipments</h3>
+              {(order.shipments || []).map((shipment: any) => (
+                <div
+                  key={shipment.id}
+                  style={{ paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--color-border)', fontSize: 13 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <strong>{shipment.carrier || '—'}</strong>
+                    <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                      {new Date(shipment.createdAt).toLocaleString('en-CA')}
+                    </span>
+                  </div>
+                  <div style={{ color: 'var(--color-text-muted)' }}>Tracking: {shipment.trackingNumber || 'Pending'}</div>
+                  {shipment.labelUrl && (
+                    <Link href={shipment.labelUrl} target="_blank" className="btn btn--outline btn--xs" style={{ marginTop: 8, fontSize: 12 }}>
+                      Download Label
+                    </Link>
+                  )}
+                </div>
+              ))}
             </div>
           )}
-          */}
 
-          {/* Activity Log 功能已移除 */}
         </aside>
       </div>
+
+      {/* Refund modal */}
+      {showRefundModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          onClick={() => !refundLoading && setShowRefundModal(false)}
+        >
+          <div
+            className="admin-form"
+            style={{ background: '#fff', padding: 28, borderRadius: 16, maxWidth: 480, width: '90%', maxHeight: '90vh', overflow: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: 16 }}>Process Refund</h3>
+            <div className="admin-form-group">
+              <label>Refund Amount (order total: {formatCurrency(data?.total)})</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max={data?.total}
+                value={refundAmount}
+                onChange={(e) => setRefundAmount(e.target.value)}
+                placeholder={`Default full refund: ${formatCurrency(data?.total)}`}
+              />
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-text-muted)' }}>
+                Leave blank for full refund
+              </p>
+            </div>
+            <div className="admin-form-group">
+              <label>Reason (optional)</label>
+              <textarea
+                value={refundNote}
+                onChange={(e) => setRefundNote(e.target.value)}
+                placeholder="Enter refund reason..."
+                rows={3}
+                style={{ width: '100%', padding: '10px 12px', fontSize: 14, resize: 'vertical' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button type="button" className="btn btn--primary" onClick={handleRefund} disabled={refundLoading} style={{ flex: 1 }}>
+                {refundLoading ? 'Processing…' : 'Confirm Refund'}
+              </button>
+              <button
+                type="button"
+                className="btn btn--outline"
+                onClick={() => { setShowRefundModal(false); setRefundAmount(''); setRefundNote(''); }}
+                disabled={refundLoading}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function AddressBlock(address?: any) {
-  if (!address) {
-    return <p className="text-muted">Not provided.</p>;
-  }
+function InfoField({ label, value }: { label: string; value: string }) {
   return (
-    <address>
-      <p>{address.fullName}</p>
-      <p>{address.addressLine1}</p>
-      {address.addressLine2 && <p>{address.addressLine2}</p>}
-      <p>
-        {address.city}, {address.province} {address.postalCode}
-      </p>
-      <p>{address.country}</p>
-    </address>
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 14 }}>{value}</div>
+    </div>
   );
 }
+
+function FulfillmentBadge({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    PENDING:    { bg: '#F3F4F6', color: '#6B7280', label: 'Pending' },
+    PROCESSING: { bg: '#DBEAFE', color: '#1D4ED8', label: 'Processing' },
+    SHIPPED:    { bg: '#D1FAE5', color: '#065F46', label: 'Shipped' },
+    DELIVERED:  { bg: '#D1FAE5', color: '#065F46', label: 'Delivered' },
+    CANCELLED:  { bg: '#FEE2E2', color: '#991B1B', label: 'Cancelled' },
+    REFUNDED:   { bg: '#FEE2E2', color: '#991B1B', label: 'Refunded' },
+  };
+  const s = map[status?.toUpperCase?.()] ?? { bg: '#F3F4F6', color: '#6B7280', label: status };
+  return (
+    <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color }}>
+      {s.label}
+    </span>
+  );
+}
+
+function PaymentBadge({ status }: { status: string }) {
+  const map: Record<string, { bg: string; color: string; label: string }> = {
+    PENDING:   { bg: '#FEF3C7', color: '#92400E', label: 'Unpaid' },
+    COMPLETED: { bg: '#D1FAE5', color: '#065F46', label: 'Paid' },
+    FAILED:    { bg: '#FEE2E2', color: '#991B1B', label: 'Failed' },
+    REFUNDED:  { bg: '#FEE2E2', color: '#991B1B', label: 'Refunded' },
+  };
+  const s = map[status?.toUpperCase?.()] ?? { bg: '#F3F4F6', color: '#6B7280', label: status };
+  return (
+    <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color }}>
+      {s.label}
+    </span>
+  );
+}
+
 
