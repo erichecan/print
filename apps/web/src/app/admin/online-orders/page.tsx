@@ -126,6 +126,40 @@ export default function AdminOnlineOrdersPage() {
   const formatCurrency = (value: number, currency?: string) =>
     `${value.toFixed(2)}${currency ? ` ${currency}` : ''}`;
 
+  function orderStatusBadge(status: string) {
+    const map: Record<string, { bg: string; color: string; label: string }> = {
+      PENDING:    { bg: '#F3F4F6', color: '#6B7280', label: 'Pending' },
+      PROCESSING: { bg: '#DBEAFE', color: '#1D4ED8', label: 'Processing' },
+      SHIPPED:    { bg: '#D1FAE5', color: '#065F46', label: 'Shipped' },
+      DELIVERED:  { bg: '#D1FAE5', color: '#065F46', label: 'Delivered' },
+      COMPLETED:  { bg: '#D1FAE5', color: '#065F46', label: 'Completed' },
+      CANCELLED:  { bg: '#FEE2E2', color: '#991B1B', label: 'Cancelled' },
+      REFUNDED:   { bg: '#FEE2E2', color: '#991B1B', label: 'Refunded' },
+    };
+    const s = map[status?.toUpperCase?.()] ?? { bg: '#F3F4F6', color: '#6B7280', label: status };
+    return (
+      <span style={{ padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
+        {s.label}
+      </span>
+    );
+  }
+
+  function designReviewBadge(status: string | null | undefined) {
+    if (!status) return null;
+    const map: Record<string, { bg: string; color: string; label: string }> = {
+      PENDING_REVIEW: { bg: '#FEF3C7', color: '#92400E', label: '待审核' },
+      IN_REVIEW:      { bg: '#DBEAFE', color: '#1E40AF', label: '审核中' },
+      SYNCED:         { bg: '#D1FAE5', color: '#065F46', label: '已同步' },
+      REJECTED:       { bg: '#FEE2E2', color: '#991B1B', label: '已退回' },
+    };
+    const s = map[status] ?? { bg: '#F3F4F6', color: '#6B7280', label: status };
+    return (
+      <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
+        {s.label}
+      </span>
+    );
+  }
+
   return (
     <>
       <div style={{ marginTop: 24 }}>
@@ -278,10 +312,10 @@ export default function AdminOnlineOrdersPage() {
                   </th>
                   <th>Order #</th>
                   <th>Customer</th>
-                  <th>Email</th>
                   <th>Items</th>
                   <th>Total</th>
                   <th>Status</th>
+                  <th>设计审核</th>
                   <th>Date</th>
                   <th>Actions</th>
                 </tr>
@@ -300,14 +334,21 @@ export default function AdminOnlineOrdersPage() {
                     <td>
                       <Link href={`/admin/online-orders/${order.id}`}>#{order.orderNumber}</Link>
                     </td>
-                    <td>{order.customerName || '—'}</td>
-                    <td>{order.customerEmail || '—'}</td>
+                    <td>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{order.customerName || '—'}</div>
+                      <div style={{ fontSize: 11, color: '#6B7280' }}>{order.customerEmail || ''}</div>
+                    </td>
                     <td>{order.itemCount ?? 0} items</td>
                     <td>
                       {order.total > 0 ? `${order.currency || 'CAD'} ${formatCurrency(order.total)}` : '—'}
                     </td>
                     <td>
-                      <span className={`badge badge-${order.status.toLowerCase()}`}>{order.status}</span>
+                      {orderStatusBadge(order.status)}
+                    </td>
+                    <td>
+                      {designReviewBadge(order.designReviewStatus) ?? (
+                        <span style={{ fontSize: 12, color: '#9CA3AF' }}>—</span>
+                      )}
                     </td>
                     <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                     <td>

@@ -5,8 +5,9 @@
  * 步骤3：详情完善（定价、库存、运输、Printable Area配置）
  * Created: 2025-01-06
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useProductWizard } from '../ProductWizard';
+import { adminReviewsApi } from '@/lib/api';
 
 const parseNumber = (value: any): number => {
   if (value === '' || value === undefined || value === null) return 0;
@@ -17,6 +18,32 @@ const parseNumber = (value: any): number => {
 export function Step3Details() {
   const { wizardData, updateWizardData, nextStep, prevStep, saveDraft, isLoading } =
     useProductWizard();
+
+  const productId = (wizardData as any).productId as string | undefined;
+  const [reviewsEnabled, setReviewsEnabled] = useState(true);
+  const [maxDisplayCount, setMaxDisplayCount] = useState(10);
+  const [reviewSettingsSaving, setReviewSettingsSaving] = useState(false);
+  const [reviewSettingsSaved, setReviewSettingsSaved] = useState(false);
+
+  useEffect(() => {
+    if (!productId) return;
+    adminReviewsApi.getSettings(productId).then((data) => {
+      setReviewsEnabled(data.reviewsEnabled ?? true);
+      setMaxDisplayCount(data.maxDisplayCount ?? 10);
+    }).catch(() => {});
+  }, [productId]);
+
+  const saveReviewSettings = useCallback(async () => {
+    if (!productId) return;
+    setReviewSettingsSaving(true);
+    try {
+      await adminReviewsApi.updateSettings(productId, { reviewsEnabled, maxDisplayCount });
+      setReviewSettingsSaved(true);
+      setTimeout(() => setReviewSettingsSaved(false), 2000);
+    } finally {
+      setReviewSettingsSaving(false);
+    }
+  }, [productId, reviewsEnabled, maxDisplayCount]);
 
   // Auto-calculate gross profit
   useEffect(() => {
@@ -569,6 +596,46 @@ export function Step3Details() {
           </div>
         </div>
       </div>
+
+      {/* Review Settings */}
+      {productId && (
+        <div className="step3-details__section">
+          <h2 className="section-title">评论设置</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={reviewsEnabled}
+                onChange={(e) => setReviewsEnabled(e.target.checked)}
+                style={{ width: 16, height: 16, cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: 14, fontWeight: 500 }}>启用评论区</span>
+            </label>
+            <div className="form-field" style={{ maxWidth: 200 }}>
+              <label className="form-field__label">最多显示条数</label>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                className="form-field__input"
+                value={maxDisplayCount}
+                onChange={(e) => setMaxDisplayCount(Math.max(1, parseInt(e.target.value) || 10))}
+              />
+            </div>
+            <div>
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={saveReviewSettings}
+                disabled={reviewSettingsSaving}
+                style={{ width: 'fit-content' }}
+              >
+                {reviewSettingsSaving ? '保存中...' : reviewSettingsSaved ? '已保存 ✓' : '保存评论设置'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Actions */}
       <div className="step3-details__actions">

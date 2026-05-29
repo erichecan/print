@@ -139,6 +139,8 @@ const NAV_LINKS: NavItem[] = [
   { href: '/admin/online-products', label: 'Online Products', icon: 'products', i18n: 'onlineProducts' },
   { href: '/admin/online-categories', label: 'Online Categories', icon: 'categories', i18n: 'onlineCategories' },
   { href: '/admin/online-orders', label: 'Online Orders', icon: 'orders', i18n: 'onlineOrders' },
+  { href: '/admin/design-review', label: 'Design Review', icon: 'design', i18n: 'designReview', sub: true },
+  { href: '/admin/logistics', label: 'Logistics', icon: 'shipping', i18n: 'logistics', sub: true },
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
   { href: '/admin/referral-settings', label: 'Referral', icon: 'promotions', i18n: 'promotions' },

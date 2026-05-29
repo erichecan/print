@@ -290,7 +290,7 @@ exports.generateAssetUploadUrl = async (req, res) => {
 exports.requestQuote = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity = 1, sidesUsed = [], layerCount = 0, sizeQuantities = [] } = req.body || {};
+    const { quantity = 1, sidesUsed = [], layerCount = 0, sizeQuantities = [], printMethod = 'dtf', printSize = 'medium' } = req.body || {};
 
     if (!quantity || quantity <= 0) {
       return res.status(400).json({ error: 'quantity must be greater than zero' });
@@ -315,6 +315,15 @@ exports.requestQuote = async (req, res) => {
     const baseLayers = 5;
     const additionalLayers = Math.max(0, layerCount - baseLayers);
     const layersFee = additionalLayers * 0.5 * 100; // 转换为分，每个额外图层 $0.50
+
+    // 印刷工艺费用（每个印刷面收取一次）
+    const locationsCount = Math.max(1, sidesCount);
+    const dtfFees = { small: 599, medium: 899, large: 1199 };
+    const embroideryFees = { small: 1499, medium: 2499, large: 2499 };
+    const printMethodFeePerLocation = printMethod === 'embroidery'
+      ? (embroideryFees[printSize] || embroideryFees.medium)
+      : (dtfFees[printSize] || dtfFees.medium);
+    const printMethodFee = printMethodFeePerLocation * locationsCount;
 
     // 数量折扣
     let quantityDiscount = 0;
@@ -365,7 +374,8 @@ exports.requestQuote = async (req, res) => {
       let calculatedQuantity = 0;
       sizeQuantities.forEach(sq => {
         if (sq.quantity > 0) {
-          const adj = sizeAdjustmentMap[sq.size] || 0;
+          // Fall back to globalFeeMap for sizes not in this product's variants
+          const adj = sizeAdjustmentMap[sq.size] !== undefined ? sizeAdjustmentMap[sq.size] : (globalFeeMap[sq.size] || 0);
           totalBasePrice += basePrice * sq.quantity;
           totalAdjustment += adj * sq.quantity;
           calculatedQuantity += sq.quantity;
@@ -391,8 +401,8 @@ exports.requestQuote = async (req, res) => {
       totalAdjustment = effectiveAdjustment * quantity;
     }
 
-    // 单价包含基础费用（base + adjustment）加上 附加费用（sides + layers）
-    let unitPrice = weightedUnitPrice + sidesFee + layersFee;
+    // 单价包含基础费用（base + adjustment）加上 附加费用（sides + layers + print method）
+    let unitPrice = weightedUnitPrice + sidesFee + layersFee + printMethodFee;
 
     // 应用数量折扣
     const discountedUnitPrice = unitPrice * (1 - quantityDiscount);
@@ -423,6 +433,9 @@ exports.requestQuote = async (req, res) => {
           sidesFee: sidesFee / 100,
           layerCount,
           layersFee: layersFee / 100,
+          printMethod,
+          printSize,
+          printMethodFee: printMethodFee / 100,
           quantityDiscount: quantityDiscount * 100, // 百分比
         }
       }

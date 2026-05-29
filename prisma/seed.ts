@@ -648,6 +648,9 @@ async function main() {
     designReviewStatus,
     designerDraft,
     mockupUrl,
+    printSpecs,
+    carrier,
+    trackingNumber,
     createdAt,
   }: {
     orderNumber: string;
@@ -659,11 +662,24 @@ async function main() {
     designReviewStatus?: string;
     designerDraft?: object;
     mockupUrl?: string;
+    printSpecs?: object;
+    carrier?: string;
+    trackingNumber?: string;
     createdAt?: Date;
   }) {
     const existing = await prisma.order.findUnique({ where: { orderNumber } });
     if (existing) {
-      return existing;
+      // Update mutable fields so re-running seed picks up new values
+      return prisma.order.update({
+        where: { orderNumber },
+        data: {
+          ...(designReviewStatus !== undefined ? { designReviewStatus } : {}),
+          ...(mockupUrl !== undefined ? { mockupUrl } : {}),
+          ...(printSpecs !== undefined ? { printSpecs: printSpecs as Prisma.InputJsonValue } : {}),
+          ...(carrier !== undefined ? { carrier } : {}),
+          ...(trackingNumber !== undefined ? { trackingNumber } : {}),
+        },
+      });
     }
 
     const variantSource = seededProducts[1] || seededProducts[0];
@@ -743,6 +759,9 @@ async function main() {
         ...(designReviewStatus ? { designReviewStatus } : {}),
         ...(designerDraft ? { designerDraft } : {}),
         ...(mockupUrl ? { mockupUrl } : {}),
+        ...(printSpecs ? { printSpecs: printSpecs as Prisma.InputJsonValue } : {}),
+        ...(carrier ? { carrier } : {}),
+        ...(trackingNumber ? { trackingNumber } : {}),
         ...(createdAt ? { createdAt } : {}),
       },
     });
@@ -765,15 +784,36 @@ async function main() {
   });
 
   // Design-review test orders — used to test the designer draft save/load flow
-  // ORD-DR-001: customer submitted design (canvasJson in designerDraft), awaiting first review
+  // ORD-DR-001: design synced + logistics filled → gang sheet ready
   await ensureOrderSeed({
     orderNumber: 'ORD-DR-001',
     user: customerUser,
     email: 'customer@test.com',
     status: 'PROCESSING',
     paymentStatus: 'COMPLETED',
-    designReviewStatus: 'PENDING_REVIEW',
+    designReviewStatus: 'SYNCED',
     designerDraft: SEED_CANVAS_JSON,
+    mockupUrl: 'https://images.unsplash.com/photo-1618354691229-88d47f285158?w=400&h=400&fit=crop',
+    carrier: 'UPS',
+    trackingNumber: '1Z999AA10123456784',
+    printSpecs: {
+      positions: [
+        {
+          position: 'front',
+          artworkImageUrl: 'https://placehold.co/600x600/1a1a2e/FFFFFF.png?text=FRONT+ARTWORK',
+          widthCm: 25,
+          heightCm: 30,
+          printType: 'DTF',
+        },
+        {
+          position: 'back',
+          artworkImageUrl: 'https://placehold.co/600x600/16213e/FFFFFF.png?text=BACK+ARTWORK',
+          widthCm: 20,
+          heightCm: 25,
+          printType: 'DTF',
+        },
+      ],
+    },
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
   });
 

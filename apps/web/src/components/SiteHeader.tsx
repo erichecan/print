@@ -284,6 +284,12 @@ export function SiteHeader() {
                   </li>
                 </>
               )}
+              {/* Gallery 固定入口 - 始终显示 */}
+              <li className="mega__item">
+                <Link href="/gallery" className="mega__trigger mega__trigger--gallery">
+                  Gallery
+                </Link>
+              </li>
             </ul>
             <div className="primary-nav__actions">
               <Link href="/offline-orders" className="primary-nav__offline-btn">
@@ -383,6 +389,16 @@ export function SiteHeader() {
               </li>
             </>
           )}
+          {/* Gallery 固定入口 */}
+          <li>
+            <Link
+              href="/gallery"
+              className="mobile-nav__link mobile-nav__link--gallery"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Gallery
+            </Link>
+          </li>
           {/* Mobile Only: Offline Order Link */}
           <li>
             <Link

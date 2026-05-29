@@ -1319,7 +1319,7 @@ exports.listDesignReviewQueue = async (req, res, next) => {
 
 exports.syncDesignToOrder = async (req, res, next) => {
   const { id } = req.params;
-  const { mockupUrl } = req.body;
+  const { mockupUrl, printSpecs } = req.body;
 
   if (!mockupUrl) {
     return next(new BadRequestError('mockupUrl 不能为空'));
@@ -1335,6 +1335,7 @@ exports.syncDesignToOrder = async (req, res, next) => {
         designReviewStatus: 'SYNCED',
         mockupUrl,
         designReviewSyncedAt: new Date(),
+        ...(printSpecs ? { printSpecs } : {}),
       },
     });
 

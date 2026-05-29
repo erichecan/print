@@ -64,11 +64,11 @@ function getColorDbNames(canonical: string): string[] {
   return COLOR_ALIASES[canonical] ?? [canonical];
 }
 
-// audience handled by nav tree L2; neckline handled by nav tree L3; artTheme surfaces art print categories
-const FILTER_DIMS: DimensionKey[] = ['artTheme'];
+// audience handled by nav tree L2; neckline handled by nav tree L3; artTheme moved to /gallery page
+const FILTER_DIMS: DimensionKey[] = [];
 
 // dimensions where only one tag can be active at a time
-const SINGLE_SELECT_DIMS = new Set<DimensionKey>(['artTheme']);
+const SINGLE_SELECT_DIMS = new Set<DimensionKey>();
 
 const SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
 

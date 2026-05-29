@@ -23,6 +23,7 @@ router.get('/:slug/related', productController.getRelatedProducts);
 
 // 产品评价路由（必须在 :slug 之前）
 router.get('/:id/reviews', authenticateOptional, reviewController.getProductReviews);
+router.get('/:id/review-summary', reviewController.getProductReviewSummary);
 router.post('/:id/reviews', authenticate, reviewController.createProductReview);
 
 // 指定 slug 产品详情

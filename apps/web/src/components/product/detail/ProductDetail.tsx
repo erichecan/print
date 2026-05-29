@@ -15,6 +15,7 @@ import { DeliveryReturns } from './DeliveryReturns';
 import { ProductFeatures } from './ProductFeatures';
 import { MoreByArtist } from './MoreByArtist';
 import { YouMightLike } from './YouMightLike';
+import { ReviewSection } from '@/components/reviews/ReviewSection';
 import { adaptProductData } from './dataAdapter';
 import { ProductData } from './types';
 import styles from './ProductDetail.module.css';
@@ -499,7 +500,8 @@ export function ProductDetail() {
           products={productData.youMightLike}
         />
 
-        {/* 移除 Trending Topics 模块（按需求） */}
+        {/* 产品评论区 */}
+        {apiProduct && <ReviewSection productId={(apiProduct as any).id} />}
       </div>
     </div>
   );

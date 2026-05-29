@@ -14,9 +14,11 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
         onlineProducts: 'Online Products',
         onlineCategories: 'Online Categories',
         onlineOrders: 'Online Orders',
+        factoryQueue: 'Factory Queue',
         orders: 'Orders',
         users: 'Users',
         designReview: 'Design Review',
+        logistics: 'Logistics',
         coupons: 'Coupons',
         promotions: 'Promotions',
         // Promotions bilingual strings
@@ -578,9 +580,11 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
         onlineProducts: '线上商品',
         onlineCategories: '线上类目',
         onlineOrders: '线上订单',
+        factoryQueue: '生产队列',
         orders: '订单',
         users: '用户',
         designReview: '设计审核',
+        logistics: '物流管理',
         coupons: '优惠券',
         promotions: '促销活动',
         // 促销与优惠券右侧内容双语

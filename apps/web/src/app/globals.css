@@ -342,6 +342,25 @@ select {
   padding: 8px 6px;
 }
 
+.mega__trigger--gallery {
+  background: #E85D2B;
+  color: #fff !important;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.mega__trigger--gallery:hover {
+  background: #c94d1f;
+  color: #fff !important;
+}
+
+.mobile-nav__link--gallery {
+  color: #E85D2B !important;
+  font-weight: 700;
+}
+
 .mega__panel {
   position: absolute;
   left: 0;

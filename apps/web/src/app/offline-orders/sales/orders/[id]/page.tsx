@@ -662,6 +662,63 @@ export default function SalesOrderDetailPage() {
           {/* 产品列表（基于 colorGroupsByProduct / variants） */}
           <div className="sec">
             <h2 className="sec-title">Product List / 产品明细</h2>
+            {(!config.productItems || config.productItems.length === 0) && (
+              <div className="product-block">
+                <div className="product-head">
+                  <span>{meta.primaryProduct || '—'}</span>
+                  <span>{meta.quantity != null ? `${meta.quantity} pcs` : '—'}</span>
+                </div>
+                {config.printPositions && config.printPositions.length > 0 && (
+                  <div className="print-specs">
+                    <div className="print-specs-label">🛠️ {t('printPositions') || 'Print Positions'}:</div>
+                    <table className="pos-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: '18%' }}>Position</th>
+                          <th style={{ width: '18%' }}>Method</th>
+                          <th style={{ width: '28%' }}>Logo Size</th>
+                          <th>Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {config.printPositions.map((pos: any, idx: number) => {
+                          const posName = pos.positionName || pos.position || pos.positionKey || '—';
+                          const method = pos.method || pos.printingStyle || '—';
+                          const logoSize = (() => {
+                            if (pos.widthMm || pos.heightMm) {
+                              const parts: string[] = [];
+                              if (pos.widthMm) parts.push(`W: ${(pos.widthMm / 25.4).toFixed(2)}"`);
+                              if (pos.heightMm) parts.push(`H: ${(pos.heightMm / 25.4).toFixed(2)}"`);
+                              return parts.join(' × ');
+                            }
+                            const w = pos.width;
+                            const h = pos.height;
+                            if (w && h && w !== '0' && h !== '0') return `W: ${w}" × H: ${h}"`;
+                            if (w && w !== '0') return `W: ${w}"`;
+                            if (h && h !== '0') return `H: ${h}"`;
+                            return null;
+                          })();
+                          return (
+                            <tr key={idx}>
+                              <td><strong>{posName}</strong></td>
+                              <td>{method !== '—' ? <span className="method-badge">{method}</span> : '—'}</td>
+                              <td>{logoSize ? <span className="logo-size-cell">{logoSize}</span> : '—'}</td>
+                              <td>{pos.notes || '—'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                {(config.artworkNotes || config.orderNotes) && (
+                  <div style={{ fontSize: '8pt', color: '#555', marginTop: '4px' }}>
+                    {config.artworkNotes && <div>Artwork Notes: {config.artworkNotes}</div>}
+                    {config.orderNotes && <div>Order Notes: {config.orderNotes}</div>}
+                  </div>
+                )}
+              </div>
+            )}
             {config.productItems?.map((item) => {
               const productId = item.id;
               const totals = productTotals[productId] || { quantity: 0, total: 0 };
@@ -696,8 +753,8 @@ export default function SalesOrderDetailPage() {
                             const logoSize = (() => {
                               if (pos.widthMm || pos.heightMm) {
                                 const parts = [];
-                                if (pos.widthMm) parts.push(`W: ${pos.widthMm}mm`);
-                                if (pos.heightMm) parts.push(`H: ${pos.heightMm}mm`);
+                                if (pos.widthMm) parts.push(`W: ${(pos.widthMm / 25.4).toFixed(2)}"`);
+                                if (pos.heightMm) parts.push(`H: ${(pos.heightMm / 25.4).toFixed(2)}"`);
                                 return parts.join(' × ');
                               }
                               const w = pos.width;
@@ -1386,13 +1443,12 @@ export default function SalesOrderDetailPage() {
                                       </div>
                                       <div style={{ color: '#713f12', fontSize: '0.8rem', marginTop: '4px', lineHeight: 1.4 }}>
                                         <div style={{ fontWeight: 500 }}>{pos.method || (pos as any).printingStyle}</div>
-                                        {/* Display Dimensions: Prefer mm if available (as requested), otherwise inch */}
+                                        {/* Display Dimensions in inches */}
                                         {(() => {
-                                          // Prioritize mm if available
                                           if (pos.widthMm || pos.heightMm) {
                                             const parts = [];
-                                            if (pos.widthMm) parts.push(`W: ${pos.widthMm}mm`);
-                                            if (pos.heightMm) parts.push(`H: ${pos.heightMm}mm`);
+                                            if (pos.widthMm) parts.push(`W: ${(pos.widthMm / 25.4).toFixed(2)}"`);
+                                            if (pos.heightMm) parts.push(`H: ${(pos.heightMm / 25.4).toFixed(2)}"`);
                                             return <div>{parts.join(' x ')}</div>;
                                           }
 

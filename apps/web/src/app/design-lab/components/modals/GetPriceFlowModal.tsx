@@ -1,41 +1,22 @@
 /**
  * Get Price Flow Modal
-* 完整的Get Price流程：Buy & Ship / Fundraiser选择 → Ordering Options → Quantity → Order Options
+ * 3-step flow: Print Method → Sizes & Quantities (with inline price) → Done
  */
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { designLabApi, productsApi, sizeFeesApi } from '@/lib/api';
+import { designLabApi, sizeFeesApi, cartApi } from '@/lib/api';
 import './GetPriceFlowModal.css';
 
-export type GetPriceFlowStep = 'ordering-options' | 'quantity' | 'order-options' | 'content-check' | 'added-to-cart';
+export type GetPriceFlowStep = 'print-method' | 'quantity' | 'content-check' | 'added-to-cart';
+export type PrintMethod = 'dtf' | 'embroidery';
+export type PrintSize = 'small' | 'medium' | 'large';
 
+// Kept for backward compat in parent state declarations
 export type OrderType = 'buy-ship' | 'fundraiser';
 export type ShippingOption = 'single-address' | 'multiple-addresses';
 export type SizesQuantitiesOption = 'i-know-sizes' | 'invite-group';
 export type PaymentOption = 'i-pay' | 'group-pays';
-
-interface GetPriceFlowModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  designId: string | null;
-  onAddToCart?: (orderData: any) => void;
-  getQuoteData?: () => Promise<{ sidesUsed: string[]; layerCount: number }> | { sidesUsed: string[]; layerCount: number };
-  productName?: string;
-  variants?: any[]; // Added variants prop
-  initialSize?: string | null; // Pre-selected size from product detail page
-  // States lifted from parent for persistence
-  currentStep: GetPriceFlowStep;
-  setCurrentStep: React.Dispatch<React.SetStateAction<GetPriceFlowStep>>;
-  orderingOptions: OrderingOptions;
-  setOrderingOptions: React.Dispatch<React.SetStateAction<OrderingOptions>>;
-  sizeQuantities: SizeQuantity[];
-  setSizeQuantities: React.Dispatch<React.SetStateAction<SizeQuantity[]>>;
-  estimatedQuantity: number;
-  setEstimatedQuantity: React.Dispatch<React.SetStateAction<number>>;
-  quoteData: any;
-  setQuoteData: React.Dispatch<React.SetStateAction<any>>;
-}
 
 export interface OrderingOptions {
   orderType: OrderType;
@@ -49,262 +30,135 @@ export interface SizeQuantity {
   quantity: number;
 }
 
+interface GetPriceFlowModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  designId: string | null;
+  variantId?: string | null;
+  getQuoteData?: () => Promise<{ sidesUsed: string[]; layerCount: number }> | { sidesUsed: string[]; layerCount: number };
+  productName?: string;
+  variants?: any[];
+  initialSize?: string | null;
+  // States lifted from parent for persistence
+  currentStep: GetPriceFlowStep;
+  setCurrentStep: React.Dispatch<React.SetStateAction<GetPriceFlowStep>>;
+  sizeQuantities: SizeQuantity[];
+  setSizeQuantities: React.Dispatch<React.SetStateAction<SizeQuantity[]>>;
+  estimatedQuantity: number;
+  setEstimatedQuantity: React.Dispatch<React.SetStateAction<number>>;
+  quoteData: any;
+  setQuoteData: React.Dispatch<React.SetStateAction<any>>;
+  printMethod: PrintMethod;
+  setPrintMethod: React.Dispatch<React.SetStateAction<PrintMethod>>;
+  printSize: PrintSize;
+  setPrintSize: React.Dispatch<React.SetStateAction<PrintSize>>;
+}
+
 const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   isOpen,
   onClose,
   designId,
-  onAddToCart,
+  variantId,
   getQuoteData,
   productName = 'Design Item',
   variants,
   initialSize,
   currentStep,
   setCurrentStep,
-  orderingOptions,
-  setOrderingOptions,
   sizeQuantities,
   setSizeQuantities,
   estimatedQuantity,
   setEstimatedQuantity,
   quoteData,
   setQuoteData,
+  printMethod,
+  setPrintMethod,
+  printSize,
+  setPrintSize,
 }) => {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
-  // Content Check 相关状态
   const [needsContentCheck, setNeedsContentCheck] = useState(false);
   const [hasUploadedImages, setHasUploadedImages] = useState(false);
-  // 加车成功相关状态
   const [addedToCartData, setAddedToCartData] = useState<any>(null);
-  // Adding to cart loading state
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-  // [2026-01-06] 从API读取尺码配置（包括所有尺码，不仅仅是费用）
   const [sizeConfig, setSizeConfig] = useState<Array<{ size: string; sizeType?: string; additionalFee: number; displayOrder?: number }>>([]);
 
-  // 组件挂载时的初始日志
-  React.useEffect(() => {
-    console.log('[GetPriceFlowModal] 🎬 Component mounted/rendered', {
-      timestamp: new Date().toISOString(),
-      isOpen,
-      designId,
-      sizeConfigLength: sizeConfig.length
-    });
-  }, []);
-
-  // 尺码费用映射表（从配置读取）
-  const sizeAdjustments = React.useMemo(() => {
-    console.log('[GetPriceFlowModal] 🔄 Computing sizeAdjustments from sizeConfig:', {
-      timestamp: new Date().toISOString(),
-      sizeConfigLength: sizeConfig.length,
-      sizeConfig: sizeConfig.map(s => ({
-        size: s.size,
-        fee: s.additionalFee,
-        type: s.sizeType,
-        order: s.displayOrder
-      }))
-    });
-
-    const adjustments: Record<string, number> = {};
-    sizeConfig.forEach(fee => {
-      const feeValue = fee.additionalFee || 0;
-      adjustments[fee.size] = feeValue; // 记录所有尺码的费用，包括0
-      console.log(`[GetPriceFlowModal] 📊 Size ${fee.size} (${fee.sizeType || 'Adult'}): additionalFee = $${feeValue.toFixed(2)}, displayOrder = ${fee.displayOrder || 0}`);
-    });
-
-    console.log('[GetPriceFlowModal] ✅ Final sizeAdjustments:', {
-      totalSizes: Object.keys(adjustments).length,
-      adjustments: adjustments,
-      sizesWithFees: Object.entries(adjustments).filter(([_, fee]) => fee > 0).map(([size, fee]) => ({ size, fee })),
-      sizesWithoutFees: Object.entries(adjustments).filter(([_, fee]) => fee === 0).map(([size]) => size)
-    });
-
-    return adjustments;
-  }, [sizeConfig]);
-
-  // [2026-01-06] 从公共API获取尺码配置 - useEffect在isOpen为true时执行
+  // Fetch size config when modal opens
   useEffect(() => {
-    console.log('[GetPriceFlowModal] ⚡ useEffect for fetchSizeData triggered', {
-      timestamp: new Date().toISOString(),
-      isOpen,
-      componentMounted: true
-    });
-
-    // 只在modal打开时获取数据
-    if (!isOpen) {
-      console.log('[GetPriceFlowModal] ⚠️ Modal is closed, skipping fetch');
-      return;
-    }
+    if (!isOpen) return;
 
     const fetchSizeData = async () => {
-      console.log('[GetPriceFlowModal] 🚀 Starting to fetch size data from API...', {
-        timestamp: new Date().toISOString(),
-        isOpen
-      });
-
-      // [2026-01-06] 从公共API获取所有启用的尺码配置（包括尺码名称、类型、费用、顺序）
       try {
-        console.log('[GetPriceFlowModal] 📡 About to call sizeFeesApi.getAll()...');
-        console.log('[GetPriceFlowModal] 📡 API endpoint will be: /size-fees');
-
         const sizeFeesRes = await sizeFeesApi.getAll();
-
-        console.log('[GetPriceFlowModal] ✅ sizeFeesApi.getAll() completed successfully');
-        console.log('[GetPriceFlowModal] 📥 Raw API Response:', sizeFeesRes);
-        console.log('[GetPriceFlowModal] 📥 API Response structure:', {
-          success: sizeFeesRes?.success,
-          hasData: !!sizeFeesRes?.data,
-          dataType: typeof sizeFeesRes?.data,
-          isArray: Array.isArray(sizeFeesRes?.data),
-          dataLength: sizeFeesRes?.data?.length || 0,
-          count: sizeFeesRes?.count,
-          firstFewItems: sizeFeesRes?.data?.slice(0, 5) || []
-        });
-
         if (sizeFeesRes && sizeFeesRes.data && Array.isArray(sizeFeesRes.data)) {
-          console.log('[GetPriceFlowModal] ✅ Data is valid array, processing...');
-
-          const configData = sizeFeesRes.data.map(fee => ({
+          setSizeConfig(sizeFeesRes.data.map((fee: any) => ({
             size: fee.size,
             sizeType: fee.sizeType || 'Adult',
             additionalFee: fee.additionalFee || 0,
             displayOrder: fee.displayOrder || 0,
-          }));
-
-          console.log('[GetPriceFlowModal] ✅ Processed configData:', {
-            totalSizes: configData.length,
-            allSizes: configData.map(s => ({
-              size: s.size,
-              type: s.sizeType,
-              fee: s.additionalFee,
-              order: s.displayOrder
-            })),
-            youthSizes: configData.filter(s => s.sizeType === 'Youth').map(s => s.size),
-            adultSizes: configData.filter(s => s.sizeType === 'Adult' || !s.sizeType).map(s => s.size),
-            sizesWithFees: configData.filter(s => s.additionalFee > 0).map(s => ({
-              size: s.size,
-              fee: s.additionalFee,
-              type: s.sizeType
-            }))
-          });
-
-          setSizeConfig(configData);
-          console.log('[GetPriceFlowModal] ✅✅✅ setSizeConfig called with', configData.length, 'items');
+          })));
         } else {
-          console.error('[GetPriceFlowModal] ❌❌❌ API returned invalid data structure:', {
-            response: sizeFeesRes,
-            hasData: !!sizeFeesRes?.data,
-            isArray: Array.isArray(sizeFeesRes?.data),
-            dataType: typeof sizeFeesRes?.data
-          });
           setSizeConfig([]);
         }
-      } catch (e: any) {
-        console.error('[GetPriceFlowModal] ❌❌❌ Failed to fetch global size fees from API:', {
-          error: e,
-          errorType: typeof e,
-          errorName: e?.name,
-          message: e?.message,
-          stack: e?.stack,
-          response: e?.response,
-          status: e?.status,
-          statusCode: e?.statusCode
-        });
-        // 如果API调用失败，使用空数组，后续会使用默认值
+      } catch (e) {
+        console.error('[GetPriceFlowModal] Failed to fetch size fees:', e);
         setSizeConfig([]);
       }
     };
 
-    // 立即执行数据获取
-    console.log('[GetPriceFlowModal] 🎯 About to call fetchSizeData()...');
-    fetchSizeData().catch(err => {
-      console.error('[GetPriceFlowModal] ❌❌❌ fetchSizeData() promise rejected with error:', err);
-    });
-  }, [isOpen]); // 依赖isOpen，当modal打开时获取数据
+    fetchSizeData();
+  }, [isOpen]);
 
-  // [2026-01-06] 从配置读取尺码列表，按类型分组和显示顺序排序
+  // Size adjustment map
+  const sizeAdjustments = React.useMemo(() => {
+    const adjustments: Record<string, number> = {};
+    sizeConfig.forEach(fee => {
+      adjustments[fee.size] = fee.additionalFee || 0;
+    });
+    return adjustments;
+  }, [sizeConfig]);
+
+  // Size lists sorted by displayOrder
   const { youthSizes, adultSizes, allSizes } = React.useMemo(() => {
-    console.log('[GetPriceFlowModal] 🔄 Computing youthSizes/adultSizes from sizeConfig:', {
-      sizeConfigLength: sizeConfig.length,
-      sizeConfig: sizeConfig
-    });
-
     if (sizeConfig.length === 0) {
-      // 后备默认值（如果API未返回数据）
       const defaultYouth = ['YS', 'YM', 'YL'];
       const defaultAdult = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
-      console.warn('[GetPriceFlowModal] ⚠️ Using default sizes (no config from API):', {
-        youth: defaultYouth,
-        adult: defaultAdult
-      });
-      return {
-        youthSizes: defaultYouth,
-        adultSizes: defaultAdult,
-        allSizes: [...defaultYouth, ...defaultAdult],
-      };
+      return { youthSizes: defaultYouth, adultSizes: defaultAdult, allSizes: [...defaultYouth, ...defaultAdult] };
     }
-
-    // 按显示顺序排序
-    const sorted = [...sizeConfig].sort((a, b) => {
-      const orderA = a.displayOrder || 0;
-      const orderB = b.displayOrder || 0;
-      if (orderA !== orderB) return orderA - orderB;
-      return a.size.localeCompare(b.size);
-    });
-
-    console.log('[GetPriceFlowModal] 📊 Sorted sizes:', sorted.map(s => ({
-      size: s.size,
-      type: s.sizeType,
-      order: s.displayOrder,
-      fee: s.additionalFee
-    })));
-
+    const sorted = [...sizeConfig].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0) || a.size.localeCompare(b.size));
     const youth: string[] = [];
     const adult: string[] = [];
-    const all: string[] = [];
-
-    sorted.forEach((sf) => {
-      all.push(sf.size);
-      if (sf.sizeType === 'Youth') {
-        youth.push(sf.size);
-      } else if (sf.sizeType === 'Adult' || !sf.sizeType) {
-        adult.push(sf.size);
-      }
+    sorted.forEach(sf => {
+      if (sf.sizeType === 'Youth') youth.push(sf.size);
+      else adult.push(sf.size);
     });
-
-    const result = {
+    return {
       youthSizes: youth.length > 0 ? youth : ['YS', 'YM', 'YL'],
       adultSizes: adult.length > 0 ? adult : ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'],
-      allSizes: all.length > 0 ? all : [...youth, ...adult],
+      allSizes: [...youth, ...adult],
     };
-
-    console.log('[GetPriceFlowModal] ✅ Final size groups:', {
-      youthSizes: result.youthSizes,
-      adultSizes: result.adultSizes,
-      allSizes: result.allSizes
-    });
-
-    return result;
   }, [sizeConfig]);
-  const womensSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'], []); // 女性尺码
-  const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示女性尺码
 
-  // 初始化尺码数量 — 仅在 modal 已打开后执行，确保 initialSize 已就绪
+  // Initialize size quantities when entering quantity step
   React.useEffect(() => {
-    if (isOpen && currentStep === 'quantity' && sizeQuantities.length === 0 && orderingOptions.sizesQuantities === 'i-know-sizes') {
-      setSizeQuantities(
-        allSizes.map(size => ({ size, quantity: initialSize === size ? 1 : 0 }))
-      );
+    if (isOpen && currentStep === 'quantity' && sizeQuantities.length === 0) {
+      setSizeQuantities(allSizes.map(size => ({ size, quantity: initialSize === size ? 1 : 0 })));
     }
-  }, [isOpen, currentStep, orderingOptions.sizesQuantities, allSizes, sizeQuantities.length, initialSize]);
+  }, [isOpen, currentStep, allSizes, sizeQuantities.length, initialSize]);
 
-  // 检查是否有上传的图片（用于 Content Check）
+  // Total quantity
+  const totalQuantity = React.useMemo(() => {
+    return sizeQuantities.reduce((sum, sq) => sum + sq.quantity, 0);
+  }, [sizeQuantities]);
+
+  // Check for uploaded images (content check)
   React.useEffect(() => {
     const checkImages = async () => {
       if (getQuoteData) {
         try {
           const data = typeof getQuoteData === 'function' ? await getQuoteData() : getQuoteData;
-          // 检查是否有上传的图片对象
           if ((data as any)?.hasUploadedImages) {
             setHasUploadedImages(true);
             setNeedsContentCheck(true);
@@ -317,370 +171,36 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     checkImages();
   }, [getQuoteData]);
 
-  // 计算总数量
-  const totalQuantity = React.useMemo(() => {
-    if (orderingOptions.sizesQuantities === 'i-know-sizes') {
-      return sizeQuantities.reduce((sum: number, sq: SizeQuantity) => sum + sq.quantity, 0);
-    } else {
-      return estimatedQuantity;
-    }
-  }, [sizeQuantities, estimatedQuantity, orderingOptions.sizesQuantities]);
-
-  // 重置状态当模态框关闭
+  // Reset local state when modal closes
   React.useEffect(() => {
     if (!isOpen) {
-      // Note: We NO LONGER reset persistent state here.
-      // We only reset local temporary states if needed.
       setQuoteError(null);
       setAddedToCartData(null);
     }
   }, [isOpen]);
 
-
-
-  // 步骤2：Ordering Options
-  const renderOrderingOptionsStep = () => (
-    <div className="dl-get-price-flow__step">
-      <h2 className="dl-get-price-flow__step-title">Ordering Options</h2>
-      <p className="dl-get-price-flow__step-description">
-        Configure your order preferences
-      </p>
-
-      {/* 组1：Shipping */}
-      <div className="dl-get-price-flow__option-group">
-        <h3 className="dl-get-price-flow__option-group-title">Shipping</h3>
-        <div className="dl-get-price-flow__radio-group">
-          <label className={`dl-get-price-flow__radio-label ${orderingOptions.shipping === 'single-address' ? 'is-selected' : ''}`}>
-            <input
-              type="radio"
-              name="shipping"
-              value="single-address"
-              checked={orderingOptions.shipping === 'single-address'}
-              onChange={(e) => setOrderingOptions(prev => ({
-                ...prev,
-                shipping: e.target.value as ShippingOption,
-              }))}
-            />
-            <span>Ship to single address</span>
-          </label>
-          <label className={`dl-get-price-flow__radio-label ${orderingOptions.shipping === 'multiple-addresses' ? 'is-selected' : ''}`}>
-            <input
-              type="radio"
-              name="shipping"
-              value="multiple-addresses"
-              checked={orderingOptions.shipping === 'multiple-addresses'}
-              onChange={(e) => setOrderingOptions(prev => ({
-                ...prev,
-                shipping: e.target.value as ShippingOption,
-              }))}
-            />
-            <span>Ship to multiple addresses</span>
-            {orderingOptions.shipping === 'multiple-addresses' && (
-              <span className="dl-get-price-flow__hint">
-                (Minimum 6 items required)
-              </span>
-            )}
-          </label>
-        </div>
-      </div>
-
-      {/* 组2：Sizes and Quantities */}
-      <div className="dl-get-price-flow__option-group">
-        <h3 className="dl-get-price-flow__option-group-title">Sizes and Quantities</h3>
-        <div className="dl-get-price-flow__radio-group">
-          <label className={`dl-get-price-flow__radio-label ${orderingOptions.sizesQuantities === 'i-know-sizes' ? 'is-selected' : ''}`}>
-            <input
-              type="radio"
-              name="sizes-quantities"
-              value="i-know-sizes"
-              checked={orderingOptions.sizesQuantities === 'i-know-sizes'}
-              onChange={(e) => setOrderingOptions(prev => ({
-                ...prev,
-                sizesQuantities: e.target.value as SizesQuantitiesOption,
-              }))}
-            />
-            <span>I know the sizes I need</span>
-          </label>
-          <label className={`dl-get-price-flow__radio-label ${orderingOptions.sizesQuantities === 'invite-group' ? 'is-selected' : ''}`}>
-            <input
-              type="radio"
-              name="sizes-quantities"
-              value="invite-group"
-              checked={orderingOptions.sizesQuantities === 'invite-group'}
-              onChange={(e) => setOrderingOptions(prev => ({
-                ...prev,
-                sizesQuantities: e.target.value as SizesQuantitiesOption,
-              }))}
-            />
-            <span>Invite my group to choose their sizes</span>
-          </label>
-        </div>
-      </div>
-
-      {/* 组3：Payment */}
-      <div className="dl-get-price-flow__option-group">
-        <h3 className="dl-get-price-flow__option-group-title">Payment</h3>
-        <div className="dl-get-price-flow__radio-group">
-          <label className={`dl-get-price-flow__radio-label ${orderingOptions.payment === 'i-pay' ? 'is-selected' : ''}`}>
-            <input
-              type="radio"
-              name="payment"
-              value="i-pay"
-              checked={orderingOptions.payment === 'i-pay'}
-              onChange={(e) => setOrderingOptions(prev => ({
-                ...prev,
-                payment: e.target.value as PaymentOption,
-              }))}
-            />
-            <span>I will pay for the entire order</span>
-          </label>
-          <label className={`dl-get-price-flow__radio-label ${orderingOptions.payment === 'group-pays' ? 'is-selected' : ''}`}>
-            <input
-              type="radio"
-              name="payment"
-              value="group-pays"
-              checked={orderingOptions.payment === 'group-pays'}
-              onChange={(e) => setOrderingOptions(prev => ({
-                ...prev,
-                payment: e.target.value as PaymentOption,
-              }))}
-            />
-            <span>Invite my group to pay for their order</span>
-          </label>
-        </div>
-      </div>
-
-      {/* 预计送达日期提示 */}
-      <div className="dl-get-price-flow__delivery-hint">
-        <p>🚚 Free Standard Shipping on all orders!</p>
-      </div>
-
-      <div className="dl-get-price-flow__actions">
-        <button
-          className="dl-modal__btn dl-modal__btn--secondary"
-          onClick={() => setCurrentStep('quantity')}
-        >
-          Back to Sizes
-        </button>
-        <button
-          className="dl-modal__btn dl-modal__btn--primary"
-          onClick={() => setCurrentStep('order-options')}
-        >
-          See My Price
-        </button>
-      </div>
-    </div>
-  );
-
-  // 步骤1：Quantity - 尺码网格 (Now the first step)
-  const renderQuantityStep = () => {
-    if (orderingOptions.sizesQuantities === 'invite-group') {
-      return (
-        <div className="dl-get-price-flow__step">
-          <h2 className="dl-get-price-flow__step-title">How many are you ordering?</h2>
-          <p className="dl-get-price-flow__step-description">
-            Enter the estimated total quantity for your group order. We&apos;ll give you a price based on this.
-          </p>
-
-          <div className="dl-get-price-flow__estimated-quantity">
-            <button
-              className="dl-get-price-flow__quantity-btn"
-              onClick={() => setEstimatedQuantity(Math.max(1, estimatedQuantity - 1))}
-            >
-              −
-            </button>
-            <input
-              type="number"
-              min="1"
-              value={estimatedQuantity}
-              onChange={(e) => setEstimatedQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-              className="dl-get-price-flow__quantity-input"
-            />
-            <button
-              className="dl-get-price-flow__quantity-btn"
-              onClick={() => setEstimatedQuantity(estimatedQuantity + 1)}
-            >
-              +
-            </button>
-          </div>
-
-          <div className="dl-get-price-flow__total-quantity">
-            <span className="dl-get-price-flow__total-label">Estimated Total:</span>
-            <span className="dl-get-price-flow__total-value">{estimatedQuantity} items</span>
-          </div>
-
-          <div className="dl-get-price-flow__actions">
-            <button className="dl-modal__btn dl-modal__btn--secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button
-              className="dl-modal__btn dl-modal__btn--primary"
-              onClick={() => setCurrentStep('ordering-options')}
-              disabled={estimatedQuantity < 1}
-            >
-              Next: Shipping Details
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="dl-get-price-flow__step">
-        <h2 className="dl-get-price-flow__step-title">Select Sizes & Quantities</h2>
-        <p className="dl-get-price-flow__step-description">
-          Provide the number of items you need for each size to get an accurate price.
-        </p>
-
-        <div className="dl-get-price-flow__size-grid-container">
-          {/* ADULT尺码 */}
-          <div className="dl-get-price-flow__size-section">
-            <h4 className="dl-get-price-flow__size-section-title">ADULT SIZES</h4>
-            <div className="dl-get-price-flow__size-grid">
-              {adultSizes.map(size => {
-                const adjustment = sizeAdjustments[size] || 0;
-                const sizeFee = adjustment > 0 ? `(+$${adjustment.toFixed(2)})` : '';
-
-                // 调试日志（只在首次渲染时打印）
-                if (adultSizes.indexOf(size) === 0) {
-                  console.log('[GetPriceFlowModal] 🎨 Rendering Adult sizes:', {
-                    totalSizes: adultSizes.length,
-                    firstSize: size,
-                    adjustment: adjustment,
-                    sizeAdjustments: sizeAdjustments,
-                    hasAdjustment: adjustment > 0
-                  });
-                }
-
-                return (
-                  <div key={size} className="dl-get-price-flow__size-item">
-                    <label className="dl-get-price-flow__size-label">
-                      {size}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={sizeQuantities.find(sq => sq.size === size)?.quantity || 0}
-                      onChange={(e) => {
-                        const value = Math.max(0, parseInt(e.target.value) || 0);
-                        setSizeQuantities(prev => {
-                          const existing = prev.find(sq => sq.size === size);
-                          if (existing) {
-                            return prev.map(sq => sq.size === size ? { ...sq, quantity: value } : sq);
-                          } else {
-                            return [...prev, { size, quantity: value }];
-                          }
-                        });
-                        setQuoteData(null); // Reset quote data to trigger loading
-                      }}
-                      className="dl-get-price-flow__size-input"
-                    />
-                    {sizeFee && <span className="dl-get-price-flow__size-fee">{sizeFee}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* YOUTH尺码 */}
-          <div className="dl-get-price-flow__size-section">
-            <h4 className="dl-get-price-flow__size-section-title">YOUTH SIZES</h4>
-            <div className="dl-get-price-flow__size-grid">
-              {youthSizes.map(size => {
-                const adjustment = sizeAdjustments[size] || 0;
-                const sizeFee = adjustment > 0 ? `(+$${adjustment.toFixed(2)})` : '';
-
-                // 调试日志（只在首次渲染时打印）
-                if (youthSizes.indexOf(size) === 0) {
-                  console.log('[GetPriceFlowModal] 🎨 Rendering Youth sizes:', {
-                    totalSizes: youthSizes.length,
-                    firstSize: size,
-                    adjustment: adjustment,
-                    sizeAdjustments: sizeAdjustments,
-                    hasAdjustment: adjustment > 0
-                  });
-                }
-
-                return (
-                  <div key={size} className="dl-get-price-flow__size-item">
-                    <label className="dl-get-price-flow__size-label">{size}</label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={sizeQuantities.find(sq => sq.size === size)?.quantity || 0}
-                      onChange={(e) => {
-                        const value = Math.max(0, parseInt(e.target.value) || 0);
-                        setSizeQuantities(prev => {
-                          const existing = prev.find(sq => sq.size === size);
-                          if (existing) {
-                            return prev.map(sq => sq.size === size ? { ...sq, quantity: value } : sq);
-                          } else {
-                            return [...prev, { size, quantity: value }];
-                          }
-                        });
-                      }}
-                      className="dl-get-price-flow__size-input"
-                    />
-                    {sizeFee && <span className="dl-get-price-flow__size-fee">{sizeFee}</span>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="dl-get-price-flow__total-quantity">
-          <span className="dl-get-price-flow__total-label">Order Subtotal:</span>
-          <span className="dl-get-price-flow__total-value">{totalQuantity} items</span>
-        </div>
-
-        <div className="dl-get-price-flow__actions">
-          <button className="dl-modal__btn dl-modal__btn--secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="dl-modal__btn dl-modal__btn--primary"
-            onClick={() => setCurrentStep('ordering-options')}
-            disabled={totalQuantity === 0}
-          >
-            Next: Order Options
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // 获取报价数据
+  // Fetch quote with debounce when quantities change in the quantity step
   const fetchQuote = async () => {
-    if (totalQuantity === 0) {
-      return;
-    }
+    if (totalQuantity === 0) return;
 
     setQuoteLoading(true);
     setQuoteError(null);
 
     try {
-      // 获取报价所需的数据（使用的面和图层数）
-      let quoteParams: { sidesUsed: string[]; layerCount: number } = {
-        sidesUsed: ['front'], // 默认值
-        layerCount: 0,
-      };
-
+      let quoteParams: { sidesUsed: string[]; layerCount: number } = { sidesUsed: ['front'], layerCount: 0 };
       if (getQuoteData) {
         const data = await (typeof getQuoteData === 'function' ? getQuoteData() : Promise.resolve(getQuoteData));
         quoteParams = data;
       }
 
       if (designId) {
-        // 调用报价API
         const response = await designLabApi.requestQuote(designId, {
           quantity: totalQuantity,
           sidesUsed: quoteParams.sidesUsed,
           layerCount: quoteParams.layerCount,
-          // Pass size quantities for accurate pricing
           sizeQuantities: sizeQuantities.filter(sq => sq.quantity > 0),
+          printMethod,
+          printSize,
         }) as any;
 
         if (response && response.data) {
@@ -689,43 +209,41 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           throw new Error('Failed to get price quote');
         }
       } else {
-        // 如果没有 designId，使用模拟数据，不阻塞流程
-        console.log('[GetPriceFlowModal] No designId, using mock quote data');
-        setQuoteData({
-          unitPrice: 0,
-          total: 0,
-          discountedUnitPrice: 0,
-          currency: 'USD',
-          breakdown: {
-            quantityDiscount: 0,
-            sidesCount: quoteParams.sidesUsed.length,
-            layerCount: quoteParams.layerCount,
-            basePrice: 0,
-            designPrice: 0
-          }
-        });
+        setQuoteData({ unitPrice: 0, total: 0, discountedUnitPrice: 0, currency: 'USD', breakdown: { quantityDiscount: 0 } });
       }
     } catch (error: any) {
       console.error('[GetPriceFlowModal] Error fetching quote:', error);
-      setQuoteError(error?.message || 'Failed to get price quote. Please try again.');
+      setQuoteError(error?.message || 'Failed to get price quote.');
     } finally {
       setQuoteLoading(false);
     }
   };
 
-  // 当进入Order Options步骤时，自动获取报价
-  // 依赖 totalQuantity 和 sizeQuantities 变化时重新获取
+  // Debounced quote fetch when on quantity step
   useEffect(() => {
-    if (currentStep === 'order-options' && designId && totalQuantity > 0 && !quoteLoading) {
-      fetchQuote();
-    }
+    if (currentStep !== 'quantity' || totalQuantity === 0) return;
+    const timer = setTimeout(() => {
+      if (!quoteLoading) fetchQuote();
+    }, 700);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentStep, designId, totalQuantity, JSON.stringify(sizeQuantities)]);
+  }, [currentStep, totalQuantity, JSON.stringify(sizeQuantities), printMethod, printSize, designId]);
 
-  // 处理加入购物车
-  const handleAddToCart = async () => {
-    if (!onAddToCart) {
-      console.warn('[GetPriceFlowModal] onAddToCart callback not provided');
+  // Handle size quantity input change
+  const handleSizeQtyChange = (size: string, value: number) => {
+    const qty = Math.max(0, value);
+    setSizeQuantities(prev => {
+      const existing = prev.find(sq => sq.size === size);
+      if (existing) return prev.map(sq => sq.size === size ? { ...sq, quantity: qty } : sq);
+      return [...prev, { size, quantity: qty }];
+    });
+    setQuoteData(null);
+  };
+
+  // Add to cart handler — calls cartApi directly
+  const handleAddToCart = async (redirectToCheckout = false) => {
+    if (!variantId) {
+      setQuoteError('No product variant selected. Please select a product first.');
       return;
     }
 
@@ -733,25 +251,24 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     setQuoteError(null);
 
     try {
-      const orderData = {
-        designId,
-        orderingOptions,
-        sizeQuantities: orderingOptions.sizesQuantities === 'i-know-sizes' ? sizeQuantities : null,
-        estimatedQuantity: orderingOptions.sizesQuantities === 'invite-group' ? estimatedQuantity : null,
+      const activeSizes = sizeQuantities.filter(sq => sq.quantity > 0);
+
+      await cartApi.addItem(
+        variantId,
         totalQuantity,
-        quoteData,
-      };
+        designId || undefined,
+        activeSizes,
+        { printMethod, printSize, quoteData }
+      );
 
-      await onAddToCart(orderData);
+      if (needsContentCheck) setNeedsContentCheck(false);
 
-      // 标记内容已确认（如果通过了 Content Check）
-      if (needsContentCheck) {
-        setNeedsContentCheck(false);
+      if (redirectToCheckout) {
+        window.location.href = '/checkout';
+      } else {
+        setAddedToCartData({ sizeQuantities: activeSizes, totalQuantity, quoteData });
+        setCurrentStep('added-to-cart');
       }
-
-      // 进入加车成功页
-      setAddedToCartData(orderData);
-      setCurrentStep('added-to-cart');
     } catch (error) {
       console.error('[GetPriceFlowModal] Error adding to cart:', error);
       setQuoteError('Failed to add to cart. Please try again.');
@@ -760,12 +277,254 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     }
   };
 
-  // 步骤5：Content Check - 内容合规确认
+  // ─── Step 1: Print Method ─────────────────────────────────────────────────
+  const renderPrintMethodStep = () => {
+    const dtfOptions: Array<{ value: PrintSize; label: string; price: number; desc: string }> = [
+      { value: 'small', label: 'Under 5"', price: 5.99, desc: 'Left chest / small logo' },
+      { value: 'medium', label: '5" – 11"', price: 8.99, desc: 'Standard front print' },
+      { value: 'large', label: '11" – 22"', price: 11.99, desc: 'Full front / back' },
+    ];
+    const embroideryOptions: Array<{ value: PrintSize; label: string; price: number; desc: string }> = [
+      { value: 'small', label: 'Under 5"', price: 14.99, desc: 'Left chest / small logo' },
+      { value: 'medium', label: '5" – 11"', price: 24.99, desc: 'Large embroidery' },
+    ];
+    const sizeOptions = printMethod === 'dtf' ? dtfOptions : embroideryOptions;
+    const validPrintSize = sizeOptions.find(o => o.value === printSize) ? printSize : sizeOptions[0].value;
+
+    return (
+      <div className="dl-get-price-flow__step">
+        <h2 className="dl-get-price-flow__step-title">Print Method</h2>
+        <p className="dl-get-price-flow__step-description">Choose how your design will be printed</p>
+
+        <div className="dl-get-price-flow__method-row">
+          {[
+            { value: 'dtf' as PrintMethod, label: 'DTF Print', icon: '🖨️', desc: 'Full color, photo-quality' },
+            { value: 'embroidery' as PrintMethod, label: 'Embroidery', icon: '🧵', desc: 'Stitched, premium feel' },
+          ].map(opt => (
+            <button
+              key={opt.value}
+              className={`dl-get-price-flow__method-card${printMethod === opt.value ? ' is-selected' : ''}`}
+              onClick={() => {
+                setPrintMethod(opt.value);
+                if (opt.value === 'embroidery' && printSize === 'large') setPrintSize('medium');
+              }}
+            >
+              <span className="dl-get-price-flow__method-icon">{opt.icon}</span>
+              <span className="dl-get-price-flow__method-label">{opt.label}</span>
+              <span className="dl-get-price-flow__method-desc">{opt.desc}</span>
+            </button>
+          ))}
+        </div>
+
+        <div style={{ marginTop: '24px' }}>
+          <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '12px', fontWeight: 600 }}>
+            Print Size <span style={{ fontWeight: 400 }}>(per location)</span>
+          </p>
+          <div className="dl-get-price-flow__size-option-row">
+            {sizeOptions.map(opt => (
+              <button
+                key={opt.value}
+                className={`dl-get-price-flow__size-option-card${validPrintSize === opt.value ? ' is-selected' : ''}`}
+                onClick={() => setPrintSize(opt.value)}
+              >
+                <span className="dl-get-price-flow__size-option-label">{opt.label}</span>
+                <span className="dl-get-price-flow__size-option-price">${opt.price.toFixed(2)}</span>
+                <span className="dl-get-price-flow__size-option-desc">{opt.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          className="dl-modal__btn dl-modal__btn--primary"
+          style={{ marginTop: '28px', width: '100%' }}
+          onClick={() => setCurrentStep('quantity')}
+        >
+          Continue
+        </button>
+      </div>
+    );
+  };
+
+  // ─── Step 2: Sizes & Quantities ───────────────────────────────────────────
+  const renderQuantityStep = () => {
+    const thumbUrl = variants && variants.length > 0
+      ? (variants[0].imageUrl || variants[0].image || variants[0].thumbnailUrl || null)
+      : null;
+
+    const printSizeLabel = printSize === 'small' ? 'Under 5"' : printSize === 'medium' ? '5"–11"' : '11"–22"';
+    const methodLabel = printMethod === 'dtf' ? '🖨️ DTF Print' : '🧵 Embroidery';
+
+    const renderSizesRow = (sizes: string[]) => (
+      <div className="gp-sizes-row">
+        {sizes.map(size => {
+          const adj = sizeAdjustments[size] || 0;
+          const qty = sizeQuantities.find(sq => sq.size === size)?.quantity || 0;
+          return (
+            <div key={size} className="gp-size-col">
+              <span className="gp-size-col-label">{size}</span>
+              <input
+                type="number"
+                min="0"
+                value={qty === 0 ? '' : qty}
+                placeholder="0"
+                className={`gp-size-input-box${qty > 0 ? ' has-val' : ''}`}
+                onChange={(e) => handleSizeQtyChange(size, parseInt(e.target.value) || 0)}
+              />
+              {adj > 0
+                ? <span className="gp-size-surcharge">+${adj.toFixed(2)}</span>
+                : <span className="gp-size-surcharge gp-size-surcharge--empty" />
+              }
+            </div>
+          );
+        })}
+      </div>
+    );
+
+    return (
+      <div className="dl-get-price-flow__step">
+        <h2 className="dl-get-price-flow__step-title">Sizes &amp; Quantities</h2>
+
+        {/* Product card */}
+        <div className="gp-product-card">
+          {thumbUrl ? (
+            <img src={thumbUrl} className="gp-product-thumb" alt={typeof productName === 'string' ? productName : ''} />
+          ) : (
+            <div className="gp-product-thumb gp-product-thumb--placeholder">
+              {(typeof productName === 'string' ? productName : '').charAt(0).toUpperCase() || 'P'}
+            </div>
+          )}
+
+          <div className="gp-product-info">
+            <div className="gp-product-name">{typeof productName === 'string' ? productName : ''}</div>
+            <div className="gp-product-meta">{methodLabel} · {printSizeLabel}</div>
+
+            {/* Adult sizes */}
+            <div className="gp-sizes-section">
+              <div className="gp-sizes-section-label">Adult</div>
+              {renderSizesRow(adultSizes)}
+            </div>
+
+            {/* Youth sizes */}
+            {youthSizes.length > 0 && (
+              <div className="gp-sizes-section">
+                <div className="gp-sizes-section-label">Youth</div>
+                {renderSizesRow(youthSizes)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Inline price summary */}
+        <div className="gp-inline-price-summary">
+          {totalQuantity === 0 ? (
+            <span className="gp-price-hint">Enter quantities above to see pricing</span>
+          ) : quoteLoading ? (
+            <span className="gp-price-loading">Calculating price…</span>
+          ) : quoteData ? (
+            <div className="gp-price-breakdown">
+              {/* Common per-item fees */}
+              <div className="gp-price-breakdown-rows">
+                {(quoteData.breakdown?.basePrice ?? 0) > 0 && (
+                  <div className="gp-price-breakdown-row gp-price-breakdown-row--muted">
+                    <span className="gp-price-breakdown-label">Base price</span>
+                    <span className="gp-price-breakdown-val">${(quoteData.breakdown.basePrice).toFixed(2)}/item</span>
+                  </div>
+                )}
+                {(quoteData.breakdown?.printMethodFee ?? 0) > 0 && (
+                  <div className="gp-price-breakdown-row gp-price-breakdown-row--muted">
+                    <span className="gp-price-breakdown-label">
+                      {quoteData.breakdown.printMethod === 'embroidery' ? 'Embroidery' : 'DTF print'} ({quoteData.breakdown.printSize})
+                    </span>
+                    <span className="gp-price-breakdown-val">+${(quoteData.breakdown.printMethodFee).toFixed(2)}/item</span>
+                  </div>
+                )}
+                {(quoteData.breakdown?.sidesFee ?? 0) > 0 && (
+                  <div className="gp-price-breakdown-row gp-price-breakdown-row--muted">
+                    <span className="gp-price-breakdown-label">Extra print sides ×{quoteData.breakdown.sidesCount - 1}</span>
+                    <span className="gp-price-breakdown-val">+${(quoteData.breakdown.sidesFee).toFixed(2)}/item</span>
+                  </div>
+                )}
+                {(quoteData.breakdown?.layersFee ?? 0) > 0 && (
+                  <div className="gp-price-breakdown-row gp-price-breakdown-row--muted">
+                    <span className="gp-price-breakdown-label">Design complexity</span>
+                    <span className="gp-price-breakdown-val">+${(quoteData.breakdown.layersFee).toFixed(2)}/item</span>
+                  </div>
+                )}
+              </div>
+              {/* Per-size line items */}
+              <div className="gp-price-breakdown-sizes">
+                {sizeQuantities.filter(sq => sq.quantity > 0).map(sq => {
+                  const surcharge = sizeAdjustments[sq.size] || 0;
+                  const basePricePerItem = (quoteData.breakdown?.basePrice ?? 0)
+                    + surcharge
+                    + (quoteData.breakdown?.printMethodFee ?? 0)
+                    + (quoteData.breakdown?.sidesFee ?? 0)
+                    + (quoteData.breakdown?.layersFee ?? 0);
+                  const lineTotal = basePricePerItem * sq.quantity;
+                  return (
+                    <div key={sq.size} className="gp-price-breakdown-row gp-price-breakdown-row--size">
+                      <span className="gp-price-breakdown-label">
+                        {sq.size}
+                        {surcharge > 0 && <span className="gp-price-size-surcharge"> +${surcharge.toFixed(2)}</span>}
+                        {' '}× {sq.quantity}
+                      </span>
+                      <span className="gp-price-breakdown-val">${lineTotal.toFixed(2)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Grand total */}
+              <div className="gp-price-breakdown-total">
+                <div className="gp-price-breakdown-grand">
+                  Total ({totalQuantity} item{totalQuantity !== 1 ? 's' : ''}): <strong>${(quoteData.total || 0).toFixed(2)}</strong>
+                </div>
+              </div>
+              {(quoteData.breakdown?.quantityDiscount ?? 0) > 0 && (
+                <div className="gp-price-discount">Bulk discount applied — saved ${(quoteData.discount || 0).toFixed(2)}</div>
+              )}
+            </div>
+          ) : quoteError ? (
+            <div className="gp-price-error-row">
+              <span className="gp-price-error">{quoteError}</span>
+              <button className="gp-price-retry" onClick={fetchQuote}>Retry</button>
+            </div>
+          ) : null}
+        </div>
+
+        {/* CTA row */}
+        <div className="gp-cta-row">
+          <button
+            className="dl-modal__btn dl-modal__btn--secondary"
+            disabled={totalQuantity === 0 || isAddingToCart}
+            onClick={() => {
+              if (needsContentCheck && hasUploadedImages) setCurrentStep('content-check');
+              else handleAddToCart(false);
+            }}
+          >
+            {isAddingToCart ? 'Adding…' : 'Add to Cart'}
+          </button>
+          <button
+            className="gp-btn-checkout"
+            disabled={totalQuantity === 0 || isAddingToCart}
+            onClick={() => {
+              if (needsContentCheck && hasUploadedImages) setCurrentStep('content-check');
+              else handleAddToCart(true);
+            }}
+          >
+            {isAddingToCart ? 'Processing…' : 'Buy Now →'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // ─── Content Check ────────────────────────────────────────────────────────
   const renderContentCheckStep = () => (
     <div className="dl-get-price-flow__step">
       <h2 className="dl-get-price-flow__step-title">Content Check</h2>
       <p className="dl-get-price-flow__step-description">
-        By continuing with your order, you confirm that any uploaded images comply with our content standards and copyright requirements.
+        By continuing, you confirm that any uploaded images comply with our content standards and copyright requirements.
       </p>
 
       <div className="dl-get-price-flow__content-check-warning">
@@ -784,22 +543,12 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       )}
 
       <div className="dl-get-price-flow__actions">
-        <button
-          className="dl-modal__btn dl-modal__btn--secondary"
-          onClick={() => {
-            onClose();
-            // 返回设计器（通过关闭模态框）
-          }}
-        >
+        <button className="dl-modal__btn dl-modal__btn--secondary" onClick={onClose}>
           Edit Design
         </button>
         <button
           className="dl-modal__btn dl-modal__btn--primary"
-          onClick={() => {
-            // 同意并继续到加入购物车
-            setNeedsContentCheck(false);
-            handleAddToCart();
-          }}
+          onClick={() => { setNeedsContentCheck(false); handleAddToCart(false); }}
           disabled={isAddingToCart}
         >
           {isAddingToCart ? 'Adding...' : 'Agree & Continue'}
@@ -808,7 +557,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     </div>
   );
 
-  // 步骤6：Added to Cart - 加车成功页
+  // ─── Added to Cart ────────────────────────────────────────────────────────
   const renderAddedToCartStep = () => {
     if (!addedToCartData) return null;
 
@@ -843,14 +592,9 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         <div className="dl-get-price-flow__actions">
           <button
             className="dl-modal__btn dl-modal__btn--primary"
-            onClick={() => {
-              // 跳转到购物车页面
-              if (typeof window !== 'undefined') {
-                window.location.href = '/cart';
-              }
-            }}
+            onClick={() => { if (typeof window !== 'undefined') window.location.href = '/checkout'; }}
           >
-            Review Cart & Check Out
+            Go to Checkout
           </button>
         </div>
 
@@ -859,224 +603,20 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           <div className="dl-get-price-flow__want-more-options">
             <button
               className="dl-get-price-flow__want-more-btn"
-              onClick={() => {
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/products';
-                }
-              }}
+              onClick={() => { if (typeof window !== 'undefined') window.location.href = '/products'; }}
             >
               Browse the catalog
             </button>
-            <button
-              className="dl-get-price-flow__want-more-btn"
-              onClick={() => {
-                onClose();
-                // 从当前设计继续
-              }}
-            >
+            <button className="dl-get-price-flow__want-more-btn" onClick={onClose}>
               Start from this design
             </button>
             <button
               className="dl-get-price-flow__want-more-btn"
-              onClick={() => {
-                onClose();
-                // 开始新设计（重置画布）
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/design-lab';
-                }
-              }}
+              onClick={() => { if (typeof window !== 'undefined') window.location.href = '/design-lab'; }}
             >
               Start a new design
             </button>
           </div>
-        </div>
-      </div>
-    );
-  };
-
-  // 步骤 4 的高级渲染方案（Tailwind 风格）
-  const renderOrderOptionsStep = () => {
-    // Declare quote variable properly
-    const quote = quoteData || {
-      unitPrice: 0,
-      total: 0,
-      discountedUnitPrice: 0,
-      discount: 0,
-      breakdown: { quantityDiscount: 0, sidesCount: 0, layerCount: 0 }
-    };
-
-    // 如果正在加载，显示加载状态
-    if (quoteLoading) {
-      return (
-        <div className="dl-get-price-flow__step">
-          <h2 className="dl-get-price-flow__step-title">Order Options</h2>
-          <div className="dl-get-price-flow__loading">
-            <p>Calculating price...</p>
-          </div>
-        </div>
-      );
-    }
-
-    // 如果有错误，显示错误信息
-    if (quoteError) {
-      return (
-        <div className="dl-get-price-flow__step">
-          <h2 className="dl-get-price-flow__step-title">Order Options</h2>
-          <div className="dl-get-price-flow__error">
-            <p>{quoteError}</p>
-            <button
-              className="dl-modal__btn dl-modal__btn--primary"
-              onClick={fetchQuote}
-            >
-              Retry
-            </button>
-            <button
-              className="dl-modal__btn dl-modal__btn--secondary"
-              onClick={() => setCurrentStep('quantity')}
-            >
-              Back
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    // 如果没有报价数据，显示提示
-    if (!quoteData) {
-      return (
-        <div className="dl-get-price-flow__step">
-          <h2 className="dl-get-price-flow__step-title">Order Options</h2>
-          <div className="dl-get-price-flow__error">
-            <p>Unable to calculate price. Please try again.</p>
-            <button
-              className="dl-modal__btn dl-modal__btn--primary"
-              onClick={fetchQuote}
-            >
-              Calculate Price
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="dl-get-price-flow__quote-container">
-        {/* 主要价格卡片 */}
-        <div className="dl-get-price-flow__price-card">
-          <div className="dl-get-price-flow__price-main-wrap">
-            <div className="dl-get-price-flow__price-each">
-              ${quote.discountedUnitPrice?.toFixed(2) || quote.unitPrice?.toFixed(2) || '0.00'}
-              <span>each</span>
-            </div>
-            <div className="dl-get-price-flow__price-total-wrap">
-              Total: ${quote.total?.toFixed(2) || '0.00'}
-            </div>
-          </div>
-
-          {/* 优惠提示 */}
-          {quote.breakdown?.quantityDiscount > 0 && (
-            <div className="dl-get-price-flow__discount-hint" style={{ marginTop: '16px', color: '#38bdf8', fontWeight: 600 }}>
-              🎉 You saved ${quote.discount?.toFixed(2) || '0.00'} with bulk discount!
-            </div>
-          )}
-        </div>
-
-        {/* 徽章行 */}
-        <div className="dl-get-price-flow__badges-row">
-          <span className="dl-get-price-flow__pill">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4l3 3"></path></svg>
-            {totalQuantity} Item{totalQuantity > 1 ? 's' : ''}
-          </span>
-          {quote.breakdown?.sidesCount > 0 && (
-            <span className="dl-get-price-flow__pill">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="3" x2="12" y2="21"></line></svg>
-              {quote.breakdown.sidesCount} Side{quote.breakdown.sidesCount > 1 ? 's' : ''}
-            </span>
-          )}
-          {quote.breakdown?.layerCount > 0 && (
-            <span className="dl-get-price-flow__pill">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
-              Layers: {quote.breakdown.layerCount}
-            </span>
-          )}
-        </div>
-
-        {/* 信息网格 */}
-        <div className="dl-get-price-flow__info-grid">
-          {/* 配送信息卡片 */}
-          <div className="dl-get-price-flow__info-card">
-            <div className="dl-get-price-flow__info-header">
-              <span className="dl-get-price-flow__info-title">Delivery & Options</span>
-              <button
-                className="dl-get-price-flow__info-edit-btn"
-                onClick={() => setCurrentStep('ordering-options')}
-              >
-                Edit
-              </button>
-            </div>
-            <div className="dl-get-price-flow__info-content">
-              <div>FREE Standard Delivery</div>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>Estimated arrival: 7-10 business days</div>
-              <div style={{ marginTop: '4px', fontStyle: 'italic', fontSize: '13px' }}>
-                Payment: {orderingOptions.payment === 'i-pay' ? 'I Pay' : 'Group Pays'}
-              </div>
-            </div>
-          </div>
-
-          {/* 订单明细卡片 */}
-          <div className="dl-get-price-flow__info-card">
-            <div className="dl-get-price-flow__info-header">
-              <span className="dl-get-price-flow__info-title">Your Order Breakdown</span>
-              <button
-                className="dl-get-price-flow__info-edit-btn"
-                onClick={() => setCurrentStep('quantity')}
-              >
-                Edit
-              </button>
-            </div>
-            <div className="dl-get-price-flow__info-content">
-              <div className="dl-get-price-flow__order-summary-item">
-                <div className="dl-get-price-flow__order-details-text">
-                  Items Details • {totalQuantity} Total
-                </div>
-              </div>
-              {orderingOptions.sizesQuantities === 'i-know-sizes' && sizeQuantities.filter(sq => sq.quantity > 0).length > 0 && (
-                <div className="dl-get-price-flow__order-sizes-text">
-                  {sizeQuantities
-                    .filter(sq => sq.quantity > 0)
-                    .map(sq => `${sq.size} × ${sq.quantity}`)
-                    .join(', ')}
-                </div>
-              )}
-              {orderingOptions.sizesQuantities === 'invite-group' && (
-                <div className="dl-get-price-flow__order-sizes-text">
-                  Group Order (Est. {estimatedQuantity} items)
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="dl-get-price-flow__actions">
-          <button
-            className="dl-modal__btn dl-modal__btn--secondary"
-            onClick={onClose}
-          >
-            Continue Designing
-          </button>
-          <button
-            className="dl-modal__btn dl-modal__btn--primary"
-            onClick={() => {
-              if (needsContentCheck && hasUploadedImages) {
-                setCurrentStep('content-check');
-              } else {
-                handleAddToCart();
-              }
-            }}
-            disabled={totalQuantity === 0}
-          >
-            Add to Cart
-          </button>
         </div>
       </div>
     );
@@ -1089,51 +629,43 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       <div className="dl-modal dl-get-price-flow-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dl-modal__header">
           <h2 className="dl-modal__title">Get Price</h2>
-          <button className="dl-modal__close" onClick={onClose} aria-label="Close">
-            ×
-          </button>
+          <button className="dl-modal__close" onClick={onClose} aria-label="Close">×</button>
         </div>
 
         <div className="dl-modal__body">
-          {/* 步骤指示器 */}
+          {/* Step indicator — 3 steps */}
           <div className="dl-get-price-flow__steps-indicator">
             <div
-              className={`dl-get-price-flow__step-indicator ${(currentStep as string) === 'quantity' ? 'is-active' : (currentStep as string) !== 'quantity' ? 'is-completed' : ''}`}
-              onClick={() => setCurrentStep('quantity')}
+              className={`dl-get-price-flow__step-indicator ${currentStep === 'print-method' ? 'is-active' : 'is-completed'}`}
+              onClick={() => setCurrentStep('print-method')}
               style={{ cursor: 'pointer' }}
             >
               <span>1</span>
+              <span>Method</span>
+            </div>
+            <div
+              className={`dl-get-price-flow__step-indicator ${
+                currentStep === 'quantity' || currentStep === 'content-check' ? 'is-active'
+                : currentStep === 'added-to-cart' ? 'is-completed'
+                : ''
+              }`}
+              onClick={() => setCurrentStep('quantity')}
+              style={{ cursor: 'pointer' }}
+            >
+              <span>2</span>
               <span>Quantity</span>
             </div>
             <div
-              className={`dl-get-price-flow__step-indicator ${currentStep === 'ordering-options' ? 'is-active' : ['order-options', 'content-check', 'added-to-cart'].includes(currentStep) ? 'is-completed' : ''}`}
-              onClick={() => {
-                // Only allow clicking if we have quantity set
-                if (totalQuantity > 0) setCurrentStep('ordering-options');
-              }}
-              style={{ cursor: totalQuantity > 0 ? 'pointer' : 'not-allowed' }}
-            >
-              <span>2</span>
-              <span>Options</span>
-            </div>
-            <div
-              className={`dl-get-price-flow__step-indicator ${currentStep === 'order-options' ? 'is-active' : ['content-check', 'added-to-cart'].includes(currentStep) ? 'is-completed' : ''}`}
-              // Quote step usually requires options to be set, so maybe only allow if already visited or ready
-              // For simplicity, let's allow it if we have quantity, as defaults exist for options.
-              onClick={() => {
-                if (totalQuantity > 0) setCurrentStep('order-options');
-              }}
-              style={{ cursor: totalQuantity > 0 ? 'pointer' : 'not-allowed' }}
+              className={`dl-get-price-flow__step-indicator ${currentStep === 'added-to-cart' ? 'is-active' : ''}`}
             >
               <span>3</span>
-              <span>Quote</span>
+              <span>Done</span>
             </div>
           </div>
 
-          {/* 步骤内容 */}
+          {/* Step content */}
+          {currentStep === 'print-method' && renderPrintMethodStep()}
           {currentStep === 'quantity' && renderQuantityStep()}
-          {currentStep === 'ordering-options' && renderOrderingOptionsStep()}
-          {currentStep === 'order-options' && renderOrderOptionsStep()}
           {currentStep === 'content-check' && renderContentCheckStep()}
           {currentStep === 'added-to-cart' && renderAddedToCartStep()}
         </div>
@@ -1143,4 +675,3 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 };
 
 export default GetPriceFlowModal;
-

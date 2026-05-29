@@ -1,25 +1,33 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
+import QRCode from 'qrcode';
 import { adminOrdersApi } from '@/lib/api';
 
-function QRCodePlaceholder({ value }: { value: string }) {
-  return (
-    <div
-      style={{
-        width: 64, height: 64, background: '#F3F4F6',
-        border: '1px solid #E5E7EB', borderRadius: 6,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 9, color: '#9CA3AF', textAlign: 'center', padding: 4,
-        wordBreak: 'break-all',
-      }}
-      title={value}
-    >
-      QR
-      <br />{value.slice(-8)}
-    </div>
-  );
+const POSITION_LABELS: Record<string, string> = {
+  front: '正面',
+  back: '背面',
+  left: '左袖',
+  right: '右袖',
+  left_chest: '左胸',
+  right_chest: '右胸',
+};
+
+const POSITION_ORDER = ['left', 'right', 'front', 'back', 'left_chest', 'right_chest'];
+
+function QRCanvas({ value, size = 80 }: { value: string; size?: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    QRCode.toCanvas(canvasRef.current, value, {
+      width: size,
+      margin: 1,
+      color: { dark: '#000000', light: '#ffffff' },
+    }).catch(console.error);
+  }, [value, size]);
+  return <canvas ref={canvasRef} style={{ display: 'block', borderRadius: 3, border: '1px solid #E5E7EB' }} />;
 }
 
 export default function GangSheetPage({ params }: { params: { id: string } }) {
@@ -53,18 +61,27 @@ export default function GangSheetPage({ params }: { params: { id: string } }) {
     );
   }
 
-  const positions: any[] = gs.specs?.positions?.filter(
-    (p: any) => p.imageUrl || p.text
-  ) ?? [];
+  const positions: any[] = (gs.specs?.positions ?? [])
+    .filter((p: any) => p.artworkImageUrl || p.text)
+    .sort((a: any, b: any) => {
+      const ai = POSITION_ORDER.indexOf(a.position);
+      const bi = POSITION_ORDER.indexOf(b.position);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+
+  const totalQty = (gs.items ?? []).reduce((s: number, it: any) => s + (it.quantity || 0), 0);
+  const isMulti = totalQty > 1;
+  const firstItem = gs.items?.[0];
+  const qrValue = `${gs.order?.orderNumber}|${gs.order?.trackingNumber ?? ''}`;
 
   return (
     <div>
-      {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-        <Link
-          href={`/admin/online-orders/${id}`}
-          style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}
-        >
+      {/* Screen-only top bar */}
+      <div
+        className="no-print"
+        style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}
+      >
+        <Link href={`/admin/online-orders/${id}`} style={{ fontSize: 13, color: '#6B7280', textDecoration: 'none' }}>
           ← 返回订单
         </Link>
         <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>
@@ -73,8 +90,7 @@ export default function GangSheetPage({ params }: { params: { id: string } }) {
         <button
           onClick={() => window.print()}
           style={{
-            marginLeft: 'auto',
-            padding: '8px 18px',
+            marginLeft: 'auto', padding: '8px 18px',
             background: '#000', color: '#fff',
             border: 'none', borderRadius: 8,
             fontWeight: 700, fontSize: 13, cursor: 'pointer',
@@ -84,146 +100,185 @@ export default function GangSheetPage({ params }: { params: { id: string } }) {
         </button>
       </div>
 
-      <div id="gang-sheet-print" style={{ maxWidth: 800 }}>
-        {/* Row 1: Order Info */}
+      {/* ─── 整张大版 ─── */}
+      <div
+        id="gang-sheet-print"
+        style={{
+          background: '#fff',
+          border: '2px solid #374151',
+          borderRadius: 8,
+          padding: '16px 20px 24px',
+          display: 'inline-block',
+          minWidth: 600,
+        }}
+      >
+
+        {/* 信息条 */}
         <div
           style={{
-            border: '2px solid #111',
-            borderRadius: 10,
-            padding: '16px 20px',
-            marginBottom: 12,
-            background: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            paddingBottom: 14,
+            marginBottom: 24,
+            borderBottom: '1.5px solid #E5E7EB',
+            flexWrap: 'wrap',
           }}
         >
-          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-            {/* QR Code */}
-            <div style={{ flexShrink: 0 }}>
-              <QRCodePlaceholder value={gs.order?.orderNumber ?? id} />
-              <p style={{ fontSize: 10, color: '#9CA3AF', margin: '4px 0 0', textAlign: 'center' }}>
-                扫码查看订单
-              </p>
-            </div>
+          {/* 效果图 */}
+          {gs.mockupUrl ? (
+            <img
+              src={gs.mockupUrl}
+              alt="效果图"
+              style={{
+                flexShrink: 0, width: 80, height: 80,
+                objectFit: 'contain', borderRadius: 4,
+                border: '1px solid #E5E7EB', background: '#F9FAFB',
+              }}
+            />
+          ) : (
+            <div style={{
+              flexShrink: 0, width: 80, height: 80,
+              background: '#F3F4F6', borderRadius: 4,
+              border: '1px dashed #D1D5DB',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, color: '#9CA3AF',
+            }}>无效果图</div>
+          )}
 
-            {/* Order details */}
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px' }}>
-              <InfoRow label="订单号" value={gs.order?.orderNumber} bold />
-              <InfoRow label="下单时间" value={gs.order?.createdAt ? new Date(gs.order.createdAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '—'} />
-              <InfoRow label="客户" value={gs.order?.customer?.name ?? gs.order?.customer?.email ?? '—'} bold />
-              <InfoRow label="邮箱" value={gs.order?.customer?.email ?? '—'} />
-              {gs.order?.shippingAddress && (
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <InfoRow
-                    label="收货地址"
-                    value={[
-                      gs.order.shippingAddress.line1,
-                      gs.order.shippingAddress.city,
-                      gs.order.shippingAddress.province,
-                      gs.order.shippingAddress.postalCode,
-                    ].filter(Boolean).join(', ')}
-                  />
-                </div>
-              )}
-              <InfoRow label="快递公司" value={gs.order?.carrier ?? '—'} />
-              <InfoRow label="物流单号" value={gs.order?.trackingNumber ?? '—'} bold />
+          {/* 二维码 */}
+          <div style={{ flexShrink: 0 }}>
+            <QRCanvas value={qrValue} size={80} />
+          </div>
+
+          {/* 订单号 */}
+          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+              订单号
+            </span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>
+              {gs.order?.orderNumber}
+            </span>
+          </div>
+
+          {/* 分隔线 */}
+          <div style={{ width: 1, height: 52, background: '#E5E7EB', flexShrink: 0 }} />
+
+          {/* 产品概览 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <span style={{
+              padding: '3px 10px', borderRadius: 20,
+              fontSize: 11, fontWeight: 700,
+              background: isMulti ? '#FEF3C7' : '#DCFCE7',
+              color: isMulti ? '#92400E' : '#166534',
+            }}>
+              {isMulti ? '多件' : '单件'}
+            </span>
+            <MetaItem label="产品" value={firstItem?.productName || '—'} />
+            <MetaItem label="颜色" value={firstItem?.color || '—'} />
+            <MetaItem label="尺码" value={firstItem?.size || '—'} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 10, color: '#9CA3AF' }}>数量</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: '#111', lineHeight: 1 }}>×{totalQty}</span>
             </div>
           </div>
         </div>
 
-        {/* Row 2+: Print Positions */}
+        {/* 图稿区 — 图片以原始像素展示 */}
         {positions.length === 0 ? (
-          <div
-            style={{
-              padding: '24px', textAlign: 'center',
-              color: 'var(--color-text-muted)', fontSize: 14,
-              border: '1px dashed var(--color-border)', borderRadius: 8,
-            }}
-          >
-            无印刷位置信息
+          <div style={{
+            padding: '24px', textAlign: 'center',
+            color: '#9CA3AF', fontSize: 14,
+            border: '1px dashed #D1D5DB', borderRadius: 6,
+          }}>
+            无印刷位置信息（设计审核同步时未导出图稿）
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {positions.map((pos: any, idx: number) => (
-              <div
-                key={idx}
-                style={{
-                  border: '1px solid #E5E7EB',
-                  borderRadius: 8,
-                  padding: '14px 18px',
-                  background: '#fff',
-                  display: 'flex',
-                  gap: 16,
-                  alignItems: 'flex-start',
-                }}
-              >
-                {/* Position label */}
-                <div
-                  style={{
-                    flexShrink: 0, width: 64, height: 64,
-                    background: '#F9FAFB', borderRadius: 6,
-                    border: '1px solid #E5E7EB',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexDirection: 'column', gap: 4,
-                  }}
-                >
-                  {pos.imageUrl ? (
-                    <img
-                      src={pos.imageUrl}
-                      alt={pos.position}
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 4 }}
-                    />
-                  ) : (
-                    <span style={{ fontSize: 11, color: '#9CA3AF' }}>无图</span>
-                  )}
-                </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'flex-start' }}>
+            {positions.map((pos: any, idx: number) => {
+              const label = POSITION_LABELS[pos.position] ?? pos.position;
+              const wIn: number | null = pos.widthCm ?? null;
+              const hIn: number | null = pos.heightCm ?? null;
 
-                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 20px' }}>
-                  <InfoRow label="位置" value={POSITION_LABELS[pos.position] ?? pos.position} bold />
-                  {pos.printType && <InfoRow label="印刷方式" value={pos.printType} />}
-                  {pos.width && pos.height && (
-                    <InfoRow label="尺寸" value={`${pos.width} × ${pos.height} cm`} />
-                  )}
-                  {pos.color && <InfoRow label="颜色" value={pos.color} />}
-                  {pos.text && (
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <InfoRow label="文字内容" value={pos.text} />
+              return (
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+                  {/* 图稿：原始像素，不缩放 */}
+                  <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+                    {pos.artworkImageUrl ? (
+                      <img
+                        src={pos.artworkImageUrl}
+                        alt={label}
+                        style={{
+                          display: 'block',
+                          maxWidth: 'none',
+                          border: '1px dashed #9CA3AF',
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: 200, height: 200,
+                        background: `repeating-conic-gradient(#E5E7EB 0% 25%, transparent 0% 50%) 0 0 / 12px 12px`,
+                        border: '1px dashed #9CA3AF',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 11, color: '#9CA3AF',
+                      }}>无图稿</div>
+                    )}
+
+                    {/* 序号角标 */}
+                    <div style={{
+                      position: 'absolute', top: 6, left: 6,
+                      width: 22, height: 22,
+                      background: 'rgba(0,0,0,0.7)', color: '#fff',
+                      borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11, fontWeight: 700,
+                    }}>
+                      {idx + 1}
                     </div>
-                  )}
+                  </div>
+
+                  {/* 位置标签 */}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', paddingLeft: 2 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{label}</span>
+                    {wIn && hIn
+                      ? <span style={{ fontSize: 11, color: '#6B7280' }}>{wIn} × {hIn} in</span>
+                      : null}
+                    {pos.printType
+                      ? <span style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '.04em' }}>{pos.printType}</span>
+                      : null}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
+
       </div>
 
       <style>{`
         @media print {
-          body * { visibility: hidden; }
-          #gang-sheet-print, #gang-sheet-print * { visibility: visible; }
-          #gang-sheet-print { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { margin: 0; size: auto; }
+          * { visibility: hidden !important; }
+          #gang-sheet-print,
+          #gang-sheet-print * { visibility: visible !important; }
+          #gang-sheet-print {
+            position: fixed;
+            left: 0; top: 0;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 8mm !important;
+          }
         }
       `}</style>
     </div>
   );
 }
 
-const POSITION_LABELS: Record<string, string> = {
-  front: '正面',
-  back: '背面',
-  left: '左袖',
-  right: '右袖',
-  left_chest: '左胸',
-  right_chest: '右胸',
-};
-
-function InfoRow({ label, value, bold }: { label: string; value?: string | null; bold?: boolean }) {
+function MetaItem({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-        {label}
-      </span>
-      <span style={{ fontSize: 13, fontWeight: bold ? 700 : 400, color: '#111' }}>
-        {value ?? '—'}
-      </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{ fontSize: 10, color: '#9CA3AF' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{value}</span>
     </div>
   );
 }

@@ -2612,19 +2612,21 @@ export interface AdminOrderSummary {
   orderNumber: string;
   status: string;
   paymentStatus: string;
+  designReviewStatus?: string | null;
+  mockupUrl?: string | null;
   total: number;
   currency: string;
   customerEmail?: string | null;
   customerName?: string | null;
-  itemCount?: number; // 添加 itemCount 字段
-  items?: any[]; // 添加 items 字段
-  subtotal?: number; // 添加 subtotal 字段
-  shippingCost?: number; // 添加 shippingCost 字段
-  tax?: number; // 添加 tax 字段
-  discount?: number; // 添加 discount 字段
-  shippingAddress?: any; // 添加 shippingAddress 字段
-  billingAddress?: any; // 添加 billingAddress 字段
-  shipments?: any[]; // 添加 shipments 字段
+  itemCount?: number;
+  items?: any[];
+  subtotal?: number;
+  shippingCost?: number;
+  tax?: number;
+  discount?: number;
+  shippingAddress?: any;
+  billingAddress?: any;
+  shipments?: any[];
   createdAt: string;
   updatedAt: string;
 }
@@ -2776,6 +2778,47 @@ export const adminOrdersApi = {
       updatedAt: string;
     }>(`/admin/orders/${id}/shipment/label`, { method: 'POST', body: rateId ? { rateId } : {} }),
   // auditTrail 功能已移除
+
+  // Design Review flow
+  listDesignReviewQueue: () =>
+    api<{ orders: any[] }>('/admin/orders/design-review/queue'),
+  syncDesign: (id: string, mockupUrl: string) =>
+    api<{ order: any; gangSheetPending: boolean }>(`/admin/orders/${id}/design-review/sync`, {
+      method: 'PATCH',
+      body: { mockupUrl },
+    }),
+  rejectDesign: (id: string, note: string) =>
+    api<{ order: any }>(`/admin/orders/${id}/design-review/reject`, {
+      method: 'PATCH',
+      body: { note },
+    }),
+
+  // Logistics export + CSV import
+  exportLogistics: async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const response = await fetch(`${API_BASE_URL}/admin/orders/logistics/export`, {
+      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) throw new Error(`Export failed: ${response.status}`);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `logistics-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+  importLogistics: (rows: { orderNumber: string; carrier?: string; trackingNumber: string }[]) =>
+    api<{ updated: string[]; notFound: string[]; errors: any[] }>('/admin/orders/logistics/import-csv', {
+      method: 'POST',
+      body: { rows },
+    }),
+
+  // Gang Sheet
+  getGangSheet: (id: string) => api<{ gangSheet: any }>(`/admin/orders/${id}/gang-sheet`),
 };
 
 // Admin Offline Orders API Types

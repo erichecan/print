@@ -4201,6 +4201,37 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       if (canvas) {
                         mockupUrl = canvas.toDataURL({ format: 'png', quality: 0.85 });
                       }
+
+                      // Export per-position artwork PNGs (artwork layer only, no product base)
+                      const VIEW_TO_POSITION: Record<string, string> = {
+                        'front': 'front',
+                        'back': 'back',
+                        'left-sleeve': 'left',
+                        'right-sleeve': 'right',
+                        'sleeve': 'left',
+                      };
+                      const doc = useDesignStore.getState().document;
+                      const printPositions: Array<{ position: string; artworkImageUrl: string }> = [];
+                      if (doc) {
+                        for (const [viewId, viewState] of Object.entries(doc.views)) {
+                          if (!viewState.layers || viewState.layers.length === 0) continue;
+                          const position = VIEW_TO_POSITION[viewId];
+                          if (!position) continue;
+                          const el = document.createElement('canvas');
+                          const tempCanvas = new fabric.StaticCanvas(el, {
+                            width: CANVAS_WIDTH,
+                            height: CANVAS_HEIGHT,
+                            backgroundColor: 'transparent',
+                          });
+                          await applyViewState(tempCanvas, viewState.layers);
+                          tempCanvas.renderAll();
+                          const artworkImageUrl = tempCanvas.toDataURL({ format: 'png', multiplier: 1 });
+                          printPositions.push({ position, artworkImageUrl });
+                          tempCanvas.dispose();
+                        }
+                      }
+                      const printSpecs = printPositions.length > 0 ? { positions: printPositions } : undefined;
+
                       const token = typeof window !== 'undefined'
         ? (sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'))
         : null;
@@ -4212,7 +4243,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                             'Content-Type': 'application/json',
                             ...(token ? { Authorization: `Bearer ${token}` } : {}),
                           },
-                          body: JSON.stringify({ mockupUrl }),
+                          body: JSON.stringify({ mockupUrl, ...(printSpecs ? { printSpecs } : {}) }),
                         }
                       );
                       if (!res.ok) throw new Error('同步失败');

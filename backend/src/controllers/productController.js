@@ -629,6 +629,12 @@ exports.getProducts = async (req, res) => {
       }
     }
 
+    // artTheme tags — only shown in /gallery, excluded from all regular product listings
+    const ART_THEME_TAGS = [
+      'Floral & Botanical', 'Nature & Landscape', 'Animals & Wildlife', 'Cute & Kawaii',
+      'Portraits & Figures', 'Religious & Spiritual', 'City & Life', 'Art & Abstract',
+    ];
+
     // Filter by tags — OR within each dimension, AND across dimensions
     // e.g. (Adult OR Youth) AND (Crew Neck OR V-Neck)
     if (tagsFilter.length > 0) {
@@ -637,6 +643,7 @@ exports.getProducts = async (req, res) => {
         neckline: ['Crew Neck', 'V-Neck', 'Hooded', 'Polo'],
         material: ['Cotton', 'Polyester', 'Fleece', 'Blend'],
         fit: ['Regular', 'Slim', 'Relaxed', 'Oversized'],
+        artTheme: ART_THEME_TAGS,
       };
       const byDim = {};
       const unmatched = [];
@@ -658,6 +665,13 @@ exports.getProducts = async (req, res) => {
       for (const tag of unmatched) {
         andConditions.push({ tags: { has: tag } });
       }
+    }
+
+    // Unless the request explicitly asks for artTheme products (gallery page),
+    // exclude them from all regular product listings.
+    const requestedArtTheme = tagsFilter.some(t => ART_THEME_TAGS.includes(t));
+    if (!requestedArtTheme) {
+      andConditions.push({ NOT: { tags: { hasSome: ART_THEME_TAGS } } });
     }
 
     // Search by name, description, or SKU
@@ -791,6 +805,26 @@ exports.getProducts = async (req, res) => {
       sortedProducts = sortedProducts.slice(skip, skip + limit);
     }
 
+    // 批量获取评分统计，避免 N+1
+    const productIds = sortedProducts.map((p) => p.id);
+    let ratingStatsForList = [];
+    try {
+      ratingStatsForList = await prisma.productReview.groupBy({
+        by: ['productId'],
+        where: { productId: { in: productIds }, status: 'APPROVED' },
+        _avg: { rating: true },
+        _count: { id: true },
+      });
+    } catch (_err) {
+      // reviews table may not exist yet; silently skip
+    }
+    const ratingMapForList = new Map(
+      ratingStatsForList.map((s) => [
+        s.productId,
+        { average: Number(s._avg.rating || 0), count: Number(s._count.id || 0) },
+      ])
+    );
+
     const normalizedProducts = sortedProducts.map((product) => {
       const primaryImage = product.images[0];
       const primaryVariant = product.variants[0];
@@ -861,10 +895,7 @@ exports.getProducts = async (req, res) => {
             };
           }),
         tags: product.tags || [],
-        rating: {
-          average: 4.5, // 默认值，可以从reviews计算
-          count: 10000, // 默认值
-        },
+        rating: ratingMapForList.get(product.id) || { average: 0, count: 0 },
       };
     });
 
