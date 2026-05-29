@@ -1535,8 +1535,12 @@ exports.getGangSheet = async (req, res, next) => {
       include: {
         items: {
           include: {
-            product: { select: { name: true } },
-            variant: { select: { color: true, size: true, sku: true } },
+            variant: {
+              include: {
+                product: { select: { name: true } },
+              },
+            },
+            colors: true,
           },
         },
         user: { select: { firstName: true, lastName: true, email: true, phone: true } },
@@ -1554,17 +1558,11 @@ exports.getGangSheet = async (req, res, next) => {
       });
     }
 
-    // Flatten all print positions from all items into a single list
-    const allPositions = order.items.flatMap((item) => {
-      const specs = item.printSpecs
-        ? (typeof item.printSpecs === 'string' ? JSON.parse(item.printSpecs) : item.printSpecs)
-        : {};
-      return (specs.positions || []).map((p) => ({
-        ...p,
-        productName: item.product?.name || '',
-        sku: item.variant?.sku || '',
-      }));
-    });
+    // Print positions come from order-level printSpecs (set during design sync / order creation)
+    const orderSpecs = order.printSpecs
+      ? (typeof order.printSpecs === 'string' ? JSON.parse(order.printSpecs) : order.printSpecs)
+      : {};
+    const allPositions = (orderSpecs.positions || []);
 
     const customerName = [order.user?.firstName, order.user?.lastName].filter(Boolean).join(' ')
       || order.user?.email
@@ -1583,23 +1581,14 @@ exports.getGangSheet = async (req, res, next) => {
       },
       mockupUrl: order.mockupUrl,
       specs: { positions: allPositions },
-      items: order.items.map((item) => {
-        const specs = item.printSpecs
-          ? (typeof item.printSpecs === 'string' ? JSON.parse(item.printSpecs) : item.printSpecs)
-          : {};
-        return {
-          id: item.id,
-          productName: item.product?.name || '',
-          color: item.variant?.color || '',
-          size: item.variant?.size || '',
-          sku: item.variant?.sku || '',
-          quantity: item.quantity,
-          printMethod: specs.method || '',
-          widthCm: specs.widthCm,
-          heightCm: specs.heightCm,
-          notes: specs.notes || '',
-        };
-      }),
+      items: order.items.map((item) => ({
+        id: item.id,
+        productName: item.variant?.product?.name || '',
+        color: item.variant?.color || '',
+        size: item.variant?.size || '',
+        sku: item.variant?.sku || '',
+        quantity: item.quantity,
+      })),
     };
 
     res.json({ gangSheet });
