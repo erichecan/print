@@ -207,7 +207,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // Designer mode: load order info when orderId is present
   useEffect(() => {
     if (!isDesignerMode || !designerOrderId) return;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = typeof window !== 'undefined'
+      ? (sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'))
+      : null;
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/api/admin/orders/${designerOrderId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -216,23 +218,6 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       .catch(() => {});
   }, [isDesignerMode, designerOrderId]);
 
-  // Designer mode: load existing draft (or customer design) into canvas
-  useEffect(() => {
-    if (!isDesignerMode || !designerOrderInfo) return;
-    const snapshot = designerOrderInfo.designerDraft ?? designerOrderInfo.canvasJson ?? null;
-    if (!snapshot) return;
-
-    let attempts = 0;
-    const tryLoad = () => {
-      const canvas = fabricCanvasRef.current;
-      if (!canvas) {
-        if (attempts++ < 20) setTimeout(tryLoad, 300);
-        return;
-      }
-      restoreCanvasFromSnapshot(canvas, snapshot).catch(() => {});
-    };
-    tryLoad();
-  }, [isDesignerMode, designerOrderInfo]);
 
   // 5.0 版本：功能2 - 从 URL 参数加载商品信息
   // 修复：添加默认图片机制，如果用户直接从导航进入，显示默认白色 T 恤
@@ -445,6 +430,26 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     console.log('[DesignLab 5.0] canvasInitialized state changed:', canvasInitialized);
   }, [canvasInitialized]);
 
+  // Designer mode: load existing draft (or customer design) into canvas.
+  // Declared AFTER canvasInitialized to avoid temporal dead zone.
+  useEffect(() => {
+    if (!isDesignerMode || !designerOrderInfo || !canvasInitialized) return;
+    const snapshot = designerOrderInfo.designerDraft ?? designerOrderInfo.canvasJson ?? null;
+    if (!snapshot) return;
+
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    restoreCanvasFromSnapshot(canvas, snapshot).then(() => {
+      // loadFromJSON wipes the entire canvas; re-add product image at the bottom.
+      const imageUrl = productInfo.baseImages?.[currentView];
+      if (imageUrl) {
+        addProductImageToCanvas(imageUrl, '#ffffff');
+      }
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDesignerMode, designerOrderInfo, canvasInitialized]);
+
   useEffect(() => {
     // 检查 Rail（第一列）
     const rail = railRef.current;
@@ -627,7 +632,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     setDesignerDraftSaving(true);
     try {
       const canvasJson = canvas.toJSON(['data', 'name']);
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token = typeof window !== 'undefined'
+        ? (sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'))
+        : null;
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/api/admin/orders/${designerOrderId}/design-review/save-draft`,
         {
@@ -639,11 +646,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           body: JSON.stringify({ canvasJson }),
         }
       );
-      if (!res.ok) throw new Error('保存失败');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || `保存失败 (${res.status})`);
+      }
       setDesignerDraftSaved(true);
+      setDesignerActionError('');
       setTimeout(() => setDesignerDraftSaved(false), 3000);
-    } catch {
-      // fail silently — designer can retry
+    } catch (err: any) {
+      console.error('[Designer] save draft failed:', err);
+      setDesignerActionError(err?.message || '保存草稿失败');
+      setTimeout(() => setDesignerActionError(''), 5000);
     } finally {
       setDesignerDraftSaving(false);
     }
@@ -4188,7 +4201,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       if (canvas) {
                         mockupUrl = canvas.toDataURL({ format: 'png', quality: 0.85 });
                       }
-                      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                      const token = typeof window !== 'undefined'
+        ? (sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'))
+        : null;
                       const res = await fetch(
                         `${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/api/admin/orders/${designerOrderId}/design-review/sync`,
                         {
@@ -4409,7 +4424,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     setDesignerRejectLoading(true);
                     setDesignerActionError('');
                     try {
-                      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                      const token = typeof window !== 'undefined'
+        ? (sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'))
+        : null;
                       const res = await fetch(
                         `${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/api/admin/orders/${designerOrderId}/design-review/reject`,
                         {
