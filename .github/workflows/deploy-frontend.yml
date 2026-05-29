@@ -1,0 +1,81 @@
+name: Deploy Frontend to Cloud Run
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/deploy-frontend.yml"
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_ID: print-482914
+      REGION: us-central1
+      ARTIFACT_REGISTRY: print-main
+      SERVICE_NAME: print-main-frontend
+      IMAGE: us-central1-docker.pkg.dev/print-482914/print-main/frontend:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Get Stripe key from Secret Manager
+        id: stripe
+        run: |
+          STRIPE_KEY=$(gcloud secrets versions access latest \
+            --secret=stripe-publishable-key \
+            --project=${{ env.PROJECT_ID }})
+          echo "key=$STRIPE_KEY" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=https://print-main-backend-5spbppmmza-uc.a.run.app/api \
+            --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${{ steps.stripe.outputs.key }}" \
+            --build-arg NEXT_PUBLIC_BUILD_SHA="${GITHUB_SHA::8}" \
+            --build-arg NEXT_PUBLIC_BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            -t ${{ env.IMAGE }} \
+            -f apps/web/Dockerfile \
+            .
+
+      - name: Push image to Artifact Registry
+        run: docker push ${{ env.IMAGE }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.IMAGE }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --min-instances=0 \
+            --max-instances=5 \
+            --memory=1Gi \
+            --cpu=1 \
+            --quiet
+
+      - name: Verify deployment
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --format="value(status.url)")
+          echo "✅ 部署完成: $URL"
+          curl -sf -o /dev/null -w "HTTP %{http_code}" "$URL" || echo "⚠️ 健康检查失败，请手动验证"
