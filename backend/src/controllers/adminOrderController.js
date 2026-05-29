@@ -1539,14 +1539,12 @@ exports.getGangSheet = async (req, res, next) => {
             variant: { select: { color: true, size: true, sku: true } },
           },
         },
-        user: { select: { name: true, email: true, phone: true } },
+        user: { select: { firstName: true, lastName: true, email: true, phone: true } },
         shipments: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
     });
 
     if (!order) return next(new NotFoundError('订单不存在'));
-    if (!order.mockupUrl) return next(new BadRequestError('设计尚未同步，无法生成 Gang Sheet'));
-    if (!order.trackingNumber) return next(new BadRequestError('物流信息尚未录入，无法生成 Gang Sheet'));
 
     // Record download time on first access
     if (!order.gangSheetDownloadedAt) {
@@ -1556,16 +1554,35 @@ exports.getGangSheet = async (req, res, next) => {
       });
     }
 
-    // Build gang sheet data structure for frontend rendering
+    // Flatten all print positions from all items into a single list
+    const allPositions = order.items.flatMap((item) => {
+      const specs = item.printSpecs
+        ? (typeof item.printSpecs === 'string' ? JSON.parse(item.printSpecs) : item.printSpecs)
+        : {};
+      return (specs.positions || []).map((p) => ({
+        ...p,
+        productName: item.product?.name || '',
+        sku: item.variant?.sku || '',
+      }));
+    });
+
+    const customerName = [order.user?.firstName, order.user?.lastName].filter(Boolean).join(' ')
+      || order.user?.email
+      || order.email
+      || null;
+
+    // Build response in the shape the frontend expects
     const gangSheet = {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      createdAt: order.createdAt,
-      customer: order.user,
-      carrier: order.carrier || '',
-      trackingNumber: order.trackingNumber,
-      shippingAddress: order.shippingAddress,
+      order: {
+        orderNumber: order.orderNumber,
+        createdAt: order.createdAt,
+        customer: { name: customerName, email: order.user?.email || order.email },
+        shippingAddress: order.shippingAddress,
+        carrier: order.carrier || null,
+        trackingNumber: order.trackingNumber || null,
+      },
       mockupUrl: order.mockupUrl,
+      specs: { positions: allPositions },
       items: order.items.map((item) => {
         const specs = item.printSpecs
           ? (typeof item.printSpecs === 'string' ? JSON.parse(item.printSpecs) : item.printSpecs)
@@ -1578,7 +1595,6 @@ exports.getGangSheet = async (req, res, next) => {
           sku: item.variant?.sku || '',
           quantity: item.quantity,
           printMethod: specs.method || '',
-          positions: (specs.positions || []).filter(p => p.imageUrl || p.text),
           widthCm: specs.widthCm,
           heightCm: specs.heightCm,
           notes: specs.notes || '',
