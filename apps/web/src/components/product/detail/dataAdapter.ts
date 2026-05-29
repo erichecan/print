@@ -45,7 +45,9 @@ const PREDEFINED_COLORS: Record<string, string> = {
 export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiProduct[]): ProductData {
     const basePriceVal = typeof apiProduct.basePrice === 'string' ? Number(apiProduct.basePrice) : apiProduct.basePrice;
     const basePriceInDollars = apiProduct.price?.base ?? (basePriceVal / 100);
-    const salePriceInDollars = apiProduct.price?.sale ?? basePriceInDollars;
+    const salePriceInDollars = (apiProduct.price?.sale != null && apiProduct.price.sale > 0)
+        ? apiProduct.price.sale
+        : basePriceInDollars;
     const discountPercent = apiProduct.price?.onSale && (apiProduct.price.base > apiProduct.price.sale)
         ? Math.round(((apiProduct.price.base - apiProduct.price.sale) / apiProduct.price.base) * 100)
         : 0;
@@ -173,12 +175,15 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
             }
         }
 
+        // Strategy 4: single-color product — all images belong to the one color
+        const singleColor = colorMap.size === 1 ? Array.from(colorMap.keys())[0] : undefined;
+
         return {
             id: img.id,
             url: img.url,
             alt: img.alt || apiProduct.name,
             thumbnail: shopifyThumbUrl(img.url),
-            color: linkedColor || null,
+            color: linkedColor || singleColor || null,
         };
     });
 
