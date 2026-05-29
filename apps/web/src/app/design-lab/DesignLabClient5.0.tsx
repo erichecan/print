@@ -4236,6 +4236,19 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                         mockupUrl = canvas.toDataURL({ format: 'png', quality: 0.85 });
                       }
 
+                      // ── GANG SHEET TRACE ──────────────────────────────────────
+                      console.group('[GangSheet] 同步设计 开始');
+                      console.log('[GangSheet] 当前 view:', currentView);
+                      console.log('[GangSheet] Canvas 上的所有对象:', canvas?.getObjects().map((obj: any, i: number) => ({
+                        idx: i,
+                        type: obj.type,
+                        name: obj.name ?? '(无name)',
+                        layerType: obj.data?.layerType ?? '(无layerType)',
+                        visible: obj.visible,
+                        src: obj.type === 'image' ? (obj.getSrc?.() ?? '').substring(0, 60) : undefined,
+                      })));
+                      // ─────────────────────────────────────────────────────────
+
                       // Export per-position artwork PNGs (artwork layer only, no product base)
                       const VIEW_TO_POSITION: Record<string, string> = {
                         'front': 'front',
@@ -4260,12 +4273,23 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       };
 
                       const doc = useDesignStore.getState().document;
+                      console.log('[GangSheet] Store doc views:', doc
+                        ? Object.entries(doc.views).map(([k, v]) => ({
+                            view: k,
+                            layerCount: v.layers?.length ?? 0,
+                            layerNames: v.layers?.map((l: any) => l.name ?? l.type) ?? [],
+                          }))
+                        : '(doc is null)');
                       const printPositions: Array<{ position: string; artworkImageUrl: string }> = [];
                       if (doc) {
                         for (const [viewId, viewState] of Object.entries(doc.views)) {
                           if (!viewState.layers || viewState.layers.length === 0) continue;
                           const position = VIEW_TO_POSITION[viewId];
                           if (!position) continue;
+                          console.log(`[GangSheet] STORE路径 — view: ${viewId}, position: ${position}, layers: ${viewState.layers.length}`);
+                          console.log(`[GangSheet] layers detail:`, (viewState.layers as any[]).map((l: any) => ({
+                            type: l.type, name: l.name, metadata: l.metadata,
+                          })));
                           const el = document.createElement('canvas');
                           const tempCanvas = new fabric.StaticCanvas(el, {
                             width: CANVAS_WIDTH,
@@ -4274,8 +4298,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                           });
                           await applyViewState(tempCanvas, viewState.layers);
                           tempCanvas.renderAll();
+                          console.log(`[GangSheet] StaticCanvas objects after applyViewState:`, tempCanvas.getObjects().map((o: any) => ({
+                            type: o.type, name: o.name, layerType: o.data?.layerType,
+                          })));
                           const crop = getPrintableAreaCrop(viewId);
                           const artworkImageUrl = tempCanvas.toDataURL({ format: 'png', multiplier: 1, ...crop });
+                          console.log(`[GangSheet] STORE路径导出 — url前缀: ${artworkImageUrl.substring(0, 50)}, 大小: ${artworkImageUrl.length} bytes`);
                           printPositions.push({ position, artworkImageUrl });
                           tempCanvas.dispose();
                         }
@@ -4286,9 +4314,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       // area from the live canvas, then restore visibility. This is more reliable
                       // than recreating a StaticCanvas because it avoids any Fabric.js v6 issues
                       // with custom property (name/data) restoration during loadFromJSON.
+                      console.log('[GangSheet] printPositions after store path:', printPositions.length, '→', printPositions.length === 0 ? '走 FALLBACK 路径' : '跳过 fallback');
                       if (printPositions.length === 0 && canvas) {
                         const position = VIEW_TO_POSITION[currentView] ?? 'front';
-                        const toHide = canvas.getObjects().filter((obj: any) => {
+                        const allObjs = canvas.getObjects();
+                        const toHide = allObjs.filter((obj: any) => {
                           const name = obj.name || '';
                           const layerType = obj.data?.layerType || '';
                           return (
@@ -4301,14 +4331,21 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                             layerType === 'guide'
                           );
                         });
-                        const hasCustomerObjects = canvas.getObjects().length > toHide.length;
+                        const customerObjs = allObjs.filter((obj: any) => !toHide.includes(obj));
+                        console.log('[GangSheet] FALLBACK — 隐藏对象:', toHide.map((o: any) => ({ name: o.name, layerType: o.data?.layerType, type: o.type })));
+                        console.log('[GangSheet] FALLBACK — 保留对象(用户元素):', customerObjs.map((o: any) => ({ name: o.name, layerType: o.data?.layerType, type: o.type })));
+                        const hasCustomerObjects = customerObjs.length > 0;
+                        console.log('[GangSheet] FALLBACK — hasCustomerObjects:', hasCustomerObjects);
                         if (hasCustomerObjects) {
                           toHide.forEach((obj: any) => obj.set('visible', false));
                           canvas.renderAll();
+                          console.log('[GangSheet] FALLBACK — 隐藏后 canvas 对象 visible 状态:', canvas.getObjects().map((o: any) => ({ name: o.name, visible: o.visible })));
                           const crop = getPrintableAreaCrop(currentView);
+                          console.log('[GangSheet] FALLBACK — crop 参数:', crop);
                           const artworkImageUrl = canvas.toDataURL({ format: 'png', multiplier: 1, ...crop });
                           toHide.forEach((obj: any) => obj.set('visible', true));
                           canvas.renderAll();
+                          console.log('[GangSheet] FALLBACK — 导出完成, url大小:', artworkImageUrl.length, '前缀:', artworkImageUrl.substring(0, 60));
                           printPositions.push({ position, artworkImageUrl });
                         }
                       }
