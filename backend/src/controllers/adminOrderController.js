@@ -84,7 +84,7 @@ exports.listOrders = async (req, res) => {
               },
             },
           },
-          user: { select: { name: true } },
+          user: { select: { firstName: true, lastName: true } },
           _count: {
             select: {
               items: true,
@@ -100,7 +100,7 @@ exports.listOrders = async (req, res) => {
         id: order.id,
         orderNumber: order.orderNumber,
         email: order.email,
-        customerName: order.user?.name ?? order.email ?? null,
+        customerName: [order.user?.firstName, order.user?.lastName].filter(Boolean).join(' ') || order.email || null,
         customerEmail: order.email,
         status: order.status.toLowerCase(),
         paymentStatus: order.paymentStatus.toLowerCase(),
