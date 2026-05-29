@@ -1203,6 +1203,20 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         const loadedObjects = await restoreCanvasFromSnapshot(fabricCanvasRef.current, canvasData);
         console.log('[DesignLab 5.0] ✅ Canvas restored with', loadedObjects.length, 'objects');
 
+        // Sync restored layers to store so view switching doesn't lose them
+        const layers = serializeCanvas(fabricCanvasRef.current);
+        setViewLayers(currentView, layers);
+
+        // Restore all other views from viewsData (multi-view persistence)
+        if (loadedDesign.viewsData) {
+          for (const [viewId, viewLayers] of Object.entries(loadedDesign.viewsData)) {
+            if (viewId !== currentView && Array.isArray(viewLayers)) {
+              setViewLayers(viewId as any, viewLayers as any);
+              console.log('[DesignLab 5.0] Restored view:', viewId, 'layers:', viewLayers.length);
+            }
+          }
+        }
+
         // Apply custom controls to all loaded objects
         const canvas = fabricCanvasRef.current;
         console.log('[DesignLab 5.0] Applying custom controls to', loadedObjects.length, 'loaded objects');
@@ -1239,9 +1253,37 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         console.log('[DesignLab 5.0] ✅ Design name updated to:', loadedDesign.name);
       }
 
-      // Load product info if available
-      if (loadedDesign.variant) {
-        console.log('[DesignLab 5.0] Updating product info from loaded design');
+      // Load product info + correct baseImages if variant is available
+      let resolvedBaseImages = productInfo.baseImages;
+      const variantId = loadedDesign.productVariantId ?? loadedDesign.variant?.id;
+      if (variantId) {
+        try {
+          console.log('[DesignLab 5.0] Fetching correct product via variantId:', variantId);
+          const productDetail = await getProductByVariant(variantId);
+          if (productDetail) {
+            const color = productDetail.color || 'White';
+            const rawBaseImages = productDetail.baseImages || getDefaultProductBaseImages(color);
+            const baseImages = rawBaseImages.front?.includes('hero-card-tee.jpg')
+              ? getDefaultProductBaseImages(color)
+              : rawBaseImages;
+            resolvedBaseImages = baseImages;
+            setProductInfo(prev => ({
+              ...prev,
+              productId: productDetail.productId,
+              productName: productDetail.productName,
+              colorId: productDetail.variantId ?? variantId,
+              color,
+              baseImages,
+              variants: (productDetail.variants || []).map(v => ({ ...v, color: v.color || '' })),
+              colorDetails: (productDetail.colorDetails || []) as any,
+              printableArea: productDetail.printableArea ?? prev.printableArea,
+            }));
+            console.log('[DesignLab 5.0] ✅ Product info updated:', productDetail.productName, color);
+          }
+        } catch (e) {
+          console.warn('[DesignLab 5.0] Could not load product variant, using defaults:', e);
+        }
+      } else if (loadedDesign.variant) {
         setProductInfo(prev => ({
           ...prev,
           productId: loadedDesign.variant!.product.id,
@@ -1251,19 +1293,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       }
 
       // Re-add product image since loadFromJSON cleared it
-      // Get the current product image URL
-      const imageUrl = productInfo.baseImages?.[currentView];
+      const imageUrl = resolvedBaseImages?.[currentView];
       if (imageUrl && fabricCanvasRef.current) {
         console.log('[DesignLab 5.0] Re-adding product image after design load');
-        const isDefaultProduct = productInfo.productName?.includes('Design Lab Default Tee') || productInfo.productName?.includes('Loading');
         let finalImageUrl = imageUrl;
         let tintHex = '#ffffff';
-
-        if (isDefaultProduct) {
-          const colorData = PRODUCT_COLORS.find(c => c.name === productInfo.color);
-          tintHex = colorData ? colorData.hex : '#ffffff';
-          finalImageUrl = getDefaultProductBaseImages('White')[currentView];
-        }
 
         addProductImageToCanvas(finalImageUrl, tintHex);
 
@@ -4210,6 +4244,21 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                         'right-sleeve': 'right',
                         'sleeve': 'left',
                       };
+
+                      // Printable area group is positioned at (CANVAS_WIDTH/2 - 6, CANVAS_HEIGHT/2) with originX/Y='center'.
+                      // We crop toDataURL to exactly these bounds so the exported artwork has no transparent margins.
+                      const getPrintableAreaCrop = (viewId: string) => {
+                        const cx = CANVAS_WIDTH / 2 - 6; // 594
+                        const cy = CANVAS_HEIGHT / 2;    // 720
+                        const isSleeve = viewId === 'sleeve' || viewId === 'left-sleeve' || viewId === 'right-sleeve';
+                        const w = isSleeve ? DEFAULT_SLEEVE_WIDTH : DEFAULT_PRINTABLE_WIDTH;
+                        const h = isSleeve ? DEFAULT_SLEEVE_HEIGHT : DEFAULT_PRINTABLE_HEIGHT;
+                        let offsetX = 0;
+                        if (viewId === 'sleeve' || viewId === 'left-sleeve') offsetX = 100;
+                        if (viewId === 'right-sleeve') offsetX = -100;
+                        return { left: cx + offsetX - w / 2, top: cy - h / 2, width: w, height: h };
+                      };
+
                       const doc = useDesignStore.getState().document;
                       const printPositions: Array<{ position: string; artworkImageUrl: string }> = [];
                       if (doc) {
@@ -4225,12 +4274,51 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                           });
                           await applyViewState(tempCanvas, viewState.layers);
                           tempCanvas.renderAll();
-                          const artworkImageUrl = tempCanvas.toDataURL({ format: 'png', multiplier: 1 });
+                          const crop = getPrintableAreaCrop(viewId);
+                          const artworkImageUrl = tempCanvas.toDataURL({ format: 'png', multiplier: 1, ...crop });
                           printPositions.push({ position, artworkImageUrl });
                           tempCanvas.dispose();
                         }
                       }
-                      const printSpecs = printPositions.length > 0 ? { positions: printPositions } : undefined;
+
+                      // Designer mode fallback: store is empty (no view switching occurred).
+                      // Temporarily hide product/model base + guide layers, export the printable
+                      // area from the live canvas, then restore visibility. This is more reliable
+                      // than recreating a StaticCanvas because it avoids any Fabric.js v6 issues
+                      // with custom property (name/data) restoration during loadFromJSON.
+                      if (printPositions.length === 0 && canvas) {
+                        const position = VIEW_TO_POSITION[currentView] ?? 'front';
+                        const toHide = canvas.getObjects().filter((obj: any) => {
+                          const name = obj.name || '';
+                          const layerType = obj.data?.layerType || '';
+                          return (
+                            name === 'product-image-base' ||
+                            name === 'product-image' ||
+                            layerType === 'product-image' ||
+                            name === 'background' ||
+                            layerType === 'background' ||
+                            name === 'printable-area-group' ||
+                            layerType === 'guide'
+                          );
+                        });
+                        const hasCustomerObjects = canvas.getObjects().length > toHide.length;
+                        if (hasCustomerObjects) {
+                          toHide.forEach((obj: any) => obj.set('visible', false));
+                          canvas.renderAll();
+                          const crop = getPrintableAreaCrop(currentView);
+                          const artworkImageUrl = canvas.toDataURL({ format: 'png', multiplier: 1, ...crop });
+                          toHide.forEach((obj: any) => obj.set('visible', true));
+                          canvas.renderAll();
+                          printPositions.push({ position, artworkImageUrl });
+                        }
+                      }
+
+                      if (printPositions.length === 0) {
+                        setDesignerActionError('未检测到任何印刷图层，请确认设计内容已加载后再同步');
+                        setDesignerSyncLoading(false);
+                        return;
+                      }
+                      const printSpecs = { positions: printPositions };
 
                       const token = typeof window !== 'undefined'
         ? (sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token'))

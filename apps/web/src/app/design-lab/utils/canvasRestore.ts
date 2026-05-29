@@ -29,20 +29,17 @@ export async function restoreCanvasFromSnapshot(
         firstObject: snapshot.objects[0]
     });
 
-    return new Promise((resolve) => {
-        canvas.loadFromJSON(snapshot, () => {
-            canvas.renderAll();
+    // Fabric.js v6: loadFromJSON returns a Promise and the second arg is a per-object
+    // reviver, NOT a completion callback. Await the Promise directly.
+    await canvas.loadFromJSON(snapshot);
+    canvas.renderAll();
 
-            const loadedObjects = canvas.getObjects();
-            console.log('[canvasRestore] ✅ Canvas restored with', loadedObjects.length, 'objects');
+    const loadedObjects = canvas.getObjects();
+    console.log('[canvasRestore] ✅ Canvas restored with', loadedObjects.length, 'objects');
 
-            // Warning if objects were in snapshot but not restored
-            if (snapshot.objects.length > 0 && loadedObjects.length === 0) {
-                console.error('[canvasRestore] ⚠️ WARNING: Snapshot had objects but none were restored!');
-                console.error('[canvasRestore] This suggests a Fabric.js version mismatch or incompatible data format');
-            }
+    if (snapshot.objects.length > 0 && loadedObjects.length === 0) {
+        console.error('[canvasRestore] ⚠️ WARNING: Snapshot had objects but none were restored!');
+    }
 
-            resolve(loadedObjects);
-        });
-    });
+    return loadedObjects;
 }
