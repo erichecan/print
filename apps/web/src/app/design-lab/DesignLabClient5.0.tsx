@@ -112,6 +112,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [designerRejectNote, setDesignerRejectNote] = useState('');
   const [designerRejectLoading, setDesignerRejectLoading] = useState(false);
   const [designerActionError, setDesignerActionError] = useState('');
+  const [designerDraftSaving, setDesignerDraftSaving] = useState(false);
+  const [designerDraftSaved, setDesignerDraftSaved] = useState(false);
 
   // 5.0 版本：功能2 - 改为 useState，支持动态更新
   // 修复：初始状态使用默认白色 T 恤图片，确保用户直接从导航进入时也能正常显示
@@ -213,6 +215,24 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       .then((data) => setDesignerOrderInfo(data.order || data))
       .catch(() => {});
   }, [isDesignerMode, designerOrderId]);
+
+  // Designer mode: load existing draft (or customer design) into canvas
+  useEffect(() => {
+    if (!isDesignerMode || !designerOrderInfo) return;
+    const snapshot = designerOrderInfo.designerDraft ?? designerOrderInfo.canvasJson ?? null;
+    if (!snapshot) return;
+
+    let attempts = 0;
+    const tryLoad = () => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) {
+        if (attempts++ < 20) setTimeout(tryLoad, 300);
+        return;
+      }
+      restoreCanvasFromSnapshot(canvas, snapshot).catch(() => {});
+    };
+    tryLoad();
+  }, [isDesignerMode, designerOrderInfo]);
 
   // 5.0 版本：功能2 - 从 URL 参数加载商品信息
   // 修复：添加默认图片机制，如果用户直接从导航进入，显示默认白色 T 恤
@@ -596,6 +616,36 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       setShowSaveShareModal(true);
     } else {
       setShowQuickLoginModal(true);
+    }
+  };
+
+  // Designer mode: save draft handler
+  const handleSaveDraft = async () => {
+    if (designerDraftSaving || !designerOrderId) return;
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+    setDesignerDraftSaving(true);
+    try {
+      const canvasJson = canvas.toJSON(['data', 'name']);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001'}/api/admin/orders/${designerOrderId}/design-review/save-draft`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ canvasJson }),
+        }
+      );
+      if (!res.ok) throw new Error('保存失败');
+      setDesignerDraftSaved(true);
+      setTimeout(() => setDesignerDraftSaved(false), 3000);
+    } catch {
+      // fail silently — designer can retry
+    } finally {
+      setDesignerDraftSaving(false);
     }
   };
 
@@ -4087,7 +4137,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             </span>
             {designerOrderInfo && (
               <span style={{ opacity: 0.8, fontSize: 12 }}>
-                订单 <strong>{designerOrderInfo.orderNumber}</strong>
+                订单{' '}
+                <Link
+                  href={`/admin/online-orders/${designerOrderId}`}
+                  target="_blank"
+                  style={{ color: '#93C5FD', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  {designerOrderInfo.orderNumber} ↗
+                </Link>
                 {designerOrderInfo.user?.name && ` · ${designerOrderInfo.user.name}`}
               </span>
             )}
@@ -4095,6 +4152,23 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               {designerActionError && (
                 <span style={{ color: '#FCA5A5', fontSize: 11 }}>{designerActionError}</span>
               )}
+              <span
+                role="button"
+                tabIndex={0}
+                aria-disabled={designerDraftSaving}
+                onClick={handleSaveDraft}
+                style={{
+                  height: 20, display: 'inline-flex', alignItems: 'center', padding: '0 8px',
+                  background: designerDraftSaved ? '#1E40AF' : 'transparent',
+                  color: designerDraftSaved ? '#BFDBFE' : '#93C5FD',
+                  border: '1px solid #3B82F6', borderRadius: 4, fontWeight: 600, fontSize: 11,
+                  cursor: designerDraftSaving ? 'not-allowed' : 'pointer',
+                  userSelect: 'none',
+                  opacity: designerDraftSaving ? 0.6 : 1,
+                }}
+              >
+                {designerDraftSaving ? '保存中…' : designerDraftSaved ? '✓ 已保存' : '保存草稿'}
+              </span>
               {designerSyncDone ? (
                 <span style={{ background: '#D1FAE5', color: '#065F46', height: 20, display: 'inline-flex', alignItems: 'center', padding: '0 8px', borderRadius: 4, fontWeight: 700, fontSize: 11 }}>
                   ✓ 已同步

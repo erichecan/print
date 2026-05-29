@@ -84,6 +84,7 @@ exports.listOrders = async (req, res) => {
               },
             },
           },
+          user: { select: { name: true } },
           _count: {
             select: {
               items: true,
@@ -99,8 +100,12 @@ exports.listOrders = async (req, res) => {
         id: order.id,
         orderNumber: order.orderNumber,
         email: order.email,
+        customerName: order.user?.name ?? order.email ?? null,
+        customerEmail: order.email,
         status: order.status.toLowerCase(),
         paymentStatus: order.paymentStatus.toLowerCase(),
+        designReviewStatus: order.designReviewStatus ?? null,
+        mockupUrl: order.mockupUrl ?? null,
         total: Number(order.total),
         currency: order.currency,
         createdAt: order.createdAt,
@@ -205,6 +210,9 @@ exports.getOrderById = async (req, res) => {
       billingAddress: order.billingAddress,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
+      productionStatus: order.productionStatus || null,
+      printToken: order.printToken || null,
+      sentToFactoryAt: order.sentToFactoryAt || null,
       items: order.items.map((item) => ({
         id: item.id,
         sku: item.variant.sku,
@@ -223,6 +231,10 @@ exports.getOrderById = async (req, res) => {
         labelUrl: shipment.labelUrl,
         createdAt: shipment.createdAt,
       })),
+      designReviewStatus: order.designReviewStatus ?? null,
+      mockupUrl: order.mockupUrl ?? null,
+      designerDraft: order.designerDraft ?? null,
+      designerDraftSavedAt: order.designerDraftSavedAt ?? null,
     });
   } catch (error) {
     console.error('[Admin] Error fetching order:', error);
@@ -1246,6 +1258,338 @@ exports.getShippingRates = async (req, res, next) => {
     }
 
     next(new InternalServerError('获取运费报价失败，请稍后重试'));
+  }
+};
+
+// ─── Design Review APIs ───────────────────────────────────────────────────────
+
+const DESIGN_REVIEW_STATUSES = ['PENDING_REVIEW', 'IN_REVIEW', 'REJECTED'];
+
+exports.listDesignReviewQueue = async (req, res, next) => {
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        designReviewStatus: { in: DESIGN_REVIEW_STATUSES },
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        createdAt: true,
+        status: true,
+        designReviewStatus: true,
+        designReviewNote: true,
+        designReviewRejectedAt: true,
+        mockupUrl: true,
+        items: {
+          take: 1,
+          select: {
+            id: true,
+            quantity: true,
+            variant: {
+              select: {
+                color: true,
+                size: true,
+                product: { select: { name: true } },
+              },
+            },
+          },
+        },
+        user: { select: { firstName: true, lastName: true, email: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const now = Date.now();
+    const enriched = orders.map((o) => {
+      const waitMs = now - new Date(o.createdAt).getTime();
+      const waitHours = waitMs / (1000 * 60 * 60);
+      return {
+        ...o,
+        waitHours: Math.floor(waitHours),
+        isUrgent: waitHours > 24,
+      };
+    });
+
+    res.json({ orders: enriched });
+  } catch (error) {
+    logger.error('listDesignReviewQueue error', { error: error.message });
+    next(new InternalServerError('获取设计审核队列失败'));
+  }
+};
+
+exports.syncDesignToOrder = async (req, res, next) => {
+  const { id } = req.params;
+  const { mockupUrl } = req.body;
+
+  if (!mockupUrl) {
+    return next(new BadRequestError('mockupUrl 不能为空'));
+  }
+
+  try {
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return next(new NotFoundError('订单不存在'));
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: {
+        designReviewStatus: 'SYNCED',
+        mockupUrl,
+        designReviewSyncedAt: new Date(),
+      },
+    });
+
+    logger.info('Design synced to order', { orderId: id, userId: req.user?.id });
+
+    // Auto-trigger gang sheet generation if tracking info already exists
+    if (updated.trackingNumber) {
+      res.json({ order: updated, gangSheetPending: true });
+    } else {
+      res.json({ order: updated, gangSheetPending: false });
+    }
+  } catch (error) {
+    logger.error('syncDesignToOrder error', { orderId: id, error: error.message });
+    next(new InternalServerError('设计同步失败'));
+  }
+};
+
+exports.rejectDesignToCustomer = async (req, res, next) => {
+  const { id } = req.params;
+  const { note } = req.body;
+
+  if (!note || !note.trim()) {
+    return next(new BadRequestError('退回原因不能为空'));
+  }
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { user: { select: { email: true, name: true } } },
+    });
+    if (!order) return next(new NotFoundError('订单不存在'));
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: {
+        designReviewStatus: 'REJECTED',
+        designReviewNote: note.trim(),
+        designReviewRejectedAt: new Date(),
+      },
+    });
+
+    logger.info('Design rejected, returned to customer', { orderId: id, userId: req.user?.id });
+
+    // TODO: send rejection email via emailService when template is ready
+    // await sendDesignRejectionEmail(order.user.email, { orderNumber: order.orderNumber, note });
+
+    res.json({ order: updated });
+  } catch (error) {
+    logger.error('rejectDesignToCustomer error', { orderId: id, error: error.message });
+    next(new InternalServerError('退回设计失败'));
+  }
+};
+
+exports.saveDesignerDraft = async (req, res, next) => {
+  const { id } = req.params;
+  const { canvasJson } = req.body;
+
+  if (!canvasJson) {
+    return next(new BadRequestError('canvasJson 不能为空'));
+  }
+
+  try {
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) return next(new NotFoundError('订单不存在'));
+
+    await prisma.order.update({
+      where: { id },
+      data: {
+        designerDraft: canvasJson,
+        designerDraftSavedAt: new Date(),
+      },
+    });
+
+    logger.info('Designer draft saved', { orderId: id, userId: req.user?.id });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('saveDesignerDraft error', { orderId: id, error: error.message });
+    next(new InternalServerError('保存草稿失败'));
+  }
+};
+
+// ─── Logistics Export + CSV Import ───────────────────────────────────────────
+
+exports.exportLogisticsOrders = async (req, res, next) => {
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        designReviewStatus: 'SYNCED',
+        trackingNumber: null,
+        shippingAddress: { not: null },
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        createdAt: true,
+        shippingAddress: true,
+        items: {
+          select: {
+            quantity: true,
+            product: { select: { name: true } },
+            variant: { select: { color: true, size: true } },
+          },
+        },
+        user: { select: { name: true, email: true, phone: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Build CSV
+    const rows = [
+      ['订单号', '客户姓名', '电话', '邮箱', '收货地址', '商品', '数量', '下单时间'],
+    ];
+
+    for (const o of orders) {
+      const addr = typeof o.shippingAddress === 'string'
+        ? o.shippingAddress
+        : JSON.stringify(o.shippingAddress);
+      const items = o.items.map(i => `${i.product?.name || ''} ${i.variant?.color || ''} ${i.variant?.size || ''}`).join('; ');
+      const qty = o.items.reduce((s, i) => s + (i.quantity || 0), 0);
+      rows.push([
+        o.orderNumber,
+        o.user?.name || '',
+        o.user?.phone || '',
+        o.user?.email || '',
+        addr,
+        items,
+        qty,
+        new Date(o.createdAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+      ]);
+    }
+
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const bom = '﻿';
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="logistics-${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.send(bom + csv);
+  } catch (error) {
+    logger.error('exportLogisticsOrders error', { error: error.message });
+    next(new InternalServerError('导出物流订单失败'));
+  }
+};
+
+exports.importLogisticsCsv = async (req, res, next) => {
+  try {
+    const { rows } = req.body; // [{ orderNumber, carrier, trackingNumber }]
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return next(new BadRequestError('rows 不能为空'));
+    }
+
+    const results = { updated: [], notFound: [], errors: [] };
+
+    for (const row of rows) {
+      const { orderNumber, carrier, trackingNumber } = row;
+      if (!orderNumber || !trackingNumber) {
+        results.errors.push({ orderNumber, reason: '缺少订单号或快递单号' });
+        continue;
+      }
+
+      try {
+        const order = await prisma.order.findFirst({ where: { orderNumber } });
+        if (!order) {
+          results.notFound.push(orderNumber);
+          continue;
+        }
+
+        await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            trackingNumber,
+            carrier: carrier || null,
+            status: 'SHIPPED',
+          },
+        });
+
+        results.updated.push(orderNumber);
+        logger.info('Logistics CSV import: order updated', { orderNumber, trackingNumber });
+      } catch (err) {
+        results.errors.push({ orderNumber, reason: err.message });
+      }
+    }
+
+    res.json(results);
+  } catch (error) {
+    logger.error('importLogisticsCsv error', { error: error.message });
+    next(new InternalServerError('导入物流信息失败'));
+  }
+};
+
+// ─── Gang Sheet ───────────────────────────────────────────────────────────────
+
+exports.getGangSheet = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            product: { select: { name: true } },
+            variant: { select: { color: true, size: true, sku: true } },
+          },
+        },
+        user: { select: { name: true, email: true, phone: true } },
+        shipments: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
+
+    if (!order) return next(new NotFoundError('订单不存在'));
+    if (!order.mockupUrl) return next(new BadRequestError('设计尚未同步，无法生成 Gang Sheet'));
+    if (!order.trackingNumber) return next(new BadRequestError('物流信息尚未录入，无法生成 Gang Sheet'));
+
+    // Record download time on first access
+    if (!order.gangSheetDownloadedAt) {
+      await prisma.order.update({
+        where: { id },
+        data: { gangSheetDownloadedAt: new Date() },
+      });
+    }
+
+    // Build gang sheet data structure for frontend rendering
+    const gangSheet = {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      createdAt: order.createdAt,
+      customer: order.user,
+      carrier: order.carrier || '',
+      trackingNumber: order.trackingNumber,
+      shippingAddress: order.shippingAddress,
+      mockupUrl: order.mockupUrl,
+      items: order.items.map((item) => {
+        const specs = item.printSpecs
+          ? (typeof item.printSpecs === 'string' ? JSON.parse(item.printSpecs) : item.printSpecs)
+          : {};
+        return {
+          id: item.id,
+          productName: item.product?.name || '',
+          color: item.variant?.color || '',
+          size: item.variant?.size || '',
+          sku: item.variant?.sku || '',
+          quantity: item.quantity,
+          printMethod: specs.method || '',
+          positions: (specs.positions || []).filter(p => p.imageUrl || p.text),
+          widthCm: specs.widthCm,
+          heightCm: specs.heightCm,
+          notes: specs.notes || '',
+        };
+      }),
+    };
+
+    res.json({ gangSheet });
+  } catch (error) {
+    logger.error('getGangSheet error', { orderId: id, error: error.message });
+    next(new InternalServerError('获取 Gang Sheet 失败'));
   }
 };
 

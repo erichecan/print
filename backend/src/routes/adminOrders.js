@@ -17,6 +17,19 @@ router.post('/:id/refund', adminOrderController.recordRefund);
 router.get('/:id/shipment/rates', adminOrderController.getShippingRates);
 router.post('/:id/shipment/label', adminOrderController.generateShippingLabel);
 
+// Design Review flow
+router.get('/design-review/queue', adminOrderController.listDesignReviewQueue);
+router.patch('/:id/design-review/sync', adminOrderController.syncDesignToOrder);
+router.patch('/:id/design-review/reject', adminOrderController.rejectDesignToCustomer);
+router.patch('/:id/design-review/save-draft', adminOrderController.saveDesignerDraft);
+
+// Logistics export + CSV import
+router.get('/logistics/export', adminOrderController.exportLogisticsOrders);
+router.post('/logistics/import-csv', adminOrderController.importLogisticsCsv);
+
+// Gang Sheet
+router.get('/:id/gang-sheet', adminOrderController.getGangSheet);
+
 module.exports = router;
 
 

@@ -178,6 +178,7 @@ model Product {
   colorImages        ProductColorImage[]
   images             ProductImage[]
   reviews            ProductReview[]
+  reviewSettings     ProductReviewSettings?
   brand              Brand?              @relation(fields: [brandId], references: [id])
   category           Category            @relation(fields: [categoryId], references: [id])
   projects           Project[]
@@ -185,7 +186,6 @@ model Product {
   giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
   variants           Variant[]
   shippingTemplates  ShippingTemplateProduct[] // Shipping templates that apply to this product
-  tags               String[]                   @default([])
 
   @@index([slug])
   @@index([categoryId])
@@ -270,23 +270,40 @@ model ProductColorImage {
 }
 
 model ProductReview {
-  id                 String   @id @default(uuid())
-  productId          String   @map("product_id")
-  userId             String?  @map("user_id")
-  orderId            String?  @map("order_id")
+  id                 String        @id @default(uuid())
+  productId          String        @map("product_id")
+  userId             String?       @map("user_id")
+  orderId            String?       @map("order_id")
   rating             Int
   title              String
   comment            String
-  isVerifiedPurchase Boolean  @default(false) @map("is_verified_purchase")
-  helpfulCount       Int      @default(0) @map("helpful_count")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  status             ReviewStatus  @default(PENDING)
+  images             String[]      @default([])
+  adminReply         String?       @map("admin_reply")
+  adminRepliedAt     DateTime?     @map("admin_replied_at")
+  isVerifiedPurchase Boolean       @default(false) @map("is_verified_purchase")
+  helpfulCount       Int           @default(0) @map("helpful_count")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  product            Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([userId])
+  @@index([status])
   @@index([createdAt])
   @@map("product_reviews")
+}
+
+model ProductReviewSettings {
+  id               String   @id @default(uuid())
+  productId        String   @unique @map("product_id")
+  reviewsEnabled   Boolean  @default(true) @map("reviews_enabled")
+  maxDisplayCount  Int      @default(10) @map("max_display_count")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_review_settings")
 }
 
 model Collection {
@@ -367,6 +384,21 @@ model Order {
   trackingNumber       String?          @map("tracking_number")
   carrier              String?
   estimatedDelivery    DateTime?        @map("estimated_delivery")
+  productionStatus     String?          @map("production_status")
+  printToken           String?          @unique @map("print_token")
+  sentToFactoryAt      DateTime?        @map("sent_to_factory_at")
+  printSpecs           Json?            @map("print_specs")
+  // Design Review flow
+  designReviewStatus   String?          @map("design_review_status")
+  mockupUrl            String?          @map("mockup_url")
+  designReviewNote     String?          @map("design_review_note")
+  designReviewRejectedAt DateTime?      @map("design_review_rejected_at")
+  designReviewSyncedAt   DateTime?      @map("design_review_synced_at")
+  designerDraft        Json?            @map("designer_draft")
+  designerDraftSavedAt DateTime?        @map("designer_draft_saved_at")
+  gangSheetUrl         String?          @map("gang_sheet_url")
+  gangSheetGeneratedAt DateTime?        @map("gang_sheet_generated_at")
+  gangSheetDownloadedAt DateTime?       @map("gang_sheet_downloaded_at")
   createdAt            DateTime         @default(now()) @map("created_at")
   updatedAt            DateTime         @updatedAt @map("updated_at")
   orderCoupons         OrderCoupon[]
@@ -383,6 +415,9 @@ model Order {
   @@index([email])
   @@index([createdAt], map: "idx_orders_created_at")
   @@index([status], map: "idx_orders_status")
+  @@index([productionStatus], map: "idx_orders_production_status")
+  @@index([printToken], map: "idx_orders_print_token")
+  @@index([designReviewStatus], map: "idx_orders_design_review_status")
   @@map("orders")
 }
 
@@ -1231,6 +1266,13 @@ enum GuestMessageStatus {
   UNREAD
   READ
   ARCHIVED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  HIDDEN
 }
 
 // ============================================
