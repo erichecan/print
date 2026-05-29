@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { parseTagsParam, TAG_TAXONOMY } from '@/lib/tag-taxonomy';
+import { parseTagsParam, TAG_TAXONOMY, NON_APPAREL_GARMENT_TAGS, GARMENT_TAG_TO_SLUG, GARMENT_NECKLINES } from '@/lib/tag-taxonomy';
 
 const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
 const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
@@ -69,6 +69,24 @@ export function TagNavTree() {
         </li>
 
         {GARMENT_TYPES.map((garment) => {
+          const isNonApparel = NON_APPAREL_GARMENT_TAGS.has(garment);
+          const slug = GARMENT_TAG_TO_SLUG[garment];
+
+          if (isNonApparel) {
+            // 非服装品类（如 Mug）：一级叶节点，直接链接到 /catalog/[slug]
+            const isActive = pathname.startsWith(`/catalog/${slug}`);
+            return (
+              <li key={garment}>
+                <Link
+                  href={`/catalog/${slug}`}
+                  style={isActive ? { ...ITEM_L1, ...ACTIVE } : ITEM_L1}
+                >
+                  <span>{garment}s</span>
+                </Link>
+              </li>
+            );
+          }
+
           const isL1Active = activeGarment === garment;
           const tagsWithoutTree = activeTags.filter(
             (t) => !GARMENT_TYPES.includes(t) && !AUDIENCES.includes(t) && !NECKLINES.includes(t) && !ART_THEMES.includes(t)
@@ -108,31 +126,35 @@ export function TagNavTree() {
                           <span style={ICON_STYLE} aria-hidden="true">{isL2Active ? '−' : '+'}</span>
                         </Link>
 
-                        {isL2Active && (
-                          <ul className="tnt__l3">
-                            {NECKLINES.map((neckline) => {
-                              const isL3Active = activeTags.includes(neckline);
-                              const tagsWithoutNecklines = activeTags.filter(
-                                (t) => !NECKLINES.includes(t)
-                              );
-                              const l3Tags = isL3Active
-                                ? tagsWithoutNecklines
-                                : [...tagsWithoutNecklines, neckline];
-                              const l3Href = buildTagsHref(l3Tags);
+                        {isL2Active && (() => {
+                          const applicableNecklines = (activeGarment ? GARMENT_NECKLINES[activeGarment] : null) ?? [];
+                          if (applicableNecklines.length <= 1) return null;
+                          return (
+                            <ul className="tnt__l3">
+                              {applicableNecklines.map((neckline) => {
+                                const isL3Active = activeTags.includes(neckline);
+                                const tagsWithoutNecklines = activeTags.filter(
+                                  (t) => !NECKLINES.includes(t)
+                                );
+                                const l3Tags = isL3Active
+                                  ? tagsWithoutNecklines
+                                  : [...tagsWithoutNecklines, neckline];
+                                const l3Href = buildTagsHref(l3Tags);
 
-                              return (
-                                <li key={neckline}>
-                                  <Link
-                                    href={l3Href}
-                                    style={isL3Active ? { ...ITEM_L3, ...ACTIVE } : ITEM_L3}
-                                  >
-                                    {neckline}
-                                  </Link>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
+                                return (
+                                  <li key={neckline}>
+                                    <Link
+                                      href={l3Href}
+                                      style={isL3Active ? { ...ITEM_L3, ...ACTIVE } : ITEM_L3}
+                                    >
+                                      {neckline}
+                                    </Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          );
+                        })()}
                       </li>
                     );
                   })}
