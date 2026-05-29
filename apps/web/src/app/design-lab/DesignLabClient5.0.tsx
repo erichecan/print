@@ -4071,7 +4071,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         {/* Designer Mode Banner — fixed floating top bar */}
         {isDesignerMode && (
           <div style={{
-            position: 'fixed', top: 70, left: 0, right: 0,
+            position: 'fixed', top: 30, left: 0, right: 0,
             background: '#1E3A5F',
             color: '#fff',
             padding: '5px 16px',
@@ -4179,7 +4179,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               canvas={fabricCanvasRef.current}
               fabricModule={fabricRef.current}
             />
-            {/* Designer Mode: ruler overlay (pointer-events:none, purely visual) */}
+            {/* Designer Mode: ruler + grid overlay (pointer-events:none, purely visual) */}
+            {/* PX_PER_INCH=60 → canvas=20"×24", grid lines every 1" (5% horiz / 4.1667% vert) */}
             {isDesignerMode && (
               <div
                 style={{
@@ -4187,45 +4188,100 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   overflow: 'hidden', zIndex: 10,
                 }}
               >
+                {/* 1" reference grid (covers canvas content area, inside rulers) */}
+                <div style={{
+                  position: 'absolute', top: 24, left: 24, right: 0, bottom: 0,
+                  backgroundImage: [
+                    'linear-gradient(to right, rgba(100,120,160,0.13) 1px, transparent 1px)',
+                    'linear-gradient(to bottom, rgba(100,120,160,0.13) 1px, transparent 1px)',
+                  ].join(', '),
+                  backgroundSize: '5% 4.1667%, 5% 4.1667%',
+                }} />
+
                 {/* Top ruler */}
                 <div style={{
-                  position: 'absolute', top: 0, left: 20, right: 0, height: 20,
-                  background: 'rgba(30,58,95,0.85)',
-                  display: 'flex', alignItems: 'center',
+                  position: 'absolute', top: 0, left: 24, right: 0, height: 24,
+                  background: 'rgba(18,38,76,0.90)',
                 }}>
-                  {Array.from({ length: 20 }).map((_, i) => (
-                    <div key={i} style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.3)', height: i % 5 === 0 ? 12 : 6, alignSelf: 'flex-end', position: 'relative' }}>
-                      {i % 5 === 0 && (
-                        <span style={{ position: 'absolute', bottom: 14, left: 2, fontSize: 8, color: '#94A3B8', whiteSpace: 'nowrap' }}>
-                          {i * 5}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                  {Array.from({ length: 41 }).map((_, i) => {
+                    const isInch = i % 2 === 0;
+                    return (
+                      <div key={i} style={{
+                        position: 'absolute',
+                        left: `${i * 2.5}%`,
+                        bottom: 0,
+                        width: 1,
+                        height: isInch ? 11 : 5,
+                        background: isInch ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.30)',
+                      }}>
+                        {isInch && i > 0 && i < 40 && (
+                          <span style={{
+                            position: 'absolute',
+                            bottom: 12,
+                            left: 2,
+                            fontSize: 9,
+                            fontFamily: 'ui-monospace, monospace',
+                            color: '#93C5FD',
+                            whiteSpace: 'nowrap',
+                            lineHeight: 1,
+                          }}>
+                            {i / 2}&quot;
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
+
                 {/* Left ruler */}
                 <div style={{
-                  position: 'absolute', top: 20, left: 0, bottom: 0, width: 20,
-                  background: 'rgba(30,58,95,0.85)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  position: 'absolute', top: 24, left: 0, bottom: 0, width: 24,
+                  background: 'rgba(18,38,76,0.90)',
                 }}>
-                  {Array.from({ length: 20 }).map((_, i) => (
-                    <div key={i} style={{ flex: 1, borderTop: '1px solid rgba(255,255,255,0.3)', width: i % 5 === 0 ? 12 : 6, alignSelf: 'flex-end', position: 'relative' }}>
-                      {i % 5 === 0 && (
-                        <span style={{ position: 'absolute', right: 14, top: 2, fontSize: 8, color: '#94A3B8', writingMode: 'vertical-rl', whiteSpace: 'nowrap' }}>
-                          {i * 5}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                  {Array.from({ length: 49 }).map((_, i) => {
+                    const isInch = i % 2 === 0;
+                    return (
+                      <div key={i} style={{
+                        position: 'absolute',
+                        top: `${i * (100 / 48)}%`,
+                        right: 0,
+                        height: 1,
+                        width: isInch ? 11 : 5,
+                        background: isInch ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.30)',
+                      }}>
+                        {isInch && i > 0 && i < 48 && (
+                          <span style={{
+                            position: 'absolute',
+                            right: 13,
+                            top: -5,
+                            fontSize: 9,
+                            fontFamily: 'ui-monospace, monospace',
+                            color: '#93C5FD',
+                            whiteSpace: 'nowrap',
+                            lineHeight: 1,
+                          }}>
+                            {i / 2}&quot;
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                {/* DPI warning label */}
+
+                {/* Corner square */}
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, width: 24, height: 24,
+                  background: 'rgba(18,38,76,0.90)',
+                }} />
+
+                {/* Scale label */}
                 <div style={{
                   position: 'absolute', bottom: 8, right: 8,
-                  background: 'rgba(30,58,95,0.85)', color: '#fff',
+                  background: 'rgba(18,38,76,0.90)', color: '#93C5FD',
                   padding: '4px 10px', borderRadius: 6, fontSize: 11,
+                  fontFamily: 'ui-monospace, monospace', letterSpacing: '0.04em',
                 }}>
-                  300 DPI 推荐 · cm 单位
+                  in · DTF · 300 DPI
                 </div>
               </div>
             )}
