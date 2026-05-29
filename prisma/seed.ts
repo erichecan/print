@@ -182,13 +182,13 @@ async function main() {
   console.info('➡️  Start seeding printable catalog');
 
   await prisma.orderItem.deleteMany({
-    where: { order: { orderNumber: { in: ['ORD-1001'] } } }
+    where: { order: { orderNumber: { in: ['ORD-1001', 'ORD-DR-001', 'ORD-DR-002', 'ORD-DR-003'] } } }
   });
   await prisma.project.deleteMany({
     where: { name: { in: ['Demo Canvas Draft', 'Ready For Production'] } }
   });
   await prisma.order.deleteMany({
-    where: { orderNumber: { in: ['ORD-1001'] } }
+    where: { orderNumber: { in: ['ORD-1001', 'ORD-DR-001', 'ORD-DR-002', 'ORD-DR-003'] } }
   });
 
   const user = await prisma.user.upsert({
@@ -558,6 +558,85 @@ async function main() {
     data: { status: ProjectStatus.ORDERED, orderId: order.id }
   });
 
+// Minimal Fabric.js canvas snapshot used as customer design stub for design-review seed orders
+  const SEED_CANVAS_JSON = {
+    version: '5.3.0',
+    background: '',
+    objects: [
+      {
+        type: 'textbox',
+        version: '5.3.0',
+        originX: 'left',
+        originY: 'top',
+        left: 350,
+        top: 480,
+        width: 500,
+        height: 72,
+        fill: '#111827',
+        strokeWidth: 1,
+        scaleX: 1,
+        scaleY: 1,
+        angle: 0,
+        opacity: 1,
+        visible: true,
+        fontFamily: 'Arial',
+        fontWeight: 'bold',
+        fontSize: 64,
+        text: 'Hello PrintNgo!',
+        textAlign: 'center',
+        fontStyle: 'normal',
+        lineHeight: 1.16,
+        textBackgroundColor: '',
+        charSpacing: 0,
+        styles: {},
+        direction: 'ltr',
+        minWidth: 20,
+        splitByGrapheme: false,
+        shadow: null,
+        backgroundColor: '',
+        fillRule: 'nonzero',
+        paintFirst: 'fill',
+        globalCompositeOperation: 'source-over',
+        skewX: 0,
+        skewY: 0,
+        underline: false,
+        overline: false,
+        linethrough: false,
+        path: null,
+        pathStartOffset: 0,
+        pathSide: 'left',
+        pathAlign: 'baseline',
+      },
+      {
+        type: 'rect',
+        version: '5.3.0',
+        originX: 'left',
+        originY: 'top',
+        left: 450,
+        top: 600,
+        width: 300,
+        height: 80,
+        fill: '#3B82F6',
+        stroke: null,
+        strokeWidth: 1,
+        scaleX: 1,
+        scaleY: 1,
+        angle: 0,
+        opacity: 0.8,
+        visible: true,
+        shadow: null,
+        backgroundColor: '',
+        fillRule: 'nonzero',
+        paintFirst: 'fill',
+        globalCompositeOperation: 'source-over',
+        skewX: 0,
+        skewY: 0,
+        rx: 12,
+        ry: 12,
+      },
+    ],
+  };
+
 // Helper to create repeatable sample orders
   async function ensureOrderSeed({
     orderNumber,
@@ -566,6 +645,10 @@ async function main() {
     couponCode,
     status = 'PENDING',
     paymentStatus = 'COMPLETED',
+    designReviewStatus,
+    designerDraft,
+    mockupUrl,
+    createdAt,
   }: {
     orderNumber: string;
     user?: { id: string; email: string };
@@ -573,6 +656,10 @@ async function main() {
     couponCode?: string;
     status?: string;
     paymentStatus?: string;
+    designReviewStatus?: string;
+    designerDraft?: object;
+    mockupUrl?: string;
+    createdAt?: Date;
   }) {
     const existing = await prisma.order.findUnique({ where: { orderNumber } });
     if (existing) {
@@ -653,6 +740,10 @@ async function main() {
               },
             }
           : {}),
+        ...(designReviewStatus ? { designReviewStatus } : {}),
+        ...(designerDraft ? { designerDraft } : {}),
+        ...(mockupUrl ? { mockupUrl } : {}),
+        ...(createdAt ? { createdAt } : {}),
       },
     });
   }
@@ -671,6 +762,40 @@ async function main() {
     email: 'guest+seed@print.local',
     status: 'PROCESSING',
     paymentStatus: 'COMPLETED',
+  });
+
+  // Design-review test orders — used to test the designer draft save/load flow
+  // ORD-DR-001: customer submitted design (canvasJson in designerDraft), awaiting first review
+  await ensureOrderSeed({
+    orderNumber: 'ORD-DR-001',
+    user: customerUser,
+    email: 'customer@test.com',
+    status: 'PROCESSING',
+    paymentStatus: 'COMPLETED',
+    designReviewStatus: 'PENDING_REVIEW',
+    designerDraft: SEED_CANVAS_JSON,
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+  });
+
+  // ORD-DR-002: designer already opened and partially worked on it (IN_REVIEW), no draft yet
+  await ensureOrderSeed({
+    orderNumber: 'ORD-DR-002',
+    user: customerUser,
+    email: 'customer@test.com',
+    status: 'PROCESSING',
+    paymentStatus: 'COMPLETED',
+    designReviewStatus: 'IN_REVIEW',
+    createdAt: new Date(Date.now() - 26 * 60 * 60 * 1000), // 26 hours ago → triggers urgent badge
+  });
+
+  // ORD-DR-003: designer rejected, customer needs to resubmit
+  await ensureOrderSeed({
+    orderNumber: 'ORD-DR-003',
+    email: 'guest+seed@print.local',
+    status: 'PROCESSING',
+    paymentStatus: 'COMPLETED',
+    designReviewStatus: 'REJECTED',
+    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
   });
 
   console.info('✅ Seed completed successfully');
