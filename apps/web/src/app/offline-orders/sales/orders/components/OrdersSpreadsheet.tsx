@@ -381,8 +381,7 @@ function AssetRow({
       <div className="mt-1">
         <textarea
           value={draft}
-          onChange={(e) => setDraft(e.target.value.slice(0, 100))}
-          maxLength={100}
+          onChange={(e) => setDraft(e.target.value)}
           rows={2}
           placeholder="备注（可选）"
           className="w-full px-1.5 py-1 text-[11px] border border-gray-200 rounded focus:border-blue-400 focus:outline-none resize-none leading-snug"
