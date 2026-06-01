@@ -2508,18 +2508,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           } catch (err) {
             // ignore
           }
-          console.log('[DesignLab 5.0] ✏️ 对象修改完成:', {
-            objectName: (obj as any).name,
-            objectType: obj.type,
-            scaleX: obj.scaleX,
-            scaleY: obj.scaleY,
-            name: (obj as any).name, // Added this line based on instruction, using 'obj'
-            angle: obj.angle,
-            left: obj.left,
-            top: obj.top,
-            width: obj.width, // Added this line based on instruction, using 'obj'
-            height: obj.height, // Added this line based on instruction, using 'obj'
-          });
+          // Sync modified object state to store so export always reflects current canvas
+          const freshView = useDesignStore.getState().document?.activeView || 'front';
+          const updatedLayers = serializeCanvas(fabricCanvas);
+          setViewLayers(freshView as any, updatedLayers);
         });
 
         // 创建 Custom Ink 样式的自定义控件（参考 Custom Ink 实现）
@@ -4287,9 +4279,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                           const position = VIEW_TO_POSITION[viewId];
                           if (!position) continue;
                           console.log(`[GangSheet] STORE路径 — view: ${viewId}, position: ${position}, layers: ${viewState.layers.length}`);
-                          console.log(`[GangSheet] layers detail:`, (viewState.layers as any[]).map((l: any) => ({
-                            type: l.type, name: l.name, metadata: l.metadata,
-                          })));
+                          console.log('[GangSheet] layers detail (flat):\n' + JSON.stringify(
+                            (viewState.layers as any[]).map((l: any) => ({
+                              type: l.type, name: l.name, src: l.src ? l.src.substring(0, 80) : undefined,
+                              layerType: l.metadata?.layerType, fill: l.style?.fill, x: l.transform?.x, y: l.transform?.y,
+                            })), null, 2
+                          ));
                           const el = document.createElement('canvas');
                           const tempCanvas = new fabric.StaticCanvas(el, {
                             width: CANVAS_WIDTH,
@@ -4298,9 +4293,21 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                           });
                           await applyViewState(tempCanvas, viewState.layers);
                           tempCanvas.renderAll();
-                          console.log(`[GangSheet] StaticCanvas objects after applyViewState:`, tempCanvas.getObjects().map((o: any) => ({
-                            type: o.type, name: o.name, layerType: o.data?.layerType,
-                          })));
+                          // Belt-and-suspenders: remove any product image that slipped through
+                          const bogusObjs = tempCanvas.getObjects().filter((o: any) =>
+                            o.name === 'product-image-base' || o.data?.layerType === 'product-image'
+                          );
+                          if (bogusObjs.length > 0) {
+                            console.warn('[GangSheet] ⚠️ Removing product image from tempCanvas:', bogusObjs.length);
+                            tempCanvas.remove(...bogusObjs);
+                            tempCanvas.renderAll();
+                          }
+                          console.log('[GangSheet] StaticCanvas objects after applyViewState (flat):\n' + JSON.stringify(
+                            tempCanvas.getObjects().map((o: any) => ({
+                              type: o.type, name: o.name, layerType: o.data?.layerType,
+                              src: o.type === 'image' ? (o.getSrc?.() ?? '').substring(0, 80) : undefined,
+                            })), null, 2
+                          ));
                           const crop = getPrintableAreaCrop(viewId);
                           const artworkImageUrl = tempCanvas.toDataURL({ format: 'png', multiplier: 1, ...crop });
                           console.log(`[GangSheet] STORE路径导出 — url前缀: ${artworkImageUrl.substring(0, 50)}, 大小: ${artworkImageUrl.length} bytes`);

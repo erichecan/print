@@ -8,7 +8,11 @@ import * as fabric from 'fabric';
 function serializeObject(obj: any): Layer | null {
     if (!obj) return null;
     // Skip guide objects or background images that shouldn't be serialized
-    if (obj.name === 'printable-area-group' || obj.name === 'product-image-base') {
+    if (
+        obj.name === 'printable-area-group' ||
+        obj.name === 'product-image-base' ||
+        obj.data?.layerType === 'product-image'
+    ) {
         return null;
     }
 
