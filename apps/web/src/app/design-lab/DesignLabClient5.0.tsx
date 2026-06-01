@@ -1498,10 +1498,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           return;
         }
 
-        // 新图片加载成功后，再移除旧图片
-        const oldProductImage = canvas.getObjects().find((obj: any) => obj.name === 'product-image-base');
-        if (oldProductImage) {
-          canvas.remove(oldProductImage);
+        // 新图片加载成功后，再移除旧图片（用多重条件兜底，防止 Fabric.js v6 name 丢失）
+        const oldProductImages = canvas.getObjects().filter((obj: any) =>
+          obj.name === 'product-image-base' ||
+          obj.data?.layerType === 'product-image' ||
+          (obj as any).name === 'product-image-base'
+        );
+        if (oldProductImages.length > 0) {
+          canvas.remove(...oldProductImages);
         }
 
         const fabricImg = new fabric.Image(imgElement);
@@ -1536,12 +1540,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           scaleY: scale,
           selectable: false,
           evented: false,
-          data: {
-            layerType: 'product-image',
-            zIndex: 0,
-          },
-          name: 'product-image-base',
         });
+        // Fabric.js v6: direct assignment ensures custom props are accessible as obj.name / obj.data
+        (fabricImg as any).name = 'product-image-base';
+        (fabricImg as any).data = { layerType: 'product-image', zIndex: 0 };
+        // excludeFromExport prevents this object from entering the Zustand store via serializeCanvas
+        (fabricImg as any).excludeFromExport = true;
 
         // Apply tinting filter if requested
         if (tintColor && tintColor.toLowerCase() !== '#ffffff') {
@@ -4291,11 +4295,23 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                             height: CANVAS_HEIGHT,
                             backgroundColor: 'transparent',
                           });
-                          await applyViewState(tempCanvas, viewState.layers);
+                          // Filter stale product-base entries from store before restoring
+                          // These sneak in when excludeFromExport wasn't yet set (old sessions)
+                          const cleanLayers = (viewState.layers as any[]).filter((l: any) => {
+                            if (l.type !== 'image') return true;
+                            if (l.metadata?.layerType === 'product-image') return false;
+                            // Shopify CDN URLs via Next.js proxy — definitively the product base image
+                            const src: string = l.src ?? '';
+                            if (src.includes('_next/image') && src.includes('cdn.shopify.com')) return false;
+                            return true;
+                          });
+                          await applyViewState(tempCanvas, cleanLayers);
                           tempCanvas.renderAll();
                           // Belt-and-suspenders: remove any product image that slipped through
                           const bogusObjs = tempCanvas.getObjects().filter((o: any) =>
-                            o.name === 'product-image-base' || o.data?.layerType === 'product-image'
+                            o.name === 'product-image-base' ||
+                            o.data?.layerType === 'product-image' ||
+                            (o.excludeFromExport === true)
                           );
                           if (bogusObjs.length > 0) {
                             console.warn('[GangSheet] ⚠️ Removing product image from tempCanvas:', bogusObjs.length);

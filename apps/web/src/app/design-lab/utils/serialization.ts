@@ -7,11 +7,15 @@ import * as fabric from 'fabric';
  */
 function serializeObject(obj: any): Layer | null {
     if (!obj) return null;
-    // Skip guide objects or background images that shouldn't be serialized
+    // Primary guard: excludeFromExport is set directly on product base images — most reliable check
+    if (obj.excludeFromExport) return null;
+    // Fallback guards using both obj.x and obj.get?.('x') for Fabric.js v6 compatibility
+    const objName = obj.name ?? obj.get?.('name');
+    const objData = obj.data ?? obj.get?.('data');
     if (
-        obj.name === 'printable-area-group' ||
-        obj.name === 'product-image-base' ||
-        obj.data?.layerType === 'product-image'
+        objName === 'printable-area-group' ||
+        objName === 'product-image-base' ||
+        objData?.layerType === 'product-image'
     ) {
         return null;
     }
@@ -49,12 +53,9 @@ function serializeObject(obj: any): Layer | null {
     };
 
     if (type === 'image') {
-        // For images, we need the source
-        // In a real app, we'd prefer a stable uploadId, but for now use src
         const src = obj.getSrc ? obj.getSrc() : (obj._element?.src || '');
         layer.src = src;
-        // CRITICAL FIX: Preserve original object name if available, otherwise fallback
-        layer.name = obj.name || 'image-layer';
+        layer.name = objName || 'image-layer';
     }
 
     if (type === 'text') {
@@ -66,14 +67,13 @@ function serializeObject(obj: any): Layer | null {
             textAlign: obj.textAlign,
             opacity: obj.opacity,
         };
-        layer.name = obj.name || 'text-layer';
+        layer.name = objName || 'text-layer';
     }
 
     // Preserve existing metadata if any
-    if (obj.data) {
-        layer.metadata = obj.data;
-        // Restore ID if it was in metadata (legacy support)
-        if (obj.data.id) layer.id = obj.data.id;
+    if (objData) {
+        layer.metadata = objData;
+        if (objData.id) layer.id = objData.id;
     }
 
     return layer;
@@ -144,10 +144,11 @@ async function restoreLayer(canvas: any, layer: Layer): Promise<void> {
                 skewY: transform.skewY,
                 originX: transform.originX || 'left',
                 originY: transform.originY || 'top',
-                id: layer.id, // Set the ID on the object
-                name: layer.name, // CRITICAL FIX: Restore original object name
-                data: layer.metadata || { id: layer.id, layerType: type }, // Restore metadata
             });
+            // Direct assignment for Fabric.js v6: set() doesn't reliably expose custom props
+            (fabricObj as any).id = layer.id;
+            (fabricObj as any).name = layer.name;
+            (fabricObj as any).data = layer.metadata || { id: layer.id, layerType: type };
 
             // Add controls hook if needed (will be handled by client)
             canvas.add(fabricObj);
@@ -176,10 +177,11 @@ async function restoreLayer(canvas: any, layer: Layer): Promise<void> {
 export async function applyViewState(canvas: any, layers: Layer[]): Promise<void> {
     if (!canvas) return;
 
-    // 1. Clear existing user objects
+    // 1. Clear existing user objects (keep background and guides)
     const existingObjects = canvas.getObjects().filter((obj: any) => {
-        // Keep background and guides
-        return obj.name !== 'product-image-base' && obj.name !== 'printable-area-group';
+        const n = obj.name ?? obj.get?.('name');
+        const d = obj.data ?? obj.get?.('data');
+        return n !== 'product-image-base' && n !== 'printable-area-group' && d?.layerType !== 'product-image';
     });
 
     canvas.remove(...existingObjects);
