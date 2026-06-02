@@ -560,3 +560,38 @@ exports.updatePrintPricing = async (req, res) => {
 
 exports.DEFAULT_PRINT_PRICING = DEFAULT_PRINT_PRICING;
 
+// ─── Quantity Tiers ───────────────────────────────────────────────────────────
+
+const DEFAULT_QUANTITY_TIERS = [
+  { minQty: 10, discount: 5,  label: '10+ 件' },
+  { minQty: 25, discount: 10, label: '25+ 件' },
+  { minQty: 50, discount: 15, label: '50+ 件' },
+];
+
+exports.getQuantityTiers = async (req, res) => {
+  try {
+    const data = await getSettingValue('print.quantityTiers', DEFAULT_QUANTITY_TIERS);
+    res.json({ data });
+  } catch (error) {
+    console.error('[adminSettingController] getQuantityTiers error:', error);
+    res.status(500).json({ error: 'Failed to load quantity tiers' });
+  }
+};
+
+exports.updateQuantityTiers = async (req, res) => {
+  try {
+    const tiers = req.body;
+    if (!Array.isArray(tiers)) {
+      return res.status(400).json({ error: 'tiers must be an array' });
+    }
+    const sorted = [...tiers].sort((a, b) => a.minQty - b.minQty);
+    await upsertSetting('print.quantityTiers', sorted, req.user?.id);
+    res.json({ data: sorted });
+  } catch (error) {
+    console.error('[adminSettingController] updateQuantityTiers error:', error);
+    res.status(500).json({ error: 'Failed to update quantity tiers' });
+  }
+};
+
+exports.DEFAULT_QUANTITY_TIERS = DEFAULT_QUANTITY_TIERS;
+

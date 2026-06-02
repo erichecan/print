@@ -6,7 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const { getUploadSignedUrl } = require('../config/aws');
 const { getSettingValue } = require('../services/settingService');
-const { DEFAULT_PRINT_PRICING } = require('./adminSettingController');
+const { DEFAULT_PRINT_PRICING, DEFAULT_QUANTITY_TIERS } = require('./adminSettingController');
 
 // 校验设计归属权，支持用户或会话草稿
 const fetchOwnedDesign = async (designId, { user, sessionId }) => {
@@ -339,15 +339,11 @@ exports.requestQuote = async (req, res) => {
       : (dtfFees[printSize] || dtfFees.medium);
     const printMethodFee = printMethodFeePerLocation * locationsCount;
 
-    // 数量折扣
-    let quantityDiscount = 0;
-    if (quantity >= 50) {
-      quantityDiscount = 0.15;
-    } else if (quantity >= 25) {
-      quantityDiscount = 0.10;
-    } else if (quantity >= 10) {
-      quantityDiscount = 0.05;
-    }
+    // 数量折扣（从 DB 读取量价阶梯，降序匹配第一个满足的阶梯）
+    const quantityTiers = await getSettingValue('print.quantityTiers', DEFAULT_QUANTITY_TIERS);
+    const sortedTiers = [...(quantityTiers || [])].sort((a, b) => b.minQty - a.minQty);
+    const matchedTier = sortedTiers.find(t => quantity >= t.minQty);
+    const quantityDiscount = matchedTier ? (matchedTier.discount / 100) : 0;
 
     // Fetch global size fees for synchronization
     let globalSizeFees = [];

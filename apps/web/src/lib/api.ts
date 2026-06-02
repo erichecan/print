@@ -2410,6 +2410,9 @@ export const adminSettingsApi = {
   getPrintPricing: () => api<{ data: PrintPricingConfig }>('/admin/settings/print-pricing'),
   updatePrintPricing: (data: PrintPricingConfig) =>
     api<{ data: PrintPricingConfig }>('/admin/settings/print-pricing', { method: 'PUT', body: data }),
+  getQuantityTiers: () => api<{ data: QuantityTier[] }>('/admin/settings/quantity-tiers'),
+  updateQuantityTiers: (tiers: QuantityTier[]) =>
+    api<{ data: QuantityTier[] }>('/admin/settings/quantity-tiers', { method: 'PUT', body: { tiers } }),
 };
 
 export interface PrintSizeTier {
@@ -2420,6 +2423,11 @@ export interface PrintSizeTier {
 export interface PrintPricingConfig {
   dtf: { small: PrintSizeTier; medium: PrintSizeTier; large: PrintSizeTier };
   embroidery: { small: PrintSizeTier; medium: PrintSizeTier; large: PrintSizeTier };
+}
+export interface QuantityTier {
+  minQty: number;
+  discount: number;
+  label: string;
 }
 
 

@@ -28,5 +28,9 @@ router.delete('/color-mappings/:id', controller.deleteColorMapping);
 router.get('/print-pricing', controller.getPrintPricing);
 router.put('/print-pricing', controller.updatePrintPricing);
 
+// Quantity Tiers
+router.get('/quantity-tiers', controller.getQuantityTiers);
+router.put('/quantity-tiers', controller.updateQuantityTiers);
+
 module.exports = router;
 
