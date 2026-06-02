@@ -35,6 +35,7 @@ import { serializeCanvas, applyViewState } from './utils/serialization'; // Impo
 import { loadFromLocal } from './store/persistence'; // Import Persistence
 import ProductCatalogModal from './components/modals/ProductCatalogModal';
 import { PRODUCT_COLORS } from '@/lib/product-data';
+import { getTemplateArea } from './config/printable-area-templates';
 // 产品模块：导入产品选择器和颜色选择器
 import ProductSelectorModal from './modules/product/ProductSelectorModal';
 import ColorSelectorModal from './modules/product/ColorSelectorModal';
@@ -59,10 +60,6 @@ const CANVAS_HEIGHT = 1440;
 // Default values used as fallback if product has no specific printable area config
 const DEFAULT_PRINTABLE_WIDTH = 546;
 const DEFAULT_PRINTABLE_HEIGHT = 960;
-const LEFT_CHEST_WIDTH = 180;
-const LEFT_CHEST_HEIGHT = 180;
-const LEFT_CHEST_OFFSET_X = 150;
-const LEFT_CHEST_OFFSET_Y = -390;
 const DEFAULT_SLEEVE_WIDTH = 500;
 const DEFAULT_SLEEVE_HEIGHT = 500;
 
@@ -140,10 +137,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       imageUrls?: { front: string | null; back: string | null; left_sleeve: string | null; right_sleeve: string | null; };
     }>;
     printableArea?: {
-      front: { width: number; height: number; x: number; y: number };
-      back: { width: number; height: number; x: number; y: number };
-      sleeve: { width: number; height: number; x: number; y: number };
+      front?: { width: number; height: number; x: number; y: number };
+      back?: { width: number; height: number; x: number; y: number };
+      sleeve?: { width: number; height: number; x: number; y: number };
+      'left-sleeve'?: { width: number; height: number; x: number; y: number };
+      'right-sleeve'?: { width: number; height: number; x: number; y: number };
     } | null;
+    garmentType?: string | null;
   }>(() => {
     // CRITICAL FIX: Initialize from initialProductData if available
     if (initialProductData) {
@@ -172,6 +172,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         variants: initialProductData.variants,
         colorDetails: initialProductData.colorDetails || [],
         printableArea: initialProductData.printableArea,
+        garmentType: initialProductData.garmentType,
       };
     }
 
@@ -266,6 +267,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         productName: initialProductData.productName || initialProductData.name,
         variants: initialProductData.variants || [],
         colorDetails: initialProductData.colorDetails || [],
+        printableArea: initialProductData.printableArea,
+        garmentType: initialProductData.garmentType,
       });
       return;
     }
@@ -357,6 +360,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               variants: (product.variants || []).map(v => ({ ...v, color: v.color || '' })),
               colorDetails: product.colorDetails || [],
               printableArea: product.printableArea,
+              garmentType: product.garmentType,
             }));
 
             // 更新 URL 参数以包含 variantId (可选)
@@ -423,6 +427,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [isLoadingDesign, setIsLoadingDesign] = useState(false); // 防止加载设计时重新添加产品图片
   const cleanupMouseListenerRef = useRef<(() => void) | null>(null); // 保存鼠标监听器清理函数
   const handleAddArtRef = useRef<((url: string, name: string) => void) | null>(null); // Gallery → Design Lab 自动添加 art
+  // Break stale-closure in canvas event handlers: always points to the latest productInfo.
+  const productInfoRef = useRef(productInfo);
+  productInfoRef.current = productInfo;
   // viewStates removed in favor of useDesignStore for persistence <!-- id: 360 -->
 
   // 调试：监听 canvasInitialized 变化
@@ -980,6 +987,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           variants: (productDetail.variants || []).map(v => ({ ...v, color: v.color || '' })),
           colorDetails: (productDetail.colorDetails || []) as any,
           printableArea: productDetail.printableArea,
+          garmentType: productDetail.garmentType,
         };
 
         // Feature: Add/Change Product with Design Inheritance
@@ -1277,6 +1285,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               variants: (productDetail.variants || []).map(v => ({ ...v, color: v.color || '' })),
               colorDetails: (productDetail.colorDetails || []) as any,
               printableArea: productDetail.printableArea ?? prev.printableArea,
+              garmentType: productDetail.garmentType ?? prev.garmentType,
             }));
             console.log('[DesignLab 5.0] ✅ Product info updated:', productDetail.productName, color);
           }
@@ -1593,6 +1602,37 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     };
   };
 
+  // Single source of truth for printable area geometry.
+  // Used by both the guide renderer and the drag/scale constraint system.
+  // Level 1: product-specific DB override → Level 2: garment type template → Level 3: centered fallback.
+  const getCanvasAreaBounds = (view: string): { left: number; top: number; right: number; bottom: number; width: number; height: number } => {
+    // Always read from ref so stale closures in canvas event handlers see the latest productInfo.
+    const info = productInfoRef.current;
+    // Level 1: product-specific override
+    const dbArea = info.printableArea ? (info.printableArea as Record<string, { x: number; y: number; width: number; height: number } | undefined>)[view] : undefined;
+    if (dbArea) {
+      const result = { left: dbArea.x, top: dbArea.y, right: dbArea.x + dbArea.width, bottom: dbArea.y + dbArea.height, width: dbArea.width, height: dbArea.height };
+      console.log('[AreaBounds] source=DB', { view, ...result });
+      return result;
+    }
+    // Level 2: garment type template
+    const templateArea = getTemplateArea(info.garmentType, view);
+    if (templateArea) {
+      const result = { left: templateArea.x, top: templateArea.y, right: templateArea.x + templateArea.width, bottom: templateArea.y + templateArea.height, width: templateArea.width, height: templateArea.height };
+      console.log('[AreaBounds] source=template garmentType=' + info.garmentType, { view, ...result });
+      return result;
+    }
+    // Level 3: hardcoded fallback — centered on canvas
+    const isSleeve = view === 'sleeve' || view === 'left-sleeve' || view === 'right-sleeve';
+    const w = isSleeve ? DEFAULT_SLEEVE_WIDTH : DEFAULT_PRINTABLE_WIDTH;
+    const h = isSleeve ? DEFAULT_SLEEVE_HEIGHT : DEFAULT_PRINTABLE_HEIGHT;
+    const left = (CANVAS_WIDTH - w) / 2;
+    const top = (CANVAS_HEIGHT - h) / 2;
+    const result = { left, top, right: left + w, bottom: top + h, width: w, height: h };
+    console.log('[AreaBounds] source=fallback', { view, ...result });
+    return result;
+  };
+
   // 添加动态打印区域参考线
   // Updated to match Custom Ink: thin gray lines, view-specific, visible only on interaction
   const addPrintableArea = (view: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve') => {
@@ -1606,32 +1646,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       canvas.remove(existing);
     }
 
-    // Determine dimensions based on view and product configuration
-    const getSafePrintableArea = (v: string) => {
-      const config = productInfo.printableArea;
-      // Default fallback
-      let width = DEFAULT_PRINTABLE_WIDTH;
-      let height = DEFAULT_PRINTABLE_HEIGHT;
-      let offsetX = 0;
-      let offsetY = 0;
-
-      if (v === 'sleeve' || v === 'left-sleeve' || v === 'right-sleeve') {
-        width = DEFAULT_SLEEVE_WIDTH;
-        height = DEFAULT_SLEEVE_HEIGHT;
-      }
-
-      // Override if product has custom configuration
-      if (config) {
-        if (v === 'front' && config.front) return { ...config.front, offsetX: 0, offsetY: 0 }; // Usually centered by default logic, but let's check config format
-        if (v === 'back' && config.back) return { ...config.back, offsetX: 0, offsetY: 0 };
-        if ((v === 'sleeve' || v === 'left-sleeve' || v === 'right-sleeve') && config.sleeve) return { ...config.sleeve, offsetX: 0, offsetY: 0 };
-      }
-
-      return { width, height, offsetX, offsetY };
+    // Delegate to component-level getCanvasAreaBounds so guide and constraints share the same geometry.
+    const getSafePrintableArea = (v: string): { x: number; y: number; width: number; height: number } => {
+      const b = getCanvasAreaBounds(v);
+      return { x: b.left, y: b.top, width: b.width, height: b.height };
     };
 
     const area = getSafePrintableArea(view);
-    console.log('[DesignLab 5.0] Updating printable area guide for view:', view, area);
+    console.log('[DesignLab 5.0] Guide area for view:', view, area);
 
     const groupObjects: any[] = [];
 
@@ -1671,48 +1693,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     });
     groupObjects.push(mainLabel);
 
-    // 3. Left Chest Area (Front View Only)
-    if (view === 'front') {
-      const leftChestRect = new fabric.Rect({
-        left: LEFT_CHEST_OFFSET_X, // Offset from center
-        top: LEFT_CHEST_OFFSET_Y,
-        width: LEFT_CHEST_WIDTH,
-        height: LEFT_CHEST_HEIGHT,
-        originX: 'center',
-        originY: 'center',
-        fill: 'transparent',
-        stroke: '#808080', // Dark gray border
-        strokeWidth: 2, // 2px width
-        selectable: false,
-        evented: false,
-      });
-
-      const leftChestLabel = new fabric.Text('Left Chest', {
-        left: LEFT_CHEST_OFFSET_X - LEFT_CHEST_WIDTH / 2 + 10,
-        top: LEFT_CHEST_OFFSET_Y - LEFT_CHEST_HEIGHT / 2 + 10,
-        fontSize: 18, // Scaled down (54 * 0.3 = 16.2 -> 18)
-        fontWeight: 'bold',
-        fontFamily: 'Arial',
-        fill: '#808080', // Dark gray text
-        originX: 'left',
-        originY: 'top',
-        selectable: false,
-        evented: false,
-      });
-
-      groupObjects.push(leftChestRect, leftChestLabel);
-    }
-
-    // Offset Logic:
-    // Left Sleeve: +100 (Right)
-    // Right Sleeve: -100 (Left) -> 200 units left of Left Sleeve
-    let offsetX = 0;
-    if (view === 'sleeve' || view === 'left-sleeve') offsetX = 100;
-    if (view === 'right-sleeve') offsetX = -100;
+    const groupLeft = area.x + area.width / 2;
+    const groupTop = area.y + area.height / 2;
 
     const group = new fabric.Group(groupObjects, {
-      left: CANVAS_WIDTH / 2 - 6 + offsetX,
-      top: CANVAS_HEIGHT / 2, // Centered vertically
+      left: groupLeft,
+      top: groupTop,
       originX: 'center',
       originY: 'center',
       selectable: false,
@@ -1733,7 +1719,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 监听视图变化更新参考线
   useEffect(() => {
     addPrintableArea(currentView);
-  }, [currentView, productInfo.printableArea]); // Added printableArea dependency
+  }, [currentView, productInfo.printableArea, productInfo.garmentType]);
 
   // 5.0 版本：步骤2 - 初始化 Fabric.js Canvas
   useEffect(() => {
@@ -1871,34 +1857,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           }
         };
 
-        // Boundary constraint helper
+        // Boundary constraint helper — delegates to getCanvasAreaBounds so it always matches the guide.
         const getPrintableAreaBounds = (view: string) => {
-          // Correct for asymmetrical center offset (-6)
-          const centerX = CANVAS_WIDTH / 2 - 6;
-          const centerY = CANVAS_HEIGHT / 2;
-
-          let width = DEFAULT_PRINTABLE_WIDTH;
-          let height = DEFAULT_PRINTABLE_HEIGHT;
-
-          if (view === 'left-sleeve' || view === 'right-sleeve' || view === 'sleeve') {
-            width = DEFAULT_SLEEVE_WIDTH;
-            height = DEFAULT_SLEEVE_HEIGHT;
-          }
-
-          // Use dynamic config if available
-          const config = productInfo.printableArea;
-          if (config) {
-            if (view === 'front' && config.front) { width = config.front.width; height = config.front.height; }
-            else if (view === 'back' && config.back) { width = config.back.width; height = config.back.height; }
-            else if ((view === 'sleeve' || view === 'left-sleeve' || view === 'right-sleeve') && config.sleeve) { width = config.sleeve.width; height = config.sleeve.height; }
-          }
-
-          return {
-            left: centerX - width / 2,
-            top: centerY - height / 2,
-            right: centerX + width / 2,
-            bottom: centerY + height / 2,
-          };
+          return getCanvasAreaBounds(view);
         };
 
         // Enhanced object:moving with boundary constraints
@@ -1912,38 +1873,34 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const layerType = obj.data?.layerType;
           if (layerType === 'product-image' || layerType === 'guide') return;
 
-          // Get printable area boundaries
+          // Get printable area boundaries (same geometry as the rendered guide)
           const bounds = getPrintableAreaBounds(currentView);
 
           // Get object bounding rectangle (accounts for rotation, scale, etc.)
           const objBounds = obj.getBoundingRect(true, true);
 
-          // Calculate how much the object exceeds the boundaries
-          const exceedsLeft = bounds.left - objBounds.left;
-          const exceedsTop = bounds.top - objBounds.top;
-          const exceedsRight = objBounds.left + objBounds.width - bounds.right;
-          const exceedsBottom = objBounds.top + objBounds.height - bounds.bottom;
-
-          // Adjust object position to constrain within bounds
-          // Use clamping to ensure objects never move outside (Custom Ink style)
           const boundsWidth = bounds.right - bounds.left;
           const boundsHeight = bounds.bottom - bounds.top;
 
+          let clamped = false;
           if (objBounds.width <= boundsWidth) {
-            if (objBounds.left < bounds.left) obj.left! += (bounds.left - objBounds.left);
-            if (objBounds.right > bounds.right) obj.left! -= (objBounds.right - bounds.right);
+            if (objBounds.left < bounds.left) { obj.left! += (bounds.left - objBounds.left); clamped = true; }
+            if (objBounds.right > bounds.right) { obj.left! -= (objBounds.right - bounds.right); clamped = true; }
           } else {
-            // Optimization for oversized images: prioritize keeping them centered within the overflow
-            if (objBounds.left > bounds.left) obj.left! -= (objBounds.left - bounds.left);
-            if (objBounds.right < bounds.right) obj.left! += (bounds.right - objBounds.right);
+            if (objBounds.left > bounds.left) { obj.left! -= (objBounds.left - bounds.left); clamped = true; }
+            if (objBounds.right < bounds.right) { obj.left! += (bounds.right - objBounds.right); clamped = true; }
           }
 
           if (objBounds.height <= boundsHeight) {
-            if (objBounds.top < bounds.top) obj.top! += (bounds.top - objBounds.top);
-            if (objBounds.bottom > bounds.bottom) obj.top! -= (objBounds.bottom - bounds.bottom);
+            if (objBounds.top < bounds.top) { obj.top! += (bounds.top - objBounds.top); clamped = true; }
+            if (objBounds.bottom > bounds.bottom) { obj.top! -= (objBounds.bottom - bounds.bottom); clamped = true; }
           } else {
-            if (objBounds.top > bounds.top) obj.top! -= (objBounds.top - bounds.top);
-            if (objBounds.bottom < bounds.bottom) obj.top! += (bounds.bottom - objBounds.bottom);
+            if (objBounds.top > bounds.top) { obj.top! -= (objBounds.top - bounds.top); clamped = true; }
+            if (objBounds.bottom < bounds.bottom) { obj.top! += (bounds.bottom - objBounds.bottom); clamped = true; }
+          }
+
+          if (clamped) {
+            console.log('[Constraint:moving] clamped', { view: currentView, bounds, objBounds, newLeft: obj.left, newTop: obj.top });
           }
 
           obj.setCoords();
@@ -1960,30 +1917,27 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const layerType = obj.data?.layerType;
           if (layerType === 'product-image' || layerType === 'guide') return;
 
-          // Get printable area boundaries
+          // Get printable area boundaries (same geometry as the rendered guide)
           const bounds = getPrintableAreaBounds(currentView);
 
           // Get object bounding rectangle
           const objBounds = obj.getBoundingRect(true, true);
 
-          // Calculate how much the object exceeds the boundaries
           const exceedsLeft = bounds.left - objBounds.left;
           const exceedsTop = bounds.top - objBounds.top;
           const exceedsRight = objBounds.left + objBounds.width - bounds.right;
           const exceedsBottom = objBounds.top + objBounds.height - bounds.bottom;
 
-          // Snap object position to constrain within bounds
-          if (exceedsLeft > 0) {
-            obj.left = obj.left! + exceedsLeft;
-          }
-          if (exceedsRight > 0) {
-            obj.left = obj.left! - exceedsRight;
-          }
-          if (exceedsTop > 0) {
-            obj.top = obj.top! + exceedsTop;
-          }
-          if (exceedsBottom > 0) {
-            obj.top = obj.top! - exceedsBottom;
+          let snapped = false;
+          if (exceedsLeft > 0) { obj.left = obj.left! + exceedsLeft; snapped = true; }
+          if (exceedsRight > 0) { obj.left = obj.left! - exceedsRight; snapped = true; }
+          if (exceedsTop > 0) { obj.top = obj.top! + exceedsTop; snapped = true; }
+          if (exceedsBottom > 0) { obj.top = obj.top! - exceedsBottom; snapped = true; }
+
+          if (snapped) {
+            console.log('[Constraint:modified] snapped back', { view: currentView, bounds, objBounds, exceeds: { exceedsLeft, exceedsTop, exceedsRight, exceedsBottom }, newLeft: obj.left, newTop: obj.top });
+          } else {
+            console.log('[Constraint:modified] within bounds', { view: currentView, bounds, objBounds });
           }
 
           obj.setCoords();
