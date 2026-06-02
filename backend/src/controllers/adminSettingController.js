@@ -522,3 +522,41 @@ exports.deleteColorMapping = async (req, res) => {
   }
 };
 
+// ─── Print Pricing ────────────────────────────────────────────────────────────
+
+const DEFAULT_PRINT_PRICING = {
+  dtf: {
+    small:  { price: 5.99,  label: 'Under 5"',  desc: 'Left chest / small logo' },
+    medium: { price: 8.99,  label: '5" – 11"',  desc: 'Standard front print' },
+    large:  { price: 11.99, label: '11" – 22"', desc: 'Full front / back' },
+  },
+  embroidery: {
+    small:  { price: 14.99, label: 'Under 5"',  desc: 'Left chest / small logo' },
+    medium: { price: 24.99, label: '5" – 11"',  desc: 'Standard / medium' },
+    large:  { price: 24.99, label: '11" – 22"', desc: 'Large area' },
+  },
+};
+
+exports.getPrintPricing = async (req, res) => {
+  try {
+    const data = await getSettingValue('print.pricing', DEFAULT_PRINT_PRICING);
+    res.json({ data });
+  } catch (error) {
+    console.error('[adminSettingController] getPrintPricing error:', error);
+    res.status(500).json({ error: 'Failed to load print pricing' });
+  }
+};
+
+exports.updatePrintPricing = async (req, res) => {
+  try {
+    const payload = req.body || {};
+    await upsertSetting('print.pricing', payload, req.user?.id);
+    res.json({ data: payload });
+  } catch (error) {
+    console.error('[adminSettingController] updatePrintPricing error:', error);
+    res.status(500).json({ error: 'Failed to update print pricing' });
+  }
+};
+
+exports.DEFAULT_PRINT_PRICING = DEFAULT_PRINT_PRICING;
+

@@ -5,6 +5,8 @@
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const { getUploadSignedUrl } = require('../config/aws');
+const { getSettingValue } = require('../services/settingService');
+const { DEFAULT_PRINT_PRICING } = require('./adminSettingController');
 
 // 校验设计归属权，支持用户或会话草稿
 const fetchOwnedDesign = async (designId, { user, sessionId }) => {
@@ -36,7 +38,7 @@ const fetchOwnedDesign = async (designId, { user, sessionId }) => {
 // 创建 Design Lab 草稿
 exports.createDesignDraft = async (req, res) => {
   try {
-    let { productVariantId, name, canvas, pricing, thumbnailUrl } = req.body || {};
+    let { productVariantId, name, canvas, pricing, thumbnailUrl, viewsData } = req.body || {};
     const userId = req.user?.id || null;
     const sessionId = userId ? null : req.sessionId || uuidv4();
 
@@ -100,6 +102,7 @@ exports.createDesignDraft = async (req, res) => {
         status: 'DRAFT',
         currentVersion: 1,
         canvasSnapshot: initialCanvas,
+        viewsData: viewsData || null,
         pricingSnapshot: pricing || null,
         thumbnailUrl: thumbnailUrl || null
       };
@@ -163,7 +166,7 @@ exports.getDesignDraft = async (req, res) => {
 exports.updateDesignDraft = async (req, res) => {
   try {
     const { id } = req.params;
-    const { canvas, pricing, name, thumbnailUrl, summary } = req.body || {};
+    const { canvas, pricing, name, thumbnailUrl, viewsData, summary } = req.body || {};
 
     const result = await fetchOwnedDesign(id, req);
 
@@ -179,6 +182,7 @@ exports.updateDesignDraft = async (req, res) => {
         data: {
           ...(name ? { name } : {}),
           ...(canvas ? { canvasSnapshot: canvas } : {}),
+          ...(viewsData !== undefined ? { viewsData: viewsData || null } : {}),
           ...(pricing ? { pricingSnapshot: pricing } : {}),
           ...(thumbnailUrl ? { thumbnailUrl } : {}),
           currentVersion: nextVersion
@@ -318,8 +322,18 @@ exports.requestQuote = async (req, res) => {
 
     // 印刷工艺费用（每个印刷面收取一次）
     const locationsCount = Math.max(1, sidesCount);
-    const dtfFees = { small: 599, medium: 899, large: 1199 };
-    const embroideryFees = { small: 1499, medium: 2499, large: 2499 };
+    const printPricing = await getSettingValue('print.pricing', DEFAULT_PRINT_PRICING);
+    const toDollars = v => Math.round((v || 0) * 100); // 转分
+    const dtfFees = {
+      small:  toDollars(printPricing?.dtf?.small?.price),
+      medium: toDollars(printPricing?.dtf?.medium?.price),
+      large:  toDollars(printPricing?.dtf?.large?.price),
+    };
+    const embroideryFees = {
+      small:  toDollars(printPricing?.embroidery?.small?.price),
+      medium: toDollars(printPricing?.embroidery?.medium?.price),
+      large:  toDollars(printPricing?.embroidery?.large?.price),
+    };
     const printMethodFeePerLocation = printMethod === 'embroidery'
       ? (embroideryFees[printSize] || embroideryFees.medium)
       : (dtfFees[printSize] || dtfFees.medium);

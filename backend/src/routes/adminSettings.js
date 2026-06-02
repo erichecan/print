@@ -24,5 +24,9 @@ router.get('/color-mappings', controller.getColorMappings);
 router.put('/color-mappings', controller.updateColorMappings);
 router.delete('/color-mappings/:id', controller.deleteColorMapping);
 
+// Print Pricing
+router.get('/print-pricing', controller.getPrintPricing);
+router.put('/print-pricing', controller.updatePrintPricing);
+
 module.exports = router;
 

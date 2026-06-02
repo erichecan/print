@@ -137,6 +137,7 @@ type NavItem =
 const NAV_LINKS: NavItem[] = [
   { href: '/admin', label: 'Dashboard', icon: 'dashboard', exact: true, i18n: 'dashboard' },
   { href: '/admin/online-products', label: 'Online Products', icon: 'products', i18n: 'onlineProducts' },
+  { href: '/admin/calibrate-areas', label: 'Calibrate Areas', icon: 'design', i18n: 'calibrateAreas', sub: true },
   { href: '/admin/online-categories', label: 'Online Categories', icon: 'categories', i18n: 'onlineCategories' },
   { href: '/admin/online-orders', label: 'Online Orders', icon: 'orders', i18n: 'onlineOrders' },
   { href: '/admin/design-review', label: 'Design Review', icon: 'design', i18n: 'designReview', sub: true },
@@ -150,6 +151,7 @@ const NAV_LINKS: NavItem[] = [
   { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' },
   { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials', sub: true },
   { href: '/admin/reviews', label: 'Reviews', icon: 'testimonials', i18n: 'reviews', sub: true },
+  { href: '/admin/print-pricing', label: 'Print Pricing', icon: 'settings', i18n: 'printPricing', sub: true },
   { href: '/admin/settings/shipping', label: 'Shipping', icon: 'shipping', i18n: 'shipping' },
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];

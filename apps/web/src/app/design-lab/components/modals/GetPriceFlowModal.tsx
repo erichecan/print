@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { designLabApi, sizeFeesApi, cartApi } from '@/lib/api';
+import { designLabApi, sizeFeesApi, cartApi, adminSettingsApi, PrintPricingConfig } from '@/lib/api';
 import './GetPriceFlowModal.css';
 
 export type GetPriceFlowStep = 'print-method' | 'quantity' | 'content-check' | 'added-to-cart';
@@ -84,6 +84,11 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const [sizeConfig, setSizeConfig] = useState<Array<{ size: string; sizeType?: string; additionalFee: number; displayOrder?: number }>>([]);
+  const [printPricing, setPrintPricing] = useState<PrintPricingConfig | null>(null);
+
+  // Ref to read sizeQuantities without adding it to effect deps (avoids init loop)
+  const sizeQuantitiesRef = React.useRef(sizeQuantities);
+  sizeQuantitiesRef.current = sizeQuantities;
 
   // Fetch size config when modal opens
   useEffect(() => {
@@ -109,6 +114,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     };
 
     fetchSizeData();
+    adminSettingsApi.getPrintPricing().then(res => setPrintPricing(res.data)).catch(() => {});
   }, [isOpen]);
 
   // Size adjustment map
@@ -141,12 +147,16 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     };
   }, [sizeConfig]);
 
-  // Initialize size quantities when entering quantity step
+  // Initialize size quantities when entering quantity step.
+  // Uses a ref for sizeQuantities to avoid the effect re-firing after setSizeQuantities,
+  // while still respecting any quantities the user has already typed (hasUserInput guard).
   React.useEffect(() => {
-    if (isOpen && currentStep === 'quantity' && sizeQuantities.length === 0) {
+    if (!isOpen || currentStep !== 'quantity' || allSizes.length === 0) return;
+    const hasUserInput = sizeQuantitiesRef.current.some(sq => sq.quantity > 0);
+    if (!hasUserInput) {
       setSizeQuantities(allSizes.map(size => ({ size, quantity: initialSize === size ? 1 : 0 })));
     }
-  }, [isOpen, currentStep, allSizes, sizeQuantities.length, initialSize]);
+  }, [isOpen, currentStep, allSizes, initialSize, setSizeQuantities]);
 
   // Total quantity
   const totalQuantity = React.useMemo(() => {
@@ -279,14 +289,16 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 
   // ─── Step 1: Print Method ─────────────────────────────────────────────────
   const renderPrintMethodStep = () => {
+    const p = printPricing;
     const dtfOptions: Array<{ value: PrintSize; label: string; price: number; desc: string }> = [
-      { value: 'small', label: 'Under 5"', price: 5.99, desc: 'Left chest / small logo' },
-      { value: 'medium', label: '5" – 11"', price: 8.99, desc: 'Standard front print' },
-      { value: 'large', label: '11" – 22"', price: 11.99, desc: 'Full front / back' },
+      { value: 'small',  label: p?.dtf.small.label  ?? 'Under 5"',  price: p?.dtf.small.price  ?? 5.99,  desc: p?.dtf.small.desc  ?? 'Left chest / small logo' },
+      { value: 'medium', label: p?.dtf.medium.label ?? '5" – 11"',  price: p?.dtf.medium.price ?? 8.99,  desc: p?.dtf.medium.desc ?? 'Standard front print' },
+      { value: 'large',  label: p?.dtf.large.label  ?? '11" – 22"', price: p?.dtf.large.price  ?? 11.99, desc: p?.dtf.large.desc  ?? 'Full front / back' },
     ];
     const embroideryOptions: Array<{ value: PrintSize; label: string; price: number; desc: string }> = [
-      { value: 'small', label: 'Under 5"', price: 14.99, desc: 'Left chest / small logo' },
-      { value: 'medium', label: '5" – 11"', price: 24.99, desc: 'Large embroidery' },
+      { value: 'small',  label: p?.embroidery.small.label  ?? 'Under 5"',  price: p?.embroidery.small.price  ?? 14.99, desc: p?.embroidery.small.desc  ?? 'Left chest / small logo' },
+      { value: 'medium', label: p?.embroidery.medium.label ?? '5" – 11"',  price: p?.embroidery.medium.price ?? 24.99, desc: p?.embroidery.medium.desc ?? 'Standard / medium' },
+      { value: 'large',  label: p?.embroidery.large.label  ?? '11" – 22"', price: p?.embroidery.large.price  ?? 24.99, desc: p?.embroidery.large.desc  ?? 'Large area' },
     ];
     const sizeOptions = printMethod === 'dtf' ? dtfOptions : embroideryOptions;
     const validPrintSize = sizeOptions.find(o => o.value === printSize) ? printSize : sizeOptions[0].value;
@@ -348,9 +360,12 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 
   // ─── Step 2: Sizes & Quantities ───────────────────────────────────────────
   const renderQuantityStep = () => {
-    const thumbUrl = variants && variants.length > 0
-      ? (variants[0].imageUrl || variants[0].image || variants[0].thumbnailUrl || null)
-      : null;
+    const thumbUrl = (() => {
+      if (!variants || variants.length === 0) return null;
+      const selected = variantId ? variants.find((v: any) => v.id === variantId) : null;
+      const v = selected || variants[0];
+      return v.imageUrl || v.image || v.thumbnailUrl || null;
+    })();
 
     const printSizeLabel = printSize === 'small' ? 'Under 5"' : printSize === 'medium' ? '5"–11"' : '11"–22"';
     const methodLabel = printMethod === 'dtf' ? '🖨️ DTF Print' : '🧵 Embroidery';

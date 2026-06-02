@@ -720,6 +720,23 @@ export const checkoutApi = {
         ...(couponId ? { couponId } : {}),
       },
     }),
+  devOrder: (email: string, shippingAddress: CheckoutAddressPayload) =>
+    api<CheckoutConfirmResponse>('/checkout/dev-order', {
+      method: 'POST',
+      body: {
+        email,
+        shippingAddress: {
+          firstName: shippingAddress.firstName || 'Dev',
+          lastName: shippingAddress.lastName || 'Test',
+          addressLine1: shippingAddress.addressLine1 || '123 Dev Street',
+          city: shippingAddress.city || 'Toronto',
+          province: shippingAddress.province || 'ON',
+          postalCode: shippingAddress.postalCode || 'M5V 3A8',
+          country: shippingAddress.country || 'CA',
+          phone: shippingAddress.phone || '4161234567',
+        },
+      },
+    }),
 };
 
 // Designs API (User)
@@ -1548,6 +1565,7 @@ export interface AdminProductDetail extends AdminProductSummary {
     'left-sleeve'?: { width: number; height: number; x: number; y: number };
     'right-sleeve'?: { width: number; height: number; x: number; y: number };
   } | null;
+  garmentType?: string | null;
   tags?: string[];
   colorImages?: Array<{
     id: string;
@@ -1604,6 +1622,7 @@ export interface AdminProductPayload {
     'left-sleeve'?: { width: number; height: number; x: number; y: number };
     'right-sleeve'?: { width: number; height: number; x: number; y: number };
   } | null;
+  garmentType?: string | null;
 }
 
 // Product Wizard Data Type
@@ -1653,7 +1672,10 @@ export interface ProductWizardData {
     front: { width: number; height: number; x: number; y: number };
     back: { width: number; height: number; x: number; y: number };
     sleeve: { width: number; height: number; x: number; y: number };
+    'left-sleeve'?: { width: number; height: number; x: number; y: number };
+    'right-sleeve'?: { width: number; height: number; x: number; y: number };
   };
+  garmentType?: string;
 
   // Step 4: Publish
   publishOption?: 'publish' | 'draft' | 'scheduled';
@@ -2385,7 +2407,20 @@ export const adminSettingsApi = {
   getColorMappings: () => api<{ data: ColorMappingPayload[] }>('/admin/settings/color-mappings'),
   updateColorMappings: (mappings: ColorMappingPayload[]) => api('/admin/settings/color-mappings', { method: 'PUT', body: { mappings } }),
   deleteColorMapping: (id: string) => api(`/admin/settings/color-mappings/${id}`, { method: 'DELETE' }),
+  getPrintPricing: () => api<{ data: PrintPricingConfig }>('/admin/settings/print-pricing'),
+  updatePrintPricing: (data: PrintPricingConfig) =>
+    api<{ data: PrintPricingConfig }>('/admin/settings/print-pricing', { method: 'PUT', body: data }),
 };
+
+export interface PrintSizeTier {
+  price: number;
+  label: string;
+  desc: string;
+}
+export interface PrintPricingConfig {
+  dtf: { small: PrintSizeTier; medium: PrintSizeTier; large: PrintSizeTier };
+  embroidery: { small: PrintSizeTier; medium: PrintSizeTier; large: PrintSizeTier };
+}
 
 
 export const adminContentApi = {
