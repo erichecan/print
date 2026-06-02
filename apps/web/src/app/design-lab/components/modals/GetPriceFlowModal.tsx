@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { designLabApi, sizeFeesApi, cartApi, adminSettingsApi, PrintPricingConfig } from '@/lib/api';
+import { designLabApi, sizeFeesApi, cartApi, adminSettingsApi, PrintPricingConfig, QuantityTier } from '@/lib/api';
 import './GetPriceFlowModal.css';
 
 export type GetPriceFlowStep = 'print-method' | 'quantity' | 'content-check' | 'added-to-cart';
@@ -85,6 +85,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 
   const [sizeConfig, setSizeConfig] = useState<Array<{ size: string; sizeType?: string; additionalFee: number; displayOrder?: number }>>([]);
   const [printPricing, setPrintPricing] = useState<PrintPricingConfig | null>(null);
+  const [quantityTiers, setQuantityTiers] = useState<QuantityTier[]>([]);
 
   // Ref to read sizeQuantities without adding it to effect deps (avoids init loop)
   const sizeQuantitiesRef = React.useRef(sizeQuantities);
@@ -115,6 +116,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 
     fetchSizeData();
     adminSettingsApi.getPrintPricing().then(res => setPrintPricing(res.data)).catch(() => {});
+    adminSettingsApi.getQuantityTiers().then(res => setQuantityTiers(res.data ?? [])).catch(() => {});
   }, [isOpen]);
 
   // Size adjustment map
@@ -432,6 +434,19 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 
         {/* Inline price summary */}
         <div className="gp-inline-price-summary">
+          {quantityTiers.length > 0 && (
+            <div className="gp-tier-hint">
+              <span className="gp-tier-hint__icon">🏷️</span>
+              {[...quantityTiers].sort((a, b) => a.minQty - b.minQty).map((t, i, arr) => (
+                <React.Fragment key={t.minQty}>
+                  <span className={`gp-tier-hint__item${totalQuantity >= t.minQty ? ' is-active' : ''}`}>
+                    {t.minQty}+ pcs · {t.discount}% off
+                  </span>
+                  {i < arr.length - 1 && <span className="gp-tier-hint__sep">·</span>}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
           {totalQuantity === 0 ? (
             <span className="gp-price-hint">Enter quantities above to see pricing</span>
           ) : quoteLoading ? (
