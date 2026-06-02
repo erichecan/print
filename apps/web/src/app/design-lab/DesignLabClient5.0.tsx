@@ -1862,47 +1862,43 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           return getCanvasAreaBounds(view);
         };
 
-        // Enhanced object:moving with boundary constraints
+        // Hard-stop boundary constraint during drag — object simply cannot be moved past the edge
         fabricCanvas.on('object:moving', (e: any) => {
           showGuides();
 
           const obj = e.target;
           if (!obj) return;
 
-          // Skip constraint for product image and guides
           const layerType = obj.data?.layerType;
           if (layerType === 'product-image' || layerType === 'guide') return;
 
-          // Get printable area boundaries (same geometry as the rendered guide)
           const bounds = getPrintableAreaBounds(currentView);
 
-          // Get object bounding rectangle (accounts for rotation, scale, etc.)
-          const objBounds = obj.getBoundingRect(true, true);
+          // setCoords() before getBoundingRect ensures the rect reflects the current left/top
+          obj.setCoords();
+          const br = obj.getBoundingRect(true, true);
+          const brRight  = br.left + br.width;
+          const brBottom = br.top  + br.height;
 
-          const boundsWidth = bounds.right - bounds.left;
-          const boundsHeight = bounds.bottom - bounds.top;
+          let newLeft = obj.left as number;
+          let newTop  = obj.top  as number;
 
-          let clamped = false;
-          if (objBounds.width <= boundsWidth) {
-            if (objBounds.left < bounds.left) { obj.left! += (bounds.left - objBounds.left); clamped = true; }
-            if (objBounds.right > bounds.right) { obj.left! -= (objBounds.right - bounds.right); clamped = true; }
-          } else {
-            if (objBounds.left > bounds.left) { obj.left! -= (objBounds.left - bounds.left); clamped = true; }
-            if (objBounds.right < bounds.right) { obj.left! += (bounds.right - objBounds.right); clamped = true; }
+          // Horizontal: clamp against left or right, never both at once
+          if (br.left < bounds.left) {
+            newLeft = newLeft + (bounds.left - br.left);
+          } else if (brRight > bounds.right) {
+            newLeft = newLeft - (brRight - bounds.right);
           }
 
-          if (objBounds.height <= boundsHeight) {
-            if (objBounds.top < bounds.top) { obj.top! += (bounds.top - objBounds.top); clamped = true; }
-            if (objBounds.bottom > bounds.bottom) { obj.top! -= (objBounds.bottom - bounds.bottom); clamped = true; }
-          } else {
-            if (objBounds.top > bounds.top) { obj.top! -= (objBounds.top - bounds.top); clamped = true; }
-            if (objBounds.bottom < bounds.bottom) { obj.top! += (bounds.bottom - objBounds.bottom); clamped = true; }
+          // Vertical: clamp against top or bottom
+          if (br.top < bounds.top) {
+            newTop = newTop + (bounds.top - br.top);
+          } else if (brBottom > bounds.bottom) {
+            newTop = newTop - (brBottom - bounds.bottom);
           }
 
-          if (clamped) {
-            console.log('[Constraint:moving] clamped', { view: currentView, bounds, objBounds, newLeft: obj.left, newTop: obj.top });
-          }
-
+          obj.left = newLeft;
+          obj.top  = newTop;
           obj.setCoords();
         });
 
