@@ -163,6 +163,7 @@ model Product {
   weight             Decimal?            @db.Decimal(8, 2)
   dimensions         String?
   printableAreas     Json?               @map("printable_areas")
+  garmentType        String?             @map("garment_type")
   isActive           Boolean             @default(true) @map("is_active")
   isDraft            Boolean             @default(false) @map("is_draft")
   createdAt          DateTime            @default(now()) @map("created_at")
@@ -191,6 +192,7 @@ model Product {
   @@index([categoryId])
   @@index([brandId])
   @@index([isActive])
+  @@index([isActive, isSystem], map: "idx_products_active_system")
   @@index([createdAt], map: "idx_products_created_at")
   @@index([name(ops: raw("gin_trgm_ops"))], map: "idx_products_name_trgm", type: Gin)
   @@index([tags], map: "idx_products_tags", type: Gin)
@@ -231,6 +233,7 @@ model Variant {
   product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+  @@index([productId, stockQuantity], map: "idx_variants_product_stock")
   @@index([sku])
   @@map("variants")
 }
@@ -422,18 +425,22 @@ model Order {
 }
 
 model OrderItem {
-  id            String           @id @default(uuid())
-  orderId       String           @map("order_id")
-  variantId     String           @map("variant_id")
-  quantity      Int
-  priceSnapshot Decimal          @map("price_snapshot") @db.Decimal(10, 2)
-  createdAt     DateTime         @default(now()) @map("created_at")
-  colors        OrderItemColor[]
-  order         Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  variant       Variant          @relation(fields: [variantId], references: [id])
+  id                  String           @id @default(uuid())
+  orderId             String           @map("order_id")
+  variantId           String           @map("variant_id")
+  quantity            Int
+  priceSnapshot       Decimal          @map("price_snapshot") @db.Decimal(10, 2)
+  designId            String?          @map("design_id")
+  designReviewStatus  String?          @map("design_review_status")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  colors              OrderItemColor[]
+  order               Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant             Variant          @relation(fields: [variantId], references: [id])
+  design              Design?          @relation(fields: [designId], references: [id])
 
   @@index([orderId])
   @@index([variantId])
+  @@index([designId])
   @@map("order_items")
 }
 
@@ -639,6 +646,7 @@ model Design {
   status          DesignStatus    @default(DRAFT)
   currentVersion  Int             @default(1) @map("current_version")
   canvasSnapshot  Json            @map("canvas_snapshot")
+  viewsData       Json?           @map("views_data")
   pricingSnapshot Json?           @map("pricing_snapshot")
   thumbnailUrl    String?         @map("thumbnail_url")
   shareToken      String?         @unique @map("share_token")
@@ -648,6 +656,7 @@ model Design {
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   cartItems       CartItem[]
+  orderItems      OrderItem[]
   assets          DesignAsset[]
   comments        DesignComment[]
   versions        DesignVersion[]
@@ -1348,4 +1357,54 @@ model ShippingRule {
   @@index([shippingMethod])
   @@index([startDate, endDate])
   @@map("shipping_rules")
+}
+
+// ─── Referral Plugin ────────────────────────────────────────────────────────
+// Self-contained cashback referral system. Remove all 4 models + enum to unplug.
+
+model ReferralCampaign {
+  id          String   @id @default(cuid())
+  name        String   @default("default") @db.VarChar(50)
+  isActive    Boolean  @default(true) @map("is_active")
+  cap         Int      @default(3)
+  tier1Amount Decimal  @default(200) @map("tier1_amount") @db.Decimal(10, 2)
+  tier2Amount Decimal  @default(400) @map("tier2_amount") @db.Decimal(10, 2)
+  tier3Amount Decimal  @default(800) @map("tier3_amount") @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("referral_campaigns")
+}
+
+model ReferralUserCode {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  code      String   @unique @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([code])
+  @@map("referral_user_codes")
+}
+
+model ReferralLink {
+  id             String               @id @default(cuid())
+  promoterUserId String               @map("promoter_user_id")
+  referredUserId String?              @map("referred_user_id")
+  orderId        String               @unique @map("order_id")
+  tier           Int
+  rewardAmount   Decimal              @map("reward_amount") @db.Decimal(10, 2)
+  rewardStatus   ReferralRewardStatus @default(PENDING) @map("reward_status")
+  paidAt         DateTime?            @map("paid_at")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  @@index([promoterUserId])
+  @@index([referredUserId])
+  @@map("referral_links")
+}
+
+enum ReferralRewardStatus {
+  PENDING
+  PAID
+  CANCELLED
 }
