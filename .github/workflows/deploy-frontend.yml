@@ -69,6 +69,7 @@ jobs:
             --max-instances=5 \
             --memory=1Gi \
             --cpu=1 \
+            --update-env-vars=NEXT_PUBLIC_API_URL=https://print-main-backend-5spbppmmza-uc.a.run.app/api \
             --quiet
 
       - name: Verify deployment
