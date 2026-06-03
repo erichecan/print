@@ -3,23 +3,20 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
-// Dynamically import to ensure code splitting
+const LoadingView = () => (
+    <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Loading Design Lab...
+    </div>
+);
+
 const DesignLabClient = dynamic(() => import('./DesignLabClient5.0'), {
     ssr: false,
-    loading: () => (
-        <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Loading Desktop Design Lab...
-        </div>
-    )
+    loading: LoadingView,
 });
 
 const MobileDesignLabClient = dynamic(() => import('./MobileDesignLabClient'), {
     ssr: false,
-    loading: () => (
-        <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Loading Mobile Design Lab...
-        </div>
-    )
+    loading: LoadingView,
 });
 
 interface DesignLabRouterProps {
@@ -27,28 +24,17 @@ interface DesignLabRouterProps {
 }
 
 export default function DesignLabRouter({ initialProductData }: DesignLabRouterProps) {
-    const [isMobile, setIsMobile] = useState(false);
-    const [isClient, setIsClient] = useState(false);
+    const [isMobile, setIsMobile] = useState<boolean | null>(null);
 
     useEffect(() => {
-        setIsClient(true);
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
-
+        const checkMobile = () => setIsMobile(window.innerWidth <= 768);
         checkMobile();
         window.addEventListener('resize', checkMobile);
-
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Prevent hydration mismatch by only rendering after client mount
-    if (!isClient) {
-        return (
-            <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                Initializing Design Lab...
-            </div>
-        );
+    if (isMobile === null) {
+        return <LoadingView />;
     }
 
     return isMobile
