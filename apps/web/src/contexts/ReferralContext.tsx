@@ -1,9 +1,3 @@
-/**
- * Referral 推广状态管理
- * 阶梯裂变：$200 / $400 / $800，最多 3 单封顶
- * 使用 localStorage 持久化，key: referral_wallet_{userId}
- * 2025-02-20 创建 | 2026-02-20 23:04:53 注释
- */
 'use client';
 
 import {
@@ -15,144 +9,105 @@ import {
   ReactNode,
 } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import type { ReferralState, Transaction, ReferralConfig } from '@/types/referral';
-import { DEFAULT_REFERRAL_CONFIG } from '@/types/referral';
+import type { ReferralState, Transaction } from '@/types/referral';
 
-const STORAGE_PREFIX = 'referral_wallet_';
-const CONFIG_STORAGE_KEY = 'referral_admin_config';
-
-function getReferralConfig(): ReferralConfig {
-  if (typeof window === 'undefined') return DEFAULT_REFERRAL_CONFIG;
-  try {
-    const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
-    if (!raw) return DEFAULT_REFERRAL_CONFIG;
-    const parsed = JSON.parse(raw) as ReferralConfig;
-    return {
-      maxInvitees: Math.max(1, parsed.maxInvitees ?? 3),
-      orderThreshold: Math.max(0, parsed.orderThreshold ?? 1000),
-      tierAmounts: Array.isArray(parsed.tierAmounts) && parsed.tierAmounts.length >= 3
-        ? [parsed.tierAmounts[0], parsed.tierAmounts[1], parsed.tierAmounts[2]]
-        : DEFAULT_REFERRAL_CONFIG.tierAmounts,
-    };
-  } catch {
-    return DEFAULT_REFERRAL_CONFIG;
-  }
-}
-
-function getStorageKey(userId: string): string {
-  return `${STORAGE_PREFIX}${userId}`;
-}
-
-function loadFromStorage(userId: string): ReferralState {
-  const config = getReferralConfig();
-  const cap = config.maxInvitees;
-  if (typeof window === 'undefined') {
-    return { referralCount: 0, walletBalance: 0, transactionHistory: [] };
-  }
-  try {
-    const raw = localStorage.getItem(getStorageKey(userId));
-    if (!raw) return { referralCount: 0, walletBalance: 0, transactionHistory: [] };
-    const parsed = JSON.parse(raw) as ReferralState;
-    return {
-      referralCount: Math.min(parsed.referralCount ?? 0, cap),
-      walletBalance: parsed.walletBalance ?? 0,
-      transactionHistory: Array.isArray(parsed.transactionHistory) ? parsed.transactionHistory : [],
-    };
-  } catch {
-    return { referralCount: 0, walletBalance: 0, transactionHistory: [] };
-  }
-}
-
-function saveToStorage(userId: string, state: ReferralState): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(getStorageKey(userId), JSON.stringify(state));
-  } catch (e) {
-    console.error('[ReferralContext] saveToStorage failed:', e);
-  }
-}
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:3001';
 
 interface ReferralContextType extends ReferralState {
   loading: boolean;
-  /** 邀请人数上限（来自管理后台配置） */
   referralCap: number;
-  /** 为指定推广者增加一笔成功推荐（由被邀请人支付成功后调用） */
-  addReferral: (promoterUserId: string) => boolean;
-  /** 获取下一档奖励金额，已满返回 null */
+  tierAmounts: [number, number, number];
   getNextReward: () => number | null;
-  /** 重新从 storage 加载 */
   refresh: () => void;
 }
 
 const ReferralContext = createContext<ReferralContextType | undefined>(undefined);
 
+const EMPTY: ReferralState = { referralCount: 0, walletBalance: 0, transactionHistory: [] };
+const DEFAULT_TIERS: [number, number, number] = [200, 400, 800];
+const DEFAULT_CAP = 3;
+
 export function ReferralProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const [state, setState] = useState<ReferralState>({
-    referralCount: 0,
-    walletBalance: 0,
-    transactionHistory: [],
-  });
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState<ReferralState>(EMPTY);
+  const [tierAmounts, setTierAmounts] = useState<[number, number, number]>(DEFAULT_TIERS);
+  const [referralCap, setReferralCap] = useState(DEFAULT_CAP);
+  const [loading, setLoading] = useState(false);
 
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     if (!user?.id) {
-      setState({ referralCount: 0, walletBalance: 0, transactionHistory: [] });
-      setLoading(false);
+      setState(EMPTY);
+      return;
+    }
+    const token =
+      (typeof window !== 'undefined'
+        ? sessionStorage.getItem('auth_token') || localStorage.getItem('auth_token')
+        : null) ?? '';
+    if (!token) {
+      setState(EMPTY);
       return;
     }
     setLoading(true);
-    setState(loadFromStorage(user.id));
-    setLoading(false);
+    try {
+      const res = await fetch(`${API_BASE}/api/referral/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const tiers: [number, number, number] = [
+        data.tierAmounts?.[0] ?? 200,
+        data.tierAmounts?.[1] ?? 400,
+        data.tierAmounts?.[2] ?? 800,
+      ];
+      setTierAmounts(tiers);
+      setReferralCap(data.referralCap ?? DEFAULT_CAP);
+
+      const transactions: Transaction[] = (data.transactions ?? []).map(
+        (tx: {
+          id: string;
+          amount: number;
+          tier: number;
+          status: string;
+          createdAt: string;
+          paidAt?: string | null;
+        }) => ({
+          id: tx.id,
+          amount: tx.amount,
+          description: `第 ${tx.tier} 单邀请返现 · ${tx.status === 'PAID' ? '已支付' : '待支付'}`,
+          createdAt: tx.createdAt,
+          status: tx.status,
+          tier: tx.tier,
+          paidAt: tx.paidAt ?? null,
+        })
+      );
+
+      setState({
+        referralCount: data.referralCount ?? 0,
+        walletBalance: data.walletBalance ?? 0,
+        transactionHistory: transactions,
+      });
+    } catch (err) {
+      console.error('[ReferralContext] fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [user?.id]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  const addReferral = useCallback(
-    (promoterUserId: string): boolean => {
-      const config = getReferralConfig();
-      const current = loadFromStorage(promoterUserId);
-      if (current.referralCount >= config.maxInvitees) {
-        return false;
-      }
-      const tierIndex = current.referralCount;
-      const amount = config.tierAmounts[Math.min(tierIndex, config.tierAmounts.length - 1)];
-      const newCount = current.referralCount + 1;
-      const tx: Transaction = {
-        id: `tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        amount,
-        description: `Referral #${newCount} (Completed) - +$${amount}`,
-        createdAt: new Date().toISOString(),
-      };
-      const newState: ReferralState = {
-        referralCount: newCount,
-        walletBalance: current.walletBalance + amount,
-        transactionHistory: [tx, ...current.transactionHistory],
-      };
-      saveToStorage(promoterUserId, newState);
-      if (user?.id === promoterUserId) {
-        setState(newState);
-      }
-      return true;
-    },
-    [user?.id]
-  );
-
   const getNextReward = useCallback((): number | null => {
-    const config = getReferralConfig();
-    if (state.referralCount >= config.maxInvitees) return null;
-    const tier = config.tierAmounts[state.referralCount];
-    return tier ?? null;
-  }, [state.referralCount]);
+    if (state.referralCount >= referralCap) return null;
+    return tierAmounts[state.referralCount] ?? null;
+  }, [state.referralCount, referralCap, tierAmounts]);
 
-  const config = getReferralConfig();
   const value: ReferralContextType = {
     ...state,
     loading,
-    referralCap: config.maxInvitees,
-    addReferral,
+    referralCap,
+    tierAmounts,
     getNextReward,
     refresh,
   };
@@ -165,9 +120,7 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
 }
 
 export function useReferral() {
-  const context = useContext(ReferralContext);
-  if (context === undefined) {
-    throw new Error('useReferral must be used within ReferralProvider');
-  }
-  return context;
+  const ctx = useContext(ReferralContext);
+  if (!ctx) throw new Error('useReferral must be used within ReferralProvider');
+  return ctx;
 }

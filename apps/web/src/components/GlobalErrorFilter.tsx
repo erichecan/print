@@ -11,6 +11,9 @@ import { useEffect } from 'react';
 // 修复：添加浏览器扩展异步监听错误过滤
 // 添加后端服务错误过滤（当后端服务不可用时，这些错误已被优雅处理）
 const FILTERED_ERROR_PATTERNS = [
+  // Tawk.to 客服组件内部错误（i18next 冲突，不影响业务）
+  /tawk.*i18next/i,
+  /i18next is not a function/i,
   // GCP Console 内部 API 错误
   /cloudusersettings-pa\.clients6\.google\.com/i,
   /cloudusersettings/i,
@@ -152,6 +155,12 @@ export function GlobalErrorFilter() {
         
         // 检查错误 URL 是否是 GCP Console 内部 API
         if (errorUrl.includes('cloudusersettings') || errorUrl.includes('clients6.google.com')) {
+          event.preventDefault();
+          return false;
+        }
+
+        // 过滤 Tawk.to 客服脚本的内部错误（i18next 冲突，不影响业务）
+        if (errorUrl.includes('embed.tawk.to') || errorUrl.includes('tawk.to')) {
           event.preventDefault();
           return false;
         }

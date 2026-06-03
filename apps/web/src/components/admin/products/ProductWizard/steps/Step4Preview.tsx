@@ -88,6 +88,7 @@ export function Step4Preview() {
       variants: variants.length > 0 ? variants : undefined,
       images: images.length > 0 ? images : undefined,
       printableArea: wizardData.printableArea || undefined,
+      garmentType: wizardData.garmentType || undefined,
     };
 
     return payload;

@@ -175,9 +175,10 @@ export default function DesignReviewPage() {
             </thead>
             <tbody>
               {orders.map((order: any) => {
-                const firstItem = order.items?.[0];
-                const productName = firstItem?.variant?.product?.name ?? '—';
-                const variant = firstItem?.variant;
+                const allItems: any[] = order.items ?? [];
+                const designItems = allItems.filter((i: any) => i.designId);
+                const regularItems = allItems.filter((i: any) => !i.designId);
+                const isMixed = designItems.length > 0 && regularItems.length > 0;
                 return (
                   <tr key={order.id}>
                     <td>
@@ -195,11 +196,29 @@ export default function DesignReviewPage() {
                       <div style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>{order.user?.email}</div>
                     </td>
                     <td style={{ fontSize: 13 }}>
-                      <div>{productName}</div>
-                      {variant && (
-                        <div style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>
-                          {variant.color} / {variant.size}
-                          {firstItem?.quantity > 1 && ` × ${firstItem.quantity}`}
+                      {designItems.map((item: any) => (
+                        <div key={item.id} style={{ marginBottom: 4 }}>
+                          <span style={{ display: 'inline-block', background: '#EDE9FE', color: '#5B21B6', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 6 }}>设计稿</span>
+                          <span>{item.variant?.product?.name ?? '—'}</span>
+                          <span style={{ color: 'var(--color-text-muted)', fontSize: 12, marginLeft: 6 }}>
+                            {item.variant?.color} / {item.variant?.size}
+                            {item.quantity > 1 && ` × ${item.quantity}`}
+                          </span>
+                        </div>
+                      ))}
+                      {isMixed && regularItems.map((item: any) => (
+                        <div key={item.id} style={{ marginBottom: 4, opacity: 0.6 }}>
+                          <span style={{ display: 'inline-block', background: '#F3F4F6', color: '#6B7280', fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 6 }}>普通</span>
+                          <span>{item.variant?.product?.name ?? '—'}</span>
+                          <span style={{ color: 'var(--color-text-muted)', fontSize: 12, marginLeft: 6 }}>
+                            {item.variant?.color} / {item.variant?.size}
+                            {item.quantity > 1 && ` × ${item.quantity}`}
+                          </span>
+                        </div>
+                      ))}
+                      {isMixed && (
+                        <div style={{ fontSize: 11, color: '#F59E0B', fontWeight: 600, marginTop: 2 }}>
+                          混合订单 — 设计稿审核通过后一起发货
                         </div>
                       )}
                     </td>

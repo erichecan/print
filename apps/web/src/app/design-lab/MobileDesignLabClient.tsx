@@ -56,6 +56,7 @@ import GetPriceFlowModal, {
 import { usePricing } from './modules/pricing/usePricing';
 import './mobile-design-lab.css';
 import { MobileDesignLab } from './MobileDesignLab';
+import { getTemplateArea } from './config/printable-area-templates';
 
 // 画布常量 - Optimized to 1200x1440 to match Custom Ink product image resolution (1200px)
 const CANVAS_WIDTH = 1200;
@@ -63,11 +64,6 @@ const CANVAS_HEIGHT = 1440;
 // 打印区域常量 (Custom Ink 风格) - Recalculated for 1200px canvas (Ratio 0.3)
 const PRINTABLE_WIDTH = 546; // 1820 * 0.3
 const PRINTABLE_HEIGHT = 960; // 3200 * 0.3
-// Left Chest 区域 (Front view only)
-const LEFT_CHEST_WIDTH = 180; // 600 * 0.3
-const LEFT_CHEST_HEIGHT = 180; // 600 * 0.3
-const LEFT_CHEST_OFFSET_X = 150; // 500 * 0.3
-const LEFT_CHEST_OFFSET_Y = -390; // -1300 * 0.3
 // Sleeve 区域
 // Sleeve 区域 - Expanded by 200 units (Conceptually larger area, but adjusted down to 500)
 const SLEEVE_PRINTABLE_WIDTH = 500; // 300 + 200
@@ -124,6 +120,14 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       size?: string | null;
       stockQuantity?: number;
     }>;
+    printableArea?: {
+      front?: { x: number; y: number; width: number; height: number };
+      back?: { x: number; y: number; width: number; height: number };
+      sleeve?: { x: number; y: number; width: number; height: number };
+      'left-sleeve'?: { x: number; y: number; width: number; height: number };
+      'right-sleeve'?: { x: number; y: number; width: number; height: number };
+    } | null;
+    garmentType?: string | null;
   }>(() => {
     // CRITICAL FIX: Initialize from initialProductData if available
     if (initialProductData) {
@@ -150,6 +154,8 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
         colorId: initialProductData.variantId, // CRITICAL: Set colorId from variantId
         productName: initialProductData.productName || initialProductData.name,
         variants: initialProductData.variants,
+        printableArea: initialProductData.printableArea || null,
+        garmentType: initialProductData.garmentType || null,
       };
     }
 
@@ -223,6 +229,8 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
         colorId: initialProductData.variantId || initialProductData.colorId || variantId,
         productName: initialProductData.productName || initialProductData.name,
         variants: initialProductData.variants || [],
+        printableArea: initialProductData.printableArea || null,
+        garmentType: initialProductData.garmentType || null,
       });
       return;
     }
@@ -306,7 +314,9 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
                 'left-sleeve': images['left-sleeve'],
                 'right-sleeve': images['right-sleeve'],
               },
-              variants: (product.variants || []).map(v => ({ ...v, color: v.color || '' })), // 保存 variants 列表
+              variants: (product.variants || []).map(v => ({ ...v, color: v.color || '' })),
+              printableArea: product.printableArea || null,
+              garmentType: product.garmentType || null,
             }));
 
             // 更新 URL 参数以包含 variantId (可选)
@@ -798,7 +808,9 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           slug: productDetail.slug, // Capture slug
           colorId: productDetail.variantId, // CRITICAL: Set colorId from variantId
           productName: productDetail.productName,
-          variants: productDetail.variants, // Ensure variants are preserved
+          variants: productDetail.variants,
+          printableArea: productDetail.printableArea || null,
+          garmentType: productDetail.garmentType || null,
         };
 
         // Feature: Add/Change Product with Design Inheritance
@@ -1366,6 +1378,28 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
     };
   };
 
+  // 3-level fallback: product custom config → garmentType template → hardcoded constants
+  const resolveAreaConfig = (view: string): { x: number; y: number; width: number; height: number } => {
+    // Level 1: product-specific override from DB
+    const productArea = productInfo.printableArea?.[view as keyof typeof productInfo.printableArea];
+    if (productArea) return productArea;
+
+    // Level 2: garmentType template
+    const templateArea = getTemplateArea(productInfo.garmentType, view);
+    if (templateArea) return templateArea;
+
+    // Level 3: hardcoded constants
+    const isSleeve = view === 'left-sleeve' || view === 'right-sleeve' || view === 'sleeve';
+    const w = isSleeve ? SLEEVE_PRINTABLE_WIDTH : PRINTABLE_WIDTH;
+    const h = isSleeve ? SLEEVE_PRINTABLE_HEIGHT : PRINTABLE_HEIGHT;
+    return {
+      x: (CANVAS_WIDTH - w) / 2,
+      y: (CANVAS_HEIGHT - h) / 2,
+      width: w,
+      height: h,
+    };
+  };
+
   // 添加动态打印区域参考线
   // Updated to match Custom Ink: thin gray lines, view-specific, visible only on interaction
   const addPrintableArea = (view: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve') => {
@@ -1379,16 +1413,15 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       canvas.remove(existing);
     }
 
-    // Determine dimensions based on view
-    let areaWidth = PRINTABLE_WIDTH;
-    let areaHeight = PRINTABLE_HEIGHT;
+    // Resolve area dimensions via 3-level fallback
+    const area = resolveAreaConfig(view);
+    const areaWidth = area.width;
+    const areaHeight = area.height;
+    // Canvas center position for the group (area center in absolute coords)
+    const groupCenterX = area.x + area.width / 2;
+    const groupCenterY = area.y + area.height / 2;
 
-    if (view === 'left-sleeve' || view === 'right-sleeve' || view === 'sleeve') {
-      areaWidth = SLEEVE_PRINTABLE_WIDTH;
-      areaHeight = SLEEVE_PRINTABLE_HEIGHT;
-    }
-
-    console.log('[DesignLab 5.0] Updating printable area guide for view:', view);
+    console.log('[DesignLab 5.0] Updating printable area guide for view:', view, area);
 
     const groupObjects: any[] = [];
 
@@ -1428,48 +1461,9 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
     });
     groupObjects.push(mainLabel);
 
-    // 3. Left Chest Area (Front View Only)
-    if (view === 'front') {
-      const leftChestRect = new fabric.Rect({
-        left: LEFT_CHEST_OFFSET_X, // Offset from center
-        top: LEFT_CHEST_OFFSET_Y,
-        width: LEFT_CHEST_WIDTH,
-        height: LEFT_CHEST_HEIGHT,
-        originX: 'center',
-        originY: 'center',
-        fill: 'transparent',
-        stroke: '#808080', // Dark gray border
-        strokeWidth: 2, // 2px width
-        selectable: false,
-        evented: false,
-      });
-
-      const leftChestLabel = new fabric.Text('Left Chest', {
-        left: LEFT_CHEST_OFFSET_X - LEFT_CHEST_WIDTH / 2 + 10,
-        top: LEFT_CHEST_OFFSET_Y - LEFT_CHEST_HEIGHT / 2 + 10,
-        fontSize: 18, // Scaled down (54 * 0.3 = 16.2 -> 18)
-        fontWeight: 'bold',
-        fontFamily: 'Arial',
-        fill: '#808080', // Dark gray text
-        originX: 'left',
-        originY: 'top',
-        selectable: false,
-        evented: false,
-      });
-
-      groupObjects.push(leftChestRect, leftChestLabel);
-    }
-
-    // Offset Logic:
-    // Left Sleeve: +100 (Right)
-    // Right Sleeve: -100 (Left) -> 200 units left of Left Sleeve
-    let offsetX = 0;
-    if (view === 'sleeve' || view === 'left-sleeve') offsetX = 100;
-    if (view === 'right-sleeve') offsetX = -100;
-
     const group = new fabric.Group(groupObjects, {
-      left: CANVAS_WIDTH / 2 - 6 + offsetX,
-      top: CANVAS_HEIGHT / 2, // Centered vertically
+      left: groupCenterX,
+      top: groupCenterY,
       originX: 'center',
       originY: 'center',
       selectable: false,
@@ -1619,25 +1613,14 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           }
         };
 
-        // Boundary constraint helper
+        // Boundary constraint helper — uses same 3-level fallback as addPrintableArea
         const getPrintableAreaBounds = (view: string) => {
-          // Correct for asymmetrical center offset (-6)
-          const centerX = CANVAS_WIDTH / 2 - 6;
-          const centerY = CANVAS_HEIGHT / 2;
-
-          let width = PRINTABLE_WIDTH;
-          let height = PRINTABLE_HEIGHT;
-
-          if (view === 'left-sleeve' || view === 'right-sleeve' || view === 'sleeve') {
-            width = SLEEVE_PRINTABLE_WIDTH;
-            height = SLEEVE_PRINTABLE_HEIGHT;
-          }
-
+          const area = resolveAreaConfig(view);
           return {
-            left: centerX - width / 2,
-            top: centerY - height / 2,
-            right: centerX + width / 2,
-            bottom: centerY + height / 2,
+            left: area.x,
+            top: area.y,
+            right: area.x + area.width,
+            bottom: area.y + area.height,
           };
         };
 

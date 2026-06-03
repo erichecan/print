@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/useToast';
 
 export function SimulatePurchaseButton() {
   const { user } = useAuth();
-  const { addReferral, referralCount, referralCap } = useReferral();
+  const { refresh, referralCount, referralCap } = useReferral();
   const { success, error: showError } = useToast();
   const [loading, setLoading] = useState(false);
 
@@ -28,13 +28,9 @@ export function SimulatePurchaseButton() {
       return;
     }
     setLoading(true);
-    const ok = addReferral(user.id);
+    refresh();
     setLoading(false);
-    if (ok) {
-      success(`模拟成功！已为推广者增加第 ${referralCount + 1} 笔佣金`);
-    } else {
-      showError('已达最大推荐人数');
-    }
+    success('已刷新推荐状态（实际返现由真实订单触发）');
   };
 
   return (

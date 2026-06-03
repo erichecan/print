@@ -8,7 +8,8 @@ export interface DesignDraft {
   id: string;
   name: string;
   canvas: any;
-  canvasSnapshot?: any; // Add canvas snapshot for loading
+  canvasSnapshot?: any;
+  viewsData?: Record<string, any> | null;
   productVariantId?: string;
   variant?: {
     id: string;
@@ -27,13 +28,15 @@ export interface CreateDesignPayload {
   name: string;
   canvas: any;
   productVariantId: string;
-  thumbnailUrl?: string; // Add thumbnail support
+  thumbnailUrl?: string;
+  viewsData?: Record<string, any> | null;
 }
 
 export interface UpdateDesignPayload {
   name?: string;
   canvas?: any;
-  thumbnailUrl?: string; // Add thumbnail support
+  thumbnailUrl?: string;
+  viewsData?: Record<string, any> | null;
 }
 
 export interface ShareDesignResponse {

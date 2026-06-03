@@ -516,6 +516,7 @@ exports.createProduct = async (req, res) => {
       weight,
       dimensions,
       printableArea, // Added printableArea
+      garmentType,
       tags = [],
       variants = [],
       images = [],
@@ -578,6 +579,7 @@ exports.createProduct = async (req, res) => {
           weight: weight ? convertToDecimal(weight) : null,
           dimensions: dimensions || null,
           printableAreas: printableArea ? printableArea : undefined,
+          garmentType: garmentType || null,
           tags: Array.isArray(tags) ? tags : [],
           variants: variants && variants.length > 0
             ? {
@@ -863,6 +865,8 @@ exports.updateProduct = async (req, res) => {
       isCustomizable,
       weight,
       dimensions,
+      printableArea,
+      garmentType,
       tags,
       variants,
       images,
@@ -938,6 +942,8 @@ exports.updateProduct = async (req, res) => {
         ...(isCustomizable !== undefined ? { isCustomizable } : {}),
         ...(weight !== undefined ? { weight: convertToDecimal(weight) } : {}),
         ...(dimensions !== undefined ? { dimensions } : {}),
+        ...(printableArea !== undefined ? { printableAreas: printableArea } : {}),
+        ...(garmentType !== undefined ? { garmentType: garmentType || null } : {}),
         ...(Array.isArray(tags) ? { tags } : {}),
       };
 

@@ -78,13 +78,14 @@ export function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
           <div className="order-items">
             {order.items.map((item: any) => (
               <div key={item.id} className="order-item">
-                {item.thumbnail && (
+                {(item.designThumbnailUrl || item.thumbnail) && (
                   <Image
-                    src={item.thumbnail}
+                    src={item.designThumbnailUrl || item.thumbnail}
                     alt={item.productName}
                     width={100}
                     height={100}
                     className="item-thumb"
+                    style={{ flexShrink: 0, objectFit: 'contain' }}
                   />
                 )}
                 <div className="item-details">

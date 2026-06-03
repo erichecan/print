@@ -8,6 +8,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useProductWizard } from '../ProductWizard';
 import { adminReviewsApi } from '@/lib/api';
+import {
+  GARMENT_TYPE_LABELS,
+  GARMENT_TYPES,
+  PRINTABLE_AREA_TEMPLATES,
+  type GarmentType,
+} from '@/app/design-lab/config/printable-area-templates';
+import {
+  PrintableAreaCalibrator,
+  type CalibView,
+  type AreaRect,
+} from '../components/PrintableAreaCalibrator';
 
 const parseNumber = (value: any): number => {
   if (value === '' || value === undefined || value === null) return 0;
@@ -20,6 +31,7 @@ export function Step3Details() {
     useProductWizard();
 
   const productId = (wizardData as any).productId as string | undefined;
+  const [showAdvancedArea, setShowAdvancedArea] = useState(false);
   const [reviewsEnabled, setReviewsEnabled] = useState(true);
   const [maxDisplayCount, setMaxDisplayCount] = useState(10);
   const [reviewSettingsSaving, setReviewSettingsSaving] = useState(false);
@@ -328,271 +340,152 @@ export function Step3Details() {
         <div className="step3-details__section">
           <h2 className="section-title">可打印区域配置 (Design Lab)</h2>
           <p className="section-description">
-            定义每个视图的可打印区域。默认值 (T恤): 546x960。
-            坐标基于 1200x1440 画布。
+            选择服装类型后坐标自动套入模板，再拖动蓝框对齐图片中的实际印刷位置。
           </p>
 
-          <div className="printable-area-grid">
-            {/* Front View */}
-            <div className="printable-area-section">
-              <h4 className="printable-area-title">正面视图</h4>
-              <div className="printable-area-fields">
-                <div className="form-field">
-                  <label className="form-field__label">宽度</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.front?.width || 546}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          front: {
-                            ...current.front,
-                            width: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-field__label">高度</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.front?.height || 960}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          front: {
-                            ...current.front,
-                            height: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-field__label">偏移 X</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.front?.x || 326}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          front: {
-                            ...current.front,
-                            x: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-field__label">偏移 Y</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.front?.y || 240}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          front: {
-                            ...current.front,
-                            y: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+          {/* Garment Type Selector */}
+          <div className="form-field" style={{ marginBottom: 20 }}>
+            <label className="form-field__label">服装类型</label>
+            <select
+              className="form-field__input"
+              value={wizardData.garmentType || ''}
+              onChange={(e) => {
+                const type = e.target.value as GarmentType | '';
+                updateWizardData({ garmentType: type || undefined });
+                if (type && PRINTABLE_AREA_TEMPLATES[type]) {
+                  const tpl = PRINTABLE_AREA_TEMPLATES[type];
+                  updateWizardData({
+                    garmentType: type,
+                    printableArea: {
+                      front:         tpl.front          ?? { x: 327, y: 240, width: 546, height: 960 },
+                      back:          tpl.back           ?? { x: 327, y: 240, width: 546, height: 960 },
+                      sleeve:        tpl['left-sleeve'] ?? tpl.sleeve ?? { x: 350, y: 470, width: 500, height: 500 },
+                      'left-sleeve': tpl['left-sleeve'],
+                      'right-sleeve':tpl['right-sleeve'],
+                    },
+                  });
+                }
+              }}
+            >
+              <option value="">— 未设置（使用默认 T 恤模板）—</option>
+              {GARMENT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {GARMENT_TYPE_LABELS[type]}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            {/* Back View */}
-            <div className="printable-area-section">
-              <h4 className="printable-area-title">背面视图</h4>
-              <div className="printable-area-fields">
-                <div className="form-field">
-                  <label className="form-field__label">宽度</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.back?.width || 546}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          back: {
-                            ...current.back,
-                            width: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-field__label">高度</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.back?.height || 960}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          back: {
-                            ...current.back,
-                            height: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-field__label">偏移 X</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.back?.x || 326}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          back: {
-                            ...current.back,
-                            x: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-field__label">偏移 Y</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.back?.y || 240}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          back: {
-                            ...current.back,
-                            y: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+          {/* Visual Calibrator */}
+          {(() => {
+            const firstColorImages = wizardData.colors?.[0]?.images ?? [];
+            const mainUrl = wizardData.mainImage?.url;
+            const imgFront  = firstColorImages[0]?.url || mainUrl;
+            const imgBack   = firstColorImages[1]?.url || mainUrl;
+            const imgSleeve = firstColorImages[2]?.url || undefined;
 
-            {/* Sleeve View */}
-            <div className="printable-area-section">
-              <h4 className="printable-area-title">袖子视图 (共享)</h4>
-              <div className="printable-area-fields">
-                <div className="form-field">
-                  <label className="form-field__label">宽度</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.sleeve?.width || 500}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
+            const pa = wizardData.printableArea;
+            const D_FRONT  = { x: 327, y: 240, width: 546, height: 960 };
+            const D_BACK   = { x: 327, y: 240, width: 546, height: 960 };
+            const D_SLEEVE = { x: 350, y: 470, width: 500, height: 500 };
+
+            const handleCalibratorChange = (view: CalibView, area: AreaRect) => {
+              const front  = pa?.front  ?? D_FRONT;
+              const back   = pa?.back   ?? D_BACK;
+              const sleeve = pa?.sleeve ?? pa?.['left-sleeve'] ?? D_SLEEVE;
+              if (view === 'front') {
+                updateWizardData({ printableArea: { front: area, back, sleeve } });
+              } else if (view === 'back') {
+                updateWizardData({ printableArea: { front, back: area, sleeve } });
+              } else {
+                updateWizardData({
+                  printableArea: { front, back, sleeve: area, 'left-sleeve': area, 'right-sleeve': area },
+                });
+              }
+            };
+
+            return (
+              <PrintableAreaCalibrator
+                imageUrls={{ front: imgFront, back: imgBack, sleeve: imgSleeve }}
+                areas={{
+                  front:  pa?.front,
+                  back:   pa?.back,
+                  sleeve: pa?.sleeve ?? pa?.['left-sleeve'],
+                }}
+                onChange={handleCalibratorChange}
+              />
+            );
+          })()}
+
+          {/* Advanced: numeric inputs toggle */}
+          <div style={{ marginTop: 16 }}>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedArea((v) => !v)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#6d7175',
+                fontSize: 12,
+                cursor: 'pointer',
+                padding: 0,
+                textDecoration: 'underline',
+              }}
+            >
+              {showAdvancedArea ? '▾ 收起精确坐标' : '▸ 手动输入精确坐标'}
+            </button>
+
+            {showAdvancedArea && (
+              <div className="printable-area-grid" style={{ marginTop: 12 }}>
+                {(['front', 'back', 'sleeve'] as const).map((view) => {
+                  const labels: Record<string, string> = { front: '正面', back: '背面', sleeve: '袖子' };
+                  const defaults: Record<string, AreaRect> = {
+                    front:  { x: 327, y: 240, width: 546, height: 960 },
+                    back:   { x: 327, y: 240, width: 546, height: 960 },
+                    sleeve: { x: 350, y: 470, width: 500, height: 500 },
+                  };
+                  const area = (wizardData.printableArea as any)?.[view] ?? defaults[view];
+
+                  const update = (field: keyof AreaRect, val: number) => {
+                    const pa2 = wizardData.printableArea;
+                    const front  = pa2?.front  ?? defaults.front;
+                    const back   = pa2?.back   ?? defaults.back;
+                    const sleeve = pa2?.sleeve ?? pa2?.['left-sleeve'] ?? defaults.sleeve;
+                    const updated = { ...area, [field]: val };
+                    if (view === 'sleeve') {
                       updateWizardData({
-                        printableArea: {
-                          ...current,
-                          sleeve: {
-                            ...current.sleeve,
-                            width: parseNumber(e.target.value),
-                          },
-                        },
+                        printableArea: { front, back, sleeve: updated, 'left-sleeve': updated, 'right-sleeve': updated },
                       });
-                    }}
-                  />
-                </div>
-                <div className="form-field">
-                  <label className="form-field__label">高度</label>
-                  <input
-                    type="number"
-                    className="form-field__input"
-                    value={wizardData.printableArea?.sleeve?.height || 500}
-                    onChange={(e) => {
-                      const current = wizardData.printableArea || {
-                        front: { width: 546, height: 960, x: 326, y: 240 },
-                        back: { width: 546, height: 960, x: 326, y: 240 },
-                        sleeve: { width: 500, height: 500, x: 600, y: 300 },
-                      };
-                      updateWizardData({
-                        printableArea: {
-                          ...current,
-                          sleeve: {
-                            ...current.sleeve,
-                            height: parseNumber(e.target.value),
-                          },
-                        },
-                      });
-                    }}
-                  />
-                </div>
+                    } else if (view === 'front') {
+                      updateWizardData({ printableArea: { front: updated, back, sleeve } });
+                    } else {
+                      updateWizardData({ printableArea: { front, back: updated, sleeve } });
+                    }
+                  };
+
+                  return (
+                    <div key={view} className="printable-area-section">
+                      <h4 className="printable-area-title">{labels[view]}</h4>
+                      <div className="printable-area-fields">
+                        {(['x', 'y', 'width', 'height'] as (keyof AreaRect)[]).map((field) => (
+                          <div key={field} className="form-field">
+                            <label className="form-field__label">
+                              {field === 'x' ? '偏移 X' : field === 'y' ? '偏移 Y' : field === 'width' ? '宽度' : '高度'}
+                            </label>
+                            <input
+                              type="number"
+                              className="form-field__input"
+                              value={area[field] ?? defaults[view][field]}
+                              onChange={(e) => update(field, parseNumber(e.target.value))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

@@ -281,6 +281,7 @@ function CheckoutForm({
   const [isPreparing, setIsPreparing] = useState(true);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [devOrdering, setDevOrdering] = useState(false);
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [cardError, setCardError] = useState<string | null>(null);
@@ -297,6 +298,12 @@ function CheckoutForm({
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; id?: string } | null>(null); // 添加 id 字段
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+
+  // 推荐码：从 sessionStorage 读取（由邀请链接落地页写入）
+  const [referralCode] = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    return sessionStorage.getItem('referral_ref') ?? '';
+  });
 
   // 地址持久化：从 localStorage 加载保存的地址
   useEffect(() => {
@@ -854,7 +861,7 @@ function CheckoutForm({
         return; // 不跳转，让用户有机会重试
       }
 
-      // 传递优惠券信息到 confirm API
+      // 传递优惠券信息和推荐码到 confirm API
       const order = await checkoutApi.confirm(
         paymentIntentResponse.paymentIntentId,
         shippingPayload,
@@ -862,7 +869,8 @@ function CheckoutForm({
         selectedShipping,
         shippingPayload.email,
         appliedCoupon?.code,
-        appliedCoupon?.id || paymentIntentResponse.coupon?.id // 优先使用 appliedCoupon 的 id
+        appliedCoupon?.id || paymentIntentResponse.coupon?.id,
+        referralCode || undefined
       );
 
       // 支付成功后清除保存的地址信息
@@ -1430,6 +1438,41 @@ function CheckoutForm({
           `Place Order - $${totals.total.toFixed(2)} CAD`
         )}
       </button>
+
+      {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+        <button
+          type="button"
+          disabled={devOrdering || isSubmitting}
+          onClick={async () => {
+            setDevOrdering(true);
+            try {
+              const result: any = await checkoutApi.devOrder(
+                address.email || 'dev@test.com',
+                mapAddressForApi(address)
+              );
+              router.push(`/checkout/success?orderId=${result.orderId}&orderNumber=${result.orderNumber}`);
+            } catch (err: any) {
+              setSubmitError(err?.message || 'Dev order failed');
+              setDevOrdering(false);
+            }
+          }}
+          style={{
+            marginTop: 8,
+            padding: '12px 24px',
+            background: '#7c3aed',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
+            cursor: devOrdering || isSubmitting ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            fontSize: 15,
+            opacity: devOrdering || isSubmitting ? 0.6 : 1,
+            width: '100%',
+          }}
+        >
+          {devOrdering ? '⏳ Creating dev order…' : '🚀 Dev: Skip Payment'}
+        </button>
+      )}
 
       <style jsx>{`
         .checkout-form {

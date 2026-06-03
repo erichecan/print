@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { TAG_TAXONOMY, GARMENT_SLUG_TO_TAG } from '@/lib/tag-taxonomy';
+import { TAG_TAXONOMY, GARMENT_SLUG_TO_TAG, NON_APPAREL_GARMENT_TAGS } from '@/lib/tag-taxonomy';
 
 // Garment columns shown in the mega menu, in display order
 const GARMENT_COLS = Object.entries(GARMENT_SLUG_TO_TAG); // [['t-shirts','T-Shirt'], ...]
@@ -75,48 +75,62 @@ export function CatalogMegaMenu() {
             {/* Divider */}
             <div className="cmm__divider" aria-hidden="true" />
 
-            {/* Right: audience + neckline for active garment */}
+            {/* Right: audience + neckline for active garment (apparel only) */}
             <div className="cmm__detail">
-              <p className="cmm__section-label">
-                All{' '}
-                <Link
-                  href={`/catalog/${activeSlug}`}
-                  className="cmm__all-link"
-                  onClick={() => setOpen(false)}
-                >
-                  {GARMENT_SLUG_TO_TAG[activeSlug]}s →
-                </Link>
-              </p>
-
-              <div className="cmm__audience-grid">
-                {AUDIENCE_TAGS.map((audience) => (
-                  <div key={audience} className="cmm__audience-col">
-                    {/* Audience link — Level 2 */}
+              {NON_APPAREL_GARMENT_TAGS.has(GARMENT_SLUG_TO_TAG[activeSlug]) ? (
+                /* Non-apparel (e.g. Mugs): leaf node — just a browse-all link */
+                <div className="cmm__leaf">
+                  <Link
+                    href={`/catalog/${activeSlug}`}
+                    className="cmm__leaf-link"
+                    onClick={() => setOpen(false)}
+                  >
+                    Browse all {GARMENT_SLUG_TO_TAG[activeSlug]}s →
+                  </Link>
+                  <p className="cmm__leaf-hint">Custom printed mugs, 11oz &amp; 15oz</p>
+                </div>
+              ) : (
+                <>
+                  <p className="cmm__section-label">
+                    All{' '}
                     <Link
-                      href={`/catalog/${activeSlug}?tags=${encodeURIComponent(audience)}`}
-                      className="cmm__audience-label"
+                      href={`/catalog/${activeSlug}`}
+                      className="cmm__all-link"
                       onClick={() => setOpen(false)}
                     >
-                      {audience}
+                      {GARMENT_SLUG_TO_TAG[activeSlug]}s →
                     </Link>
+                  </p>
 
-                    {/* Neckline links — Level 3 */}
-                    <ul className="cmm__necklines">
-                      {NECKLINE_TAGS.map((neckline) => (
-                        <li key={neckline}>
-                          <Link
-                            href={`/catalog/${activeSlug}?tags=${encodeURIComponent(audience)},${encodeURIComponent(neckline)}`}
-                            className="cmm__neckline-link"
-                            onClick={() => setOpen(false)}
-                          >
-                            {neckline}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="cmm__audience-grid">
+                    {AUDIENCE_TAGS.map((audience) => (
+                      <div key={audience} className="cmm__audience-col">
+                        <Link
+                          href={`/catalog/${activeSlug}?tags=${encodeURIComponent(audience)}`}
+                          className="cmm__audience-label"
+                          onClick={() => setOpen(false)}
+                        >
+                          {audience}
+                        </Link>
+
+                        <ul className="cmm__necklines">
+                          {NECKLINE_TAGS.map((neckline) => (
+                            <li key={neckline}>
+                              <Link
+                                href={`/catalog/${activeSlug}?tags=${encodeURIComponent(audience)},${encodeURIComponent(neckline)}`}
+                                className="cmm__neckline-link"
+                                onClick={() => setOpen(false)}
+                              >
+                                {neckline}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -257,6 +271,32 @@ export function CatalogMegaMenu() {
         .cmm__divider {
           width: 1px;
           background: #e5e5e5;
+        }
+
+        .cmm__leaf {
+          padding: 8px 0;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .cmm__leaf-link {
+          font-size: 0.9375rem;
+          font-weight: 700;
+          color: #111;
+          text-decoration: none;
+          border-bottom: 1px solid #111;
+          padding-bottom: 2px;
+          display: inline-block;
+        }
+        .cmm__leaf-link:hover {
+          opacity: 0.7;
+        }
+
+        .cmm__leaf-hint {
+          font-size: 0.8rem;
+          color: #888;
+          margin: 0;
         }
       `}</style>
     </li>

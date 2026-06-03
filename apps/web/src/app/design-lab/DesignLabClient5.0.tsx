@@ -273,6 +273,36 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
+    // 服务端预取的默认产品（无 URL 参数直接进入时）
+    if (initialProductData && !variantId && !productId && !searchParams?.get('designId')) {
+      if (productInfo.productId) return; // 已初始化，跳过
+      const color = initialProductData.color || initialProductData.colorName || 'White';
+      let baseImages = initialProductData.baseImages || getDefaultProductBaseImages(color);
+      if (color.toLowerCase() === 'white') {
+        const defaults = getDefaultProductBaseImages('White');
+        baseImages = {
+          ...baseImages,
+          'left-sleeve': defaults['left-sleeve'],
+          'right-sleeve': defaults['right-sleeve'],
+          'sleeve': defaults['sleeve'],
+        };
+      }
+      console.log('[DesignLab 5.0] 使用服务端预取的默认产品:', initialProductData.productName || initialProductData.name);
+      setProductInfo({
+        color,
+        baseImages,
+        productId: initialProductData.productId || initialProductData.id || '',
+        slug: initialProductData.slug,
+        colorId: initialProductData.variantId || initialProductData.colorId,
+        productName: initialProductData.productName || initialProductData.name,
+        variants: initialProductData.variants || [],
+        colorDetails: initialProductData.colorDetails || [],
+        printableArea: initialProductData.printableArea,
+        garmentType: initialProductData.garmentType,
+      });
+      return;
+    }
+
     // 如果有 productId，尝试从 API 获取完整产品信息（包括 variantId）
     // 修复：优先处理 productId，并允许 colorId覆盖默认颜色
     if (productId && !initialProductData) {
@@ -394,23 +424,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       console.log('[DesignLab init] no productId — defaultLoadingRef:', defaultLoadingRef.current, '| productInfo.productId:', productInfo.productId);
 
       if (!productInfo.productId && !defaultLoadingRef.current) {
-        defaultLoadingRef.current = true; // 防止 Strict Mode 第二次 effect 重复触发
+        defaultLoadingRef.current = true;
         console.log('[DesignLab init] starting default tee load');
-        getProduct('design-lab-default-tee')
-          .then((detail: ProductDetail) => {
-            if (detail) {
-              console.log('[DesignLab init] default tee confirmed, calling handleProductSelect');
-              handleProductSelect('design-lab-default-tee');
-            }
-          })
+        handleProductSelect('design-lab-default-tee')
           .catch((err: any) => {
-            defaultLoadingRef.current = false; // 失败时重置，允许重试
+            defaultLoadingRef.current = false;
             console.warn('[DesignLab init] default tee load failed, falling back to first catalog product:', err);
             getProducts({ limit: 1 }).then((res: any) => {
               if (res.data && res.data.length > 0) {
                 handleProductSelect(res.data[0].id);
               }
-            });
+            }).catch((e: any) => console.error('Double fallback failed:', e));
           });
       }
     }

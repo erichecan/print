@@ -28,5 +28,8 @@
   },
   "prisma": {
     "seed": "cross-env TS_NODE_PROJECT=tsconfig.seed.json ts-node --transpile-only prisma/seed.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.10.0"
   }
 }

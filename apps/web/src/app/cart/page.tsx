@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // 修复：使用 router.push 替代 Link 避免 RSC 路由问题
 import { useMemo, useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
-import { couponApi, promotionApi, Promotion } from '@/lib/api'; // 添加促销活动 API
+import { couponApi, promotionApi, checkoutApi, Promotion } from '@/lib/api'; // 添加促销活动 API
 import { useToast } from '@/hooks/useToast'; // Toast 通知
 import useSWR from 'swr'; // 用于获取促销活动
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
@@ -36,6 +36,7 @@ export default function CartPage() {
   const [postalError, setPostalError] = useState('');
   const [showCouponForm, setShowCouponForm] = useState(false);
   const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防止重复点击
+  const [devOrdering, setDevOrdering] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
@@ -216,8 +217,8 @@ export default function CartPage() {
 
   const calculateTotal = () => {
     if (!cart) return 0;
-    const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-    return Math.max(0, cart.total - discount);
+    const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+    return Math.max(0, cart.total - promotionDiscount - couponDiscount);
   };
 
   // CustomInk风格：优化空购物车状态显示
@@ -620,6 +621,27 @@ export default function CartPage() {
             <button type="button" className="summary-panel__secondary" onClick={() => setShowCouponForm(!showCouponForm)}>
               {showCouponForm ? 'Hide discount code' : 'Add discount code'}
             </button>
+            {typeof window !== 'undefined' && window.location.hostname === 'localhost' && (
+              <button
+                type="button"
+                style={{ marginTop: 8, background: '#7c3aed', color: '#fff', border: 'none', borderRadius: 4, padding: '8px 0', width: '100%', cursor: devOrdering ? 'not-allowed' : 'pointer', opacity: devOrdering ? 0.6 : 1, fontSize: 13 }}
+                disabled={devOrdering || !cart || cart.items.length === 0}
+                onClick={async () => {
+                  if (devOrdering) return;
+                  setDevOrdering(true);
+                  try {
+                    const result = await checkoutApi.devOrder('dev@test.com', {} as any);
+                    router.push(`/checkout/success?orderId=${result.orderId}&orderNumber=${result.orderNumber}`);
+                  } catch (e: any) {
+                    showError(`Dev order failed: ${e.message}`);
+                  } finally {
+                    setDevOrdering(false);
+                  }
+                }}
+              >
+                {devOrdering ? 'Creating...' : '⚡ Dev: Skip Payment'}
+              </button>
+            )}
             {showCouponForm && (
               <div className="summary-panel__coupon">
                 <label htmlFor="summary-coupon">Enter discount code</label>

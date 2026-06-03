@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrintNGo Referral — Preview</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #E42313;
+    --red-dark: #c51f11;
+    --gold: #F5A623;
+    --bg-dark: #0D0D0D;
+    --bg-section: #141414;
+    --bg-card: #1C1C1C;
+    --bg-card2: #242424;
+    --text-primary: #FFFFFF;
+    --text-secondary: #A0A0A0;
+    --text-muted: #666666;
+    --border: #2A2A2A;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* ── Language switch animation ── */
+  [data-i18n] { transition: opacity 0.18s ease; }
+  body.lang-switching [data-i18n] { opacity: 0; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px; height: 64px;
+    background: rgba(13,13,13,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+  .nav-logo span { color: var(--red); }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+
+  /* Language toggle pill */
+  .lang-toggle {
+    display: flex; align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 3px;
+    cursor: pointer;
+    gap: 2px;
+  }
+  .lang-btn {
+    padding: 5px 14px;
+    border-radius: 100px;
+    font-size: 12px; font-weight: 600;
+    border: none; cursor: pointer;
+    background: transparent; color: var(--text-muted);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .lang-btn.active {
+    background: var(--red);
+    color: #fff;
+  }
+
+  .nav-cta {
+    background: var(--red); color: #fff;
+    padding: 8px 20px; border-radius: 6px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: background 0.15s;
+  }
+  .nav-cta:hover { background: var(--red-dark); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center;
+    padding: 100px 24px 80px;
+    position: relative; overflow: hidden;
+  }
+  .hero-bg-number {
+    position: absolute;
+    font-size: clamp(180px, 30vw, 380px);
+    font-weight: 900;
+    color: rgba(228,35,19,0.06);
+    pointer-events: none; user-select: none;
+    letter-spacing: -8px; line-height: 1;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(228,35,19,0.12);
+    border: 1px solid rgba(228,35,19,0.3);
+    color: #ff6b5b; font-size: 12px; font-weight: 600;
+    padding: 5px 14px; border-radius: 100px;
+    margin-bottom: 28px; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .hero-badge::before { content: '●'; font-size: 8px; animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero h1 {
+    font-size: clamp(36px, 6vw, 80px);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -2px; margin-bottom: 14px;
+    position: relative;
+  }
+  .hero h1 .amount { color: var(--red); }
+  .hero-desc {
+    font-size: 16px; color: var(--text-muted);
+    max-width: 500px; margin: 0 auto 40px;
+    position: relative; line-height: 1.7;
+  }
+  .hero-desc em { color: var(--text-secondary); font-style: normal; }
+
+  .hero-actions {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    position: relative;
+  }
+  .btn-primary {
+    background: var(--red); color: #fff;
+    padding: 16px 36px; border-radius: 8px;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer; border: none;
+    transition: all 0.15s; letter-spacing: -0.3px;
+  }
+  .btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(228,35,19,0.35); }
+  .btn-secondary {
+    background: transparent; color: var(--text-secondary);
+    padding: 16px 28px; border-radius: 8px;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: #444; color: #fff; }
+
+  .hero-stats {
+    display: flex; gap: 40px; margin-top: 60px; position: relative;
+    border-top: 1px solid var(--border); padding-top: 32px;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .stat-item { text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 800; color: #fff; letter-spacing: -1px; }
+  .stat-num span { color: var(--red); }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── TICKER ── */
+  .ticker-wrap {
+    background: var(--bg-section);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0; overflow: hidden; position: relative;
+  }
+  .ticker-wrap::before, .ticker-wrap::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 2;
+    pointer-events: none;
+  }
+  .ticker-wrap::before { left: 0; background: linear-gradient(to right, var(--bg-section), transparent); }
+  .ticker-wrap::after  { right: 0; background: linear-gradient(to left,  var(--bg-section), transparent); }
+  .ticker-track {
+    display: flex; gap: 0;
+    animation: ticker 40s linear infinite;
+    width: max-content;
+  }
+  .ticker-track:hover { animation-play-state: paused; }
+  @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .ticker-item {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 0 32px; white-space: nowrap;
+    font-size: 13px; color: var(--text-secondary);
+    border-right: 1px solid var(--border);
+  }
+  .ticker-item .t-name  { color: #fff; font-weight: 600; }
+  .ticker-item .t-money { color: var(--gold); font-weight: 700; }
+  .ticker-item .t-time  { color: var(--text-muted); font-size: 11px; }
+
+  /* ── SECTIONS ── */
+  section { padding: 96px 24px; max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--red); margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 800; letter-spacing: -1.5px;
+    line-height: 1.1; margin-bottom: 48px;
+  }
+
+  /* ── TIERS ── */
+  .tiers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .tier-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 36px 24px;
+    text-align: center; position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .tier-card:hover { border-color: var(--red); transform: translateY(-4px); }
+  .tier-card.featured {
+    border-color: var(--red);
+    background: linear-gradient(135deg, #1C1C1C 0%, #200f0f 100%);
+  }
+  .tier-card.featured::after {
+    content: attr(data-badge);
+    position: absolute; top: 14px; right: 14px;
+    background: var(--red); color: #fff;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 100px; letter-spacing: 0.5px;
+  }
+  .tier-friend { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 16px; }
+  .tier-amount {
+    font-size: clamp(40px, 5vw, 64px); font-weight: 900;
+    letter-spacing: -3px; line-height: 1; margin-bottom: 6px;
+    opacity: 0; transition: opacity 0.5s;
+  }
+  .tier-card.featured .tier-amount { color: var(--red); }
+  .tier-amount.visible { opacity: 1; }
+  .tier-amount-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .tier-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600;
+    padding: 5px 14px; border-radius: 100px;
+    background: rgba(255,255,255,0.05); color: var(--text-muted);
+  }
+  .tier-card.featured .tier-status { background: rgba(228,35,19,0.12); color: #ff8577; }
+  .tiers-total { text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-muted); }
+  .tiers-total strong { color: var(--gold); font-size: 18px; }
+
+  /* ── HOW IT WORKS ── */
+  .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .how-step { display: flex; flex-direction: column; gap: 16px; }
+  .how-num {
+    width: 40px; height: 40px; border: 1px solid var(--border);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--red);
+  }
+  .how-icon { font-size: 36px; margin-bottom: 4px; }
+  .how-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .how-desc { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+
+  /* ── ACTIVITY ── */
+  .activity-section { background: var(--bg-section); padding: 96px 0; }
+  .activity-inner { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  .activity-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .activity-feed { display: flex; flex-direction: column; gap: 12px; }
+  .activity-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .activity-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg-card2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .activity-text { flex: 1; min-width: 0; }
+  .activity-main { font-size: 13px; font-weight: 500; }
+  .activity-main .highlight { color: var(--gold); font-weight: 700; }
+  .activity-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .activity-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-green { background: #22C55E; }
+  .dot-gold  { background: var(--gold); }
+  .dot-red   { background: var(--red); }
+
+  .activity-counter {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 36px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .counter-item { display: flex; flex-direction: column; gap: 4px; }
+  .counter-num { font-size: 44px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
+  .counter-num.red  { color: var(--red); }
+  .counter-num.gold { color: var(--gold); }
+  .counter-num.green { color: #22C55E; }
+  .counter-label { font-size: 14px; font-weight: 600; color: #fff; }
+  .counter-sub   { font-size: 12px; color: var(--text-muted); }
+  .counter-divider { height: 1px; background: var(--border); }
+
+  /* ── PROOF WALL ── */
+  .proof-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .proof-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    transition: border-color 0.15s;
+  }
+  .proof-card:hover { border-color: #444; }
+  .proof-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .proof-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-card2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .proof-name     { font-size: 13px; font-weight: 600; }
+  .proof-location { font-size: 11px; color: var(--text-muted); }
+  .proof-amount   { font-size: 26px; font-weight: 900; letter-spacing: -1px; color: var(--gold); margin-bottom: 4px; }
+  .proof-desc     { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+  /* ── FINAL CTA ── */
+  .final-cta-wrap { background: linear-gradient(135deg, #140808 0%, #0D0D0D 100%); border-top: 1px solid var(--border); }
+  .final-cta { max-width: 700px; margin: 0 auto; padding: 100px 24px; text-align: center; }
+  .final-cta .big-num { font-size: clamp(60px, 10vw, 120px); font-weight: 900; color: var(--red); letter-spacing: -4px; line-height: 1; margin-bottom: 8px; }
+  .final-cta h2 { font-size: clamp(22px, 3vw, 36px); font-weight: 700; margin-bottom: 6px; letter-spacing: -1px; }
+  .final-cta .sub { font-size: 15px; color: var(--text-muted); margin-bottom: 40px; }
+  .final-cta .note { margin-top: 20px; font-size: 12px; color: var(--text-muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 32px 48px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  footer a { color: var(--text-muted); text-decoration: none; }
+  footer a:hover { color: #fff; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 0 16px; }
+    .tiers-grid { grid-template-columns: 1fr; }
+    .how-grid   { grid-template-columns: 1fr; }
+    .activity-layout { grid-template-columns: 1fr; }
+    .proof-grid { grid-template-columns: repeat(2, 1fr); }
+    footer { flex-direction: column; text-align: center; }
+    .hero-stats { gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Print<span>N</span>Go</div>
+  <div class="nav-right">
+    <div class="lang-toggle" id="langToggle">
+      <button class="lang-btn active" id="btnZh" onclick="setLang('zh')">中文</button>
+      <button class="lang-btn"        id="btnEn" onclick="setLang('en')">EN</button>
+    </div>
+    <button class="nav-cta" data-i18n="nav_cta"></button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="hero-bg-number">$1400</div>
+  <div class="hero-badge" data-i18n="hero_badge"></div>
+  <h1 data-i18n="hero_h1"></h1>
+  <p class="hero-desc" data-i18n="hero_desc"></p>
+  <div class="hero-actions" id="hero-actions">
+    <button class="btn-primary"   data-i18n="hero_cta_primary"></button>
+    <button class="btn-secondary" data-i18n="hero_cta_secondary" onclick="document.querySelector('.final-cta-wrap').scrollIntoView({behavior:'smooth'})"></button>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">2,<span>847</span></div>
+      <div class="stat-label" data-i18n="stat_referrers"></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num"><span>$</span>386K</div>
+      <div class="stat-label" data-i18n="stat_paid"></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">98<span>%</span></div>
+      <div class="stat-label" data-i18n="stat_satisfaction"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<!-- TIERS -->
+<section>
+  <div class="section-label" data-i18n="tiers_label"></div>
+  <div class="section-title"  data-i18n="tiers_title"></div>
+  <div class="tiers-grid">
+    <div class="tier-card" data-tier="1">
+      <div class="tier-friend"     data-i18n="tier1_friend"></div>
+      <div class="tier-amount">$200</div>
+      <div class="tier-amount-sub" data-i18n="tier1_sub"></div>
+      <div class="tier-status"     data-i18n="tier_instant"></div>
+    </div>
+    <div class="tier-card" data-tier="2">
+      <div class="tier-friend"     data-i18n="tier2_friend"></div>
+      <div class="tier-amount">$400</div>
+      <div class="tier-amount-sub" data-i18n="tier2_sub"></div>
+      <div class="tier-status"     data-i18n="tier_instant"></div>
+    </div>
+    <div class="tier-card featured" data-tier="3" data-badge="BEST">
+      <div class="tier-friend"     data-i18n="tier3_friend"></div>
+      <div class="tier-amount">$800</div>
+      <div class="tier-amount-sub" data-i18n="tier3_sub"></div>
+      <div class="tier-status"     data-i18n="tier3_status"></div>
+    </div>
+  </div>
+  <div class="tiers-total" data-i18n="tiers_total"></div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section style="padding-top:0">
+  <div class="section-label" data-i18n="how_label"></div>
+  <div class="section-title"  data-i18n="how_title"></div>
+  <div class="how-grid">
+    <div class="how-step">
+      <div class="how-num">01</div>
+      <div class="how-icon">🔗</div>
+      <div class="how-title" data-i18n="how1_title"></div>
+      <div class="how-desc"  data-i18n="how1_desc"></div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">02</div>
+      <div class="how-icon">👫</div>
+      <div class="how-title" data-i18n="how2_title"></div>
+      <div class="how-desc"  data-i18n="how2_desc"></div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">03</div>
+      <div class="how-icon">💸</div>
+      <div class="how-title" data-i18n="how3_title"></div>
+      <div class="how-desc"  data-i18n="how3_desc"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ACTIVITY -->
+<div class="activity-section">
+  <div class="activity-inner">
+    <div class="section-label" data-i18n="activity_label"></div>
+    <div class="section-title"  data-i18n="activity_title"></div>
+    <div class="activity-layout">
+      <div class="activity-feed" id="activity-feed"></div>
+      <div class="activity-counter">
+        <div class="counter-item">
+          <div class="counter-num red" id="counter-referrers">2,847</div>
+          <div class="counter-label" data-i18n="counter1_label"></div>
+          <div class="counter-sub"   data-i18n="counter1_sub"></div>
+        </div>
+        <div class="counter-divider"></div>
+        <div class="counter-item">
+          <div class="counter-num gold">$386,200</div>
+          <div class="counter-label" data-i18n="counter2_label"></div>
+          <div class="counter-sub"   data-i18n="counter2_sub"></div>
+        </div>
+        <div class="counter-divider"></div>
+        <div class="counter-item">
+          <div class="counter-num green">1,204</div>
+          <div class="counter-label" data-i18n="counter3_label"></div>
+          <div class="counter-sub"   data-i18n="counter3_sub"></div>
+        </div>
+        <div class="counter-divider"></div>
+        <button class="btn-primary" style="width:100%;padding:14px" data-i18n="counter_cta"
+          onclick="document.querySelector('.final-cta-wrap').scrollIntoView({behavior:'smooth'})"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROOF WALL -->
+<section>
+  <div class="section-label" data-i18n="proof_label"></div>
+  <div class="section-title"  data-i18n="proof_title"></div>
+  <div class="proof-grid" id="proof-grid"></div>
+</section>
+
+<!-- FINAL CTA -->
+<div class="final-cta-wrap">
+  <div class="final-cta" id="cta-target">
+    <div class="big-num">$1,400</div>
+    <h2 data-i18n="cta_h2"></h2>
+    <p class="sub"  data-i18n="cta_sub"></p>
+    <button class="btn-primary" style="font-size:17px;padding:18px 48px" data-i18n="cta_btn"></button>
+    <p class="note" data-i18n="cta_note"></p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div data-i18n="footer_copy"></div>
+  <div style="display:flex;gap:20px">
+    <a href="#" data-i18n="footer_rules"></a>
+    <a href="#" data-i18n="footer_privacy"></a>
+    <a href="#" data-i18n="footer_contact"></a>
+  </div>
+</footer>
+
+<script>
+// ════════════════════════════════════════
+//  TRANSLATIONS
+// ════════════════════════════════════════
+const T = {
+  zh: {
+    nav_cta:           '开始邀请',
+    hero_badge:        '限时活动进行中',
+    hero_h1:           '邀请好友，最高返现 <span class="amount">$1,400</span>',
+    hero_desc:         '邀请 3 位朋友在 PrintNGo 完成首单<br><em>阶梯奖励，每位好友付款后立即到账</em>',
+    hero_cta_primary:  '获取我的邀请链接 →',
+    hero_cta_secondary:'查看活动规则',
+    stat_referrers:    '已参与推广',
+    stat_paid:         '已发放返现',
+    stat_satisfaction: '好友满意度',
+    tiers_label:       '阶梯返现',
+    tiers_title:       '邀得越多，赚得越多',
+    tier1_friend:      '第 1 位好友',
+    tier2_friend:      '第 2 位好友',
+    tier3_friend:      '第 3 位好友',
+    tier1_sub:         'CAD $200 返现',
+    tier2_sub:         'CAD $400 返现',
+    tier3_sub:         'CAD $800 返现',
+    tier_instant:      '✓ 付款后立即到账',
+    tier3_status:      '★ 最高奖励',
+    tiers_total:       '合计最多返现 <strong>CAD $1,400</strong> · 每位好友须为首次下单新客户',
+    how_label:         '参与方式',
+    how_title:         '三步，就这么简单',
+    how1_title:        '获取专属邀请链接',
+    how1_desc:         '登录后自动生成你的专属推广码和链接。一键复制，随时可用。',
+    how2_title:        '好友通过链接下单',
+    how2_desc:         '好友点击你的链接，在 PrintNGo 完成首次下单并付款，推荐即刻生效。',
+    how3_title:        '返现到账，无需等待',
+    how3_desc:         '好友付款后，阶梯返现自动结算。邀满 3 位，相当于免费拿一套印刷服务。',
+    activity_label:    '实时动态',
+    activity_title:    '大家都在赚',
+    counter1_label:    '推广者已加入',
+    counter1_sub:      '本月活跃推广人数',
+    counter2_label:    '累计返现发放',
+    counter2_sub:      '已发放奖励总额',
+    counter3_label:    '本月新邀请',
+    counter3_sub:      '本月新增推荐记录',
+    counter_cta:       '我也要参与 →',
+    proof_label:       '真实案例',
+    proof_title:       '他们已经拿到了',
+    cta_h2:            '等你来拿',
+    cta_sub:           '邀请 3 位朋友，全部奖励到手',
+    cta_btn:           '立即开始 →',
+    cta_note:          '已有账号？直接进入推广中心',
+    footer_copy:       '© 2026 PrintNGo · 加拿大华人印刷服务',
+    footer_rules:      '活动规则',
+    footer_privacy:    '隐私政策',
+    footer_contact:    '联系我们',
+  },
+  en: {
+    nav_cta:           'Start Earning',
+    hero_badge:        'Limited Campaign · Live Now',
+    hero_h1:           'Refer Friends,<br>Earn up to <span class="amount">$1,400</span>',
+    hero_desc:         'Invite 3 friends to place their first order at PrintNGo<br><em>Tiered cashback — paid out after each friend\'s purchase</em>',
+    hero_cta_primary:  'Get My Referral Link →',
+    hero_cta_secondary:'See How It Works',
+    stat_referrers:    'Active Referrers',
+    stat_paid:         'Total Paid Out',
+    stat_satisfaction: 'Friend Satisfaction',
+    tiers_label:       'Tiered Rewards',
+    tiers_title:       'More friends, bigger rewards',
+    tier1_friend:      'Friend 1',
+    tier2_friend:      'Friend 2',
+    tier3_friend:      'Friend 3',
+    tier1_sub:         'CAD $200 cashback',
+    tier2_sub:         'CAD $400 cashback',
+    tier3_sub:         'CAD $800 cashback',
+    tier_instant:      '✓ Paid instantly',
+    tier3_status:      '★ Maximum Reward',
+    tiers_total:       'Up to <strong>CAD $1,400</strong> total · Each friend must be a new customer',
+    how_label:         'How It Works',
+    how_title:         'Three steps. That\'s it.',
+    how1_title:        'Get your unique link',
+    how1_desc:         'Login to instantly generate your personal referral code and link — copy it and share anywhere.',
+    how2_title:        'Friend places their order',
+    how2_desc:         'Your friend clicks your link, completes their first order at PrintNGo and pays — referral confirmed.',
+    how3_title:        'Cashback hits your account',
+    how3_desc:         'Cashback is auto-credited after each friend pays. 3 friends = one complete print job, on us.',
+    activity_label:    'Live',
+    activity_title:    'People earning right now',
+    counter1_label:    'Active Referrers',
+    counter1_sub:      'People referring this month',
+    counter2_label:    'Total Paid Out',
+    counter2_sub:      'Cashback distributed to date',
+    counter3_label:    'New Referrals',
+    counter3_sub:      'New referrals this month',
+    counter_cta:       'Join Now →',
+    proof_label:       'Social Proof',
+    proof_title:       'Real people, real cashback',
+    cta_h2:            'Yours to earn',
+    cta_sub:           'Invite 3 friends and collect all three rewards',
+    cta_btn:           'Start Now →',
+    cta_note:          'Already have an account? Go to your dashboard',
+    footer_copy:       '© 2026 PrintNGo · Chinese Print Services, Canada',
+    footer_rules:      'Campaign Rules',
+    footer_privacy:    'Privacy Policy',
+    footer_contact:    'Contact Us',
+  }
+};
+
+// ════════════════════════════════════════
+//  DYNAMIC DATA (bilingual)
+// ════════════════════════════════════════
+const TICKER_DATA = {
+  zh: [
+    { icon:'🎉', name:'陈**', action:'刚刚获得', money:'$800', time:'2分钟前' },
+    { icon:'👋', name:'PNG7K3M', action:'邀请了新朋友下单', money:'', time:'8分钟前' },
+    { icon:'💸', name:'李**', action:'到账', money:'$400', time:'15分钟前' },
+    { icon:'🎉', name:'黄**', action:'满额奖励到账', money:'$1,400', time:'28分钟前' },
+    { icon:'👋', name:'PNG2R9F', action:'邀请了好友', money:'', time:'41分钟前' },
+    { icon:'💸', name:'张**', action:'获得返现', money:'$200', time:'1小时前' },
+    { icon:'🎊', name:'PNG9K2M', action:'邀满 3 位好友', money:'', time:'1.5小时前' },
+    { icon:'💸', name:'王**', action:'第 2 笔返现到账', money:'$400', time:'2小时前' },
+  ],
+  en: [
+    { icon:'🎉', name:'C. Chen', action:'just earned', money:'$800', time:'2 min ago' },
+    { icon:'👋', name:'PNG7K3M', action:'referred a new friend', money:'', time:'8 min ago' },
+    { icon:'💸', name:'K. Lee', action:'cashback received', money:'$400', time:'15 min ago' },
+    { icon:'🎉', name:'W. Huang', action:'hit the full reward', money:'$1,400', time:'28 min ago' },
+    { icon:'👋', name:'PNG2R9F', action:'invited a friend', money:'', time:'41 min ago' },
+    { icon:'💸', name:'S. Zhang', action:'earned cashback', money:'$200', time:'1 hr ago' },
+    { icon:'🎊', name:'PNG9K2M', action:'completed all 3 referrals', money:'', time:'1.5 hrs ago' },
+    { icon:'💸', name:'Y. Wang', action:'2nd reward received', money:'$400', time:'2 hrs ago' },
+  ]
+};
+
+const ACTIVITY_DATA = {
+  zh: [
+    { avatar:'🎉', name:'黄**', city:'多伦多', main:'获得了最终奖励', money:'$800', sub:'第 3 位好友已付款', time:'刚刚', dotClass:'dot-gold' },
+    { avatar:'👋', name:'PNG7K3M', city:'温哥华', main:'邀请了新朋友', money:'', sub:'好友已注册并下单', time:'3分钟前', dotClass:'dot-green' },
+    { avatar:'💸', name:'陈**', city:'万锦市', main:'返现到账', money:'$400', sub:'第 2 位好友付款', time:'11分钟前', dotClass:'dot-gold' },
+    { avatar:'🎊', name:'林**', city:'列治文山', main:'邀满 3 位，全额到账', money:'$1,400', sub:'任务圆满完成', time:'28分钟前', dotClass:'dot-red' },
+    { avatar:'👋', name:'PNG4L2P', city:'本拿比', main:'加入推广计划', money:'', sub:'新推广者', time:'45分钟前', dotClass:'dot-green' },
+    { avatar:'💸', name:'李**', city:'多伦多', main:'第 1 笔返现到账', money:'$200', sub:'第 1 位好友已付款', time:'1小时前', dotClass:'dot-gold' },
+  ],
+  en: [
+    { avatar:'🎉', name:'W. Huang', city:'Toronto', main:'earned final reward', money:'$800', sub:'3rd friend completed payment', time:'just now', dotClass:'dot-gold' },
+    { avatar:'👋', name:'PNG7K3M', city:'Vancouver', main:'referred a new friend', money:'', sub:'Friend registered & ordered', time:'3 min ago', dotClass:'dot-green' },
+    { avatar:'💸', name:'C. Chen', city:'Markham', main:'cashback received', money:'$400', sub:'2nd friend paid', time:'11 min ago', dotClass:'dot-gold' },
+    { avatar:'🎊', name:'L. Lin', city:'Richmond Hill', main:'maxed out — full cashback', money:'$1,400', sub:'All 3 friends completed', time:'28 min ago', dotClass:'dot-red' },
+    { avatar:'👋', name:'PNG4L2P', city:'Burnaby', main:'joined as referrer', money:'', sub:'New promoter', time:'45 min ago', dotClass:'dot-green' },
+    { avatar:'💸', name:'K. Lee', city:'Toronto', main:'first cashback received', money:'$200', sub:'1st friend paid', time:'1 hr ago', dotClass:'dot-gold' },
+  ]
+};
+
+const NEW_ACTIVITY = {
+  zh: [
+    { avatar:'🎉', name:'PNG5T8R', city:'多伦多', main:'好友成功下单', money:'', sub:'推荐确认', time:'刚刚', dotClass:'dot-green' },
+    { avatar:'💰', name:'林**', city:'温哥华', main:'获得返现', money:'$200', sub:'第 1 位好友奖励', time:'刚刚', dotClass:'dot-gold' },
+    { avatar:'🎊', name:'赵**', city:'密西沙加', main:'获得返现', money:'$400', sub:'第 2 位好友奖励', time:'刚刚', dotClass:'dot-gold' },
+  ],
+  en: [
+    { avatar:'🎉', name:'PNG5T8R', city:'Toronto', main:'friend just ordered', money:'', sub:'Referral confirmed', time:'just now', dotClass:'dot-green' },
+    { avatar:'💰', name:'J. Lin', city:'Vancouver', main:'earned cashback', money:'$200', sub:'1st friend reward', time:'just now', dotClass:'dot-gold' },
+    { avatar:'🎊', name:'M. Zhao', city:'Mississauga', main:'earned cashback', money:'$400', sub:'2nd friend reward', time:'just now', dotClass:'dot-gold' },
+  ]
+};
+
+const PROOF_DATA = {
+  zh: [
+    { avatar:'😄', name:'陈**', loc:'多伦多', amount:'$1,400', desc:'邀满 3 位好友，两周内完成' },
+    { avatar:'🙋', name:'PNG8K2M', loc:'温哥华', amount:'$800', desc:'第 3 位好友刚付款，全额到手' },
+    { avatar:'😊', name:'李**', loc:'万锦市', amount:'$600', desc:'已邀请 2 位，还差 1 位就满额' },
+    { avatar:'👩', name:'黄**', loc:'列治文山', amount:'$1,400', desc:'专门发了微信朋友圈，一周搞定' },
+    { avatar:'😁', name:'PNG5L9P', loc:'密西沙加', amount:'$200', desc:'第 1 位好友刚下单，继续加油' },
+    { avatar:'🧑', name:'张**', loc:'卡尔加里', amount:'$800', desc:'帮 3 个朋友都省了钱，自己也赚了' },
+    { avatar:'👨', name:'PNG9K2M', loc:'本拿比', amount:'$400', desc:'第 2 位好友到账，第 3 位在路上' },
+    { avatar:'😃', name:'赵**', loc:'多伦多', amount:'$1,400', desc:'一次拉了 3 位朋友，全部完单' },
+  ],
+  en: [
+    { avatar:'😄', name:'C. Chen', loc:'Toronto', amount:'$1,400', desc:'Referred 3 friends in 2 weeks, full reward' },
+    { avatar:'🙋', name:'PNG8K2M', loc:'Vancouver', amount:'$800', desc:'3rd friend just paid — maxed out!' },
+    { avatar:'😊', name:'K. Lee', loc:'Markham', amount:'$600', desc:'2 friends done, one more to go' },
+    { avatar:'👩', name:'W. Huang', loc:'Richmond Hill', amount:'$1,400', desc:'Posted on WeChat Moments, done in a week' },
+    { avatar:'😁', name:'PNG5L9P', loc:'Mississauga', amount:'$200', desc:'First friend ordered — 2 more to go!' },
+    { avatar:'🧑', name:'S. Zhang', loc:'Calgary', amount:'$800', desc:'Helped 3 friends save money, earned myself too' },
+    { avatar:'👨', name:'PNG9K2M', loc:'Burnaby', amount:'$400', desc:'2nd reward received, 3rd friend pending' },
+    { avatar:'😃', name:'M. Zhao', loc:'Toronto', amount:'$1,400', desc:'Brought 3 friends at once, all completed' },
+  ]
+};
+
+// ════════════════════════════════════════
+//  LANGUAGE ENGINE
+// ════════════════════════════════════════
+let currentLang = 'zh';
+let actIdx = 0;
+
+function setLang(lang) {
+  if (lang === currentLang) return;
+  currentLang = lang;
+
+  // Toggle button state
+  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
+  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+  document.documentElement.lang = lang;
+
+  // Fade all i18n elements
+  document.body.classList.add('lang-switching');
+  setTimeout(() => {
+    applyTranslations();
+    rebuildDynamic();
+    document.body.classList.remove('lang-switching');
+  }, 180);
+}
+
+function applyTranslations() {
+  const t = T[currentLang];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (t[key] !== undefined) el.innerHTML = t[key];
+  });
+}
+
+function rebuildDynamic() {
+  buildTicker();
+  buildActivity();
+  buildProofWall();
+}
+
+// ════════════════════════════════════════
+//  DYNAMIC COMPONENTS
+// ════════════════════════════════════════
+function buildTicker() {
+  const track = document.getElementById('ticker');
+  const data = TICKER_DATA[currentLang];
+  const doubled = [...data, ...data];
+  track.innerHTML = doubled.map(d => `
+    <span class="ticker-item">
+      <span>${d.icon}</span>
+      <span class="t-name">${d.name}</span>
+      <span>${d.action}</span>
+      ${d.money ? `<span class="t-money">${d.money}</span>` : ''}
+      <span class="t-time">${d.time}</span>
+    </span>
+  `).join('');
+}
+
+function buildActivity() {
+  const feed = document.getElementById('activity-feed');
+  const data = ACTIVITY_DATA[currentLang];
+  feed.innerHTML = data.map((a, i) => activityCardHTML(a, i * 0.06)).join('');
+}
+
+function activityCardHTML(a, delay = 0) {
+  return `
+    <div class="activity-card" style="animation-delay:${delay}s">
+      <div class="activity-avatar">${a.avatar}</div>
+      <div class="activity-text">
+        <div class="activity-main">
+          <strong>${a.name}</strong>（${a.city}） ${a.main}
+          ${a.money ? `<span class="highlight">${a.money}</span>` : ''}
+        </div>
+        <div class="activity-sub">${a.sub}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        <div class="activity-dot ${a.dotClass}"></div>
+        <div class="activity-time">${a.time}</div>
+      </div>
+    </div>`;
+}
+
+function buildProofWall() {
+  const grid = document.getElementById('proof-grid');
+  const data = PROOF_DATA[currentLang];
+  grid.innerHTML = data.map(p => `
+    <div class="proof-card">
+      <div class="proof-top">
+        <div class="proof-avatar">${p.avatar}</div>
+        <div>
+          <div class="proof-name">${p.name}</div>
+          <div class="proof-location">${p.loc}</div>
+        </div>
+      </div>
+      <div class="proof-amount">${p.amount}</div>
+      <div class="proof-desc">${p.desc}</div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════
+//  ANIMATIONS & LIVE UPDATES
+// ════════════════════════════════════════
+function animateTiers() {
+  const cards = document.querySelectorAll('.tier-card');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.querySelector('.tier-amount').classList.add('visible');
+    });
+  }, { threshold: 0.3 });
+  cards.forEach(c => observer.observe(c));
+}
+
+function liveCounter() {
+  const el = document.getElementById('counter-referrers');
+  let n = 2847;
+  setInterval(() => {
+    if (Math.random() > 0.65) {
+      n++;
+      el.textContent = n.toLocaleString();
+    }
+  }, 4000);
+}
+
+function rotateActivity() {
+  setInterval(() => {
+    const feed = document.getElementById('activity-feed');
+    const cards = feed.querySelectorAll('.activity-card');
+    if (!cards.length) return;
+
+    const last = cards[cards.length - 1];
+    last.style.opacity = '0';
+    last.style.transform = 'translateX(16px)';
+    setTimeout(() => {
+      last.remove();
+      const pool = NEW_ACTIVITY[currentLang];
+      const a = pool[actIdx % pool.length];
+      actIdx++;
+      const div = document.createElement('div');
+      div.className = 'activity-card';
+      div.style.cssText = 'opacity:0;transform:translateX(-16px)';
+      div.innerHTML = `
+        <div class="activity-avatar">${a.avatar}</div>
+        <div class="activity-text">
+          <div class="activity-main"><strong>${a.name}</strong>（${a.city}） ${a.main} ${a.money ? `<span class="highlight">${a.money}</span>` : ''}</div>
+          <div class="activity-sub">${a.sub}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          <div class="activity-dot ${a.dotClass}"></div>
+          <div class="activity-time">${a.time}</div>
+        </div>`;
+      feed.insertBefore(div, feed.firstChild);
+      requestAnimationFrame(() => {
+        div.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+        div.style.opacity = '1';
+        div.style.transform = 'translateX(0)';
+      });
+    }, 320);
+  }, 5000);
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+applyTranslations();
+buildTicker();
+buildActivity();
+buildProofWall();
+animateTiers();
+liveCounter();
+rotateActivity();
+</script>
+</body>
+</html>

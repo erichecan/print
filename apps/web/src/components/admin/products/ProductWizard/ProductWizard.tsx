@@ -73,6 +73,7 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
         weight: initialProduct.weight ? Number(initialProduct.weight) : undefined,
         dimensions: initialProduct.dimensions || undefined,
         printableArea: initialProduct.printableArea || undefined,
+        garmentType: initialProduct.garmentType || undefined,
         mainImage: initialProduct.images?.[0] ? {
           url: initialProduct.images[0].url,
           alt: initialProduct.images[0].alt || undefined,

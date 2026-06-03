@@ -85,6 +85,12 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   // Load shipping rates
   const loadShippingRates = async () => {
     if (!data) return;
+    const blockedStatuses = ['PENDING_REVIEW', 'IN_REVIEW', 'REJECTED'];
+    if ((data as any).designReviewStatus && blockedStatuses.includes((data as any).designReviewStatus)) {
+      const labels: Record<string, string> = { PENDING_REVIEW: '待审核', IN_REVIEW: '审核中', REJECTED: '设计稿已退回' };
+      setMessage(`无法购买面单：订单包含待审核设计稿（${labels[(data as any).designReviewStatus] ?? (data as any).designReviewStatus}），请先完成设计审核。`);
+      return;
+    }
     setLoadingRates(true);
     try {
       const ratesData = await adminOrdersApi.getShippingRates(data.id);
@@ -301,9 +307,8 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
               </thead>
               <tbody>
                 {(order.items || []).map((item: any) => {
-                  const imgUrl = item.variant?.product?.images?.[0]?.url;
-                  const printConfigs = item.variant?.product?.colors?.flatMap((c: any) => c.printConfigs || []) || [];
-                  const printPos = printConfigs.map((pc: any) => pc.position).filter(Boolean).join(', ') || '—';
+                  const imgUrl = item.thumbnail;
+                  const printPos = '—';
                   return (
                     <tr key={item.id}>
                       <td>
@@ -362,6 +367,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                 )}
               </h3>
               <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                {/* 已同步 mockup 预览 */}
                 {orderAny.mockupUrl && (
                   <a href={orderAny.mockupUrl} target="_blank" rel="noopener noreferrer">
                     <img
@@ -371,6 +377,17 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                     />
                   </a>
                 )}
+                {/* 待审核时展示 design 缩略图 */}
+                {!orderAny.mockupUrl && (order.items || []).filter((i: any) => i.designThumbnailUrl).map((i: any) => (
+                  <div key={i.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <img
+                      src={i.designThumbnailUrl}
+                      alt={i.designName || '设计稿'}
+                      style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--color-border)', flexShrink: 0, background: '#f3f4f6' }}
+                    />
+                    {i.designName && <div style={{ fontSize: 11, color: 'var(--color-text-muted)', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.designName}</div>}
+                  </div>
+                ))}
                 <div style={{ flex: 1 }}>
                   {orderAny.designReviewSyncedAt && (
                     <InfoField label="同步时间" value={new Date(orderAny.designReviewSyncedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })} />
@@ -382,14 +399,20 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                    <Link
-                      href={`/design-lab?orderId=${data?.id}&mode=designer`}
-                      target="_blank"
-                      className="btn btn--outline"
-                      style={{ fontSize: 12 }}
-                    >
-                      在设计器中打开 ↗
-                    </Link>
+                    {(() => {
+                      const firstDesignItem = (order.items || []).find((i: any) => i.designId);
+                      const designParam = firstDesignItem?.designId ? `&designId=${firstDesignItem.designId}` : '';
+                      return (
+                        <Link
+                          href={`/design-lab?orderId=${data?.id}&mode=designer${designParam}`}
+                          target="_blank"
+                          className="btn btn--outline"
+                          style={{ fontSize: 12 }}
+                        >
+                          在设计器中打开 ↗
+                        </Link>
+                      );
+                    })()}
                     {orderAny.designReviewStatus === 'SYNCED' && orderAny.mockupUrl && (
                       <Link
                         href={`/admin/online-orders/${data?.id}/gang-sheet`}

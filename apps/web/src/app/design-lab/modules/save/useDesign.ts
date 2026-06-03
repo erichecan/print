@@ -14,6 +14,7 @@ import {
   type UpdateDesignPayload,
 } from '../../api/design';
 import { canvasToSnapshot } from './utils/canvasSerializer';
+import { useDesignStore } from '../../store/useDesignStore';
 
 interface UseDesignProps {
   canvas: fabric.Canvas | null;
@@ -108,12 +109,20 @@ const [designName, setDesignName] = useState(propDesignName); // Use prop value
         const finalDesignName = nameOverride || designName;
         console.log('[useDesign] Creating design with name:', finalDesignName, nameOverride ? '(from parameter)' : '(from state)');
 
+        const doc = useDesignStore.getState().document;
+        const viewsData = doc
+          ? Object.fromEntries(
+              Object.entries(doc.views).filter(([, vs]) => vs.layers && vs.layers.length > 0)
+            )
+          : undefined;
+
         // 创建新设计
         const payload: CreateDesignPayload = {
-name: finalDesignName, // Use the final name (parameter or state)
+          name: finalDesignName,
           canvas: snapshot,
           productVariantId: validProductVariantId,
-thumbnailUrl, // Include thumbnail
+          thumbnailUrl,
+          viewsData: viewsData && Object.keys(viewsData).length > 0 ? viewsData : null,
         };
 
         console.log('[useDesign] Create payload:', { name: payload.name, productVariantId: payload.productVariantId, hasThumbnail: !!payload.thumbnailUrl });
@@ -135,11 +144,19 @@ thumbnailUrl, // Include thumbnail
           console.error('[useDesign] Failed to generate thumbnail:', thumbError);
         }
 
+        const doc = useDesignStore.getState().document;
+        const viewsData = doc
+          ? Object.fromEntries(
+              Object.entries(doc.views).filter(([, vs]) => vs.layers && vs.layers.length > 0)
+            )
+          : undefined;
+
         // 更新现有设计
         const payload: UpdateDesignPayload = {
           name: designName,
           canvas: snapshot,
-thumbnailUrl, // Include thumbnail
+          thumbnailUrl,
+          viewsData: viewsData && Object.keys(viewsData).length > 0 ? viewsData : null,
         };
 
         await updateDesign(savedDesignId, payload);

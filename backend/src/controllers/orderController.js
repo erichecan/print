@@ -270,6 +270,9 @@ exports.getOrderByOrderNumber = async (req, res) => {
                 },
               },
             },
+            design: {
+              select: { id: true, thumbnailUrl: true, name: true },
+            },
           },
         },
         shipments: {
@@ -315,6 +318,9 @@ exports.getOrderByOrderNumber = async (req, res) => {
         unitPrice: Number(item.priceSnapshot),
         subtotal: Number(item.priceSnapshot) * item.quantity,
         thumbnail: item.variant?.imageUrl || item.variant?.product?.images?.[0]?.url || null,
+        designId: item.designId || null,
+        designThumbnailUrl: item.design?.thumbnailUrl || null,
+        designName: item.design?.name || null,
       })),
       shipment: order.shipments[0] ? {
         trackingNumber: order.shipments[0].trackingNumber,

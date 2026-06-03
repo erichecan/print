@@ -18,7 +18,7 @@ function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
-  const { addReferral } = useReferral();
+  const { refresh } = useReferral();
   const { success, error: showError } = useToast();
   const [paying, setPaying] = useState(false);
   const [total, setTotal] = useState(0);
@@ -58,20 +58,12 @@ function CheckoutContent() {
     }
 
     setPaying(true);
-    let referralOk = true;
-    if (refUserId && refUserId !== user.id) {
-      referralOk = addReferral(refUserId);
-    }
-    setPaying(false);
-
-    if (refUserId && !referralOk) {
-      showError('该推荐人已达最大推荐人数');
-      return;
-    }
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem(REF_STORAGE_KEY);
       sessionStorage.removeItem(CART_STORAGE_KEY);
     }
+    refresh();
+    setPaying(false);
     success('支付成功！' + (refUserId ? '推荐人将获得对应佣金。' : ''));
     router.push('/referral/success');
   };

@@ -1004,6 +1004,8 @@ exports.getProductBySlug = async (req, res) => {
         longDescription: true,
         basePrice: true,
         salePrice: true,
+        printableAreas: true,
+        garmentType: true,
         createdAt: true,
         updatedAt: true,
         category: {
@@ -1081,6 +1083,8 @@ exports.getProductBySlug = async (req, res) => {
           longDescription: true,
           basePrice: true,
           salePrice: true,
+          printableAreas: true,
+          garmentType: true,
           createdAt: true,
           updatedAt: true,
           category: {
@@ -1239,6 +1243,8 @@ exports.getProductBySlug = async (req, res) => {
       },
       reviews: product.reviews || [],
       collections: (product.collectionProducts || []).map((item) => item.collection).filter(Boolean),
+      printableArea: product.printableAreas || null,
+      garmentType: product.garmentType || null,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
@@ -1743,6 +1749,8 @@ exports.getProductByVariantId = async (req, res) => {
       colors,
       colorDetails, // 添加颜色详细信息
       baseImages,
+      printableArea: product.printableAreas || null,
+      garmentType: product.garmentType || null,
       gallery: (product.images || []).map((img) => img?.url ? optimizeImageUrl(img.url, req) : null).filter(Boolean),
       variants: product.variants.map((v) => {
         // Synchronize with global size fee config

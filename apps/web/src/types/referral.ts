@@ -9,6 +9,9 @@ export interface Transaction {
   amount: number;
   description: string;
   createdAt: string;
+  status?: string;
+  tier?: number;
+  paidAt?: string | null;
 }
 
 export interface ReferralState {

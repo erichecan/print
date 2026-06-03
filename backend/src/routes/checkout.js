@@ -17,4 +17,7 @@ router.post('/create-payment-intent', authenticateOptional, checkoutController.c
 // 支付后确认订单
 router.post('/confirm', authenticateOptional, checkoutController.confirmOrder);
 
+// DEV ONLY: bypass payment, create order directly (blocked in production by controller)
+router.post('/dev-order', authenticateOptional, checkoutController.devBypassOrder);
+
 module.exports = router;

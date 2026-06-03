@@ -278,6 +278,8 @@ app.use('/api/coupons', require('./routes/coupons')); // Coupon routes
 app.use('/api/payment-methods', require('./routes/paymentMethods')); // Payment method management routes for Issue #112
 app.use('/api/chat', require('./routes/chat')); // Customer service chat routes for Issue #144
 app.use('/api/design-lab/analytics', require('./routes/designLabAnalytics')); // Design Lab analytics routes
+app.use('/api/referral', require('./routes/referral')); // Referral cashback plugin
+app.use('/api/admin/referral', require('./routes/adminReferral')); // Admin: referral management
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));
 

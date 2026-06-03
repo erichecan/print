@@ -32,9 +32,10 @@ export default async function DesignLabPage({
   const params = await searchParams;
   let initialProductData = null;
 
+  const apiBaseUrl = getBackendApiBaseUrl();
+
   if (params?.productId || params?.variantId) {
     try {
-      const apiBaseUrl = getBackendApiBaseUrl();
       const productId = params.productId || (params.variantId ? undefined : null);
       const variantId = params.variantId;
 
@@ -42,9 +43,7 @@ export default async function DesignLabPage({
       if (variantId) {
         const response = await fetch(`${apiBaseUrl}/products/variant/${variantId}`, {
           cache: 'no-store',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
         if (response.ok) {
           initialProductData = await response.json();
@@ -52,9 +51,7 @@ export default async function DesignLabPage({
       } else if (productId) {
         const response = await fetch(`${apiBaseUrl}/products/${productId}`, {
           cache: 'no-store',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
         if (response.ok) {
           initialProductData = await response.json();
@@ -63,6 +60,31 @@ export default async function DesignLabPage({
     } catch (error) {
       // 服务端预取失败不影响页面加载，客户端会重试
       console.warn('[Design Lab] 服务端预取产品数据失败:', error);
+    }
+  } else {
+    // 直接进入 Design Lab（无 URL 参数）：服务端预取默认产品，消除客户端 API 瀑布
+    try {
+      const slugRes = await fetch(`${apiBaseUrl}/products/design-lab-default-tee`, {
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (slugRes.ok) {
+        const slugData = await slugRes.json();
+        const variants: any[] = slugData.variants || [];
+        const whiteVariant = variants.find((v: any) => v.color?.toLowerCase() === 'white');
+        const targetVariantId = (whiteVariant ?? variants[0])?.id;
+        if (targetVariantId) {
+          const variantRes = await fetch(`${apiBaseUrl}/products/variant/${targetVariantId}`, {
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (variantRes.ok) {
+            initialProductData = await variantRes.json();
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('[Design Lab] 服务端预取默认产品失败:', error);
     }
   }
 

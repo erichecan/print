@@ -57,6 +57,7 @@ export interface ProductDetail {
     'left-sleeve'?: { width: number; height: number; x: number; y: number };
     'right-sleeve'?: { width: number; height: number; x: number; y: number };
   } | null;
+  garmentType?: string | null;
 }
 
 /**
@@ -157,7 +158,8 @@ export async function getProduct(productId: string): Promise<ProductDetail> {
           'left-sleeve': response.images[2]?.url,
           'right-sleeve': response.images[3]?.url,
         } : { front: '', back: '', sleeve: '', 'left-sleeve': '', 'right-sleeve': '' }, // Fallback
-        printableArea: response.printableArea || null, // Map from response
+        printableArea: response.printableArea || null,
+        garmentType: response.garmentType || null,
       };
     }
 
