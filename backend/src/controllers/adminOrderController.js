@@ -182,6 +182,9 @@ exports.getOrderById = async (req, res) => {
                 },
               },
             },
+            design: {
+              select: { id: true, thumbnailUrl: true, name: true },
+            },
           },
         },
         shipments: {
@@ -222,6 +225,10 @@ exports.getOrderById = async (req, res) => {
         unitPrice: Number(item.priceSnapshot),
         subtotal: Number(item.priceSnapshot) * item.quantity,
         thumbnail: item.variant.imageUrl || item.variant.product.images[0]?.url || null,
+        designId: item.designId || null,
+        designReviewStatus: item.designReviewStatus || null,
+        designThumbnailUrl: item.design?.thumbnailUrl || null,
+        designName: item.design?.name || null,
       })),
       shipments: order.shipments.map((shipment) => ({
         id: shipment.id,
@@ -1033,6 +1040,20 @@ exports.generateShippingLabel = async (req, res, next) => {
       return next(new BadRequestError('无法为已取消或已退款的订单生成发货标签', { status: order.status }));
     }
 
+    // Block shipping label if design review is not completed
+    const blockedDesignStatuses = ['PENDING_REVIEW', 'IN_REVIEW', 'REJECTED'];
+    if (order.designReviewStatus && blockedDesignStatuses.includes(order.designReviewStatus)) {
+      const statusLabels = {
+        PENDING_REVIEW: '待审核',
+        IN_REVIEW: '审核中',
+        REJECTED: '设计稿已退回',
+      };
+      return next(new BadRequestError(
+        `订单包含待审核设计稿（当前状态：${statusLabels[order.designReviewStatus] ?? order.designReviewStatus}），请完成设计审核后再购买面单`,
+        { designReviewStatus: order.designReviewStatus }
+      ));
+    }
+
     // Check if shipment already exists
     const existingShipment = await prisma.shipment.findFirst({
       where: { orderId: id },
@@ -1271,6 +1292,7 @@ exports.listDesignReviewQueue = async (req, res, next) => {
       where: {
         designReviewStatus: { in: DESIGN_REVIEW_STATUSES },
       },
+      take: 300,
       select: {
         id: true,
         orderNumber: true,
@@ -1281,10 +1303,11 @@ exports.listDesignReviewQueue = async (req, res, next) => {
         designReviewRejectedAt: true,
         mockupUrl: true,
         items: {
-          take: 1,
           select: {
             id: true,
             quantity: true,
+            designId: true,
+            designReviewStatus: true,
             variant: {
               select: {
                 color: true,
@@ -1329,15 +1352,21 @@ exports.syncDesignToOrder = async (req, res, next) => {
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) return next(new NotFoundError('订单不存在'));
 
-    const updated = await prisma.order.update({
-      where: { id },
-      data: {
-        designReviewStatus: 'SYNCED',
-        mockupUrl,
-        designReviewSyncedAt: new Date(),
-        ...(printSpecs ? { printSpecs } : {}),
-      },
-    });
+    const [updated] = await prisma.$transaction([
+      prisma.order.update({
+        where: { id },
+        data: {
+          designReviewStatus: 'SYNCED',
+          mockupUrl,
+          designReviewSyncedAt: new Date(),
+          ...(printSpecs ? { printSpecs } : {}),
+        },
+      }),
+      prisma.orderItem.updateMany({
+        where: { orderId: id, designId: { not: null } },
+        data: { designReviewStatus: 'SYNCED' },
+      }),
+    ]);
 
     logger.info('Design synced to order', { orderId: id, userId: req.user?.id });
 
@@ -1368,14 +1397,20 @@ exports.rejectDesignToCustomer = async (req, res, next) => {
     });
     if (!order) return next(new NotFoundError('订单不存在'));
 
-    const updated = await prisma.order.update({
-      where: { id },
-      data: {
-        designReviewStatus: 'REJECTED',
-        designReviewNote: note.trim(),
-        designReviewRejectedAt: new Date(),
-      },
-    });
+    const [updated] = await prisma.$transaction([
+      prisma.order.update({
+        where: { id },
+        data: {
+          designReviewStatus: 'REJECTED',
+          designReviewNote: note.trim(),
+          designReviewRejectedAt: new Date(),
+        },
+      }),
+      prisma.orderItem.updateMany({
+        where: { orderId: id, designId: { not: null } },
+        data: { designReviewStatus: 'REJECTED' },
+      }),
+    ]);
 
     logger.info('Design rejected, returned to customer', { orderId: id, userId: req.user?.id });
 
@@ -1488,34 +1523,52 @@ exports.importLogisticsCsv = async (req, res, next) => {
 
     const results = { updated: [], notFound: [], errors: [] };
 
+    // Split rows into valid (has orderNumber + trackingNumber) vs immediately invalid
+    const validRows = [];
     for (const row of rows) {
       const { orderNumber, carrier, trackingNumber } = row;
       if (!orderNumber || !trackingNumber) {
         results.errors.push({ orderNumber, reason: '缺少订单号或快递单号' });
-        continue;
+      } else {
+        validRows.push({ orderNumber, carrier, trackingNumber });
       }
+    }
 
-      try {
-        const order = await prisma.order.findFirst({ where: { orderNumber } });
-        if (!order) {
+    if (validRows.length > 0) {
+      // Batch query 1: find all orders at once (replaces N findFirst calls)
+      const orderNumbers = validRows.map((r) => r.orderNumber);
+      const foundOrders = await prisma.order.findMany({
+        where: { orderNumber: { in: orderNumbers } },
+        select: { id: true, orderNumber: true },
+      });
+      const orderMap = Object.fromEntries(foundOrders.map((o) => [o.orderNumber, o.id]));
+
+      // Mark not-found rows and collect update tasks
+      const updateTasks = [];
+      for (const { orderNumber, carrier, trackingNumber } of validRows) {
+        const orderId = orderMap[orderNumber];
+        if (!orderId) {
           results.notFound.push(orderNumber);
-          continue;
+        } else {
+          updateTasks.push({ orderId, orderNumber, carrier, trackingNumber });
         }
-
-        await prisma.order.update({
-          where: { id: order.id },
-          data: {
-            trackingNumber,
-            carrier: carrier || null,
-            status: 'SHIPPED',
-          },
-        });
-
-        results.updated.push(orderNumber);
-        logger.info('Logistics CSV import: order updated', { orderNumber, trackingNumber });
-      } catch (err) {
-        results.errors.push({ orderNumber, reason: err.message });
       }
+
+      // Run all updates in parallel (N updates, but no sequential DB round-trips)
+      await Promise.all(
+        updateTasks.map(async ({ orderId, orderNumber, carrier, trackingNumber }) => {
+          try {
+            await prisma.order.update({
+              where: { id: orderId },
+              data: { trackingNumber, carrier: carrier || null, status: 'SHIPPED' },
+            });
+            results.updated.push(orderNumber);
+            logger.info('Logistics CSV import: order updated', { orderNumber, trackingNumber });
+          } catch (err) {
+            results.errors.push({ orderNumber, reason: err.message });
+          }
+        })
+      );
     }
 
     res.json(results);
