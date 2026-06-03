@@ -18,7 +18,6 @@ const TagFilterPanel = dynamic(
 const ProductsClient = dynamic(() => import('./ProductsClient'), { ssr: false });
 
 type Collection = { id: string; name: string; slug: string };
-type Brand = { name: string; slug?: string };
 
 const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
 const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
@@ -51,12 +50,6 @@ export function PLPLayoutClient({
 }: {
   collections: Collection[];
   currentSort: string;
-  currentCollection: string;
-  currentBrand: string;
-  currentCategoryName: string;
-  brands: Brand[];
-  groupSlug?: string;
-  categorySlug?: string;
 }) {
   const title = usePageTitle(collections, 'All Products');
 
