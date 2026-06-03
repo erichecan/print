@@ -706,7 +706,8 @@ export const checkoutApi = {
     shippingMethod: string,
     email: string,
     couponCode?: string,
-    couponId?: string
+    couponId?: string,
+    referralCode?: string
   ) =>
     api<CheckoutConfirmResponse>('/checkout/confirm', {
       method: 'POST',
@@ -718,6 +719,7 @@ export const checkoutApi = {
         email,
         ...(couponCode ? { couponCode } : {}),
         ...(couponId ? { couponId } : {}),
+        ...(referralCode ? { referralCode } : {}),
       },
     }),
   devOrder: (email: string, shippingAddress: CheckoutAddressPayload) =>
@@ -2202,6 +2204,8 @@ export const promotionApi = {
   getActive: () => api<{ promotions: Promotion[] }>('/promotions'),
   getForProduct: (productId: string) => api<{ promotions: Promotion[] }>(`/promotions/product/${productId}`),
   getForCategory: (categoryId: string) => api<{ promotions: Promotion[] }>(`/promotions/category/${categoryId}`),
+  getForProducts: (productIds: string[]) =>
+    api<Record<string, Promotion[]>>(`/promotions/products?ids=${productIds.join(',')}`),
   calculate: (data: { items: Array<{ productId: string; quantity: number; unitPrice: number }>; subtotal: number }) =>
     api<{ discount: number; promotions: Array<{ promotionId: string; promotionTitle: string; productId: string; discountAmount: number }> }>(
       '/promotions/calculate',

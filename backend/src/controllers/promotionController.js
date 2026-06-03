@@ -480,3 +480,88 @@ exports.calculatePromotionDiscount = async (req, res) => {
   }
 };
 
+/**
+ * Batch-fetch promotions for multiple products.
+ * GET /api/promotions/products?ids=id1,id2,...
+ * Returns: { [productId]: Promotion[] }
+ * Uses 3 DB queries regardless of how many products are passed.
+ */
+exports.getPromotionsForProducts = async (req, res) => {
+  try {
+    const idsParam = req.query.ids;
+    if (!idsParam) return res.json({});
+
+    const productIds = String(idsParam).split(',').map((s) => s.trim()).filter(Boolean).slice(0, 50);
+    if (productIds.length === 0) return res.json({});
+
+    const now = new Date();
+    const baseWhere = { isActive: true, startDate: { lte: now }, endDate: { gte: now } };
+
+    // Query 1: product-level promotions for all IDs
+    // Query 2: product rows to get categoryIds
+    const [productPromos, products] = await Promise.all([
+      prisma.promotion.findMany({
+        where: { ...baseWhere, products: { some: { productId: { in: productIds } } } },
+        include: { products: { select: { productId: true } } },
+      }),
+      prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, categoryId: true },
+      }),
+    ]);
+
+    const categoryIds = [...new Set(products.map((p) => p.categoryId).filter(Boolean))];
+
+    // Query 3: category-level promotions
+    const categoryPromos = categoryIds.length > 0
+      ? await prisma.promotion.findMany({
+          where: { ...baseWhere, categories: { some: { categoryId: { in: categoryIds } } } },
+          include: { categories: { select: { categoryId: true } } },
+        })
+      : [];
+
+    // Build categoryId → productIds[] map
+    const categoryToProducts = {};
+    products.forEach((p) => {
+      if (p.categoryId) {
+        if (!categoryToProducts[p.categoryId]) categoryToProducts[p.categoryId] = [];
+        categoryToProducts[p.categoryId].push(p.id);
+      }
+    });
+
+    // Build result map
+    const result = {};
+    productIds.forEach((id) => { result[id] = []; });
+
+    productPromos.forEach((promo) => {
+      promo.products.forEach(({ productId }) => {
+        if (result[productId]) result[productId].push(promo);
+      });
+    });
+
+    categoryPromos.forEach((promo) => {
+      promo.categories.forEach(({ categoryId }) => {
+        const affectedProducts = categoryToProducts[categoryId] || [];
+        affectedProducts.forEach((productId) => {
+          if (result[productId] && !result[productId].find((p) => p.id === promo.id)) {
+            result[productId].push(promo);
+          }
+        });
+      });
+    });
+
+    // Map to API format, keep best promotion per product
+    const mapped = {};
+    Object.entries(result).forEach(([productId, promos]) => {
+      if (promos.length === 0) { mapped[productId] = []; return; }
+      const sorted = [...promos].sort((a, b) => Number(b.discountValue) - Number(a.discountValue));
+      mapped[productId] = [mapPromotion(sorted[0])].filter(Boolean);
+    });
+
+    return res.json(mapped);
+  } catch (error) {
+    logger.error('[promotionController] getPromotionsForProducts error:', { error: error.message });
+    return res.json({});
+  }
+};
+

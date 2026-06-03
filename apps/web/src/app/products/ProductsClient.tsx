@@ -103,34 +103,12 @@ export default function ProductsClient({
   const { data, error, isLoading } = useSWR<ProductsResponse>(apiUrl.toString(), fetcher);
   const isMobile = useIsMobile();
 
-  // 为每个产品获取促销活动信息
+  // Batch-fetch promotions for all visible products in a single request
   const productIds = data?.data?.map((p) => p.id) || [];
-  const { data: promotionsData } = useSWR(
-    productIds.length > 0 ? ['product-promotions', productIds] : null,
-    async () => {
-      // 批量获取每个产品的促销活动
-      const promotionsMap: Record<string, Promotion[]> = {};
-      await Promise.all(
-        productIds.map(async (productId) => {
-          try {
-            const result = await promotionApi.getForProduct(productId);
-            if (result.promotions && result.promotions.length > 0) {
-              // 选择折扣最大的促销活动
-              const bestPromotion = result.promotions.sort((a, b) => {
-                const aValue = a.discountType === 'percentage' ? a.discountValue : a.discountValue;
-                const bValue = b.discountType === 'percentage' ? b.discountValue : b.discountValue;
-                return bValue - aValue;
-              })[0];
-              promotionsMap[productId] = [bestPromotion];
-            }
-          } catch (err) {
-            // 忽略错误，继续处理其他产品
-            console.warn(`Failed to fetch promotions for product ${productId}:`, err);
-          }
-        })
-      );
-      return promotionsMap;
-    }
+  const { data: promotionsData } = useSWR<Record<string, Promotion[]>>(
+    productIds.length > 0 ? ['product-promotions-batch', productIds.join(',')] : null,
+    () => promotionApi.getForProducts(productIds),
+    { revalidateOnFocus: false }
   );
 
   if (isLoading) {
