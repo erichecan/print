@@ -4,7 +4,8 @@ FROM node:18-bullseye-slim AS deps
 WORKDIR /app
 # 安装 OpenSSL 以支持 Prisma
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
-COPY package*.json ./
+# 只安装前端依赖，避免根目录 package.json 中 better-sqlite3 等原生模块触发编译
+COPY apps/web/package*.json ./
 RUN npm install
 
 FROM node:18-bullseye-slim AS builder
