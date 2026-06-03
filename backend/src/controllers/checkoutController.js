@@ -18,6 +18,7 @@ if (!stripeSecretKey || stripeSecretKey.trim() === '') {
 const stripe = stripeSecretKey ? Stripe(stripeSecretKey) : null;
 const { sendOrderConfirmation } = require('../services/emailService');
 const { checkMultipleStockAvailability, decreaseInventory } = require('../services/inventoryService');
+const referralPlugin = require('../plugins/referral');
 const { getSettingValue } = require('../services/settingService');
 const { BadRequestError } = require('../utils/errors');
 
@@ -236,103 +237,80 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
     }
 
     const now = new Date();
+
+    // Batch query 1: fetch all variants at once (replaces per-item loop queries)
+    const variantIds = [...new Set(cartItems.map((i) => i.variantId).filter(Boolean))];
+    const variants = await prisma.variant.findMany({
+      where: { id: { in: variantIds } },
+      include: { product: { select: { id: true, categoryId: true } } },
+    });
+    const variantMap = Object.fromEntries(variants.map((v) => [v.id, v]));
+
+    const productIds = [...new Set(variants.map((v) => v.productId).filter(Boolean))];
+    const categoryIds = [...new Set(variants.map((v) => v.product?.categoryId).filter(Boolean))];
+
+    if (productIds.length === 0) return { discount: 0, promotions: [] };
+
+    // Batch query 2: fetch all relevant promotions in one query
+    const allPromotions = await prisma.promotion.findMany({
+      where: {
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
+        OR: [
+          { products: { some: { productId: { in: productIds } } } },
+          ...(categoryIds.length > 0 ? [{ categories: { some: { categoryId: { in: categoryIds } } } }] : []),
+        ],
+      },
+      include: {
+        products: { select: { productId: true } },
+        categories: { select: { categoryId: true } },
+      },
+    });
+
     let totalDiscount = 0;
     const appliedPromotions = [];
 
-    // For each cart item, find the best promotion
     for (const item of cartItems) {
       const { variantId, quantity, priceSnapshot } = item;
       const unitPrice = Number(priceSnapshot);
       const itemSubtotal = unitPrice * quantity;
 
-      // Get product ID from variant
-      const variant = await prisma.variant.findUnique({
-        where: { id: variantId },
-        include: { product: { include: { category: true } } },
-      });
-
-      if (!variant) {
-        continue;
-      }
+      const variant = variantMap[variantId];
+      if (!variant) continue;
 
       const productId = variant.productId;
-      const categoryId = variant.product.categoryId;
+      const categoryId = variant.product?.categoryId;
 
-      // Find active promotions for this product
-      // Include buy-get-free promotion fields for Issue #139
-      // Find active promotions for this product
-      // Include buy-get-free promotion fields for Issue #139
-      const productPromotions = await prisma.promotion.findMany({
-        where: {
-          isActive: true,
-          startDate: { lte: now },
-          endDate: { gte: now },
-          OR: [
-            {
-              products: {
-                some: {
-                  productId: productId,
-                },
-              },
-            },
-            {
-              categories: {
-                some: {
-                  categoryId: categoryId,
-                },
-              },
-            },
-          ],
-        },
-      });
+      // Filter promotions applicable to this product/category from the batch result
+      const productPromotions = allPromotions.filter(
+        (p) =>
+          p.products.some((pp) => pp.productId === productId) ||
+          (categoryId && p.categories.some((pc) => pc.categoryId === categoryId))
+      );
 
-      if (productPromotions.length === 0) {
-        continue;
-      }
+      if (productPromotions.length === 0) continue;
 
-      // Select the promotion with the highest discount
       let bestPromotion = null;
       let bestDiscount = 0;
 
       for (const promotion of productPromotions) {
-        // Check minimum order value
-        if (promotion.minOrderValue && subtotal < Number(promotion.minOrderValue)) {
-          continue;
-        }
+        if (promotion.minOrderValue && subtotal < Number(promotion.minOrderValue)) continue;
 
-        // Calculate discount for this item
-        // Support buy-get-free promotions for Issue #139
         let itemDiscount = 0;
 
         if (promotion.discountType === 'PERCENTAGE') {
           itemDiscount = (itemSubtotal * Number(promotion.discountValue)) / 100;
-          // Apply max discount limit
           if (promotion.maxDiscount && itemDiscount > Number(promotion.maxDiscount)) {
             itemDiscount = Number(promotion.maxDiscount);
           }
         } else if (promotion.discountType === 'BUY_GET_FREE') {
-          // Buy X Get Y Free: Calculate free items discount
           const buyQty = promotion.buyQuantity || 1;
           const getQty = promotion.getQuantity || 1;
-
-          // Calculate how many "buy-get-free" sets can be applied
           const sets = Math.floor(quantity / (buyQty + getQty));
-          const freeItems = sets * getQty;
-
-          // Discount is the value of free items
-          itemDiscount = freeItems * unitPrice;
-
-          // Don't exceed item subtotal
-          if (itemDiscount > itemSubtotal) {
-            itemDiscount = itemSubtotal;
-          }
+          itemDiscount = Math.min(sets * getQty * unitPrice, itemSubtotal);
         } else {
-          // Fixed discount per item
-          itemDiscount = Number(promotion.discountValue) * quantity;
-          // Don't exceed item subtotal
-          if (itemDiscount > itemSubtotal) {
-            itemDiscount = itemSubtotal;
-          }
+          itemDiscount = Math.min(Number(promotion.discountValue) * quantity, itemSubtotal);
         }
 
         if (itemDiscount > bestDiscount) {
@@ -346,9 +324,8 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
         appliedPromotions.push({
           promotionId: bestPromotion.id,
           promotionTitle: bestPromotion.title,
-          productId: productId,
+          productId,
           discountAmount: Math.round(bestDiscount * 100) / 100,
-          // Include buy-get-free promotion details for Issue #139
           promotionType: bestPromotion.discountType,
           buyQuantity: bestPromotion.buyQuantity,
           getQuantity: bestPromotion.getQuantity,
@@ -848,7 +825,7 @@ async function upsertUserAddress(prismaClient, userId, address, options = {}) {
 
 exports.confirmOrder = async (req, res) => {
   try {
-    const { paymentIntentId, shippingAddress, billingAddress, shippingMethod = 'standard', couponCode, couponId } = req.body; // 支持优惠券代码和ID
+    const { paymentIntentId, shippingAddress, billingAddress, shippingMethod = 'standard', couponCode, couponId, referralCode } = req.body;
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
     const email = req.body.email || req.user?.email;
@@ -961,6 +938,9 @@ exports.confirmOrder = async (req, res) => {
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
+    // Check if any cart item is a design item
+    const hasDesignItems = cart.items.some((item) => item.designId);
+
     // Create order and apply coupon in transaction
     const order = await prisma.$transaction(async (tx) => {
       // Create order
@@ -983,11 +963,14 @@ exports.confirmOrder = async (req, res) => {
             shippingMethod,
           },
           billingAddress: billingAddress || shippingAddress,
+          designReviewStatus: hasDesignItems ? 'PENDING_REVIEW' : null,
           items: {
             create: cart.items.map((item) => ({
               variantId: item.variantId,
               quantity: item.quantity,
               priceSnapshot: item.priceSnapshot,
+              designId: item.designId || null,
+              designReviewStatus: item.designId ? 'PENDING_REVIEW' : null,
             })),
           },
           // Create OrderPromotion records if promotions were applied
@@ -1091,6 +1074,13 @@ exports.confirmOrder = async (req, res) => {
       paymentIntentId,
     });
 
+    // Referral plugin hook — fire-and-forget, never blocks the order response
+    if (referralCode) {
+      referralPlugin.onOrderPaid(order.id, referralCode, userId).catch((err) => {
+        logger.warn('[Referral] onOrderPaid background error', { error: err.message });
+      });
+    }
+
     // Send order confirmation email (webhook will also send, but this ensures delivery)
     // Don't fail the response if email fails
     try {
@@ -1120,5 +1110,126 @@ exports.confirmOrder = async (req, res) => {
       error: 'Failed to confirm order',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
+  }
+};
+
+// DEV ONLY: bypass payment and create order directly
+exports.devBypassOrder = async (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  try {
+    const { shippingAddress, billingAddress, shippingMethod = 'standard', couponCode, couponId } = req.body;
+    const userId = req.user?.id || null;
+    const sessionId = req.sessionId || null;
+    const email = req.body.email || req.user?.email;
+
+    const shippingSettings = await getSettingValue('site.shipping', DEFAULT_SHIPPING_SETTINGS);
+
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    if (!shippingAddress) return res.status(400).json({ error: 'Shipping address is required' });
+
+    const cart = await getOrCreateCart(userId, sessionId);
+    if (cart.items.length === 0) return res.status(400).json({ error: 'Cart is empty' });
+
+    const subtotal = cart.items.reduce((sum, item) => sum + Number(item.priceSnapshot) * item.quantity, 0);
+
+    const promotionResult = await calculatePromotionDiscount(cart.items, subtotal);
+    const promotionDiscount = promotionResult.discount || 0;
+    const subtotalAfterPromotion = subtotal - promotionDiscount;
+
+    let couponResult = { discount: 0, coupon: null, error: null };
+    if (couponId) {
+      const coupon = await prisma.coupon.findUnique({ where: { id: couponId } });
+      if (coupon) couponResult = await validateCouponAndCalculateDiscount(coupon.code, subtotalAfterPromotion, userId);
+    } else if (couponCode) {
+      couponResult = await validateCouponAndCalculateDiscount(couponCode, subtotalAfterPromotion, userId);
+    }
+    if (couponResult.error) return res.status(400).json({ error: couponResult.error });
+
+    const couponDiscount = couponResult.discount || 0;
+    const totalDiscount = promotionDiscount + couponDiscount;
+
+    const shippingResult = await calculateShipping(
+      shippingAddress.country, shippingAddress.province, shippingAddress.postalCode, shippingMethod, cart.items
+    );
+    const shippingCost = shippingResult.cost;
+    const tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
+    const total = subtotal - totalDiscount + shippingCost + tax;
+
+    const fakePaymentIntentId = `dev_bypass_${Date.now()}`;
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+    const order = await prisma.$transaction(async (tx) => {
+      const hasDesignItems = cart.items.some((item) => item.designId);
+
+      const createdOrder = await tx.order.create({
+        data: {
+          orderNumber,
+          userId: userId || null,
+          email,
+          status: 'PENDING',
+          currency: 'CAD',
+          subtotal,
+          shippingCost,
+          tax,
+          discount: totalDiscount,
+          total,
+          paymentStatus: 'COMPLETED',
+          paymentIntentId: fakePaymentIntentId,
+          shippingAddress: { ...shippingAddress, shippingMethod },
+          billingAddress: billingAddress || shippingAddress,
+          designReviewStatus: hasDesignItems ? 'PENDING_REVIEW' : null,
+          items: {
+            create: cart.items.map((item) => ({
+              variantId: item.variantId,
+              quantity: item.quantity,
+              priceSnapshot: item.priceSnapshot,
+              designId: item.designId || null,
+              designReviewStatus: item.designId ? 'PENDING_REVIEW' : null,
+            })),
+          },
+          ...(promotionResult.promotions && promotionResult.promotions.length > 0
+            ? { orderPromotions: { create: promotionResult.promotions.map((p) => ({ promotionId: p.promotionId, discountAmount: p.discountAmount })) } }
+            : {}),
+          ...(couponResult.coupon
+            ? { orderCoupons: { create: { couponId: couponResult.coupon.id, userId: userId || null, discountAmount: couponDiscount } } }
+            : {}),
+        },
+        include: { items: { include: { variant: { include: { product: true } } } } },
+      });
+
+      for (const item of createdOrder.items) {
+        await tx.variant.update({ where: { id: item.variantId }, data: { stockQuantity: { decrement: item.quantity } } });
+      }
+
+      if (couponResult.coupon) {
+        await tx.coupon.update({ where: { id: couponResult.coupon.id }, data: { usedCount: { increment: 1 } } });
+      }
+
+      if (userId) {
+        await upsertUserAddress(tx, userId, shippingAddress, { isDefault: true });
+        if (billingAddress && (billingAddress.addressLine1 !== shippingAddress.addressLine1 || billingAddress.postalCode !== shippingAddress.postalCode)) {
+          await upsertUserAddress(tx, userId, billingAddress, { isDefault: false });
+        }
+      }
+
+      await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+      return createdOrder;
+    });
+
+    logger.info('[DEV BYPASS] Order created without payment', { orderId: order.id, orderNumber: order.orderNumber });
+
+    res.status(201).json({
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      status: order.status.toLowerCase(),
+      total: Number(order.total),
+      email: order.email,
+    });
+  } catch (error) {
+    logger.error('[DEV BYPASS] Error creating order:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Failed to create dev order', details: error.message });
   }
 };
