@@ -140,6 +140,12 @@ steps:
         # 修复：使用 bash 读取 build-meta.env，确保变量能在 gcloud 参数中展开
         set -euo pipefail
         source /workspace/build-meta.env
+        # Clear any stale secret bindings on NEXT_PUBLIC_API_URL first
+        # (NEXT_PUBLIC_* vars are baked into the image at build time via --build-arg)
+        gcloud run services update ${_FRONTEND_SERVICE_NAME} \
+          --region ${_REGION} \
+          --remove-secrets=NEXT_PUBLIC_API_URL \
+          --quiet 2>/dev/null || true
         gcloud run deploy ${_FRONTEND_SERVICE_NAME} \
           --image ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest \
           --region ${_REGION} \
@@ -149,8 +155,7 @@ steps:
           --memory 1Gi \
           --cpu 1 \
           --min-instances 0 \
-          --max-instances 5 \
-          --set-secrets NEXT_PUBLIC_API_URL=api-url:latest,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest
+          --max-instances 5
     waitFor: ['push-frontend']
 
   # ---------------------------------------------------------------------------
