@@ -1564,71 +1564,35 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       }
     };
 
-    // Two-stage load: proxy first (for CORS safety), direct URL as fallback.
-    // Aborting is done by setting imgElement.src = '' before starting the next attempt.
-    const loadDirect = (_directT0?: number) => {
-      const _dStart = performance.now();
-      console.log(`[DesignLab TIMING] ⏱ loadDirect START — elapsed=${Math.round(_dStart-_imgT0)}ms from addProductImageToCanvas`);
-      const img = new window.Image();
-      // No crossOrigin on fallback — avoids CORS rejection for hosts without CORS headers.
-      // The canvas background is excluded from export so canvas taint doesn't affect print output.
-      img.src = imageUrl;
-      let settled = false;
-      const tid = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        img.src = '';
-        console.error(`[DesignLab TIMING] ⏱ loadDirect TIMEOUT (12s) — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas`);
-        console.error('[DesignLab 5.0] ❌ Direct image load timeout (12s):', imageUrl);
-      }, 12000);
-      img.onload = () => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(tid);
-        console.log(`[DesignLab TIMING] ⏱ loadDirect onload — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas (direct took ${Math.round(performance.now()-_dStart)}ms)`);
-        console.log('[DesignLab 5.0] ✅ Loaded via direct URL');
-        mountImage(img);
-      };
-      img.onerror = () => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(tid);
-        console.error(`[DesignLab TIMING] ⏱ loadDirect ERROR — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas`);
-        console.error('[DesignLab 5.0] ❌ Direct URL also failed:', imageUrl);
-      };
-    };
-
-    const proxiedUrl = `/_next/image?url=${encodeURIComponent(imageUrl)}&w=1200&q=80`;
-    const _proxyStart = performance.now();
-    console.log(`[DesignLab TIMING] ⏱ proxy request START — elapsed=${Math.round(_proxyStart-_imgT0)}ms from addProductImageToCanvas | url=${proxiedUrl.substring(0,80)}`);
+    // Direct load only — proxy (/_next/image) consistently times out on Cloud Run 0.5 CPU
+    // because WebP transcoding is too slow. Direct URL loads in ~1ms from CDN.
+    // Background image has excludeFromExport=true so canvas taint is not a concern.
+    const _dStart = performance.now();
+    console.log(`[DesignLab TIMING] ⏱ direct load START — elapsed=${Math.round(_dStart-_imgT0)}ms from addProductImageToCanvas`);
     const img = new window.Image();
-    img.crossOrigin = 'anonymous';
-    img.src = proxiedUrl;
+    img.src = imageUrl;
     let settled = false;
-    // 8s proxy timeout — much shorter than the old 15s so we fall back quickly on Cloud Run
     const tid = setTimeout(() => {
       if (settled) return;
       settled = true;
-      img.src = ''; // abort in-flight request
-      console.warn(`[DesignLab TIMING] ⏱ proxy TIMEOUT (8s) — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas`);
-      console.warn('[DesignLab 5.0] Proxy timeout (8s), falling back to direct URL:', imageUrl);
-      loadDirect();
-    }, 8000);
+      img.src = '';
+      console.error(`[DesignLab TIMING] ⏱ direct load TIMEOUT (12s) — elapsed=${Math.round(performance.now()-_imgT0)}ms`);
+      console.error('[DesignLab 5.0] ❌ Image load timeout (12s):', imageUrl);
+    }, 12000);
     img.onload = () => {
       if (settled) return;
       settled = true;
       clearTimeout(tid);
-      console.log(`[DesignLab TIMING] ⏱ proxy onload — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas (proxy took ${Math.round(performance.now()-_proxyStart)}ms)`);
-      console.log('[DesignLab 5.0] ✅ Loaded via /_next/image proxy');
+      console.log(`[DesignLab TIMING] ⏱ direct load onload — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas (took ${Math.round(performance.now()-_dStart)}ms)`);
+      console.log('[DesignLab 5.0] ✅ Product image loaded');
       mountImage(img);
     };
     img.onerror = () => {
       if (settled) return;
       settled = true;
       clearTimeout(tid);
-      console.warn(`[DesignLab TIMING] ⏱ proxy ERROR — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas, falling back to direct`);
-      console.warn('[DesignLab 5.0] Proxy error, falling back to direct URL:', imageUrl);
-      loadDirect();
+      console.error(`[DesignLab TIMING] ⏱ direct load ERROR — elapsed=${Math.round(performance.now()-_imgT0)}ms`);
+      console.error('[DesignLab 5.0] ❌ Image load failed:', imageUrl);
     };
   };
 
