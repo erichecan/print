@@ -361,10 +361,10 @@ const nextConfig = {
     // [2025-01-29 23:55:00] 对于 GCS 图片，由于已经配置了 remotePatterns，可以启用优化
     // 但在 Cloud Run 上，由于静态资源路径问题，仍然禁用优化
     // [2025-01-30 12:00:00] 修复：在 Cloud Run 生产环境禁用图片优化，避免 400 错误
-    unoptimized:
-      process.env.NEXT_IMAGE_UNOPTIMIZED === 'true' ||
-      process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
-    formats: ['image/webp'], // AVIF removed: transcoding too slow on Cloud Run 0.5 CPU (30-60s)
+    // Cloud Run 0.5 CPU cannot transcode images fast enough — proxy times out consistently.
+    // All images load directly from source CDN (GCS, Shopify, etc.) at ~1ms vs 8s+ via proxy.
+    unoptimized: true,
+    formats: ['image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // [2025-01-27 14:20:00] 响应式图片尺寸
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // [2025-01-27 14:20:00] 图片尺寸配置
     remotePatterns,
