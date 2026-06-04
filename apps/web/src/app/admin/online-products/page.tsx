@@ -86,6 +86,12 @@ export default function AdminProductsPage() {
         case 'deactivate':
           await adminProductsApi.bulkUpdateStatus(ids, 'inactive');
           break;
+        case 'enable_design_lab':
+          await adminProductsApi.bulkUpdateStatus(ids, 'enable_design_lab');
+          break;
+        case 'disable_design_lab':
+          await adminProductsApi.bulkUpdateStatus(ids, 'disable_design_lab');
+          break;
         case 'delete':
           await adminProductsApi.bulkDelete(ids);
           break;
@@ -238,6 +244,8 @@ export default function AdminProductsPage() {
             <option value="deactivate" data-i18n="bulkDeactivate">
               {t('bulkDeactivate')}
             </option>
+            <option value="enable_design_lab">启用 Design Lab</option>
+            <option value="disable_design_lab">禁用 Design Lab</option>
             <option value="delete" data-i18n="bulkDelete">
               {t('bulkDelete')}
             </option>

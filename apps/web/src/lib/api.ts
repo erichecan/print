@@ -1851,7 +1851,7 @@ export const adminProductsApi = {
   activate: (id: string) => api(`/admin/online-products/${id}/activate`, { method: 'PATCH' }),
   deactivate: (id: string) => api(`/admin/online-products/${id}/deactivate`, { method: 'PATCH' }),
   bulkUpdateStatus: (ids: string[], status: string) => api('/admin/online-products/batch/status', { method: 'PATCH', body: { ids, status } }),
-  bulkDelete: (ids: string[]) => api('/admin/online-products/batch/delete', { method: 'POST', body: { ids } }),
+  bulkDelete: (ids: string[]) => api('/admin/online-products/batch', { method: 'DELETE', body: { ids } }),
 };
 
 export interface AdminUserSummary {

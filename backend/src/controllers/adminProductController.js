@@ -1438,4 +1438,54 @@ exports.deleteProductImage = async (req, res) => {
   }
 };
 
+// PATCH /api/admin/online-products/batch/status
+exports.batchUpdateStatus = async (req, res) => {
+  try {
+    const { ids, status } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids must be a non-empty array' });
+    }
 
+    let data;
+    if (status === 'active') {
+      data = { isActive: true };
+    } else if (status === 'inactive') {
+      data = { isActive: false };
+    } else if (status === 'enable_design_lab') {
+      data = { isCustomizable: true };
+    } else if (status === 'disable_design_lab') {
+      data = { isCustomizable: false };
+    } else {
+      return res.status(400).json({ error: `Unknown status: ${status}` });
+    }
+
+    const result = await prisma.product.updateMany({
+      where: { id: { in: ids } },
+      data,
+    });
+
+    return res.json({ updated: result.count });
+  } catch (error) {
+    console.error('[batchUpdateStatus] error:', error);
+    return res.status(500).json({ error: 'Batch update failed' });
+  }
+};
+
+// DELETE /api/admin/online-products/batch
+exports.batchDelete = async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids must be a non-empty array' });
+    }
+
+    const result = await prisma.product.deleteMany({
+      where: { id: { in: ids }, isSystem: false },
+    });
+
+    return res.json({ deleted: result.count });
+  } catch (error) {
+    console.error('[batchDelete] error:', error);
+    return res.status(500).json({ error: 'Batch delete failed' });
+  }
+};
