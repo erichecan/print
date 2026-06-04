@@ -43,13 +43,12 @@ export function getDefaultProductImageUrl(
   colorName: string | null = 'White',
   view: ViewType = 'front'
 ): string {
-  // If color is White, use the new ASSETS
   if (!colorName || colorName.toLowerCase() === 'white') {
-    if (view === 'front') return ASSETS.front;
-    if (view === 'back') return ASSETS.back;
+    if (view === 'front') return getGcsUrl('white', 'front');
+    if (view === 'back') return getGcsUrl('white', 'back');
     if (view === 'left-sleeve') return ASSETS.leftSleeve;
     if (view === 'right-sleeve') return ASSETS.rightSleeve;
-    if (view === 'sleeve') return ASSETS.leftSleeve; // Default sleeve to left
+    if (view === 'sleeve') return ASSETS.leftSleeve;
   }
 
   // Use researched assets for specific views if they match our demo color
@@ -73,11 +72,10 @@ export function getDefaultProductBaseImages(colorName: string | null = 'White'):
 } {
   const safeColor = colorName || 'White';
 
-  // If White, use the new specific ASSETS
   if (safeColor.toLowerCase() === 'white') {
     return {
-      front: ASSETS.front,
-      back: ASSETS.back,
+      front: getGcsUrl('white', 'front'),
+      back: getGcsUrl('white', 'back'),
       sleeve: ASSETS.leftSleeve,
       'left-sleeve': ASSETS.leftSleeve,
       'right-sleeve': ASSETS.rightSleeve,

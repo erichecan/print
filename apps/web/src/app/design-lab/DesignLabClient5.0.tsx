@@ -176,11 +176,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       };
     }
 
-    // Default fallback
-    const defaultColor = 'White';
+    // Default fallback — blank canvas until client loads real product data
     return {
-      color: defaultColor,
-      baseImages: getDefaultProductBaseImages(defaultColor),
+      color: 'White',
+      baseImages: { front: '', back: '', sleeve: '', 'left-sleeve': '', 'right-sleeve': '' },
       productId: '',
       colorId: undefined,
       productName: undefined,
@@ -1490,80 +1489,29 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     const fabric = fabricRef.current;
     const canvas = fabricCanvasRef.current;
 
-    // 构建代理 URL 以解决 CORS 问题
-    // 使用 Next.js 图片优化 API 作为代理
-    const proxiedUrl = `/_next/image?url=${encodeURIComponent(imageUrl)}&w=1200&q=90`;
-    console.log('[DesignLab 5.0] Using proxied URL:', proxiedUrl);
-
-    // 使用原生 Image 对象加载，然后转换为 Fabric Image，更可靠
-    const imgElement = new window.Image();
-    // 即使是 same-origin (代理后)，设置 anonymous 也是安全的，且对于导出 canvas 是必需的
-    imgElement.crossOrigin = 'anonymous';
-    imgElement.src = proxiedUrl;
-
-    let imageLoaded = false;
-    const timeoutId = setTimeout(() => {
-      if (!imageLoaded) {
-        console.error('[DesignLab 5.0] ❌ Image load timeout after 15 seconds');
-      }
-    }, 15000);
-
-    imgElement.onload = () => {
-      if (imageLoaded) {
-        return;
-      }
-      imageLoaded = true;
-      clearTimeout(timeoutId);
-
-      if (!fabricCanvasRef.current || !fabricRef.current) {
-        return;
-      }
-
-      console.log('[DesignLab 5.0] ✅ Product image loaded:', {
-        src: imgElement.src,
-        naturalWidth: imgElement.naturalWidth,
-        naturalHeight: imgElement.naturalHeight,
-      });
-
+    // Mount a loaded image element onto the Fabric canvas.
+    const mountImage = (imgElement: HTMLImageElement) => {
+      if (!fabricCanvasRef.current || !fabricRef.current) return;
       try {
         if (!fabric.Image || typeof fabric.Image !== 'function') {
           console.error('[DesignLab 5.0] ❌ fabric.Image is not available!');
           return;
         }
-
-        // 新图片加载成功后，再移除旧图片（用多重条件兜底，防止 Fabric.js v6 name 丢失）
         const oldProductImages = canvas.getObjects().filter((obj: any) =>
           obj.name === 'product-image-base' ||
-          obj.data?.layerType === 'product-image' ||
-          (obj as any).name === 'product-image-base'
+          obj.data?.layerType === 'product-image'
         );
         if (oldProductImages.length > 0) {
           canvas.remove(...oldProductImages);
         }
 
         const fabricImg = new fabric.Image(imgElement);
+        if (!fabricCanvasRef.current) return;
 
-        if (!fabricCanvasRef.current) {
-          return;
-        }
-
-        console.log('[DesignLab 5.0] ✅ Fabric image created:', {
-          fabricWidth: fabricImg.width,
-          fabricHeight: fabricImg.height,
-        });
-
-        // 缩放图片以适应 canvas（现在 canvas 也是 1200，比例应该是 1）
         const scale = Math.max(
           CANVAS_WIDTH / (fabricImg.width || 1),
           CANVAS_HEIGHT / (fabricImg.height || 1)
         );
-
-        console.log('[DesignLab 5.0] Image scale factors:', {
-          canvasW: CANVAS_WIDTH,
-          imgW: fabricImg.width,
-          calculatedScale: scale
-        });
-
         fabricImg.set({
           left: CANVAS_WIDTH / 2,
           top: CANVAS_HEIGHT / 2,
@@ -1574,55 +1522,92 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           selectable: false,
           evented: false,
         });
-        // Fabric.js v6: direct assignment ensures custom props are accessible as obj.name / obj.data
         (fabricImg as any).name = 'product-image-base';
         (fabricImg as any).data = { layerType: 'product-image', zIndex: 0 };
-        // excludeFromExport prevents this object from entering the Zustand store via serializeCanvas
         (fabricImg as any).excludeFromExport = true;
 
-        // Apply tinting filter if requested
         if (tintColor && tintColor.toLowerCase() !== '#ffffff') {
-          console.log('[DesignLab 5.0] Applying tint filter:', tintColor);
           fabricImg.filters.push(new (fabric as any).filters.BlendColor({
             color: tintColor,
             mode: 'multiply',
-            alpha: 1.0
+            alpha: 1.0,
           }));
           fabricImg.applyFilters();
         }
 
-        console.log('[DesignLab 5.0] Adding image to canvas...');
         fabricCanvasRef.current.add(fabricImg);
 
-        // 使用 sendObjectToBack 方法将图片置于底层
         if (typeof (fabricCanvasRef.current as any).sendObjectToBack === 'function') {
           (fabricCanvasRef.current as any).sendObjectToBack(fabricImg);
         } else if (typeof (fabricCanvasRef.current as any).sendToBack === 'function') {
           (fabricCanvasRef.current as any).sendToBack(fabricImg);
         } else {
           const objects = fabricCanvasRef.current.getObjects();
-          const index = objects.indexOf(fabricImg);
-          if (index > 0) {
-            fabricCanvasRef.current.moveObjectTo(fabricImg, 0);
-          }
+          const idx = objects.indexOf(fabricImg);
+          if (idx > 0) fabricCanvasRef.current.moveObjectTo(fabricImg, 0);
         }
-
-        // 强制渲染
         fabricCanvasRef.current.renderAll();
-
+        console.log('[DesignLab 5.0] ✅ Product image mounted on canvas');
       } catch (err: any) {
         console.error('[DesignLab 5.0] Failed to create fabric image:', err);
       }
     };
 
-    imgElement.onerror = (err) => {
-      console.error('[DesignLab 5.0] ❌ Failed to load product image:', err);
-      // 如果代理失败，可以尝试直接加载（虽然可能会有 CORS 问题，但作为最后的尝试）
-      if (imgElement.src.startsWith('/_next/image')) {
-        console.warn('[DesignLab 5.0] Proxy failed, falling back to direct URL (CORS risk)...');
-        // 注意：这里可能会无限递归，所以要小心。真正的实现应该在递归调用时传递标志。
-        // 为简单起见，这里不再递归，只是记录错误。旧图片会被保留。
-      }
+    // Two-stage load: proxy first (for CORS safety), direct URL as fallback.
+    // Aborting is done by setting imgElement.src = '' before starting the next attempt.
+    const loadDirect = () => {
+      const img = new window.Image();
+      // No crossOrigin on fallback — avoids CORS rejection for hosts without CORS headers.
+      // The canvas background is excluded from export so canvas taint doesn't affect print output.
+      img.src = imageUrl;
+      let settled = false;
+      const tid = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        img.src = '';
+        console.error('[DesignLab 5.0] ❌ Direct image load timeout (12s):', imageUrl);
+      }, 12000);
+      img.onload = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(tid);
+        console.log('[DesignLab 5.0] ✅ Loaded via direct URL');
+        mountImage(img);
+      };
+      img.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(tid);
+        console.error('[DesignLab 5.0] ❌ Direct URL also failed:', imageUrl);
+      };
+    };
+
+    const proxiedUrl = `/_next/image?url=${encodeURIComponent(imageUrl)}&w=1200&q=80`;
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.src = proxiedUrl;
+    let settled = false;
+    // 8s proxy timeout — much shorter than the old 15s so we fall back quickly on Cloud Run
+    const tid = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      img.src = ''; // abort in-flight request
+      console.warn('[DesignLab 5.0] Proxy timeout (8s), falling back to direct URL:', imageUrl);
+      loadDirect();
+    }, 8000);
+    img.onload = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(tid);
+      console.log('[DesignLab 5.0] ✅ Loaded via /_next/image proxy');
+      mountImage(img);
+    };
+    img.onerror = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(tid);
+      console.warn('[DesignLab 5.0] Proxy error, falling back to direct URL:', imageUrl);
+      loadDirect();
     };
   };
 

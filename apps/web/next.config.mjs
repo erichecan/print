@@ -364,7 +364,7 @@ const nextConfig = {
     unoptimized:
       process.env.NEXT_IMAGE_UNOPTIMIZED === 'true' ||
       process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
-    formats: ['image/avif', 'image/webp'], // [2025-01-27 14:20:00] 支持现代图片格式
+    formats: ['image/webp'], // AVIF removed: transcoding too slow on Cloud Run 0.5 CPU (30-60s)
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // [2025-01-27 14:20:00] 响应式图片尺寸
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // [2025-01-27 14:20:00] 图片尺寸配置
     remotePatterns,
