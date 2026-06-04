@@ -68,7 +68,7 @@ export function MilestoneBar() {
               className="text-xs font-semibold"
               style={{ color: step.status === 'future' ? '#B0B0B0' : '#04954A' }}
             >
-              ¥{step.amount}
+              CA${step.amount}
             </p>
           </div>
         ))}

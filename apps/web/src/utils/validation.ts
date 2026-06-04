@@ -33,13 +33,23 @@ export function validateUSPostalCode(postalCode: string): boolean {
 }
 
 /**
- * 验证电话号码（支持北美格式）
+ * 验证加拿大/北美电话号码
+ * 规则：去掉非数字后共 10 位（或带 1 的 11 位）
+ *   - 区号首位必须为 2-9（不能是 0 或 1）
+ *   - 局号首位必须为 2-9
+ * 合法示例：(416) 555-1234、1-800-555-0199、+1 604 123 4567
  */
 export function validatePhone(phone: string): boolean {
-  // 移除所有非数字字符
-  const digitsOnly = phone.replace(/\D/g, '');
-  // 北美电话号码：10-11 位数字
-  return digitsOnly.length >= 10 && digitsOnly.length <= 11;
+  const digits = phone.replace(/\D/g, '');
+  let local = digits;
+  if (digits.length === 11) {
+    if (digits[0] !== '1') return false;
+    local = digits.slice(1);
+  }
+  if (local.length !== 10) return false;
+  // 区号首位 2-9，局号首位 2-9
+  if (local[0] < '2' || local[3] < '2') return false;
+  return true;
 }
 
 /**
@@ -126,12 +136,13 @@ export function formatCanadianPostalCode(postalCode: string): string {
 }
 
 /**
- * 格式化电话号码
+ * 格式化加拿大电话号码为 (XXX) XXX-XXXX
  */
 export function formatPhoneNumber(phone: string): string {
-  const digitsOnly = phone.replace(/\D/g, '');
-  if (digitsOnly.length === 10) {
-    return `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`;
+  const digits = phone.replace(/\D/g, '');
+  const local = digits.length === 11 && digits[0] === '1' ? digits.slice(1) : digits;
+  if (local.length === 10) {
+    return `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(6)}`;
   }
   return phone;
 }

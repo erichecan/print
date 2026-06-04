@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:3001';
 const REF_STORAGE_KEY = 'referral_ref';
 
 const HOW_STEPS = [
@@ -13,23 +14,40 @@ const HOW_STEPS = [
   { icon: '💸', title: '你立刻获得返现', desc: '每邀一位好友，阶梯返现到账' },
 ];
 
-const TIER_ITEMS = [
-  { tier: '第 1 位', amount: '¥200', label: '到账' },
-  { tier: '第 2 位', amount: '¥400', label: '到账' },
-  { tier: '第 3 位', amount: '¥800', label: '到账' },
-];
+interface CampaignConfig {
+  isActive: boolean;
+  cap: number;
+  tierAmounts: [number, number, number];
+}
+
+const DEFAULT_CAMPAIGN: CampaignConfig = { isActive: true, cap: 3, tierAmounts: [200, 400, 800] };
 
 function ReferralLandingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const ref = searchParams?.get('ref');
+  const [campaign, setCampaign] = useState<CampaignConfig>(DEFAULT_CAMPAIGN);
 
   useEffect(() => {
     if (ref && typeof window !== 'undefined') {
       sessionStorage.setItem(REF_STORAGE_KEY, ref);
     }
   }, [ref]);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/referral/campaign`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setCampaign(data); })
+      .catch(() => {});
+  }, []);
+
+  const maxTotal = campaign.tierAmounts.slice(0, campaign.cap).reduce((a, b) => a + b, 0);
+  const tierItems = campaign.tierAmounts.slice(0, campaign.cap).map((amount, i) => ({
+    tier: `第 ${i + 1} 位`,
+    amount: `CA$${amount}`,
+    label: '到账',
+  }));
 
   const handleAction = () => {
     if (ref) {
@@ -58,7 +76,7 @@ function ReferralLandingContent() {
         <h1 className="text-2xl font-bold mb-2">邀请好友，一起赚返现</h1>
         <p className="text-white/80 text-sm leading-relaxed">
           每成功邀请一位好友下单<br />
-          最多返现 <span className="font-bold text-white">¥1400</span>，相当于免费拿到一套印刷服务
+          最多返现 <span className="font-bold text-white">CA${maxTotal}</span>，相当于免费拿到一套印刷服务
         </p>
       </div>
 
@@ -94,7 +112,7 @@ function ReferralLandingContent() {
         <div className="bg-white rounded-2xl p-5">
           <p className="text-sm font-semibold text-[#1a1a1a] mb-4">阶梯返现规则</p>
           <div className="flex gap-2">
-            {TIER_ITEMS.map((item, i) => (
+            {tierItems.map((item, i) => (
               <div
                 key={i}
                 className="flex-1 flex flex-col items-center gap-1 bg-[#F5F5F5] rounded-xl py-4"
@@ -108,7 +126,7 @@ function ReferralLandingContent() {
             ))}
           </div>
           <p className="text-xs text-center text-[#888] mt-3">
-            合计最多返现 <strong className="text-[#04954A]">¥1400</strong> · 每位好友须完成付款
+            合计最多返现 <strong className="text-[#04954A]">CA${maxTotal}</strong> · 每位好友须完成付款
           </p>
         </div>
 

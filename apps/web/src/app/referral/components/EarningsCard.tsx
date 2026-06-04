@@ -21,7 +21,7 @@ export function EarningsCard() {
     <div className="bg-[#07C160] rounded-2xl p-6 text-white">
       <p className="text-white/80 text-sm mb-1">累计已返现</p>
       <p className="text-4xl font-bold mb-1">
-        ¥{walletBalance.toFixed(0)}
+        CA${walletBalance.toFixed(0)}
       </p>
       <p className="text-white/70 text-xs">
         {isComplete

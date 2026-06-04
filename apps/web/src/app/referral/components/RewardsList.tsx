@@ -23,7 +23,7 @@ function RewardRow({ tx, index }: { tx: Transaction; index: number }) {
         <p className="text-xs text-[#888]">{date}</p>
       </div>
       <div className="text-right">
-        <p className="text-sm font-bold" style={{ color: TEXT_GREEN }}>+¥{tx.amount}</p>
+        <p className="text-sm font-bold" style={{ color: TEXT_GREEN }}>+CA${tx.amount}</p>
         <span className="inline-block text-xs bg-[#E8F8EE] rounded-full px-2 py-0.5" style={{ color: TEXT_GREEN }}>
           已到账
         </span>
@@ -62,11 +62,11 @@ export function RewardsList() {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white rounded-2xl p-4">
           <p className="text-xs text-[#888] mb-1">已到账</p>
-          <p className="text-2xl font-bold" style={{ color: TEXT_GREEN }}>¥{walletBalance.toFixed(0)}</p>
+          <p className="text-2xl font-bold" style={{ color: TEXT_GREEN }}>CA${walletBalance.toFixed(0)}</p>
         </div>
         <div className="bg-white rounded-2xl p-4">
           <p className="text-xs text-[#888] mb-1">待审核</p>
-          <p className="text-2xl font-bold text-[#B45309]">¥{pending}</p>
+          <p className="text-2xl font-bold text-[#B45309]">CA${pending}</p>
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export function RewardsList() {
         <div className="flex justify-between items-center mb-2">
           <p className="text-xs text-[#888]">累计进度</p>
           <p className="text-xs font-medium" style={{ color: TEXT_GREEN }}>
-            ¥{walletBalance} / ¥{maxTotal}
+            CA${walletBalance} / CA${maxTotal}
           </p>
         </div>
         <div className="h-2 bg-[#F0F0F0] rounded-full overflow-hidden">
@@ -87,7 +87,7 @@ export function RewardsList() {
         <p className="text-xs text-[#888] mt-2 text-center">
           {walletBalance >= maxTotal
             ? '🎉 已完成全部返现'
-            : `还差 ¥${maxTotal - walletBalance} 可领满额返现`}
+            : `还差 CA$${maxTotal - walletBalance} 可领满额返现`}
         </p>
       </div>
 

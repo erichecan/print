@@ -8,6 +8,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import useSWR from 'swr';
 import { productsApi } from '@/lib/api';
+import { useToast } from '@/hooks/useToast';
 import { Breadcrumb } from './Breadcrumb';
 import { Gallery } from './Gallery';
 import { BuyBox } from './BuyBox';
@@ -29,6 +30,7 @@ export function ProductDetail() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const slug = params?.slug as string;
+  const { success: showSuccess, error: showError } = useToast();
 
   // 从 API 获取产品数据
   const { data: apiProduct, error, isLoading } = useSWR(
@@ -151,15 +153,11 @@ export function ProductDetail() {
       // 触发购物车更新事件，让 CartContext 自动刷新
       window.dispatchEvent(new CustomEvent('cart:updated'));
       console.log('[Add to Cart] ✅ Cart update event dispatched');
+      showSuccess('已加入购物车！');
       console.log('[Add to Cart] ===== SUCCESS =====');
     } catch (error: any) {
       console.error('[Add to Cart] ❌ API Error:', error);
-      console.error('[Add to Cart] Error details:', {
-        message: error?.message,
-        stack: error?.stack,
-        response: error?.response
-      });
-      alert(`Failed to add to cart: ${error?.message || 'Unknown error'}. Please try again.`);
+      showError(`加入购物车失败：${error?.message || '未知错误'}`);
       console.log('[Add to Cart] ===== FAILED =====');
     }
   }, [apiProduct]);
@@ -230,11 +228,7 @@ export function ProductDetail() {
       console.log('[Buy Now] ===== SUCCESS =====');
     } catch (error: any) {
       console.error('[Buy Now] ❌ Error:', error);
-      console.error('[Buy Now] Error details:', {
-        message: error?.message,
-        stack: error?.stack
-      });
-      alert(`Failed to process your request: ${error?.message || 'Unknown error'}. Please try again.`);
+      showError(`结账失败：${error?.message || '未知错误'}`);
       console.log('[Buy Now] ===== FAILED =====');
     }
   }, [router, apiProduct]);

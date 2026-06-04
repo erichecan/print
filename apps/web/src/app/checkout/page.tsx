@@ -24,7 +24,7 @@ import {
   paymentMethodsApi,
   PaymentMethod,
 } from '@/lib/api';
-import { validateAddressForm, formatCanadianPostalCode, formatPhoneNumber } from '@/utils/validation';
+import { validateAddressForm, validatePhone, formatCanadianPostalCode, formatPhoneNumber } from '@/utils/validation';
 import { useToast } from '@/hooks/useToast'; // Toast 通知
 import { mapStripeError } from '@/utils/stripeErrorMapping'; // Stripe error mapping
 import { getStripe, isStripeConfigured } from '@/lib/stripe'; // 使用统一的 Stripe 初始化
@@ -378,6 +378,7 @@ function CheckoutForm({
       address.fullName.trim().length > 0 &&
       address.email.trim().length > 0 &&
       address.phone.trim().length > 0 &&
+      validatePhone(address.phone) &&
       address.addressLine1.trim().length > 0 &&
       address.city.trim().length > 0 &&
       address.province.trim().length > 0 &&
@@ -388,7 +389,7 @@ function CheckoutForm({
     const addressFields = {
       fullName: address.fullName.trim().length > 0,
       email: address.email.trim().length > 0,
-      phone: address.phone.trim().length > 0,
+      phone: address.phone.trim().length > 0 && validatePhone(address.phone),
       addressLine1: address.addressLine1.trim().length > 0,
       city: address.city.trim().length > 0,
       province: address.province.trim().length > 0,
@@ -632,10 +633,10 @@ function CheckoutForm({
     const validationErrors: string[] = [...addressValidation.errors];
     const missing: string[] = [];
 
-    // 标记缺失的字段
+    // 标记缺失或格式错误的字段
     if (!address.fullName.trim()) missing.push('shipping.fullName');
     if (!address.email.trim()) missing.push('shipping.email');
-    if (!address.phone.trim()) missing.push('shipping.phone');
+    if (!address.phone.trim() || !validatePhone(address.phone)) missing.push('shipping.phone');
     if (!address.addressLine1.trim()) missing.push('shipping.addressLine1');
     if (!address.city.trim()) missing.push('shipping.city');
     if (!address.province.trim()) missing.push('shipping.province');
@@ -964,23 +965,24 @@ function CheckoutForm({
           id="phone"
           type="tel"
           required
-          placeholder="(123) 456-7890"
+          placeholder="(416) 555-1234"
           className={`field-input${missingFields.includes('shipping.phone') ? ' is-error' : ''}`}
           value={address.phone}
           onChange={(event) => {
-            let value = event.target.value;
-            // 自动格式化电话号码（可选，用户输入时保持灵活）
-            // 只在失去焦点时格式化
-            setAddress({ ...address, phone: value });
+            setAddress({ ...address, phone: event.target.value });
           }}
           onBlur={(event) => {
-            // 失去焦点时格式化电话号码
             const formatted = formatPhoneNumber(event.target.value);
             if (formatted !== event.target.value) {
               setAddress({ ...address, phone: formatted });
             }
           }}
         />
+        {address.phone.trim().length > 0 && !validatePhone(address.phone) && (
+          <p style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px' }}>
+            Please enter a valid Canadian phone number, e.g. (416) 555-1234
+          </p>
+        )}
       </div>
 
       <div className="form-group">
@@ -1413,20 +1415,23 @@ function CheckoutForm({
         )}
       </div>
 
+      {/* 当按钮不可用时，显示具体原因 */}
+      {(!addressReady || shippingRates.length === 0 || !cardComplete) && !isSubmitting && !isFetchingRates && !isCalculatingTotals && stripe && (
+        <p style={{ color: '#dc2626', fontSize: '13px', marginBottom: '8px', textAlign: 'center' }}>
+          {!addressReady
+            ? address.phone.trim().length > 0 && !validatePhone(address.phone)
+              ? '⚠️ Please enter a valid Canadian phone number (scroll up to the Phone field)'
+              : '⚠️ Please complete all required shipping address fields'
+            : shippingRates.length === 0
+              ? '⚠️ Shipping rates unavailable — please check your address'
+              : '⚠️ Please complete your card details'}
+        </p>
+      )}
+
       <button
         type="submit"
         disabled={!stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete || !addressReady || !selectedShipping || shippingRates.length === 0}
         className="btn-primary"
-        title={
-          !stripe ? 'Stripe is loading...' :
-            isSubmitting ? 'Submitting order...' :
-              isFetchingRates ? 'Loading shipping rates...' :
-                isCalculatingTotals ? 'Calculating totals...' :
-                  !addressReady ? 'Please complete shipping address' :
-                    !selectedShipping || shippingRates.length === 0 ? 'Please select a shipping method' :
-                      !cardComplete ? 'Please complete card details' :
-                        undefined
-        }
       >
         {isSubmitting ? (
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

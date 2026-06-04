@@ -25,7 +25,7 @@ function FriendRow({ tx, index }: { tx: Transaction; index: number }) {
         <p className="text-xs text-[#888]">{date} · 下单成功</p>
       </div>
       <div className="text-right">
-        <p className="text-sm font-semibold" style={{ color: TEXT_GREEN }}>+¥{tx.amount}</p>
+        <p className="text-sm font-semibold" style={{ color: TEXT_GREEN }}>+CA${tx.amount}</p>
         <span className="inline-block text-xs bg-[#E8F8EE] rounded-full px-2 py-0.5" style={{ color: TEXT_GREEN }}>
           已到账
         </span>

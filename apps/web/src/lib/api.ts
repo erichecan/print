@@ -298,9 +298,16 @@ export async function api<T>(endpoint: string, options: ApiOptions = {}): Promis
     requestUrl = `${baseUrl}/api/proxy${endpoint}`;
   } else {
     // 不需要代理，直接使用 API_BASE_URL
-    requestUrl = `${API_BASE_URL}${endpoint}`;
+    // 修复：开发环境中使用与页面相同的主机名，避免 127.0.0.1 vs localhost 跨站 cookie 问题
+    // SameSite=Lax cookie 在跨站 fetch 中不会发送，导致每次请求产生不同 sessionId
+    let effectiveBaseUrl = API_BASE_URL;
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      effectiveBaseUrl = `http://${host}:3001/api`;
+    }
+    requestUrl = `${effectiveBaseUrl}${endpoint}`;
     if (process.env.NODE_ENV === 'development') {
-      console.log('[API Debug] requestUrl:', requestUrl, 'API_BASE_URL:', API_BASE_URL, 'endpoint:', endpoint);
+      console.log('[API Debug] requestUrl:', requestUrl, 'effectiveBaseUrl:', effectiveBaseUrl, 'endpoint:', endpoint);
     }
   }
 
