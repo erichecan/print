@@ -424,6 +424,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
       if (!productInfo.productId && !defaultLoadingRef.current) {
         defaultLoadingRef.current = true;
+        console.log(`[DesignLab TIMING] ⏱ PAGE_LOAD_START — t=${Math.round(performance.now())}ms since navigation`);
         console.log('[DesignLab init] starting default tee load');
         handleProductSelect('design-lab-default-tee')
           .catch((err: any) => {
@@ -962,6 +963,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // 5.0 Version: Handle product selection from catalog (Simplified V5)
   const handleProductSelect = async (productId: string) => {
+    const _t0 = performance.now();
+    console.log(`[DesignLab TIMING] ⏱ handleProductSelect START — productId=${productId} | t=0ms`);
     console.log('[DesignLab 5.0] Selected product ID from catalog:', productId);
     setIsCatalogModalOpen(false);
 
@@ -969,6 +972,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       // Fetch product detail (supports both slug and variantId via getProduct)
       // Fix: Use getProduct which handles slug -> id mapping correctly
       let productDetail = await getProduct(productId);
+      console.log(`[DesignLab TIMING] ⏱ getProduct() resolved — elapsed=${Math.round(performance.now()-_t0)}ms`);
 
       // If slug lookup returned no variantId/colorDetails, re-fetch via a specific variant
       // to get color-specific baseImages and full colorDetails (same as entering via product detail page)
@@ -979,7 +983,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             (v) => v.color?.toLowerCase() === 'white'
           );
           const targetVariantId = (whiteVariant ?? productDetail.variants[0]).id;
+          console.log(`[DesignLab TIMING] ⏱ calling getProductByVariant(${targetVariantId}) — elapsed=${Math.round(performance.now()-_t0)}ms`);
           productDetail = await getProductByVariant(targetVariantId);
+          console.log(`[DesignLab TIMING] ⏱ getProductByVariant() resolved — elapsed=${Math.round(performance.now()-_t0)}ms`);
         } catch (e) {
           // Fall through with partial data from slug lookup
         }
@@ -994,6 +1000,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           ? getDefaultProductBaseImages(color)
           : rawBaseImages;
 
+        console.log(`[DesignLab TIMING] ⏱ product data ready, building productInfo — elapsed=${Math.round(performance.now()-_t0)}ms`);
         console.log('[DesignLab 5.0] Adding NEW product:', {
           name: productDetail.productName,
           color,
@@ -1036,6 +1043,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         }
 
         // 2. Set as active
+        console.log(`[DesignLab TIMING] ⏱ setProductInfo() called — elapsed=${Math.round(performance.now()-_t0)}ms`);
         setProductInfo(newProductInfo);
 
         // 3. Design Inheritance:
@@ -1484,6 +1492,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
+    const _imgT0 = performance.now();
+    console.log(`[DesignLab TIMING] ⏱ addProductImageToCanvas START — t=${Math.round(_imgT0)}ms since navigation`);
     console.log('[DesignLab 5.0] addProductImageToCanvas called:', { imageUrl });
 
     const fabric = fabricRef.current;
@@ -1547,6 +1557,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           if (idx > 0) fabricCanvasRef.current.moveObjectTo(fabricImg, 0);
         }
         fabricCanvasRef.current.renderAll();
+        console.log(`[DesignLab TIMING] ⏱ mountImage DONE (canvas rendered) — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas`);
         console.log('[DesignLab 5.0] ✅ Product image mounted on canvas');
       } catch (err: any) {
         console.error('[DesignLab 5.0] Failed to create fabric image:', err);
@@ -1555,7 +1566,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
     // Two-stage load: proxy first (for CORS safety), direct URL as fallback.
     // Aborting is done by setting imgElement.src = '' before starting the next attempt.
-    const loadDirect = () => {
+    const loadDirect = (_directT0?: number) => {
+      const _dStart = performance.now();
+      console.log(`[DesignLab TIMING] ⏱ loadDirect START — elapsed=${Math.round(_dStart-_imgT0)}ms from addProductImageToCanvas`);
       const img = new window.Image();
       // No crossOrigin on fallback — avoids CORS rejection for hosts without CORS headers.
       // The canvas background is excluded from export so canvas taint doesn't affect print output.
@@ -1565,12 +1578,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         if (settled) return;
         settled = true;
         img.src = '';
+        console.error(`[DesignLab TIMING] ⏱ loadDirect TIMEOUT (12s) — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas`);
         console.error('[DesignLab 5.0] ❌ Direct image load timeout (12s):', imageUrl);
       }, 12000);
       img.onload = () => {
         if (settled) return;
         settled = true;
         clearTimeout(tid);
+        console.log(`[DesignLab TIMING] ⏱ loadDirect onload — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas (direct took ${Math.round(performance.now()-_dStart)}ms)`);
         console.log('[DesignLab 5.0] ✅ Loaded via direct URL');
         mountImage(img);
       };
@@ -1578,11 +1593,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         if (settled) return;
         settled = true;
         clearTimeout(tid);
+        console.error(`[DesignLab TIMING] ⏱ loadDirect ERROR — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas`);
         console.error('[DesignLab 5.0] ❌ Direct URL also failed:', imageUrl);
       };
     };
 
     const proxiedUrl = `/_next/image?url=${encodeURIComponent(imageUrl)}&w=1200&q=80`;
+    const _proxyStart = performance.now();
+    console.log(`[DesignLab TIMING] ⏱ proxy request START — elapsed=${Math.round(_proxyStart-_imgT0)}ms from addProductImageToCanvas | url=${proxiedUrl.substring(0,80)}`);
     const img = new window.Image();
     img.crossOrigin = 'anonymous';
     img.src = proxiedUrl;
@@ -1592,6 +1610,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       if (settled) return;
       settled = true;
       img.src = ''; // abort in-flight request
+      console.warn(`[DesignLab TIMING] ⏱ proxy TIMEOUT (8s) — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas`);
       console.warn('[DesignLab 5.0] Proxy timeout (8s), falling back to direct URL:', imageUrl);
       loadDirect();
     }, 8000);
@@ -1599,6 +1618,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       if (settled) return;
       settled = true;
       clearTimeout(tid);
+      console.log(`[DesignLab TIMING] ⏱ proxy onload — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas (proxy took ${Math.round(performance.now()-_proxyStart)}ms)`);
       console.log('[DesignLab 5.0] ✅ Loaded via /_next/image proxy');
       mountImage(img);
     };
@@ -1606,6 +1626,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       if (settled) return;
       settled = true;
       clearTimeout(tid);
+      console.warn(`[DesignLab TIMING] ⏱ proxy ERROR — elapsed=${Math.round(performance.now()-_imgT0)}ms from addProductImageToCanvas, falling back to direct`);
       console.warn('[DesignLab 5.0] Proxy error, falling back to direct URL:', imageUrl);
       loadDirect();
     };
@@ -3189,6 +3210,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
+    console.log(`[DesignLab TIMING] ⏱ image-load useEffect fired — t=${Math.round(performance.now())}ms since navigation`);
     console.log('[DesignLab 5.0] Loading product image:', {
       currentView,
       url: imageUrl.substring(0, 60) + '...',
