@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { MobileFilterDrawer } from '@/components/products/MobileFilterDrawer';
 import { Pagination } from '@/components/ui/Pagination';
 import SortSelect from './SortSelect';
@@ -99,12 +98,15 @@ const ProductCard: React.FC<{ product: Product; index: number }> = ({ product, i
     return (
         <Link href={`/products/${product.slug}`} className="m-product-card">
             <div className="m-product-image-section">
-                <Image
+                {/* Direct <img> — bypasses /_next/image proxy which times out on Cloud Run 0.5 CPU */}
+                <img
                     src={img}
                     alt={product.name}
-                    fill
                     className="m-product-image"
-                    sizes="171px"
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      console.error(`[Products TIMING] ❌ mobile img error — ${(e.target as HTMLImageElement).src}`);
+                    }}
                 />
                 {badge && <div className="m-product-card-badge">{badge}</div>}
                 <div className="m-product-eco-icon">

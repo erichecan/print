@@ -6,10 +6,9 @@
 * 重新设计产品卡片以匹配参考设计，包含标签、颜色选择器、评分等
 * 添加颜色悬停切换图片功能
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
-import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api-config';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Pagination } from '@/components/ui/Pagination'; // 分页组件
@@ -100,8 +99,26 @@ export default function ProductsClient({
   // 开发阶段允许无库存商品也显示
   apiUrl.searchParams.set('includeOutOfStock', 'true');
 
+  const fetchStartRef = useRef<number>(performance.now());
+  const fetchLoggedRef = useRef(false);
+
   const { data, error, isLoading } = useSWR<ProductsResponse>(apiUrl.toString(), fetcher);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (data && !fetchLoggedRef.current) {
+      fetchLoggedRef.current = true;
+      const elapsed = (performance.now() - fetchStartRef.current).toFixed(0);
+      console.log(`[Products TIMING] ✅ SWR fetch complete — ${elapsed}ms, products=${data.data?.length ?? 0}, url=${apiUrl.toString().slice(-80)}`);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (error) {
+      const elapsed = (performance.now() - fetchStartRef.current).toFixed(0);
+      console.error(`[Products TIMING] ❌ SWR fetch ERROR — ${elapsed}ms`, error);
+    }
+  }, [error]);
 
   // Batch-fetch promotions for all visible products in a single request
   const productIds = data?.data?.map((p) => p.id) || [];
@@ -341,12 +358,15 @@ export default function ProductsClient({
             <article key={product.id} className="product-card-new">
               <Link href={`/products/${product.slug}`} className="product-card-new__image-link">
                 <div className="product-card-new__image">
-                  <Image
+                  {/* Direct <img> — bypasses /_next/image proxy which times out on Cloud Run 0.5 CPU */}
+                  <img
                     src={img}
                     alt={alt || product.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 320px"
-                    style={{ objectFit: 'cover', transition: 'opacity 0.3s ease-in-out' }}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.3s ease-in-out' }}
+                    onError={(e) => {
+                      const src = (e.target as HTMLImageElement).src;
+                      console.error(`[Products TIMING] ❌ img 404/error — ${src}`);
+                    }}
                   />
                   {/* 显示促销活动标签 */}
                   {bestPromotion && (
