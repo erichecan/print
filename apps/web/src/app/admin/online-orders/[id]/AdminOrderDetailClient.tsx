@@ -85,12 +85,13 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   // Load shipping rates
   const loadShippingRates = async () => {
     if (!data) return;
-    const blockedStatuses = ['PENDING_REVIEW', 'IN_REVIEW', 'REJECTED'];
-    if ((data as any).designReviewStatus && blockedStatuses.includes((data as any).designReviewStatus)) {
-      const labels: Record<string, string> = { PENDING_REVIEW: '待审核', IN_REVIEW: '审核中', REJECTED: '设计稿已退回' };
-      setMessage(`无法购买面单：订单包含待审核设计稿（${labels[(data as any).designReviewStatus] ?? (data as any).designReviewStatus}），请先完成设计审核。`);
-      return;
-    }
+    // [已废弃] 设计审核流程已简化，付款后订单直接进入生产，不再阻止物流
+    // const blockedStatuses = ['PENDING_REVIEW', 'IN_REVIEW', 'REJECTED'];
+    // if ((data as any).designReviewStatus && blockedStatuses.includes((data as any).designReviewStatus)) {
+    //   const labels: Record<string, string> = { PENDING_REVIEW: '待审核', IN_REVIEW: '审核中', REJECTED: '设计稿已退回' };
+    //   setMessage(`无法购买面单：订单包含待审核设计稿（${labels[(data as any).designReviewStatus] ?? (data as any).designReviewStatus}），请先完成设计审核。`);
+    //   return;
+    // }
     setLoadingRates(true);
     try {
       const ratesData = await adminOrdersApi.getShippingRates(data.id);
@@ -347,24 +348,11 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             </div>
           </div>
 
-          {/* Design Review section */}
-          {(orderAny?.designReviewStatus || orderAny?.mockupUrl) && (
+          {/* 设计稿 / 生产单 section */}
+          {(orderAny?.mockupUrl || orderAny?.printSpecs?.positions?.length > 0 || (order.items || []).some((i: any) => i.designThumbnailUrl)) && (
             <div className="admin-form" style={{ marginBottom: 16 }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                设计审核
-                {orderAny.designReviewStatus && (
-                  <span style={{
-                    padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700,
-                    background: orderAny.designReviewStatus === 'SYNCED' ? '#D1FAE5' :
-                                orderAny.designReviewStatus === 'REJECTED' ? '#FEE2E2' :
-                                orderAny.designReviewStatus === 'IN_REVIEW' ? '#DBEAFE' : '#FEF3C7',
-                    color:  orderAny.designReviewStatus === 'SYNCED' ? '#065F46' :
-                            orderAny.designReviewStatus === 'REJECTED' ? '#991B1B' :
-                            orderAny.designReviewStatus === 'IN_REVIEW' ? '#1E40AF' : '#92400E',
-                  }}>
-                    {{ PENDING_REVIEW: '待审核', IN_REVIEW: '审核中', SYNCED: '已同步', REJECTED: '已退回' }[orderAny.designReviewStatus as string] || orderAny.designReviewStatus}
-                  </span>
-                )}
+                设计稿 / 生产单
               </h3>
               <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 {/* 已同步 mockup 预览 */}
@@ -413,7 +401,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                         </Link>
                       );
                     })()}
-                    {orderAny.designReviewStatus === 'SYNCED' && orderAny.mockupUrl && (
+                    {(orderAny.printSpecs?.positions?.length > 0 || orderAny.mockupUrl) && (
                       <Link
                         href={`/admin/online-orders/${data?.id}/gang-sheet`}
                         className="btn"

@@ -5,6 +5,7 @@
 
 export type GarmentType =
   | 'tshirt'
+  | 'tshirt_women'
   | 'vneck'
   | 'hoodie'
   | 'crewneck'
@@ -21,13 +22,18 @@ export interface AreaConfig {
   y: number;
   width: number;
   height: number;
+  // Physical print dimensions at L-size. Used for operator reference on gang sheets.
+  // Source of truth: actual garment measurements (not derived from canvas pixels).
+  physicalWidthIn?: number;
+  physicalHeightIn?: number;
 }
 
 export type ViewAreaMap = Partial<Record<ViewKey, AreaConfig>>;
 
 // Human-readable labels for the admin dropdown
 export const GARMENT_TYPE_LABELS: Record<GarmentType, string> = {
-  tshirt: 'T-Shirt (Adult)',
+  tshirt: 'T-Shirt (男款 Adult)',
+  tshirt_women: 'T-Shirt (女款 Women)',
   vneck: 'V-Neck (Adult)',
   hoodie: 'Hoodie',
   crewneck: 'Crewneck Sweatshirt',
@@ -41,11 +47,20 @@ export const GARMENT_TYPE_LABELS: Record<GarmentType, string> = {
 export const GARMENT_TYPES = Object.keys(GARMENT_TYPE_LABELS) as GarmentType[];
 
 export const PRINTABLE_AREA_TEMPLATES: Record<GarmentType, ViewAreaMap> = {
+  // Measured on L-size: front/back = 16" × 22"
   tshirt: {
-    front: { x: 327, y: 240, width: 546, height: 960 },
-    back: { x: 327, y: 240, width: 546, height: 960 },
-    'left-sleeve': { x: 350, y: 470, width: 500, height: 500 },
+    front:  { x: 327, y: 240, width: 546, height: 960, physicalWidthIn: 16, physicalHeightIn: 22 },
+    back:   { x: 327, y: 240, width: 546, height: 960, physicalWidthIn: 16, physicalHeightIn: 22 },
+    'left-sleeve':  { x: 350, y: 470, width: 500, height: 500 },
     'right-sleeve': { x: 350, y: 470, width: 500, height: 500 },
+  },
+  // Measured on L-size: front/back = 15" × 20"
+  // Canvas pixels derived from men's scale: 15×34.1≈512, 20×43.6≈872
+  tshirt_women: {
+    front:  { x: 344, y: 284, width: 512, height: 872, physicalWidthIn: 15, physicalHeightIn: 20 },
+    back:   { x: 344, y: 284, width: 512, height: 872, physicalWidthIn: 15, physicalHeightIn: 20 },
+    'left-sleeve':  { x: 370, y: 490, width: 460, height: 460 },
+    'right-sleeve': { x: 370, y: 490, width: 460, height: 460 },
   },
   vneck: {
     // Neckline sits slightly lower; front area is shorter at the top

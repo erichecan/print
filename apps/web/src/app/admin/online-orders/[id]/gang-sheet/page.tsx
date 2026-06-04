@@ -71,6 +71,7 @@ export default function GangSheetPage({ params }: { params: { id: string } }) {
 
   const totalQty = (gs.items ?? []).reduce((s: number, it: any) => s + (it.quantity || 0), 0);
   const isMulti = totalQty > 1;
+  const isMultiFace = positions.length > 1;
   const firstItem = gs.items?.[0];
   const qrValue = `${gs.order?.orderNumber}|${gs.order?.trackingNumber ?? ''}`;
 
@@ -174,6 +175,14 @@ export default function GangSheetPage({ params }: { params: { id: string } }) {
             }}>
               {isMulti ? '多件' : '单件'}
             </span>
+            <span style={{
+              padding: '3px 10px', borderRadius: 20,
+              fontSize: 11, fontWeight: 700,
+              background: isMultiFace ? '#EDE9FE' : '#E0F2FE',
+              color: isMultiFace ? '#5B21B6' : '#0369A1',
+            }}>
+              {isMultiFace ? `多面 (${positions.length}面)` : '单面'}
+            </span>
             <MetaItem label="产品" value={firstItem?.productName || '—'} />
             <MetaItem label="颜色" value={firstItem?.color || '—'} />
             <MetaItem label="尺码" value={firstItem?.size || '—'} />
@@ -197,43 +206,82 @@ export default function GangSheetPage({ params }: { params: { id: string } }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, alignItems: 'flex-start' }}>
             {positions.map((pos: any, idx: number) => {
               const label = POSITION_LABELS[pos.position] ?? pos.position;
-              const wIn: number | null = pos.widthCm ?? null;
-              const hIn: number | null = pos.heightCm ?? null;
+              const wIn: number | null = pos.widthIn ?? pos.widthCm ?? null;
+              const hIn: number | null = pos.heightIn ?? pos.heightCm ?? null;
+              const hasMockup = pos.mockupImageUrl && pos.mockupImageUrl !== pos.artworkImageUrl;
 
               return (
                 <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-                  {/* 图稿：原始像素，不缩放 */}
-                  <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
-                    {pos.artworkImageUrl ? (
-                      <img
-                        src={pos.artworkImageUrl}
-                        alt={label}
-                        style={{
-                          display: 'block',
-                          maxWidth: 'none',
-                          border: '1px dashed #9CA3AF',
-                        }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: 200, height: 200,
-                        background: `repeating-conic-gradient(#E5E7EB 0% 25%, transparent 0% 50%) 0 0 / 12px 12px`,
-                        border: '1px dashed #9CA3AF',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 11, color: '#9CA3AF',
-                      }}>无图稿</div>
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    {/* 效果图（带底图），仅当与图稿不同时显示 */}
+                    {hasMockup && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+                          <img
+                            src={pos.mockupImageUrl}
+                            alt={`${label} 效果图`}
+                            style={{
+                              display: 'block',
+                              width: 120, height: 120,
+                              objectFit: 'contain',
+                              border: '1px solid #E5E7EB',
+                              borderRadius: 4,
+                              background: '#F9FAFB',
+                            }}
+                          />
+                          <div style={{
+                            position: 'absolute', top: 4, left: 4,
+                            width: 20, height: 20,
+                            background: 'rgba(0,0,0,0.65)', color: '#fff',
+                            borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 10, fontWeight: 700,
+                          }}>
+                            {idx + 1}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 9, color: '#9CA3AF' }}>效果图</span>
+                      </div>
                     )}
 
-                    {/* 序号角标 */}
-                    <div style={{
-                      position: 'absolute', top: 6, left: 6,
-                      width: 22, height: 22,
-                      background: 'rgba(0,0,0,0.7)', color: '#fff',
-                      borderRadius: '50%',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 11, fontWeight: 700,
-                    }}>
-                      {idx + 1}
+                    {/* 图稿：原始像素，不缩放（印刷文件） */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                      <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
+                        {pos.artworkImageUrl ? (
+                          <img
+                            src={pos.artworkImageUrl}
+                            alt={label}
+                            style={{
+                              display: 'block',
+                              maxWidth: 'none',
+                              border: '1px dashed #9CA3AF',
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: 200, height: 200,
+                            background: `repeating-conic-gradient(#E5E7EB 0% 25%, transparent 0% 50%) 0 0 / 12px 12px`,
+                            border: '1px dashed #9CA3AF',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, color: '#9CA3AF',
+                          }}>无图稿</div>
+                        )}
+
+                        {/* 序号角标（仅当没有单独效果图时显示） */}
+                        {!hasMockup && (
+                          <div style={{
+                            position: 'absolute', top: 6, left: 6,
+                            width: 22, height: 22,
+                            background: 'rgba(0,0,0,0.7)', color: '#fff',
+                            borderRadius: '50%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 11, fontWeight: 700,
+                          }}>
+                            {idx + 1}
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ fontSize: 9, color: '#9CA3AF' }}>印刷图稿</span>
                     </div>
                   </div>
 

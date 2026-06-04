@@ -20,18 +20,7 @@ interface Props {
   onChange: (view: CalibView, area: AreaRect) => void;
 }
 
-type Handle = 'move' | 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
-
-const HANDLES: { id: Handle; cursor: string; style: React.CSSProperties }[] = [
-  { id: 'nw', cursor: 'nw-resize', style: { top: -5, left: -5 } },
-  { id: 'n',  cursor: 'n-resize',  style: { top: -5, left: '50%', transform: 'translateX(-50%)' } },
-  { id: 'ne', cursor: 'ne-resize', style: { top: -5, right: -5 } },
-  { id: 'e',  cursor: 'e-resize',  style: { top: '50%', right: -5, transform: 'translateY(-50%)' } },
-  { id: 'se', cursor: 'se-resize', style: { bottom: -5, right: -5 } },
-  { id: 's',  cursor: 's-resize',  style: { bottom: -5, left: '50%', transform: 'translateX(-50%)' } },
-  { id: 'sw', cursor: 'sw-resize', style: { bottom: -5, left: -5 } },
-  { id: 'w',  cursor: 'w-resize',  style: { top: '50%', left: -5, transform: 'translateY(-50%)' } },
-];
+type Handle = 'move';
 
 const VIEW_LABELS: Record<CalibView, string> = {
   front: '正面',
@@ -118,44 +107,10 @@ export function PrintableAreaCalibrator({ imageUrls, areas, onChange }: Props) {
       const s = d.startArea;
       let { x, y, width, height } = s;
 
-      switch (d.handle) {
-        case 'move':
-          x = s.x + dx;
-          y = s.y + dy;
-          break;
-        case 'nw':
-          x = s.x + dx; y = s.y + dy;
-          width = s.width - dx; height = s.height - dy;
-          break;
-        case 'n':
-          y = s.y + dy; height = s.height - dy;
-          break;
-        case 'ne':
-          y = s.y + dy; width = s.width + dx; height = s.height - dy;
-          break;
-        case 'e':
-          width = s.width + dx;
-          break;
-        case 'se':
-          width = s.width + dx; height = s.height + dy;
-          break;
-        case 's':
-          height = s.height + dy;
-          break;
-        case 'sw':
-          x = s.x + dx; width = s.width - dx; height = s.height + dy;
-          break;
-        case 'w':
-          x = s.x + dx; width = s.width - dx;
-          break;
-      }
-
-      width = Math.max(40, width);
-      height = Math.max(40, height);
+      x = s.x + dx;
+      y = s.y + dy;
       x = Math.max(0, Math.min(CANVAS_W - width, x));
       y = Math.max(0, Math.min(CANVAS_H - height, y));
-      width = Math.min(width, CANVAS_W - x);
-      height = Math.min(height, CANVAS_H - y);
 
       onChange(activeView, {
         x: Math.round(x),
@@ -262,24 +217,6 @@ export function PrintableAreaCalibrator({ imageUrls, areas, onChange }: Props) {
             boxSizing: 'border-box',
           }}
         >
-          {HANDLES.map(({ id, cursor, style }) => (
-            <div
-              key={id}
-              onMouseDown={(e) => onHandleMouseDown(e, id)}
-              style={{
-                position: 'absolute',
-                width: 10,
-                height: 10,
-                background: '#005bd3',
-                border: '1px solid #fff',
-                borderRadius: 2,
-                cursor,
-                zIndex: 2,
-                ...style,
-              }}
-            />
-          ))}
-
           {/* Live coords badge */}
           <div
             style={{
@@ -302,7 +239,7 @@ export function PrintableAreaCalibrator({ imageUrls, areas, onChange }: Props) {
       </div>
 
       <p style={{ fontSize: 12, color: '#6d7175', margin: '6px 0 0' }}>
-        拖动蓝框移动位置 · 拖动四角 / 边缘调整大小 · 坐标基于 1200×1440 画布
+        拖动蓝框移动位置（尺寸已锁定，仅可移动）· 坐标基于 1200×1440 画布
       </p>
     </div>
   );

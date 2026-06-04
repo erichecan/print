@@ -140,7 +140,8 @@ const NAV_LINKS: NavItem[] = [
   { href: '/admin/calibrate-areas', label: 'Calibrate Areas', icon: 'design', i18n: 'calibrateAreas', sub: true },
   { href: '/admin/online-categories', label: 'Online Categories', icon: 'categories', i18n: 'onlineCategories' },
   { href: '/admin/online-orders', label: 'Online Orders', icon: 'orders', i18n: 'onlineOrders' },
-  { href: '/admin/design-review', label: 'Design Review', icon: 'design', i18n: 'designReview', sub: true },
+  // [已废弃] 设计审核流程已简化，付款后直接进入生产单，该导航入口暂时隐藏
+  // { href: '/admin/design-review', label: 'Design Review', icon: 'design', i18n: 'designReview', sub: true },
   { href: '/admin/logistics', label: 'Logistics', icon: 'shipping', i18n: 'logistics', sub: true },
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },

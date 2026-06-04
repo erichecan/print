@@ -1040,19 +1040,15 @@ exports.generateShippingLabel = async (req, res, next) => {
       return next(new BadRequestError('无法为已取消或已退款的订单生成发货标签', { status: order.status }));
     }
 
-    // Block shipping label if design review is not completed
-    const blockedDesignStatuses = ['PENDING_REVIEW', 'IN_REVIEW', 'REJECTED'];
-    if (order.designReviewStatus && blockedDesignStatuses.includes(order.designReviewStatus)) {
-      const statusLabels = {
-        PENDING_REVIEW: '待审核',
-        IN_REVIEW: '审核中',
-        REJECTED: '设计稿已退回',
-      };
-      return next(new BadRequestError(
-        `订单包含待审核设计稿（当前状态：${statusLabels[order.designReviewStatus] ?? order.designReviewStatus}），请完成设计审核后再购买面单`,
-        { designReviewStatus: order.designReviewStatus }
-      ));
-    }
+    // [已废弃] 设计审核流程已简化，付款后直接进入生产，不再阻止物流购买
+    // const blockedDesignStatuses = ['PENDING_REVIEW', 'IN_REVIEW', 'REJECTED'];
+    // if (order.designReviewStatus && blockedDesignStatuses.includes(order.designReviewStatus)) {
+    //   const statusLabels = { PENDING_REVIEW: '待审核', IN_REVIEW: '审核中', REJECTED: '设计稿已退回' };
+    //   return next(new BadRequestError(
+    //     `订单包含待审核设计稿（当前状态：${statusLabels[order.designReviewStatus] ?? order.designReviewStatus}），请完成设计审核后再购买面单`,
+    //     { designReviewStatus: order.designReviewStatus }
+    //   ));
+    // }
 
     // Check if shipment already exists
     const existingShipment = await prisma.shipment.findFirst({

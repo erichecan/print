@@ -45,22 +45,18 @@ function initAreas(product: AdminProductDetail): AreasState {
   return templateAreas(product.garmentType);
 }
 
+// Mirror the exact index mapping used by Design Lab's productController.js baseImages:
+// front=images[0], back=images[1], sleeve=images[2] (skipped here), left-sleeve=images[3], right-sleeve=images[4]
+// Using the same source (product.images sorted by sortOrder) ensures calibrated areas
+// line up correctly when the product is opened in Design Lab.
 function getImages(product: AdminProductDetail) {
-  const ci = product.colorImages?.[0];
-  if (ci?.imageUrls?.length) {
-    return {
-      front:          ci.imageUrls[0] || undefined,
-      back:           ci.imageUrls[1] || undefined,
-      'left-sleeve':  ci.imageUrls[2] || undefined,
-      'right-sleeve': ci.imageUrls[3] || ci.imageUrls[2] || undefined,
-    };
-  }
   const imgs = product.images ?? [];
+  const fallback = imgs[0]?.url;
   return {
-    front:          imgs[0]?.url,
-    back:           imgs[1]?.url,
-    'left-sleeve':  imgs[2]?.url,
-    'right-sleeve': imgs[3]?.url ?? imgs[2]?.url,
+    front:          imgs[0]?.url ?? fallback,
+    back:           imgs[1]?.url ?? fallback,
+    'left-sleeve':  imgs[3]?.url ?? fallback,
+    'right-sleeve': imgs[4]?.url ?? fallback,
   };
 }
 

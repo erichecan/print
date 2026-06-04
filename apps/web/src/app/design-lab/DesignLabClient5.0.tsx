@@ -3327,24 +3327,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               },
             });
 
-            // 智能缩放：缩放到画布的 30%
-            const SCALE_RATIO = 0.3;
-            const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
-            const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
+            // 缩放至印刷区域较长边的 80%，居中于印刷区域
+            const uploadAreaBounds = getCanvasAreaBounds(currentView);
+            const uploadLongerEdge = Math.max(uploadAreaBounds.width, uploadAreaBounds.height);
+            const uploadTargetSize = 0.80 * uploadLongerEdge;
 
             const originalWidth = fabricImage.width || 1;
             const originalHeight = fabricImage.height || 1;
-
-            const scaleX = targetMaxWidth / originalWidth;
-            const scaleY = targetMaxHeight / originalHeight;
-            const scale = Math.min(scaleX, scaleY, 1);
+            const uploadImageMaxEdge = Math.max(originalWidth, originalHeight);
+            const scale = Math.min(uploadTargetSize / uploadImageMaxEdge, 1);
 
             fabricImage.scale(scale);
 
-            // 居中位置（canvas 中心）
+            // 居中在印刷区域
             fabricImage.set({
-              left: CANVAS_WIDTH / 2,
-              top: CANVAS_HEIGHT / 2,
+              left: uploadAreaBounds.left + uploadAreaBounds.width / 2,
+              top: uploadAreaBounds.top + uploadAreaBounds.height / 2,
               originX: 'center',
               originY: 'center',
               name: `image_${Date.now()} `,
@@ -3446,14 +3444,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         return;
       }
 
+      const areaBounds = getCanvasAreaBounds(currentView);
+      const areaFontSize = Math.round(areaBounds.width / 8);
+
       const textObj: any = new TextCtor(normalizedText, {
-        left: CANVAS_WIDTH / 2,
-        top: CANVAS_HEIGHT / 2,
+        left: areaBounds.left + areaBounds.width / 2,
+        top: areaBounds.top + areaBounds.height / 2,
         originX: 'center',
         originY: 'center',
         fill: '#111827',
         fontFamily: 'Arial',
-        fontSize: 40, // Scaled down (120 * 0.3 = 36 -> 40)
+        fontSize: areaFontSize,
         textAlign: 'center',
         selectable: true,
         evented: true,
@@ -3548,24 +3549,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           centeredRotation: true,
         });
 
-        // 智能缩放：缩放到画布的 30%
-        const SCALE_RATIO = 0.3;
-        const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
-        const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
+        // 缩放至印刷区域较长边的 60%，居中于印刷区域
+        const artAreaBounds = getCanvasAreaBounds(currentView);
+        const artLongerEdge = Math.max(artAreaBounds.width, artAreaBounds.height);
+        const artTargetSize = 0.60 * artLongerEdge;
 
         const originalWidth = fabricImage.width || 1;
         const originalHeight = fabricImage.height || 1;
-
-        const scaleX = targetMaxWidth / originalWidth;
-        const scaleY = targetMaxHeight / originalHeight;
-        const scale = Math.min(scaleX, scaleY, 1);
+        const imageMaxEdge = Math.max(originalWidth, originalHeight);
+        const scale = Math.min(artTargetSize / imageMaxEdge, 1);
 
         fabricImage.scale(scale);
 
-        // 居中位置
+        // 居中在印刷区域
         fabricImage.set({
-          left: CANVAS_WIDTH / 2,
-          top: CANVAS_HEIGHT / 2,
+          left: artAreaBounds.left + artAreaBounds.width / 2,
+          top: artAreaBounds.top + artAreaBounds.height / 2,
           originX: 'center',
           originY: 'center',
           name: `art_${Date.now()} `, // 使用 art_ 前缀标识艺术素材
@@ -4221,7 +4220,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                             layerNames: v.layers?.map((l: any) => l.name ?? l.type) ?? [],
                           }))
                         : '(doc is null)');
-                      const printPositions: Array<{ position: string; artworkImageUrl: string }> = [];
+                      const printPositions: Array<{ position: string; artworkImageUrl: string; mockupImageUrl: string; widthIn?: number; heightIn?: number }> = [];
                       if (doc) {
                         for (const [viewId, viewState] of Object.entries(doc.views)) {
                           if (!viewState.layers || viewState.layers.length === 0) continue;
@@ -4272,7 +4271,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                           const crop = getPrintableAreaCrop(viewId);
                           const artworkImageUrl = tempCanvas.toDataURL({ format: 'png', multiplier: 1, ...crop });
                           console.log(`[GangSheet] STORE路径导出 — url前缀: ${artworkImageUrl.substring(0, 50)}, 大小: ${artworkImageUrl.length} bytes`);
-                          printPositions.push({ position, artworkImageUrl });
+                          // STORE路径中产品底图通常不在store里，mockupImageUrl暂用artworkImageUrl
+                          const storeAreaConfig = getTemplateArea(productInfo.garmentType, viewId);
+                          printPositions.push({
+                            position, artworkImageUrl, mockupImageUrl: artworkImageUrl,
+                            widthIn: storeAreaConfig?.physicalWidthIn,
+                            heightIn: storeAreaConfig?.physicalHeightIn,
+                          });
                           tempCanvas.dispose();
                         }
                       }
@@ -4305,6 +4310,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                         const hasCustomerObjects = customerObjs.length > 0;
                         console.log('[GangSheet] FALLBACK — hasCustomerObjects:', hasCustomerObjects);
                         if (hasCustomerObjects) {
+                          // 在隐藏产品底图之前，先导出带底图的效果图 (mockupImageUrl)
+                          const mockupImageUrl = canvas.toDataURL({ format: 'jpeg', quality: 0.85 });
                           toHide.forEach((obj: any) => obj.set('visible', false));
                           canvas.renderAll();
                           console.log('[GangSheet] FALLBACK — 隐藏后 canvas 对象 visible 状态:', canvas.getObjects().map((o: any) => ({ name: o.name, visible: o.visible })));
@@ -4314,7 +4321,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                           toHide.forEach((obj: any) => obj.set('visible', true));
                           canvas.renderAll();
                           console.log('[GangSheet] FALLBACK — 导出完成, url大小:', artworkImageUrl.length, '前缀:', artworkImageUrl.substring(0, 60));
-                          printPositions.push({ position, artworkImageUrl });
+                          const fallbackAreaConfig = getTemplateArea(productInfo.garmentType, currentView);
+                          printPositions.push({
+                            position, artworkImageUrl, mockupImageUrl,
+                            widthIn: fallbackAreaConfig?.physicalWidthIn,
+                            heightIn: fallbackAreaConfig?.physicalHeightIn,
+                          });
                         }
                       }
 
