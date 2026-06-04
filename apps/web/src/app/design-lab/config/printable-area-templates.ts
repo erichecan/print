@@ -49,8 +49,8 @@ export const GARMENT_TYPES = Object.keys(GARMENT_TYPE_LABELS) as GarmentType[];
 export const PRINTABLE_AREA_TEMPLATES: Record<GarmentType, ViewAreaMap> = {
   // Measured on L-size: front/back = 16" × 22"
   tshirt: {
-    front:  { x: 327, y: 240, width: 546, height: 960, physicalWidthIn: 16, physicalHeightIn: 22 },
-    back:   { x: 327, y: 240, width: 546, height: 960, physicalWidthIn: 16, physicalHeightIn: 22 },
+    front:  { x: 327, y: 240, width: 546, height: 785, physicalWidthIn: 16, physicalHeightIn: 18 },
+    back:   { x: 327, y: 240, width: 546, height: 785, physicalWidthIn: 16, physicalHeightIn: 18 },
     'left-sleeve':  { x: 350, y: 470, width: 500, height: 500 },
     'right-sleeve': { x: 350, y: 470, width: 500, height: 500 },
   },

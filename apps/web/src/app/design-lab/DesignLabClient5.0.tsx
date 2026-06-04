@@ -3335,7 +3335,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             const originalWidth = fabricImage.width || 1;
             const originalHeight = fabricImage.height || 1;
             const uploadImageMaxEdge = Math.max(originalWidth, originalHeight);
-            const scale = Math.min(uploadTargetSize / uploadImageMaxEdge, 1);
+            const scale = uploadTargetSize / uploadImageMaxEdge;
 
             fabricImage.scale(scale);
 
@@ -3557,7 +3557,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         const originalWidth = fabricImage.width || 1;
         const originalHeight = fabricImage.height || 1;
         const imageMaxEdge = Math.max(originalWidth, originalHeight);
-        const scale = Math.min(artTargetSize / imageMaxEdge, 1);
+        const scale = artTargetSize / imageMaxEdge;
 
         fabricImage.scale(scale);
 
