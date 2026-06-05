@@ -1747,6 +1747,89 @@ export default function SalesOrderDetailPage() {
                 </section>
               )}
 
+              {/* 操作日志 */}
+              {meta.auditLogs && meta.auditLogs.length > 0 && (
+                <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
+                  <h2 className="section-title">操作日志</h2>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                    {meta.auditLogs.map((log: any, idx: number) => {
+                      const actionLabels: Record<string, string> = {
+                        ORDER_CREATED: '订单已创建',
+                        FIELD_UPDATED: '字段更新',
+                        STAGE_CHANGED: '阶段变更',
+                        NOTE_ADDED: '添加备注',
+                        FILE_UPLOADED: '上传文件',
+                        FILE_DELETED: '删除文件',
+                        WORK_ORDER_AUTO_CREATED: '工单自动创建',
+                        WORK_ORDER_CREATED: '工单已创建',
+                        WORK_ORDER_UPDATED: '工单字段更新',
+                        ASSIGNEE_CHANGED: '负责人变更',
+                      };
+                      const actionLabel = actionLabels[log.action] || log.action;
+                      const hasDiff = log.field && (log.oldValue !== null || log.newValue !== null);
+                      return (
+                        <div key={log.id || idx} style={{
+                          display: 'flex',
+                          gap: '1rem',
+                          padding: '0.75rem 0',
+                          borderBottom: idx < meta.auditLogs.length - 1 ? '1px solid #f0f2f5' : 'none',
+                          alignItems: 'flex-start',
+                        }}>
+                          <div style={{ color: '#718096', fontSize: '0.75rem', whiteSpace: 'nowrap', width: '150px', paddingTop: '2px' }}>
+                            {new Date(log.createdAt).toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US')}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                padding: '1px 8px',
+                                borderRadius: '999px',
+                                background: log.action === 'ORDER_CREATED' ? '#dcfce7' :
+                                  log.action.includes('FILE') ? '#fef9c3' :
+                                  log.action.includes('WORK_ORDER') ? '#ede9fe' :
+                                  log.action === 'STAGE_CHANGED' ? '#dbeafe' :
+                                  '#f1f5f9',
+                                color: log.action === 'ORDER_CREATED' ? '#166534' :
+                                  log.action.includes('FILE') ? '#713f12' :
+                                  log.action.includes('WORK_ORDER') ? '#5b21b6' :
+                                  log.action === 'STAGE_CHANGED' ? '#1e40af' :
+                                  '#475569',
+                              }}>
+                                {actionLabel}
+                              </span>
+                              {log.field && (
+                                <span style={{ fontSize: '0.8125rem', color: '#374151', fontWeight: 500 }}>{log.field}</span>
+                              )}
+                              {log.actorName && (
+                                <span style={{ fontSize: '0.75rem', color: '#2563eb' }}>{log.actorName}</span>
+                              )}
+                            </div>
+                            {hasDiff && (
+                              <div style={{ marginTop: '0.25rem', fontSize: '0.8125rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.375rem', flexWrap: 'wrap' }}>
+                                <span style={{ background: '#fee2e2', color: '#991b1b', padding: '0 6px', borderRadius: '4px', textDecoration: 'line-through' }}>
+                                  {log.oldValue ?? '(空)'}
+                                </span>
+                                <span>→</span>
+                                <span style={{ background: '#dcfce7', color: '#166534', padding: '0 6px', borderRadius: '4px' }}>
+                                  {log.newValue ?? '(空)'}
+                                </span>
+                              </div>
+                            )}
+                            {!hasDiff && log.newValue && (
+                              <div style={{ marginTop: '0.25rem', fontSize: '0.8125rem', color: '#4b5563' }}>{log.newValue}</div>
+                            )}
+                            {log.metadata?.note && (
+                              <div style={{ marginTop: '0.25rem', fontSize: '0.8125rem', color: '#4b5563', fontStyle: 'italic' }}>{log.metadata.note}</div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
               {/* 支付信息 - 新增 */}
               <section className="order-section">
                 <h2 className="section-title">{t('paymentInfo')}</h2>

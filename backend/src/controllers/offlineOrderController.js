@@ -332,6 +332,61 @@ const mapProductionWorkOrder = (workOrder) => {
   };
 };
 
+const AUDITABLE_FIELDS = {
+  projectName: '项目名称',
+  primaryProduct: '主产品',
+  quantity: '数量',
+  deliveryDate: '交货日期',
+  description: '描述/备注',
+  requiresMockups: '需要样稿',
+  requiresProof: '需要打样',
+  rushOrder: '加急',
+  rush_fee: '加急费',
+  contactName: '联系人',
+  company: '公司',
+  email: '邮箱',
+  phone: '电话',
+  status: '订单状态',
+  type: '印花类型',
+  invoiceStatus: '发票状态',
+  totalAmount: '订单金额',
+  payment_method: '付款方式',
+  reference_number: '参考号',
+  deposit_amount: '定金',
+};
+
+const AUDITABLE_WO_FIELDS = {
+  status: '工单状态',
+  assigneeName: '负责人',
+  startDate: '开始日期',
+  dueDate: '计划完成日期',
+  completedDate: '完成日期',
+  priority: '优先级',
+  notes: '工单备注',
+};
+
+const serializeAuditValue = (v) => {
+  if (v == null) return null;
+  if (v instanceof Date) return v.toISOString();
+  return String(v);
+};
+
+const writeAuditLogs = async (tx, orderId, actorId, actorName, entries) => {
+  if (!entries || entries.length === 0) return;
+  await tx.offlineOrderAuditLog.createMany({
+    data: entries.map((e) => ({
+      orderId,
+      action: e.action,
+      field: e.field ?? null,
+      oldValue: e.oldValue != null ? String(e.oldValue) : null,
+      newValue: e.newValue != null ? String(e.newValue) : null,
+      actorId: actorId ?? null,
+      actorName: actorName ?? null,
+      metadata: e.metadata ?? null,
+    }))
+  });
+};
+
 const mapOrder = (order) => ({
   id: order.id,
   orderCode: order.orderCode,
@@ -383,6 +438,17 @@ const mapOrder = (order) => ({
     actorName: history.actorName,
     note: history.note,
     createdAt: history.createdAt
+  })),
+  auditLogs: (order.auditLogs || []).map((log) => ({
+    id: log.id,
+    action: log.action,
+    field: log.field,
+    oldValue: log.oldValue,
+    newValue: log.newValue,
+    actorId: log.actorId,
+    actorName: log.actorName,
+    metadata: log.metadata,
+    createdAt: log.createdAt
   })),
   payment: {
     method: order.payment_method,
@@ -686,12 +752,21 @@ exports.createOfflineOrder = async (req, res) => {
         });
       }
 
+      const createActorName = req.user
+        ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
+        : 'Customer';
+
+      await writeAuditLogs(tx, createdOrder.id, req.user?.id, createActorName, [
+        { action: 'ORDER_CREATED', metadata: { orderCode: uniqueCode } }
+      ]);
+
       // Re-fetch to include the production work order
       const finalOrder = await tx.offlineOrder.findUnique({
         where: { id: createdOrder.id },
         include: {
           assets: true,
           histories: { orderBy: { createdAt: 'desc' } },
+          auditLogs: { orderBy: { createdAt: 'desc' } },
           productionWorkOrder: { include: { events: { orderBy: { createdAt: 'desc' } } } }
         }
       });
@@ -1489,6 +1564,9 @@ exports.getOfflineOrderById = async (req, res) => {
         histories: {
           orderBy: { createdAt: 'desc' }
         },
+        auditLogs: {
+          orderBy: { createdAt: 'desc' }
+        },
         productionWorkOrder: {
           include: {
             events: {
@@ -1582,6 +1660,9 @@ exports.updateOfflineOrderStage = async (req, res) => {
           histories: {
             orderBy: { createdAt: 'desc' }
           },
+          auditLogs: {
+            orderBy: { createdAt: 'desc' }
+          },
           productionWorkOrder: {
             include: {
               events: {
@@ -1591,6 +1672,16 @@ exports.updateOfflineOrderStage = async (req, res) => {
           }
         }
       });
+
+      await writeAuditLogs(tx, id, req.user?.id, actorName, [
+        {
+          action: 'STAGE_CHANGED',
+          field: '阶段',
+          oldValue: existing.stageKey,
+          newValue: stage.key,
+          metadata: note ? { note: note.toString().trim() } : null
+        }
+      ]);
 
       return order;
     }));
@@ -1781,7 +1872,28 @@ exports.updateOfflineOrder = async (req, res) => {
           id: true,
           stageKey: true,
           status: true,
-          productionWorkOrder: { select: { id: true, startDate: true } }
+          projectName: true,
+          primaryProduct: true,
+          quantity: true,
+          deliveryDate: true,
+          description: true,
+          requiresMockups: true,
+          requiresProof: true,
+          rushOrder: true,
+          rush_fee: true,
+          contactName: true,
+          company: true,
+          email: true,
+          phone: true,
+          type: true,
+          invoiceStatus: true,
+          totalAmount: true,
+          payment_method: true,
+          reference_number: true,
+          deposit_amount: true,
+          productionWorkOrder: {
+            select: { id: true, startDate: true, dueDate: true, assigneeName: true }
+          }
         }
       });
 
@@ -1853,6 +1965,17 @@ exports.updateOfflineOrder = async (req, res) => {
               }
             }
           });
+          await writeAuditLogs(tx, id, req.user?.id, actorName, [
+            {
+              action: 'WORK_ORDER_AUTO_CREATED',
+              metadata: {
+                workOrderCode,
+                startDate: workOrderData.startDate?.toISOString?.() ?? null,
+                dueDate: workOrderData.dueDate?.toISOString?.() ?? null,
+                trigger: Object.keys(data).join(', ')
+              }
+            }
+          ]);
         }
       }
 
@@ -1867,6 +1990,22 @@ exports.updateOfflineOrder = async (req, res) => {
         logger.info(
           `[OfflineOrder] Order ${id} configuration updated. Reverting status from 已完成 to 待确认订单.`
         );
+      }
+
+      const fieldAuditEntries = [];
+      for (const [key, newVal] of Object.entries(data)) {
+        const fieldLabel = AUDITABLE_FIELDS[key];
+        if (!fieldLabel) continue;
+        const oldStr = serializeAuditValue(existing[key]);
+        const newStr = serializeAuditValue(newVal);
+        if (oldStr !== newStr) {
+          fieldAuditEntries.push({
+            action: 'FIELD_UPDATED',
+            field: fieldLabel,
+            oldValue: oldStr,
+            newValue: newStr,
+          });
+        }
       }
 
       const order = await tx.offlineOrder.update({
@@ -1904,6 +2043,9 @@ exports.updateOfflineOrder = async (req, res) => {
           histories: {
             orderBy: { createdAt: 'desc' }
           },
+          auditLogs: {
+            orderBy: { createdAt: 'desc' }
+          },
           productionWorkOrder: {
             include: {
               events: {
@@ -1913,6 +2055,16 @@ exports.updateOfflineOrder = async (req, res) => {
           }
         }
       });
+
+      if (fieldAuditEntries.length > 0 || note) {
+        const noteEntry = note
+          ? [{ action: 'NOTE_ADDED', newValue: note.toString().trim() }]
+          : [];
+        await writeAuditLogs(tx, id, req.user?.id, actorName, [
+          ...fieldAuditEntries,
+          ...noteEntry
+        ]);
+      }
 
       return order;
     }));
@@ -1979,11 +2131,18 @@ exports.addOfflineOrderNote = async (req, res) => {
         }
       });
 
+      await writeAuditLogs(tx, id, req.user?.id, actorName, [
+        { action: 'NOTE_ADDED', newValue: trimmedNote }
+      ]);
+
       return tx.offlineOrder.findUnique({
         where: { id },
         include: {
           assets: true,
           histories: {
+            orderBy: { createdAt: 'desc' }
+          },
+          auditLogs: {
             orderBy: { createdAt: 'desc' }
           },
           productionWorkOrder: {
@@ -2098,11 +2257,22 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
         }
       });
 
+      await writeAuditLogs(tx, id, req.user?.id, actorName,
+        assetPayloads.map((asset) => ({
+          action: 'FILE_UPLOADED',
+          newValue: asset.fileName,
+          metadata: { fileSize: asset.fileSize, contentType: asset.contentType }
+        }))
+      );
+
       return tx.offlineOrder.findUnique({
         where: { id },
         include: {
           assets: true,
           histories: {
+            orderBy: { createdAt: 'desc' }
+          },
+          auditLogs: {
             orderBy: { createdAt: 'desc' }
           },
           productionWorkOrder: {
@@ -2173,7 +2343,7 @@ exports.deleteOfflineOrderAsset = async (req, res) => {
 
     const asset = await prisma.offlineOrderAsset.findFirst({
       where: { id: assetId, orderId: id },
-      select: { id: true, storageKey: true }
+      select: { id: true, storageKey: true, fileName: true }
     });
 
     if (!asset) {
@@ -2181,6 +2351,20 @@ exports.deleteOfflineOrderAsset = async (req, res) => {
     }
 
     await prisma.offlineOrderAsset.delete({ where: { id: assetId } });
+
+    const actorName = req.user
+      ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
+      : 'Admin';
+
+    await prisma.offlineOrderAuditLog.create({
+      data: {
+        orderId: id,
+        action: 'FILE_DELETED',
+        oldValue: asset.fileName,
+        actorId: req.user?.id || null,
+        actorName,
+      }
+    });
 
     try {
       await deleteFromGcs(asset.storageKey);
@@ -2331,6 +2515,16 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
             }
           }
         });
+
+        await writeAuditLogs(tx, id, req.user?.id, actorName, [{
+          action: 'WORK_ORDER_CREATED',
+          metadata: {
+            workOrderCode,
+            status: baseWorkOrderData.status || 'PLANNING',
+            assigneeName: baseWorkOrderData.assigneeName || null,
+            dueDate: baseWorkOrderData.dueDate?.toISOString?.() ?? null,
+          }
+        }]);
       } else {
         workOrder = await tx.productionWorkOrder.update({
           where: { id: existingOrder.productionWorkOrder.id },
@@ -2348,6 +2542,25 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
             }
           }
         });
+
+        const woAuditEntries = [];
+        const existingWO = existingOrder.productionWorkOrder;
+        for (const [key, label] of Object.entries(AUDITABLE_WO_FIELDS)) {
+          if (!(key in baseWorkOrderData)) continue;
+          const oldStr = serializeAuditValue(existingWO[key]);
+          const newStr = serializeAuditValue(baseWorkOrderData[key]);
+          if (oldStr !== newStr) {
+            woAuditEntries.push({
+              action: key === 'assigneeName' ? 'ASSIGNEE_CHANGED' : 'WORK_ORDER_UPDATED',
+              field: label,
+              oldValue: oldStr,
+              newValue: newStr,
+            });
+          }
+        }
+        if (woAuditEntries.length > 0) {
+          await writeAuditLogs(tx, id, req.user?.id, actorName, woAuditEntries);
+        }
       }
 
       return tx.offlineOrder.findUnique({
@@ -2355,6 +2568,9 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
         include: {
           assets: true,
           histories: {
+            orderBy: { createdAt: 'desc' }
+          },
+          auditLogs: {
             orderBy: { createdAt: 'desc' }
           },
           productionWorkOrder: {

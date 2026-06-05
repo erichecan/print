@@ -1205,6 +1205,7 @@ export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
     dueDate?: string;
     [key: string]: any
   } | null;
+  auditLogs: OfflineOrderAuditLogEntry[];
 }
 
 export const salesOrdersApi = {
@@ -2973,9 +2974,22 @@ export interface AdminOfflineOrderSummary {
   updatedAt: string;
 }
 
+export interface OfflineOrderAuditLogEntry {
+  id: string;
+  action: string;
+  field?: string | null;
+  oldValue?: string | null;
+  newValue?: string | null;
+  actorId?: string | null;
+  actorName?: string | null;
+  metadata?: any;
+  createdAt: string;
+}
+
 // Admin offline order detail extends summary with histories
 export interface AdminOfflineOrderDetail extends AdminOfflineOrderSummary {
   histories: OfflineOrderHistoryEntry[];
+  auditLogs: OfflineOrderAuditLogEntry[];
 }
 
 // Offline order list response with pagination and stage config
