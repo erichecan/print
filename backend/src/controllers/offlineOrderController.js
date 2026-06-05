@@ -2317,18 +2317,36 @@ exports.updateOfflineOrderAssetComment = async (req, res) => {
 
     const asset = await prisma.offlineOrderAsset.findFirst({
       where: { id: assetId, orderId: id },
-      select: { id: true }
+      select: { id: true, comment: true, fileName: true }
     });
 
     if (!asset) {
       return res.status(404).json({ error: 'Not Found', message: 'Asset not found' });
     }
 
-    const updated = await prisma.offlineOrderAsset.update({
-      where: { id: assetId },
-      data: { comment: typeof comment === 'string' ? comment.slice(0, 100) : null },
-      select: { id: true, comment: true }
-    });
+    const newComment = typeof comment === 'string' ? comment.slice(0, 100) : null;
+    const actorName = req.user
+      ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
+      : 'Admin';
+
+    const [updated] = await Promise.all([
+      prisma.offlineOrderAsset.update({
+        where: { id: assetId },
+        data: { comment: newComment },
+        select: { id: true, comment: true }
+      }),
+      prisma.offlineOrderAuditLog.create({
+        data: {
+          orderId: id,
+          action: 'ASSET_COMMENT_UPDATED',
+          field: asset.fileName,
+          oldValue: asset.comment ?? null,
+          newValue: newComment,
+          actorId: req.user?.id || null,
+          actorName,
+        }
+      })
+    ]);
 
     res.json(updated);
   } catch (error) {
@@ -2829,9 +2847,14 @@ exports.deleteOfflineOrder = async (req, res, next) => {
       select: {
         id: true,
         orderCode: true,
-        productionWorkOrder: {
-          select: { id: true }
-        }
+        projectName: true,
+        status: true,
+        stageKey: true,
+        quantity: true,
+        totalAmount: true,
+        createdAt: true,
+        _count: { select: { assets: true, histories: true, auditLogs: true } },
+        productionWorkOrder: { select: { id: true, status: true } }
       },
     });
 
@@ -2843,12 +2866,34 @@ exports.deleteOfflineOrder = async (req, res, next) => {
       });
     }
 
+    const actorName = req.user
+      ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
+      : 'Admin';
+
+    // 级联删除会同时清除 auditLogs，在删除前用结构化日志保留完整痕迹
+    logger.info('[deleteOfflineOrder] ORDER_DELETED', {
+      orderId: id,
+      orderCode: existing.orderCode,
+      projectName: existing.projectName,
+      status: existing.status,
+      stageKey: existing.stageKey,
+      quantity: existing.quantity,
+      totalAmount: existing.totalAmount,
+      createdAt: existing.createdAt,
+      assetCount: existing._count.assets,
+      historyCount: existing._count.histories,
+      auditLogCount: existing._count.auditLogs,
+      hasWorkOrder: !!existing.productionWorkOrder,
+      workOrderStatus: existing.productionWorkOrder?.status ?? null,
+      deletedBy: req.user?.id ?? null,
+      deletedByName: actorName,
+      deletedAt: new Date().toISOString(),
+    });
+
     // 直接删除订单，依赖数据库的级联删除（Cascade Delete）处理关联数据
     await prisma.offlineOrder.delete({
       where: { id },
     });
-
-    logger.info(`[deleteOfflineOrder] Order deleted: ${existing.orderCode} (${id})`);
 
     res.json({
       success: true,
