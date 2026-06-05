@@ -315,6 +315,7 @@ exports.getSalesOrderById = async (req, res) => {
       include: {
         assets: true,
         histories: true,
+        auditLogs: { orderBy: { createdAt: 'desc' } },
         productionWorkOrder: {
           include: {
             events: true,
@@ -339,6 +340,7 @@ exports.getSalesOrderById = async (req, res) => {
         ...mapSalesOfflineOrder(order, true), // 传入 true 包含详情字段
         assets: order.assets || [],
         histories: order.histories || [],
+        auditLogs: order.auditLogs || [],
         productionWorkOrder: order.productionWorkOrder || null,
       },
     });
