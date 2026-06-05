@@ -168,7 +168,7 @@ exports.listSalesOrders = async (req, res) => {
     const orderByField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
 
     // 查询订单时，同时获取创建者信息（用于销售主管查看）
-    const [orders, total] = await prisma.$transaction([
+    const [orders, total] = await Promise.all([
       prisma.offlineOrder.findMany({
         where,
         skip,
