@@ -1113,14 +1113,26 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
     // 2026-04-20: 步骤交换 — 新 step1 = 客户信息，新 step2 = 产品选择
     if (step === 1) {
-      // 新第一步：客户信息和Invoice — 全部非必填，仅做邮箱格式校验
+      const errors: Record<string, string> = {};
+
+      if (!formState.contactName.trim()) {
+        errors.contactName = '联系人姓名为必填项';
+      }
+      if (!formState.phone.trim()) {
+        errors.phone = '电话号码为必填项';
+      }
       if (formState.email.trim()) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formState.email)) {
-          setFieldErrors({ email: t('errorEmailFormat') || '邮箱格式不正确' });
-          setStatus({ type: 'error', message: t('errorEmailFormat') || '邮箱格式不正确' });
-          return false;
+          errors.email = t('errorEmailFormat') || '邮箱格式不正确';
         }
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        const firstError = errors.contactName || errors.phone || errors.email || '';
+        setStatus({ type: 'error', message: firstError });
+        return false;
       }
       return true;
     }
@@ -1668,7 +1680,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         {/* 添加产品区域 - PRD v2.0: 使用可维护的产品列表 */}
         <div className="mb-8 p-4 bg-gray-50 rounded-lg">
           <label className="block">
-            <span className="block text-sm font-medium text-gray-700 mb-2">{t('addProduct')}：</span>
+            <span className="block text-sm font-medium text-gray-700 mb-2">{t('addProduct')}：<span className="text-red-500 ml-0.5">*</span></span>
             {(productsLoading || configLoading) ? (
               <select
                 className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -2106,7 +2118,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('customerInfo') || '客户基本信息'}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'}</span>
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'}<span className="text-red-500 ml-0.5">*</span></span>
               <input
                 type="text"
                 name="contactName"
@@ -2138,15 +2150,18 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             </label>
 
             <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">{t('phone') || '电话'}</span>
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('phone') || '电话'}<span className="text-red-500 ml-0.5">*</span></span>
               <input
                 type="tel"
                 name="phone"
                 value={formState.phone}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.phone ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`}
               />
+              {fieldErrors.phone && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
+              )}
             </label>
 
             <label className="block">
