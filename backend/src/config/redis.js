@@ -106,6 +106,9 @@ const setCache = async (key, value, ttl = 3600) => {
 };
 
 const deleteCache = async (key) => {
+  // Always clear memory cache
+  memoryCache.delete(key);
+
   if (!redis || !redisEnabled) {
     return false;
   }
@@ -113,7 +116,6 @@ const deleteCache = async (key) => {
     await redis.del(key);
     return true;
   } catch (error) {
-    // 静默处理错误，返回 false 表示缓存删除失败
     return false;
   }
 };

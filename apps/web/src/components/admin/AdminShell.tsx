@@ -135,7 +135,6 @@ type NavItem =
   | { type?: undefined; href: string; label: string; icon: string; exact?: boolean; i18n: string; sub?: boolean };
 
 const NAV_LINKS: NavItem[] = [
-  { href: '/admin', label: 'Dashboard', icon: 'dashboard', exact: true, i18n: 'dashboard' },
   { href: '/admin/online-products', label: 'Online Products', icon: 'products', i18n: 'onlineProducts' },
   { href: '/admin/calibrate-areas', label: 'Calibrate Areas', icon: 'design', i18n: 'calibrateAreas', sub: true },
   { href: '/admin/online-categories', label: 'Online Categories', icon: 'categories', i18n: 'onlineCategories' },

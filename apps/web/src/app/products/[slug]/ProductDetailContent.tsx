@@ -62,6 +62,7 @@ interface Product {
     average: number;
     count: number;
   };
+  isCustomizable?: boolean;
 }
 
 const currencyFormatter = new Intl.NumberFormat('en-CA', {
@@ -625,7 +626,8 @@ export function ProductDetailContent() {
 
             {/* Action Buttons */}
             <div className="flex gap-2 flex-col sm:flex-row product-actions-mobile mt-1">
-              {/* Start Design */}
+              {/* Start Design — only show when product has Design Lab enabled */}
+              {product?.isCustomizable && (
               <button
                 type="button"
                 className="flex-1 min-h-[44px] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
@@ -648,6 +650,7 @@ export function ProductDetailContent() {
               >
                 Start Design
               </button>
+              )}
 
               {/* Add to Cart — primary CTA */}
               <button

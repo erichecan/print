@@ -1464,6 +1464,13 @@ exports.batchUpdateStatus = async (req, res) => {
       data,
     });
 
+    // Invalidate Redis cache for each updated product
+    const updatedProducts = await prisma.product.findMany({
+      where: { id: { in: ids } },
+      select: { slug: true },
+    });
+    await Promise.all(updatedProducts.map(p => invalidateProductCache(p.slug)));
+
     return res.json({ updated: result.count });
   } catch (error) {
     console.error('[batchUpdateStatus] error:', error);

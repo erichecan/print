@@ -1004,6 +1004,7 @@ exports.getProductBySlug = async (req, res) => {
         longDescription: true,
         basePrice: true,
         salePrice: true,
+        isCustomizable: true,
         printableAreas: true,
         garmentType: true,
         createdAt: true,
@@ -1083,6 +1084,7 @@ exports.getProductBySlug = async (req, res) => {
           longDescription: true,
           basePrice: true,
           salePrice: true,
+          isCustomizable: true,
           printableAreas: true,
           garmentType: true,
           createdAt: true,
@@ -1245,6 +1247,7 @@ exports.getProductBySlug = async (req, res) => {
       collections: (product.collectionProducts || []).map((item) => item.collection).filter(Boolean),
       printableArea: product.printableAreas || null,
       garmentType: product.garmentType || null,
+      isCustomizable: product.isCustomizable ?? true,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
