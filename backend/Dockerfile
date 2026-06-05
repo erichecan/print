@@ -4,7 +4,7 @@ FROM node:20-bullseye-slim AS deps
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY backend/package*.json ./
-COPY backend/prisma ./prisma
+COPY prisma ./prisma
 RUN npm ci
 RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" \
     npx prisma generate --schema=./prisma/schema.prisma
@@ -23,7 +23,7 @@ COPY --from=deps /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 COPY backend/src ./src
 COPY backend/scripts ./scripts
-COPY backend/prisma ./prisma
+COPY prisma ./prisma
 COPY backend/server.js ./server.js
 
 ARG APP_BUILD_SHA
