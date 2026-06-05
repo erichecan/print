@@ -454,8 +454,9 @@ export function ProductDetail() {
               onAddToCart={handleAddToCart}
               onBuyNow={handleBuyNow}
               onStartDesign={handleStartDesign}
-              productId={(apiProduct as any)?.id} // 传递实际的 productId
+              productId={(apiProduct as any)?.id}
               variants={(apiProduct as any)?.variants || []}
+              isCustomizable={(apiProduct as any)?.isCustomizable !== false}
               selectedColor={selectedColor}
               onColorSelect={handleColorSelect}
             />

@@ -64,11 +64,12 @@ interface BuyBoxProps {
   onAddToCart: (payload: any) => void;
   onBuyNow: (payload: any) => void;
   onStartDesign?: (payload: any) => void;
-  variantId?: string; // 添加 variantId 支持
-  productId?: string; // 添加 productId 支持
+  variantId?: string;
+  productId?: string;
   variants?: any[];
   selectedColor?: string;
   onColorSelect?: (color: string) => void;
+  isCustomizable?: boolean;
 }
 
 export function BuyBox({
@@ -89,6 +90,7 @@ export function BuyBox({
   variants = [],
   selectedColor: controlledColor,
   onColorSelect: controlledOnColorSelect,
+  isCustomizable = true,
 }: BuyBoxProps) {
   const router = useRouter();
   const [selectedStyle] = useState(style.options[0]?.value || '');
@@ -389,15 +391,17 @@ export function BuyBox({
 
       {/* 三个按钮同一行：Start design, Add to cart, Buy now */}
       <div className={styles.buyboxButtons}>
-        {/* 开始设计按钮 */}
-        <button
-          type="button"
-          className={styles.buyboxStartDesign}
-          onClick={handleStartDesign}
-          aria-label="Start custom design"
-        >
-          Start design
-        </button>
+        {/* 开始设计按钮 — 仅当产品支持定制时显示 */}
+        {isCustomizable && (
+          <button
+            type="button"
+            className={styles.buyboxStartDesign}
+            onClick={handleStartDesign}
+            aria-label="Start custom design"
+          >
+            Start design
+          </button>
+        )}
 
         {/* 参考图一位置：加入购物车按钮 */}
         <button
