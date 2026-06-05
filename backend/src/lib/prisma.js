@@ -120,6 +120,9 @@ function ensureConnectionPoolParams(databaseUrl) {
       databaseUrl = databaseUrl + separator + additions.join('&');
     }
 
+    // Neon pgBouncer 兼容：添加 pgbouncer=true 防止 Prisma 使用 prepared statements
+    databaseUrl = addPgbouncerParamIfNeeded(databaseUrl);
+
     // 去掉 channel_binding=require：Prisma binary engine (Rust/quaint) 不支持
     // SCRAM-SHA-256-PLUS 认证，channel_binding=require 会导致 "Authentication timed out"
     // 降级为标准 SCRAM-SHA-256（仍然安全，Neon PgBouncer 支持）
@@ -138,6 +141,19 @@ function ensureConnectionPoolParams(databaseUrl) {
     logger.warn(' ⚠️ Failed to add connection pool params:', error.message);
     return databaseUrl;
   }
+}
+
+// 将 Neon pooler URL 补全 pgbouncer=true（Prisma 与 pgBouncer 事务模式兼容所需）
+function addPgbouncerParamIfNeeded(databaseUrl) {
+  if (!databaseUrl) return databaseUrl;
+  // 仅对 Neon pooler 域名生效（包含 -pooler 的主机名）
+  if (!databaseUrl.includes('-pooler') || !databaseUrl.includes('neon.tech')) return databaseUrl;
+  // 已有 pgbouncer 参数则跳过
+  if (databaseUrl.includes('pgbouncer=')) return databaseUrl;
+  const separator = databaseUrl.includes('?') ? '&' : '?';
+  const result = databaseUrl + separator + 'pgbouncer=true';
+  logger.info(' ✅ Added pgbouncer=true for Neon pgBouncer compatibility');
+  return result;
 }
 
 // 检查是否是连接错误
@@ -185,23 +201,48 @@ async function executeWithRetry(operation, maxRetries = 2) {
           errorMessage: error.message?.substring(0, 100)
         });
 
-        // 断开并重新连接
+        // 断开并重置单例，确保下次 getPrisma() 创建全新客户端
         try {
-          const client = getPrisma();
-          await client.$disconnect();
-          // 等待一小段时间后重试（指数退避）
-          await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+          if (prisma) {
+            await prisma.$disconnect();
+          }
         } catch (disconnectError) {
-          // 忽略断开连接的错误
+          // ignore
+        } finally {
+          prisma = null; // 必须重置，否则 getPrisma() 仍返回已断开的实例
         }
 
+        // 指数退避
+        await new Promise(resolve => setTimeout(resolve, 150 * attempt));
         continue;
       }
 
-      // 如果重试次数用完或不是连接错误，抛出错误
+      // 重试次数用完或非连接错误，抛出
       throw error;
     }
   }
+}
+
+// 为 Prisma 模型代理包装自动重试（作用于所有 model.findMany / create 等操作）
+function wrapModelWithRetry(model, modelName) {
+  return new Proxy(model, {
+    get(modelTarget, methodName) {
+      const method = modelTarget[methodName];
+      if (typeof method !== 'function') return method;
+
+      return function (...args) {
+        return executeWithRetry(async () => {
+          // 每次重试时重新获取 client（prisma 单例可能已被重置）
+          const freshClient = getPrisma();
+          const freshModel = freshClient[modelName];
+          if (!freshModel || typeof freshModel[methodName] !== 'function') {
+            throw new Error(`Prisma model ${String(modelName)}.${String(methodName)} not available`);
+          }
+          return freshModel[methodName].apply(freshModel, args);
+        });
+      };
+    }
+  });
 }
 
 // 导出重试函数供其他模块使用（将在最后通过 prismaProxy 导出）
@@ -333,13 +374,29 @@ const prismaProxy = new Proxy({}, {
 
     const client = getPrisma();
     if (!client) {
-      // 如果 Prisma Client 还没创建，抛出有意义的错误
       const error = new Error('Prisma Client not initialized yet. Please wait for server startup to complete.');
       logger.error(' ❌ Prisma Client access error:', error.message);
       throw error;
     }
     setupBackwardCompatibility();
-    return client[prop];
+
+    const value = client[prop];
+
+    // 对 Prisma 模型代理（具有 findMany 方法的对象）自动包装连接重试逻辑
+    // 内置方法（$connect/$disconnect 等）和非模型属性直接返回
+    if (
+      typeof prop === 'string' &&
+      !prop.startsWith('$') &&
+      !prop.startsWith('_') &&
+      value !== null &&
+      value !== undefined &&
+      typeof value === 'object' &&
+      typeof value.findMany === 'function'
+    ) {
+      return wrapModelWithRetry(value, prop);
+    }
+
+    return value;
   },
   set(target, prop, value) {
     const client = getPrisma();
