@@ -586,7 +586,7 @@ exports.createOfflineOrder = async (req, res) => {
 
     const orderDate = startDate ? parseDate(startDate) : new Date();
 
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
       // 在事务中生成订单编号（使用流水号）
       let uniqueCode = await generateOrderCode(tx, orderDate, req.user);
       let exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
@@ -697,7 +697,7 @@ exports.createOfflineOrder = async (req, res) => {
       });
 
       return finalOrder;
-    });
+    }));
 
     res.status(201).json({
       success: true,
@@ -1551,7 +1551,7 @@ exports.updateOfflineOrderStage = async (req, res) => {
         ? parseInt(position, 10)
         : null;
 
-    const updatedOrder = await prisma.$transaction(async (tx) => {
+    const updatedOrder = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
       const existing = await tx.offlineOrder.findUnique({
         where: { id },
         select: { stageKey: true }
@@ -1593,7 +1593,7 @@ exports.updateOfflineOrderStage = async (req, res) => {
       });
 
       return order;
-    });
+    }));
 
     if (!updatedOrder) {
       return res.status(404).json({
@@ -1774,7 +1774,7 @@ exports.updateOfflineOrder = async (req, res) => {
       }
     }
 
-    const updatedOrder = await prisma.$transaction(async (tx) => {
+    const updatedOrder = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
       const existing = await tx.offlineOrder.findUnique({
         where: { id },
         select: {
@@ -1915,7 +1915,7 @@ exports.updateOfflineOrder = async (req, res) => {
       });
 
       return order;
-    });
+    }));
 
     if (!updatedOrder) {
       return res.status(404).json({
@@ -1958,7 +1958,7 @@ exports.addOfflineOrderNote = async (req, res) => {
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Admin';
 
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
       const existing = await tx.offlineOrder.findUnique({
         where: { id },
         select: { id: true, stageKey: true }
@@ -1995,7 +1995,7 @@ exports.addOfflineOrderNote = async (req, res) => {
           }
         }
       });
-    });
+    }));
 
     if (!order) {
       return res.status(404).json({
@@ -2062,7 +2062,7 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Admin';
 
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
       const existing = await tx.offlineOrder.findUnique({
         where: { id },
         select: { id: true, stageKey: true }
@@ -2114,7 +2114,7 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
           }
         }
       });
-    });
+    }));
 
     if (!order) {
       return res.status(404).json({
@@ -2242,7 +2242,7 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Admin';
 
-    const order = await prisma.$transaction(async (tx) => {
+    const order = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
       const existingOrder = await tx.offlineOrder.findUnique({
         where: { id },
         include: {
@@ -2366,7 +2366,7 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
           }
         }
       });
-    });
+    }));
 
     if (!order) {
       return res.status(404).json({
@@ -2423,7 +2423,7 @@ exports.updateOfflineWorkflowStages = async (req, res) => {
 
     const updatedStages = await updateStageConfig(stages, req.user?.id || null);
 
-    await prisma.$transaction(
+    await Promise.all(
       updatedStages.map((stage, index) =>
         prisma.offlineOrder.updateMany({
           where: { stageKey: stage.key },
