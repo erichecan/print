@@ -80,7 +80,7 @@ exports.listDesigns = async (req, res) => {
       where.status = { in: STATUS_FILTERS[statusFilter] };
     }
 
-    const [designs, total] = await prisma.$transaction([
+    const [designs, total] = await Promise.all([
       prisma.design.findMany({
         where,
         skip,

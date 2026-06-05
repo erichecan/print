@@ -67,7 +67,7 @@ exports.listOrders = async (req, res) => {
       ];
     }
 
-    const [orders, total] = await prisma.$transaction([
+    const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,
         skip,

@@ -55,7 +55,7 @@ exports.listUsers = async (req, res) => {
       where.emailVerified = false;
     }
 
-    const [users, total] = await prisma.$transaction([
+    const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
         skip,
@@ -127,7 +127,7 @@ exports.getUserDetail = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const [orderAggregate, designsCount, recentOrders] = await prisma.$transaction([
+    const [orderAggregate, designsCount, recentOrders] = await Promise.all([
       prisma.order.aggregate({
         where: { userId: id },
         _count: { _all: true },

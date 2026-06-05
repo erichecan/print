@@ -287,7 +287,7 @@ exports.listProducts = async (req, res) => {
     // Exclude deleted products
     where.deleted = false;
 
-    const [products, total] = await prisma.$transaction([
+    const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
         skip,

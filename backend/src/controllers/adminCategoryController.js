@@ -36,7 +36,7 @@ exports.listCategories = async (req, res) => {
       where.isActive = true;
     }
 
-    const [categories, total] = await prisma.$transaction([
+    const [categories, total] = await Promise.all([
       prisma.category.findMany({
         where,
         skip,
