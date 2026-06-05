@@ -1,4 +1,4 @@
-# CI workflow for linting and tests 
+# CI workflow for linting and tests
 name: CI
 
 on:
@@ -11,16 +11,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-- name: Checkout repository # 
+      - name: Checkout repository
         uses: actions/checkout@v4
-- name: Setup Node.js # 
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
-- name: Install dependencies # 
+
+      - name: Install dependencies
         run: npm install
-- name: Check environment variables # 构建前环境变量校验
+
+      - name: Check environment variables
         run: |
           cd apps/web
           node ../../scripts/check-env.mjs
@@ -28,13 +31,18 @@ jobs:
           NODE_ENV: production
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api' }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
-- name: Lint frontend # 
+
+      - name: Lint frontend
         run: npm run lint --workspace apps/web
-- name: Test backend # 
+
+      - name: Test backend
         run: npm test --workspace backend
-- name: Install Playwright # 安装 Playwright 用于 E2E 测试
+
+      - name: Install Playwright
         run: npx playwright install --with-deps
-- name: Run E2E tests # 运行管理后台 E2E 测试
+
+      - name: Run E2E tests
+        continue-on-error: true
         run: |
           cd apps/web
           npx playwright test tests/e2e/admin-products.spec.ts tests/e2e/admin-categories.spec.ts --reporter=list
@@ -42,5 +50,3 @@ jobs:
           PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.TEST_BASE_URL || 'http://localhost:3000' }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL || 'admin@example.com' }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
-continue-on-error: true # E2E 测试可能因环境问题失败，不阻塞 CI
-
