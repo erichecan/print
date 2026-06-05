@@ -174,8 +174,14 @@
 .actions-dropdown-menu button:hover { background: var(--color-bg-subtle); }
 
 /* Filters and Search */
-.admin-filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.admin-filters { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
 .admin-filters--wrap { flex-wrap: wrap; }
+.admin-filters-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.search-box { display: flex; gap: 6px; align-items: center; }
+.search-box input { padding: 8px 12px; border: 1px solid var(--color-border); background: #fff; color: var(--color-text); font-size: 14px; min-width: 200px; }
+.filter-select { padding: 8px 32px 8px 12px; border: 1px solid var(--color-border); background: #fff url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7l5 5 5-5' stroke='%2399A1B3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center; background-size: 14px; color: var(--color-text); font-size: 14px; appearance: none; cursor: pointer; }
+.filter-select:disabled { opacity: 0.5; cursor: not-allowed; }
+.text-sm { font-size: 13px; }
 .admin-search { position: relative; flex: 1; max-width: 300px; }
 .admin-search input { width: 100%; padding: 10px 12px 10px 36px; border: 1px solid var(--color-border); border-radius: 8px; }
 .admin-search::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
@@ -1167,6 +1173,47 @@
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 480px;
+  width: 100%;
+  padding: 28px 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--color-text);
+}
+
+.modal-content p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn--danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
 }
 
 .modal {
