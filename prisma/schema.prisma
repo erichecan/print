@@ -561,6 +561,7 @@ model OfflineOrderAsset {
   contentType String?      @map("content_type")
   storageKey  String       @map("storage_key")
   url         String
+  comment     String?
   uploadedAt  DateTime     @default(now()) @map("uploaded_at")
   uploadedBy  String?      @map("uploaded_by")
   order       OfflineOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
