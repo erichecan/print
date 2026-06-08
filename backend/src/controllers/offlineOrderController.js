@@ -752,14 +752,6 @@ exports.createOfflineOrder = async (req, res) => {
         });
       }
 
-      const createActorName = req.user
-        ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
-        : 'Customer';
-
-      await writeAuditLogs(tx, createdOrder.id, req.user?.id, createActorName, [
-        { action: 'ORDER_CREATED', metadata: { orderCode: uniqueCode } }
-      ]);
-
       // Re-fetch to include the production work order
       const finalOrder = await tx.offlineOrder.findUnique({
         where: { id: createdOrder.id },
@@ -773,6 +765,19 @@ exports.createOfflineOrder = async (req, res) => {
 
       return finalOrder;
     }));
+
+    if (order) {
+      const createActorName = req.user
+        ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
+        : 'Customer';
+      try {
+        await writeAuditLogs(prisma, order.id, req.user?.id, createActorName, [
+          { action: 'ORDER_CREATED', metadata: { orderCode: order.orderCode } }
+        ]);
+      } catch (auditErr) {
+        logger.warn('[createOfflineOrder] Audit log write failed:', auditErr.message);
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -1629,6 +1634,7 @@ exports.updateOfflineOrderStage = async (req, res) => {
         ? parseInt(position, 10)
         : null;
 
+    let prevStageKey = null;
     const updatedOrder = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
       const existing = await tx.offlineOrder.findUnique({
         where: { id },
@@ -1638,6 +1644,8 @@ exports.updateOfflineOrderStage = async (req, res) => {
       if (!existing) {
         return null;
       }
+
+      prevStageKey = existing.stageKey;
 
       const order = await tx.offlineOrder.update({
         where: { id },
@@ -1673,16 +1681,6 @@ exports.updateOfflineOrderStage = async (req, res) => {
         }
       });
 
-      await writeAuditLogs(tx, id, req.user?.id, actorName, [
-        {
-          action: 'STAGE_CHANGED',
-          field: '阶段',
-          oldValue: existing.stageKey,
-          newValue: stage.key,
-          metadata: note ? { note: note.toString().trim() } : null
-        }
-      ]);
-
       return order;
     }));
 
@@ -1691,6 +1689,20 @@ exports.updateOfflineOrderStage = async (req, res) => {
         error: 'Not Found',
         message: 'Offline order not found'
       });
+    }
+
+    try {
+      await writeAuditLogs(prisma, id, req.user?.id, actorName, [
+        {
+          action: 'STAGE_CHANGED',
+          field: '阶段',
+          oldValue: prevStageKey,
+          newValue: stage.key,
+          metadata: note ? { note: note.toString().trim() } : null
+        }
+      ]);
+    } catch (auditErr) {
+      logger.warn('[updateOfflineOrderStage] Audit log write failed:', auditErr.message);
     }
 
     res.json({
@@ -1865,7 +1877,10 @@ exports.updateOfflineOrder = async (req, res) => {
       }
     }
 
-    const updatedOrder = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
+    let capturedUpdateAuditEntries = [];
+    const updatedOrder = await prisma.executeWithRetry(() => {
+      capturedUpdateAuditEntries = [];
+      return prisma.$transaction(async (tx) => {
       const existing = await tx.offlineOrder.findUnique({
         where: { id },
         select: {
@@ -1965,17 +1980,15 @@ exports.updateOfflineOrder = async (req, res) => {
               }
             }
           });
-          await writeAuditLogs(tx, id, req.user?.id, actorName, [
-            {
-              action: 'WORK_ORDER_AUTO_CREATED',
-              metadata: {
-                workOrderCode,
-                startDate: workOrderData.startDate?.toISOString?.() ?? null,
-                dueDate: workOrderData.dueDate?.toISOString?.() ?? null,
-                trigger: Object.keys(data).join(', ')
-              }
+          capturedUpdateAuditEntries.push({
+            action: 'WORK_ORDER_AUTO_CREATED',
+            metadata: {
+              workOrderCode,
+              startDate: workOrderData.startDate?.toISOString?.() ?? null,
+              dueDate: workOrderData.dueDate?.toISOString?.() ?? null,
+              trigger: Object.keys(data).join(', ')
             }
-          ]);
+          });
         }
       }
 
@@ -2060,20 +2073,26 @@ exports.updateOfflineOrder = async (req, res) => {
         const noteEntry = note
           ? [{ action: 'NOTE_ADDED', newValue: note.toString().trim() }]
           : [];
-        await writeAuditLogs(tx, id, req.user?.id, actorName, [
-          ...fieldAuditEntries,
-          ...noteEntry
-        ]);
+        capturedUpdateAuditEntries.push(...fieldAuditEntries, ...noteEntry);
       }
 
       return order;
-    }));
+    });
+    });
 
     if (!updatedOrder) {
       return res.status(404).json({
         error: 'Not Found',
         message: 'Offline order not found'
       });
+    }
+
+    if (capturedUpdateAuditEntries.length > 0) {
+      try {
+        await writeAuditLogs(prisma, id, req.user?.id, actorName, capturedUpdateAuditEntries);
+      } catch (auditErr) {
+        logger.warn('[updateOfflineOrder] Audit log write failed:', auditErr.message);
+      }
     }
 
     res.json({
@@ -2131,10 +2150,6 @@ exports.addOfflineOrderNote = async (req, res) => {
         }
       });
 
-      await writeAuditLogs(tx, id, req.user?.id, actorName, [
-        { action: 'NOTE_ADDED', newValue: trimmedNote }
-      ]);
-
       return tx.offlineOrder.findUnique({
         where: { id },
         include: {
@@ -2161,6 +2176,14 @@ exports.addOfflineOrderNote = async (req, res) => {
         error: 'Not Found',
         message: 'Offline order not found'
       });
+    }
+
+    try {
+      await writeAuditLogs(prisma, id, req.user?.id, actorName, [
+        { action: 'NOTE_ADDED', newValue: trimmedNote }
+      ]);
+    } catch (auditErr) {
+      logger.warn('[addOfflineOrderNote] Audit log write failed:', auditErr.message);
     }
 
     res.json({
@@ -2257,14 +2280,6 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
         }
       });
 
-      await writeAuditLogs(tx, id, req.user?.id, actorName,
-        assetPayloads.map((asset) => ({
-          action: 'FILE_UPLOADED',
-          newValue: asset.fileName,
-          metadata: { fileSize: asset.fileSize, contentType: asset.contentType }
-        }))
-      );
-
       return tx.offlineOrder.findUnique({
         where: { id },
         include: {
@@ -2291,6 +2306,18 @@ exports.uploadOfflineOrderAssets = async (req, res) => {
         error: 'Not Found',
         message: 'Offline order not found'
       });
+    }
+
+    try {
+      await writeAuditLogs(prisma, id, req.user?.id, actorName,
+        assetPayloads.map((asset) => ({
+          action: 'FILE_UPLOADED',
+          newValue: asset.fileName,
+          metadata: { fileSize: asset.fileSize, contentType: asset.contentType }
+        }))
+      );
+    } catch (auditErr) {
+      logger.warn('[uploadOfflineOrderAssets] Audit log write failed:', auditErr.message);
     }
 
     res.status(201).json({
@@ -2444,6 +2471,7 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Admin';
 
+    let capturedWorkOrderAuditEntries = [];
     const order = await prisma.executeWithRetry(() => prisma.$transaction(async (tx) => {
       const existingOrder = await tx.offlineOrder.findUnique({
         where: { id },
@@ -2534,7 +2562,7 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
           }
         });
 
-        await writeAuditLogs(tx, id, req.user?.id, actorName, [{
+        capturedWorkOrderAuditEntries.push({
           action: 'WORK_ORDER_CREATED',
           metadata: {
             workOrderCode,
@@ -2542,7 +2570,7 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
             assigneeName: baseWorkOrderData.assigneeName || null,
             dueDate: baseWorkOrderData.dueDate?.toISOString?.() ?? null,
           }
-        }]);
+        });
       } else {
         workOrder = await tx.productionWorkOrder.update({
           where: { id: existingOrder.productionWorkOrder.id },
@@ -2577,7 +2605,7 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
           }
         }
         if (woAuditEntries.length > 0) {
-          await writeAuditLogs(tx, id, req.user?.id, actorName, woAuditEntries);
+          capturedWorkOrderAuditEntries.push(...woAuditEntries);
         }
       }
 
@@ -2607,6 +2635,14 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
         error: 'Not Found',
         message: 'Offline order not found'
       });
+    }
+
+    if (capturedWorkOrderAuditEntries.length > 0) {
+      try {
+        await writeAuditLogs(prisma, id, req.user?.id, actorName, capturedWorkOrderAuditEntries);
+      } catch (auditErr) {
+        logger.warn('[createOrUpdateProductionWorkOrder] Audit log write failed:', auditErr.message);
+      }
     }
 
     res.status(200).json({

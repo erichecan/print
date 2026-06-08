@@ -60,7 +60,7 @@ jobs:
             --memory=512Mi \
             --cpu=0.5 \
             --concurrency=1 \
-            --set-env-vars="NODE_ENV=production,AUTO_MIGRATE=false,FRONTEND_URL=https://printngoplus.com,GCP_IMAGE_BUCKET=print-482914-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-482914-images,APP_BUILD_SHA=${GITHUB_SHA::8},APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --set-env-vars="NODE_ENV=production,AUTO_MIGRATE=true,FRONTEND_URL=https://printngoplus.com,GCP_IMAGE_BUCKET=print-482914-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-482914-images,APP_BUILD_SHA=${GITHUB_SHA::8},APP_BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             --set-secrets="DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest" \
             --quiet
 
