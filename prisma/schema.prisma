@@ -1402,9 +1402,9 @@ model ReferralCampaign {
   name        String   @default("default") @db.VarChar(50)
   isActive    Boolean  @default(true) @map("is_active")
   cap         Int      @default(3)
-  tier1Amount Decimal  @default(200) @map("tier1_amount") @db.Decimal(10, 2)
-  tier2Amount Decimal  @default(400) @map("tier2_amount") @db.Decimal(10, 2)
-  tier3Amount Decimal  @default(800) @map("tier3_amount") @db.Decimal(10, 2)
+  tier1Amount Decimal  @default(25) @map("tier1_amount") @db.Decimal(10, 2)
+  tier2Amount Decimal  @default(40) @map("tier2_amount") @db.Decimal(10, 2)
+  tier3Amount Decimal  @default(60) @map("tier3_amount") @db.Decimal(10, 2)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -1429,17 +1429,73 @@ model ReferralLink {
   tier           Int
   rewardAmount   Decimal              @map("reward_amount") @db.Decimal(10, 2)
   rewardStatus   ReferralRewardStatus @default(PENDING) @map("reward_status")
+  clientIp       String?              @map("client_ip") @db.VarChar(45)
+  clientId       String?              @map("client_id") @db.VarChar(36)
+  frozenUntil    DateTime?            @map("frozen_until")
+  frozenReason   String?              @map("frozen_reason") @db.VarChar(200)
   paidAt         DateTime?            @map("paid_at")
   createdAt      DateTime             @default(now()) @map("created_at")
   updatedAt      DateTime             @updatedAt @map("updated_at")
 
   @@index([promoterUserId])
   @@index([referredUserId])
+  @@index([clientIp])
+  @@index([clientId])
   @@map("referral_links")
 }
 
 enum ReferralRewardStatus {
   PENDING
+  FROZEN
+  PAID
+  CANCELLED
+}
+
+model InfluencerCode {
+  id            String                @id @default(cuid())
+  code          String                @unique @db.VarChar(30)
+  ownerUserId   String                @map("owner_user_id")
+  label         String                @default("") @db.VarChar(100)
+  discountPct   Int                   @default(0) @map("discount_pct")
+  commissionPct Int                   @default(10) @map("commission_pct")
+  monthlyLimit  Int                   @default(50) @map("monthly_limit")
+  isActive      Boolean               @default(true) @map("is_active")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  usages        InfluencerCodeUsage[]
+
+  @@index([ownerUserId])
+  @@map("influencer_codes")
+}
+
+model InfluencerCodeUsage {
+  id               String                 @id @default(cuid())
+  codeId           String                 @map("code_id")
+  buyerUserId      String?                @map("buyer_user_id")
+  orderId          String                 @unique @map("order_id")
+  orderAmount      Decimal                @map("order_amount") @db.Decimal(10, 2)
+  commissionAmount Decimal                @map("commission_amount") @db.Decimal(10, 2)
+  discountAmount   Decimal                @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  rewardStatus     InfluencerRewardStatus @default(PENDING) @map("reward_status")
+  clientIp         String?                @map("client_ip") @db.VarChar(45)
+  clientId         String?                @map("client_id") @db.VarChar(36)
+  frozenUntil      DateTime?              @map("frozen_until")
+  frozenReason     String?                @map("frozen_reason") @db.VarChar(200)
+  paidAt           DateTime?              @map("paid_at")
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  code             InfluencerCode         @relation(fields: [codeId], references: [id])
+
+  @@index([codeId])
+  @@index([buyerUserId])
+  @@index([clientIp])
+  @@index([clientId])
+  @@map("influencer_code_usages")
+}
+
+enum InfluencerRewardStatus {
+  PENDING
+  FROZEN
   PAID
   CANCELLED
 }

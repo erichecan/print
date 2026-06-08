@@ -79,7 +79,7 @@ async function getUserStats(userId) {
     orderBy: { createdAt: 'desc' },
   });
 
-  const referralCount = links.filter((l) => l.rewardStatus !== 'CANCELLED').length;
+  const referralCount = links.filter((l) => !['CANCELLED', 'FROZEN'].includes(l.rewardStatus)).length;
   const walletBalance = links.reduce((sum, l) => {
     if (l.rewardStatus === 'PENDING' || l.rewardStatus === 'PAID') {
       return sum + Number(l.rewardAmount);
@@ -115,9 +115,54 @@ async function getUserStats(userId) {
   };
 }
 
+// ─── Anti-Fraud: IP / clientId clustering ────────────────────────────────────
+
+const FRAUD_WINDOW_MS = 48 * 60 * 60 * 1000;
+const FRAUD_THRESHOLD = 2;
+const FREEZE_DAYS = 30;
+
+async function _checkReferralFraud(newLink) {
+  const windowStart = new Date(Date.now() - FRAUD_WINDOW_MS);
+
+  for (const field of ['clientIp', 'clientId']) {
+    const value = newLink[field];
+    if (!value) continue;
+
+    const peers = await prisma.referralLink.findMany({
+      where: {
+        promoterUserId: newLink.promoterUserId,
+        [field]: value,
+        rewardStatus: { not: 'CANCELLED' },
+        createdAt: { gte: windowStart },
+        id: { not: newLink.id },
+      },
+    });
+
+    if (peers.length >= FRAUD_THRESHOLD - 1) {
+      const frozenUntil = new Date(Date.now() + FREEZE_DAYS * 24 * 60 * 60 * 1000);
+      const frozenReason = `Suspicious: ${peers.length + 1} referrals from same ${field} in 48h`;
+
+      const idsToFreeze = [...peers.map((p) => p.id), newLink.id];
+      await prisma.referralLink.updateMany({
+        where: { id: { in: idsToFreeze }, rewardStatus: 'PENDING' },
+        data: { rewardStatus: 'FROZEN', frozenUntil, frozenReason },
+      });
+
+      logger.warn('[Referral] Fraud freeze applied', {
+        promoterUserId: newLink.promoterUserId,
+        field,
+        value,
+        count: idsToFreeze.length,
+        frozenUntil,
+      });
+      return;
+    }
+  }
+}
+
 // ─── Core Hook ────────────────────────────────────────────────────────────────
 
-async function onOrderPaid(orderId, referralCode, referredUserId) {
+async function onOrderPaid(orderId, referralCode, referredUserId, { clientIp, clientId } = {}) {
   if (!referralCode || !referralCode.startsWith('PNG')) return;
 
   try {
@@ -172,7 +217,7 @@ async function onOrderPaid(orderId, referralCode, referredUserId) {
     const tier = completedCount + 1;
     const rewardAmount = tierAmounts[completedCount];
 
-    await prisma.referralLink.create({
+    const newLink = await prisma.referralLink.create({
       data: {
         id: uuidv4(),
         promoterUserId,
@@ -181,10 +226,17 @@ async function onOrderPaid(orderId, referralCode, referredUserId) {
         tier,
         rewardAmount,
         rewardStatus: 'PENDING',
+        clientIp: clientIp || null,
+        clientId: clientId || null,
       },
     });
 
     logger.info('[Referral] Reward created', { promoterUserId, tier, rewardAmount, orderId });
+
+    // Async fraud check — never blocks order confirmation
+    _checkReferralFraud(newLink).catch((err) =>
+      logger.error('[Referral] Fraud check error', { orderId, error: err.message })
+    );
   } catch (err) {
     logger.error('[Referral] onOrderPaid error', { orderId, error: err.message, stack: err.stack });
   }

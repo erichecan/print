@@ -299,11 +299,36 @@ function CheckoutForm({
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
 
-  // 推荐码：从 sessionStorage 读取（由邀请链接落地页写入）
-  const [referralCode] = useState<string>(() => {
-    if (typeof window === 'undefined') return '';
-    return sessionStorage.getItem('referral_ref') ?? '';
+  // 推荐码/网红码输入框
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromoCode, setAppliedPromoCode] = useState<{
+    code: string;
+    codeType: 'user' | 'influencer';
+    discountPct?: number;
+    discountAmount?: number;
+  } | null>(() => {
+    // 从 localStorage 恢复已有的 PNG* 码（由邀请链接落地页写入，跨标签页保留）
+    if (typeof window === 'undefined') return null;
+    const saved = localStorage.getItem('referral_ref');
+    if (saved?.startsWith('PNG')) return { code: saved, codeType: 'user' };
+    return null;
   });
+  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
+  // clientId：持久化设备指纹（用于防刷单）
+  const clientId = useState<string>(() => {
+    if (typeof window === 'undefined') return '';
+    let id = localStorage.getItem('_cid');
+    if (!id) {
+      id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem('_cid', id);
+    }
+    return id;
+  })[0];
+
+  // referralCode：合并来源（输入的码优先）
+  const referralCode = appliedPromoCode?.code || '';
 
   // 地址持久化：从 localStorage 加载保存的地址
   useEffect(() => {
@@ -514,6 +539,70 @@ function CheckoutForm({
     }
   };
 
+  const handleApplyPromoCode = async () => {
+    const code = promoCodeInput.trim().toUpperCase();
+    if (!code) return;
+    setApplyingPromo(true);
+    setPromoError(null);
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+      const buyerUserId = (typeof window !== 'undefined' ? localStorage.getItem('userId') : null) || undefined;
+      const url = `${API_URL}/api/referral/validate/${encodeURIComponent(code)}${buyerUserId ? `?buyerUserId=${buyerUserId}` : ''}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data.valid) {
+        const reasonMap: Record<string, string> = {
+          campaign_inactive: 'Referral program is currently inactive',
+          cap_reached: 'This referral code has reached its limit',
+          not_found: 'Code not found or inactive',
+          self_use: 'You cannot use your own code',
+          monthly_limit: 'This code has reached its monthly limit',
+        };
+        setPromoError(reasonMap[data.reason] || 'Invalid code');
+        return;
+      }
+
+      const discountAmount = (data.discountPct || 0) > 0
+        ? Math.round(totals.subtotal * (data.discountPct / 100) * 100) / 100
+        : 0;
+
+      setAppliedPromoCode({
+        code,
+        codeType: data.codeType,
+        discountPct: data.discountPct,
+        discountAmount,
+      });
+      setPromoCodeInput('');
+
+      if (discountAmount > 0) {
+        notifyTotals({
+          ...totals,
+          discount: (totals.discount || 0) + discountAmount,
+          total: Math.max(0, totals.total - discountAmount),
+        });
+      }
+    } catch {
+      setPromoError('Failed to validate code. Please try again.');
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const handleRemovePromoCode = () => {
+    const discountToRemove = appliedPromoCode?.discountAmount || 0;
+    setAppliedPromoCode(null);
+    setPromoCodeInput('');
+    setPromoError(null);
+    if (discountToRemove > 0) {
+      notifyTotals({
+        ...totals,
+        discount: Math.max(0, (totals.discount || 0) - discountToRemove),
+        total: totals.total + discountToRemove,
+      });
+    }
+  };
+
   const refreshTotals = useCallback(
     async (shippingMethod: string) => {
       if (!addressReady) return;
@@ -712,12 +801,13 @@ function CheckoutForm({
         shippingPayload,
         selectedShipping,
         appliedCoupon?.code,
-        appliedCoupon?.id, // 如果前端有存储 couponId，可以传递
-        undefined, // draftOrderId (not used currently)
-        totals.total, // amount for validation
-        'CAD', // currency
-        shippingPayload.email, // customerEmail
-        {} // metadata
+        appliedCoupon?.id,
+        undefined, // draftOrderId
+        totals.total,
+        'CAD',
+        shippingPayload.email,
+        {},
+        referralCode || undefined
       );
 
       // 更新优惠券状态（如果 paymentIntentResponse 包含优惠券信息）
@@ -871,13 +961,15 @@ function CheckoutForm({
         shippingPayload.email,
         appliedCoupon?.code,
         appliedCoupon?.id || paymentIntentResponse.coupon?.id,
-        referralCode || undefined
+        referralCode || undefined,
+        clientId || undefined
       );
 
-      // 支付成功后清除保存的地址信息
+      // 支付成功后清除保存的地址和推广码
       try {
         localStorage.removeItem('checkout_shipping_address');
         localStorage.removeItem('checkout_same_billing');
+        localStorage.removeItem('referral_ref');
       } catch (err) {
         console.error(' Failed to clear saved address:', err);
       }
@@ -1376,6 +1468,49 @@ function CheckoutForm({
         )}
         {couponError && (
           <div className="coupon-error-message">{couponError}</div>
+        )}
+      </div>
+
+      {/* 推荐码 / 网红专属码 */}
+      <h2>Referral / Promo Code</h2>
+      <div className="coupon-section">
+        {appliedPromoCode ? (
+          <div className="coupon-applied">
+            <div className="coupon-info">
+              <strong>{appliedPromoCode.code}</strong>
+              {appliedPromoCode.codeType === 'influencer' && (appliedPromoCode.discountPct || 0) > 0 ? (
+                <span>-${(appliedPromoCode.discountAmount || 0).toFixed(2)} ({appliedPromoCode.discountPct}% off)</span>
+              ) : (
+                <span style={{ color: '#666', fontSize: '0.875rem' }}>Referral applied</span>
+              )}
+            </div>
+            <button type="button" onClick={handleRemovePromoCode} className="remove-coupon-btn">
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div className="coupon-input-group">
+            <input
+              type="text"
+              placeholder="Enter referral or promo code (e.g. SARAH20)"
+              value={promoCodeInput}
+              onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+              onKeyPress={(e) => e.key === 'Enter' && handleApplyPromoCode()}
+              className="coupon-input"
+              disabled={applyingPromo}
+            />
+            <button
+              type="button"
+              onClick={handleApplyPromoCode}
+              disabled={applyingPromo || !promoCodeInput.trim()}
+              className="coupon-apply-btn"
+            >
+              {applyingPromo ? '...' : 'Apply'}
+            </button>
+          </div>
+        )}
+        {promoError && (
+          <div className="coupon-error-message">{promoError}</div>
         )}
       </div>
 

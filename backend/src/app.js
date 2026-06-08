@@ -281,6 +281,7 @@ app.use('/api/chat', require('./routes/chat')); // Customer service chat routes 
 app.use('/api/design-lab/analytics', require('./routes/designLabAnalytics')); // Design Lab analytics routes
 app.use('/api/referral', require('./routes/referral')); // Referral cashback plugin
 app.use('/api/admin/referral', require('./routes/adminReferral')); // Admin: referral management
+app.use('/api/admin/influencer', require('./routes/adminInfluencer')); // Admin: influencer code management
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));
 

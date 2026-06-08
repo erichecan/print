@@ -146,6 +146,7 @@ const NAV_LINKS: NavItem[] = [
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
   { href: '/admin/referral-settings', label: 'Referral', icon: 'promotions', i18n: 'promotions' },
+  { href: '/admin/influencer-codes', label: 'Influencer Codes', icon: 'promotions', i18n: 'promotions', sub: true },
   { type: 'group', i18n: 'designLab' },
   { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets', sub: true },
   { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts', sub: true },

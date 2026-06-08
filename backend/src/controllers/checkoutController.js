@@ -578,6 +578,7 @@ exports.createPaymentIntent = async (req, res) => {
       shippingAddress,
       shippingMethod = 'standard',
       couponCode,
+      referralCode,
       draftOrderId, // Optional draft order ID
       amount, // Optional amount from frontend (for validation)
       currency = 'CAD',
@@ -615,7 +616,18 @@ exports.createPaymentIntent = async (req, res) => {
       return res.status(400).json({ error: couponResult.error, errorCode: 'INVALID_COUPON' });
     }
     const couponDiscount = couponResult.discount || 0;
-    const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
+
+    // Influencer code discount (non-PNG referral codes)
+    let influencerDiscount = 0;
+    let influencerValidation = null;
+    if (referralCode && !referralCode.startsWith('PNG')) {
+      influencerValidation = await referralPlugin.validateInfluencerCode(referralCode, userId);
+      if (influencerValidation.valid && influencerValidation.discountPct > 0) {
+        influencerDiscount = Math.round((subtotalAfterPromotion - couponDiscount) * influencerValidation.discountPct) / 100;
+      }
+    }
+
+    const totalDiscount = promotionDiscount + couponDiscount + influencerDiscount;
 
     const shippingResult = await calculateShipping(
       shippingAddress.country,
@@ -627,7 +639,7 @@ exports.createPaymentIntent = async (req, res) => {
     const shippingCost = shippingResult.cost;
 
     // Tax is calculated on subtotal minus all discounts
-    const tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
+    const tax = calculateTax(subtotalAfterPromotion - couponDiscount - influencerDiscount, shippingAddress.province);
     const calculatedTotal = subtotal - totalDiscount + shippingCost + tax;
 
     // Validate amount if provided (prevent frontend tampering)
@@ -712,7 +724,8 @@ exports.createPaymentIntent = async (req, res) => {
       ...(promotionResult.promotions && promotionResult.promotions.length > 0
         ? { promotions: promotionResult.promotions }
         : {}), // 返回促销活动信息
-      ...(couponResult.coupon ? { coupon: couponResult.coupon } : {}), // 返回优惠券信息
+      ...(couponResult.coupon ? { coupon: couponResult.coupon } : {}),
+      ...(influencerDiscount > 0 ? { influencerDiscount, influencerDiscountPct: influencerValidation.discountPct } : {}),
     });
   } catch (error) {
     // 改进错误处理和日志记录
@@ -919,7 +932,18 @@ exports.confirmOrder = async (req, res) => {
     }
 
     const couponDiscount = couponResult.discount || 0;
-    const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
+
+    // Influencer code discount (non-PNG referral codes)
+    let influencerDiscount = 0;
+    let influencerValidation = null;
+    if (referralCode && !referralCode.startsWith('PNG')) {
+      influencerValidation = await referralPlugin.validateInfluencerCode(referralCode, userId);
+      if (influencerValidation.valid && influencerValidation.discountPct > 0) {
+        influencerDiscount = Math.round((subtotalAfterPromotion - couponDiscount) * influencerValidation.discountPct) / 100;
+      }
+    }
+
+    const totalDiscount = promotionDiscount + couponDiscount + influencerDiscount;
 
     // Calculate shipping cost again (to be safe)
     const shippingResult = await calculateShipping(
@@ -932,7 +956,7 @@ exports.confirmOrder = async (req, res) => {
     const shippingCost = shippingResult.cost;
 
     // Tax is calculated on subtotal minus all discounts
-    const tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
+    const tax = calculateTax(subtotalAfterPromotion - couponDiscount - influencerDiscount, shippingAddress.province);
     const total = subtotal - totalDiscount + shippingCost + tax;
 
     // Generate order number
@@ -1074,11 +1098,27 @@ exports.confirmOrder = async (req, res) => {
       paymentIntentId,
     });
 
-    // Referral plugin hook — fire-and-forget, never blocks the order response
+    // Referral / influencer code hooks — fire-and-forget, never block order response
     if (referralCode) {
-      referralPlugin.onOrderPaid(order.id, referralCode, userId).catch((err) => {
-        logger.warn('[Referral] onOrderPaid background error', { error: err.message });
-      });
+      const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip;
+      const clientId = req.body.clientId || req.headers['x-client-id'] || null;
+
+      if (referralCode.startsWith('PNG')) {
+        referralPlugin.onOrderPaid(order.id, referralCode, userId, { clientIp, clientId }).catch((err) => {
+          logger.warn('[Referral] onOrderPaid background error', { error: err.message });
+        });
+      } else {
+        referralPlugin.onInfluencerCodeUsed({
+          code: referralCode,
+          buyerUserId: userId,
+          orderId: order.id,
+          orderAmount: order.total,
+          clientIp,
+          clientId,
+        }).catch((err) => {
+          logger.warn('[Influencer] onInfluencerCodeUsed background error', { error: err.message });
+        });
+      }
     }
 
     // Send order confirmation email (webhook will also send, but this ensures delivery)

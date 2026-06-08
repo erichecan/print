@@ -689,7 +689,8 @@ export const checkoutApi = {
     amount?: number,
     currency?: string,
     customerEmail?: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    referralCode?: string
   ) =>
     api<CheckoutPaymentIntentResponse>('/checkout/create-payment-intent', {
       method: 'POST',
@@ -703,6 +704,7 @@ export const checkoutApi = {
         ...(currency ? { currency } : {}),
         ...(customerEmail ? { customerEmail } : {}),
         ...(metadata ? { metadata } : {}),
+        ...(referralCode ? { referralCode } : {}),
       },
     }),
   // 添加优惠券支持
@@ -714,7 +716,8 @@ export const checkoutApi = {
     email: string,
     couponCode?: string,
     couponId?: string,
-    referralCode?: string
+    referralCode?: string,
+    clientId?: string
   ) =>
     api<CheckoutConfirmResponse>('/checkout/confirm', {
       method: 'POST',
@@ -727,6 +730,7 @@ export const checkoutApi = {
         ...(couponCode ? { couponCode } : {}),
         ...(couponId ? { couponId } : {}),
         ...(referralCode ? { referralCode } : {}),
+        ...(clientId ? { clientId } : {}),
       },
     }),
   devOrder: (email: string, shippingAddress: CheckoutAddressPayload) =>

@@ -1,15 +1,9 @@
-/**
- * Referral 商品页 - 选商品，加入购物车 / 直接购买
- * 流程简短，尽快引导付款
- * 2026-02-21 创建 | 2026-03-01 扩展 30+ 商品、图片展示
- */
 'use client';
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth } from '@/contexts/AuthContext';
 import { REFERRAL_PRODUCTS } from '../data/products';
 
 const REF_STORAGE_KEY = 'referral_ref';
@@ -29,7 +23,7 @@ function ShopContent() {
 
   useEffect(() => {
     if (ref && typeof window !== 'undefined') {
-      sessionStorage.setItem(REF_STORAGE_KEY, ref);
+      localStorage.setItem(REF_STORAGE_KEY, ref);
     }
   }, [ref]);
 
@@ -48,9 +42,9 @@ function ShopContent() {
   };
 
   return (
-    <div className="container mx-auto px-8 py-10 max-w-2xl">
+    <div className="min-h-screen bg-[#0D0D0D] px-4 py-10 max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-bold text-[#0D0D0D]">选择商品</h1>
+        <h1 className="text-lg font-bold text-white">选择商品</h1>
         <Link
           href={ref ? `/referral/cart?ref=${encodeURIComponent(ref)}` : '/referral/cart'}
           className="text-[#E42313] hover:text-[#c51f11] text-sm"
@@ -59,13 +53,13 @@ function ShopContent() {
         </Link>
       </div>
 
-      <ul className="grid gap-6 sm:grid-cols-2">
+      <ul className="grid gap-4 sm:grid-cols-2">
         {REFERRAL_PRODUCTS.map((p) => (
           <li
             key={p.id}
-            className="border border-[#E8E8E8] bg-white overflow-hidden"
+            className="bg-[#1C1C1C] border border-[#2A2A2A] rounded-2xl overflow-hidden"
           >
-            <div className="relative aspect-square w-full bg-[#FAFAFA]">
+            <div className="relative aspect-square w-full bg-[#141414]">
               <Image
                 src={p.imageUrl}
                 alt={p.name}
@@ -76,22 +70,22 @@ function ShopContent() {
             </div>
             <div className="p-4">
               {p.category && (
-                <span className="text-xs text-[#7A7A7A]">{p.category}</span>
+                <span className="text-xs text-[#666]">{p.category}</span>
               )}
-              <p className="font-medium text-[#0D0D0D] line-clamp-2 mt-0.5">{p.name}</p>
-              <p className="text-lg font-bold text-[#E42313] mt-1">${p.price}</p>
+              <p className="font-medium text-white line-clamp-2 mt-0.5">{p.name}</p>
+              <p className="text-lg font-bold text-[#F5A623] mt-1">${p.price}</p>
               <div className="mt-3 flex gap-2">
                 <button
                   type="button"
                   onClick={() => addToCart({ id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl })}
-                  className="flex-1 bg-[#FAFAFA] border border-[#E8E8E8] py-2 text-sm font-medium text-[#7A7A7A] hover:bg-[#F0F0F0]"
+                  className="flex-1 bg-[#242424] border border-[#2A2A2A] py-2 text-sm font-medium text-[#666] hover:bg-[#2A2A2A] rounded-xl transition-colors"
                 >
                   加入购物车
                 </button>
                 <button
                   type="button"
                   onClick={() => buyNow({ id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl })}
-                  className="flex-1 bg-[#E42313] py-2 text-sm font-medium text-white hover:bg-[#c51f11]"
+                  className="flex-1 bg-[#E42313] py-2 text-sm font-medium text-white hover:bg-[#c51f11] rounded-xl transition-colors"
                 >
                   直接购买
                 </button>
@@ -112,7 +106,7 @@ function ShopContent() {
 
 export default function ReferralShopPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-[#7A7A7A]">加载中...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[#E42313] border-t-transparent animate-spin" /></div>}>
       <ShopContent />
     </Suspense>
   );
