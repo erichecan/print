@@ -447,6 +447,7 @@ exports.getProductById = async (req, res) => {
       ...product,
       basePrice: basePriceCents / 100,
       salePrice: salePriceValue,
+      printableArea: product.printableAreas || null,
       images: (product.images || []).map((image) => {
         let optimizedUrl = image.url;
         if (image.url) {
