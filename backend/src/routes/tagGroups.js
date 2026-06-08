@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/auth');
 const {
   listTagGroups,
   getTagGroup,
@@ -13,9 +13,10 @@ const {
 router.get('/', listTagGroups);
 
 // Admin-only CRUD
-router.get('/:id', authenticateToken, requireAdmin, getTagGroup);
-router.post('/', authenticateToken, requireAdmin, createTagGroup);
-router.put('/:id', authenticateToken, requireAdmin, updateTagGroup);
-router.delete('/:id', authenticateToken, requireAdmin, deleteTagGroup);
+router.use(requireAdmin);
+router.get('/:id', getTagGroup);
+router.post('/', createTagGroup);
+router.put('/:id', updateTagGroup);
+router.delete('/:id', deleteTagGroup);
 
 module.exports = router;
