@@ -72,6 +72,7 @@ export default function CalibrateAreasPage() {
   const [allProducts, setAllProducts]   = useState<AdminProductSummary[]>([]);
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState('');
+  const [filterDesignLab, setFilterDesignLab] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [product, setProduct]           = useState<AdminProductDetail | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(false);
@@ -93,7 +94,9 @@ export default function CalibrateAreasPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = allProducts.filter(p => matches(p, search));
+  const filtered = allProducts.filter(p =>
+    matches(p, search) && (!filterDesignLab || p.isCustomizable),
+  );
 
   // reset index when search changes
   useEffect(() => { setCurrentIndex(0); }, [search]);
@@ -209,6 +212,15 @@ export default function CalibrateAreasPage() {
             borderRadius: 6, fontSize: 14, outline: 'none',
           }}
         />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#202223', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={filterDesignLab}
+            onChange={e => { setFilterDesignLab(e.target.checked); setCurrentIndex(0); }}
+            style={{ width: 14, height: 14, cursor: 'pointer' }}
+          />
+          仅 Design Lab 启用
+        </label>
         <span style={{ fontSize: 13, color: '#6d7175', whiteSpace: 'nowrap', minWidth: 60, textAlign: 'center' }}>
           {loading ? '…' : `${total === 0 ? 0 : currentIndex + 1} / ${total}`}
         </span>
