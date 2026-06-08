@@ -1510,6 +1510,7 @@ export interface AdminProductSummary {
   stockQuantity: number;
   isActive: boolean;
   isCustomizable: boolean;
+  tags?: string[];
   category?: {
     id: string;
     name: string;

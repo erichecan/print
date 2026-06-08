@@ -11,6 +11,15 @@ import {
   type GarmentType,
 } from '@/app/design-lab/config/printable-area-templates';
 
+const ART_THEME_TAGS = [
+  'Floral & Botanical', 'Nature & Landscape', 'Animals & Wildlife', 'Cute & Kawaii',
+  'Portraits & Figures', 'Religious & Spiritual', 'City & Life', 'Art & Abstract',
+];
+
+function isArtworkProduct(p: AdminProductSummary) {
+  return p.tags?.some(t => ART_THEME_TAGS.includes(t)) ?? false;
+}
+
 // ─── defaults ────────────────────────────────────────────────────────────────
 const D_FRONT:  AreaRect = { x: 327, y: 240, width: 546, height: 960 };
 const D_BACK:   AreaRect = { x: 327, y: 240, width: 546, height: 960 };
@@ -73,6 +82,7 @@ export default function CalibrateAreasPage() {
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState('');
   const [filterDesignLab, setFilterDesignLab] = useState(false);
+  const [filterArtwork, setFilterArtwork]     = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [product, setProduct]           = useState<AdminProductDetail | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(false);
@@ -95,7 +105,9 @@ export default function CalibrateAreasPage() {
   }, []);
 
   const filtered = allProducts.filter(p =>
-    matches(p, search) && (!filterDesignLab || p.isCustomizable),
+    matches(p, search) &&
+    (!filterDesignLab || p.isCustomizable) &&
+    (!filterArtwork || !isArtworkProduct(p)),
   );
 
   // reset index when search changes
@@ -220,6 +232,15 @@ export default function CalibrateAreasPage() {
             style={{ width: 14, height: 14, cursor: 'pointer' }}
           />
           仅 Design Lab 启用
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#202223', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={filterArtwork}
+            onChange={e => { setFilterArtwork(e.target.checked); setCurrentIndex(0); }}
+            style={{ width: 14, height: 14, cursor: 'pointer' }}
+          />
+          排除 Artwork 商品
         </label>
         <span style={{ fontSize: 13, color: '#6d7175', whiteSpace: 'nowrap', minWidth: 60, textAlign: 'center' }}>
           {loading ? '…' : `${total === 0 ? 0 : currentIndex + 1} / ${total}`}
