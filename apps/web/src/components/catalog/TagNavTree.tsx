@@ -3,12 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { parseTagsParam, TAG_TAXONOMY, NON_APPAREL_GARMENT_TAGS, GARMENT_TAG_TO_SLUG, GARMENT_NECKLINES } from '@/lib/tag-taxonomy';
+import useSWR from 'swr';
+import { parseTagsParam, NON_APPAREL_GARMENT_TAGS, GARMENT_TAG_TO_SLUG, GARMENT_NECKLINES } from '@/lib/tag-taxonomy';
+import { tagGroupsApi, TagGroup } from '@/lib/api';
 
-const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
-const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
-const NECKLINES = TAG_TAXONOMY.neckline.tags as unknown as string[];
-const ART_THEMES = TAG_TAXONOMY.artTheme.tags as unknown as string[];
+function getGroupTags(groups: TagGroup[], slug: string): string[] {
+  return groups.find((g) => g.slug === slug && g.isActive)?.tags ?? [];
+}
 
 const ITEM_BASE: React.CSSProperties = {
   display: 'flex',
@@ -45,6 +46,13 @@ function buildTagsHref(tags: string[]): string {
 export function TagNavTree() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { data: tagGroups } = useSWR<TagGroup[]>('tag-groups', () => tagGroupsApi.list());
+
+  const groups = tagGroups ?? [];
+  const GARMENT_TYPES = getGroupTags(groups, 'garment-type');
+  const AUDIENCES = getGroupTags(groups, 'audience');
+  const NECKLINES = getGroupTags(groups, 'neckline');
+  const ART_THEMES = getGroupTags(groups, 'art-theme');
 
   const activeTags = parseTagsParam(searchParams?.get('tags') ?? null);
   const activeGarment = GARMENT_TYPES.find((g) => activeTags.includes(g)) ?? null;
@@ -73,7 +81,6 @@ export function TagNavTree() {
           const slug = GARMENT_TAG_TO_SLUG[garment];
 
           if (isNonApparel) {
-            // 非服装品类（如 Mug）：一级叶节点，直接链接到 /catalog/[slug]
             const isActive = pathname.startsWith(`/catalog/${slug}`);
             return (
               <li key={garment}>
@@ -166,10 +173,7 @@ export function TagNavTree() {
       </ul>
 
       <style jsx>{`
-        .tnt {
-          font-size: 0.875rem;
-        }
-
+        .tnt { font-size: 0.875rem; }
         .tnt__head {
           display: flex;
           justify-content: space-between;
@@ -181,10 +185,7 @@ export function TagNavTree() {
           margin-bottom: 0.25rem;
           border-bottom: 2px solid #111;
         }
-
-        .tnt__l1,
-        .tnt__l2,
-        .tnt__l3 {
+        .tnt__l1, .tnt__l2, .tnt__l3 {
           list-style: none;
           padding: 0;
           margin: 0;
@@ -192,20 +193,9 @@ export function TagNavTree() {
           flex-direction: column;
           gap: 2px;
         }
-
-        .tnt__l1 {
-          margin-top: 8px;
-        }
-
-        .tnt__l2 {
-          padding-left: 10px;
-          margin: 2px 0 4px;
-        }
-
-        .tnt__l3 {
-          padding-left: 10px;
-          margin: 2px 0 4px;
-        }
+        .tnt__l1 { margin-top: 8px; }
+        .tnt__l2 { padding-left: 10px; margin: 2px 0 4px; }
+        .tnt__l3 { padding-left: 10px; margin: 2px 0 4px; }
       `}</style>
     </nav>
   );

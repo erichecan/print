@@ -1465,6 +1465,7 @@ export interface AdminCategorySummary {
   imageUrl?: string | null;
   isActive: boolean;
   sortOrder: number;
+  filterTags: string[];
   parent?: {
     id: string;
     name: string;
@@ -1498,7 +1499,38 @@ export interface AdminCategoryPayload {
   parentId?: string | null;
   sortOrder?: number;
   isActive?: boolean;
+  filterTags?: string[];
 }
+
+export interface TagGroup {
+  id: string;
+  name: string;
+  slug: string;
+  tags: string[];
+  sortOrder: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TagGroupPayload {
+  name: string;
+  slug: string;
+  tags: string[];
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export const tagGroupsApi = {
+  list: () => api<TagGroup[]>('/tag-groups'),
+  get: (id: string) => api<TagGroup>(`/tag-groups/${id}`),
+  create: (data: TagGroupPayload) =>
+    api<TagGroup>('/tag-groups', { method: 'POST', body: data }),
+  update: (id: string, data: Partial<TagGroupPayload>) =>
+    api<TagGroup>(`/tag-groups/${id}`, { method: 'PUT', body: data }),
+  delete: (id: string) =>
+    api<{ success: boolean }>(`/tag-groups/${id}`, { method: 'DELETE' }),
+};
 
 export interface AdminProductSummary {
   id: string;

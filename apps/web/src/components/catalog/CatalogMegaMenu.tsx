@@ -2,18 +2,20 @@
 
 import Link from 'next/link';
 import { useState, useRef } from 'react';
-import { TAG_TAXONOMY, GARMENT_SLUG_TO_TAG, NON_APPAREL_GARMENT_TAGS } from '@/lib/tag-taxonomy';
+import useSWR from 'swr';
+import { tagGroupsApi, type TagGroup } from '@/lib/api';
+import { GARMENT_SLUG_TO_TAG, NON_APPAREL_GARMENT_TAGS } from '@/lib/tag-taxonomy';
 
 // Garment columns shown in the mega menu, in display order
 const GARMENT_COLS = Object.entries(GARMENT_SLUG_TO_TAG); // [['t-shirts','T-Shirt'], ...]
 
-const AUDIENCE_TAGS = TAG_TAXONOMY.audience.tags;
-const NECKLINE_TAGS = TAG_TAXONOMY.neckline.tags;
-
 export function CatalogMegaMenu() {
   const [open, setOpen] = useState(false);
-  // Track which garment column is active in the panel
   const [activeSlug, setActiveSlug] = useState<string>(GARMENT_COLS[0][0]);
+
+  const { data: allGroups = [] } = useSWR<TagGroup[]>('tag-groups', () => tagGroupsApi.list());
+  const AUDIENCE_TAGS = allGroups.find((g) => g.slug === 'audience')?.tags ?? [];
+  const NECKLINE_TAGS = allGroups.find((g) => g.slug === 'neckline')?.tags ?? [];
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function scheduleClose() {

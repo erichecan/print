@@ -6,11 +6,9 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { TAG_TAXONOMY } from '@/lib/tag-taxonomy';
 import { API_BASE_URL } from '@/lib/api-config';
 import useSWR from 'swr';
-
-const ART_THEMES = TAG_TAXONOMY.artTheme.tags as unknown as string[];
+import { tagGroupsApi, type TagGroup } from '@/lib/api';
 
 const ITEM_H = 88;  // px，与 CSS height 一致
 const ITEM_GAP = 6; // px，与 CSS gap 一致
@@ -62,6 +60,9 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+
+  const { data: allGroups = [] } = useSWR<TagGroup[]>('tag-groups', () => tagGroupsApi.list());
+  const ART_THEMES = allGroups.find((g) => g.slug === 'art-theme')?.tags ?? [];
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const assetsRef = useRef<HTMLDivElement>(null);
 

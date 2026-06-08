@@ -138,6 +138,7 @@ const NAV_LINKS: NavItem[] = [
   { href: '/admin/online-products', label: 'Online Products', icon: 'products', i18n: 'onlineProducts' },
   { href: '/admin/calibrate-areas', label: 'Calibrate Areas', icon: 'design', i18n: 'calibrateAreas', sub: true },
   { href: '/admin/online-categories', label: 'Online Categories', icon: 'categories', i18n: 'onlineCategories' },
+  { href: '/admin/tag-groups', label: 'Tag Groups', icon: 'categories', i18n: 'tagGroups', sub: true },
   { href: '/admin/online-orders', label: 'Online Orders', icon: 'orders', i18n: 'onlineOrders' },
   // [已废弃] 设计审核流程已简化，付款后直接进入生产单，该导航入口暂时隐藏
   // { href: '/admin/design-review', label: 'Design Review', icon: 'design', i18n: 'designReview', sub: true },

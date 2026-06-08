@@ -204,6 +204,7 @@ app.use('/api/admin', (req, res, next) => {
 app.use('/api/products', require('./routes/products'));
 app.use('/api/product-color-images', require('./routes/productColorImages')); // Product color image mapping API
 app.use('/api/categories', require('./routes/categories'));
+app.use('/api/tag-groups', require('./routes/tagGroups'));
 app.use('/api/content', require('./routes/content')); // Public CMS content API
 app.use('/api/promotions', require('./routes/promotions'));
 // 临时路由：快速创建 admin 用户（生产环境应该禁用）

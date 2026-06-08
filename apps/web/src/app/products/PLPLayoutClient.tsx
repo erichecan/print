@@ -3,8 +3,6 @@
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import SortSelect from './SortSelect';
-import { parseTagsParam, TAG_TAXONOMY } from '@/lib/tag-taxonomy';
-
 const TagNavTree = dynamic(
   () => import('@/components/catalog/TagNavTree').then((mod) => ({ default: mod.TagNavTree })),
   { ssr: false }
@@ -19,14 +17,10 @@ const ProductsClient = dynamic(() => import('./ProductsClient'), { ssr: false })
 
 type Collection = { id: string; name: string; slug: string };
 
-const GARMENT_TYPES = TAG_TAXONOMY.garmentType.tags as unknown as string[];
-const AUDIENCES = TAG_TAXONOMY.audience.tags as unknown as string[];
-
 function usePageTitle(collections: Collection[], fallback: string): string {
   const params = useSearchParams();
   const collection = params?.get('collection') || '';
   const category = params?.get('category') || '';
-  const tagsParam = params?.get('tags') || '';
 
   if (collection) {
     return collections.find((c) => c.slug === collection)?.name || fallback;
@@ -35,12 +29,6 @@ function usePageTitle(collections: Collection[], fallback: string): string {
     return category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ');
   }
 
-  const activeTags = parseTagsParam(tagsParam);
-  const activeGarment = GARMENT_TYPES.find((g) => activeTags.includes(g)) ?? null;
-  const activeAudience = AUDIENCES.find((a) => activeTags.includes(a)) ?? null;
-
-  if (activeGarment && activeAudience) return `${activeGarment} > ${activeAudience}`;
-  if (activeGarment) return activeGarment;
   return 'All Products';
 }
 

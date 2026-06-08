@@ -6,9 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { API_BASE_URL } from '@/lib/api-config';
-import { TAG_TAXONOMY } from '@/lib/tag-taxonomy';
-
-const ART_THEMES = TAG_TAXONOMY.artTheme.tags as unknown as string[];
+import { tagGroupsApi, type TagGroup } from '@/lib/api';
 
 type Product = {
   id: string;
@@ -35,9 +33,12 @@ export default function GalleryClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const activeTheme = searchParams.get('theme') || '';
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const query = searchParams.get('q') || '';
+  const { data: allGroups = [] } = useSWR<TagGroup[]>('tag-groups', () => tagGroupsApi.list());
+  const ART_THEMES = allGroups.find((g) => g.slug === 'art-theme')?.tags ?? [];
+
+  const activeTheme = searchParams?.get('theme') || '';
+  const page = parseInt(searchParams?.get('page') || '1', 10);
+  const query = searchParams?.get('q') || '';
   const [searchInput, setSearchInput] = useState(query);
 
   const navigate = useCallback(

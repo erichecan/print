@@ -1,18 +1,17 @@
 'use client';
 
-/**
- * Admin Category Form
-* 后台分类创建/编辑表单
- */
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import useSWR from 'swr';
 import {
   adminCategoriesApi,
+  tagGroupsApi,
   AdminCategoryDetail,
   AdminCategoryPayload,
   AdminCategorySummary,
+  TagGroup,
 } from '@/lib/api';
+import { ImageUploader } from './ImageUploader';
 
 interface CategoryFormProps {
   mode: 'create' | 'edit';
@@ -20,25 +19,26 @@ interface CategoryFormProps {
   onSuccess?: (category: AdminCategoryDetail) => void;
 }
 
-import { ImageUploader } from './ImageUploader';
-
-// ... (imports remain the same, except ImageUploader added above)
-
 export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
-  // ... (hooks remain mostly the same)
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [traceId, setTraceId] = useState<string | null>(null);
+  const [filterTags, setFilterTags] = useState<string[]>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const { data: categoryResponse } = useSWR(
     ['admin-categories', 'parent-options'],
     () => adminCategoriesApi.list({ limit: 200 })
   );
+  const { data: tagGroups } = useSWR<TagGroup[]>('tag-groups', () => tagGroupsApi.list());
 
   const categories = useMemo<AdminCategorySummary[]>(() => {
     return categoryResponse?.data ?? [];
   }, [categoryResponse]);
+
+  const allTags = useMemo<string[]>(() => {
+    if (!tagGroups) return [];
+    return tagGroups.flatMap((g) => g.tags);
+  }, [tagGroups]);
 
   const {
     register,
@@ -56,6 +56,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
       parentId: '',
       sortOrder: 0,
       isActive: true,
+      filterTags: [],
     },
   });
 
@@ -72,13 +73,19 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
         sortOrder: category.sortOrder,
         isActive: category.isActive,
       });
+      setFilterTags(category.filterTags ?? []);
     }
   }, [category, reset]);
+
+  const toggleTag = (tag: string) => {
+    setFilterTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  };
 
   const onSubmit = async (values: AdminCategoryPayload) => {
     if (submitting) return;
     setSubmitError(null);
-    setTraceId(null);
     setSubmitting(true);
     abortControllerRef.current = new AbortController();
 
@@ -87,6 +94,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
         ...values,
         parentId: values.parentId || null,
         sortOrder: values.sortOrder !== undefined ? Number(values.sortOrder) : undefined,
+        filterTags,
       };
 
       const response =
@@ -98,9 +106,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
         onSuccess(response);
       }
     } catch (error: any) {
-      // ... (error handling remains the same)
-      const errorMessage = error?.message || '提交失败，请稍后重试';
-      setSubmitError(errorMessage);
+      setSubmitError(error?.message || '提交失败，请稍后重试');
     } finally {
       setSubmitting(false);
       abortControllerRef.current = null;
@@ -138,6 +144,41 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
               <input type="text" {...register('slug', { required: true })} />
               {errors.slug && <span className="error">Slug is required</span>}
             </div>
+          </div>
+
+          <div className="form-card">
+            <h2>Filter Tags</h2>
+            <p className="hint">
+              产品打了这些 tag 后，会自动出现在此类目页面（无需设置 Category ID）。
+            </p>
+            {tagGroups ? (
+              <div className="tag-groups">
+                {tagGroups.filter((g) => g.isActive).map((group) => (
+                  <div key={group.id} className="tag-group">
+                    <div className="tag-group-label">{group.name}</div>
+                    <div className="tag-chips">
+                      {group.tags.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          className={`tag-chip ${filterTags.includes(tag) ? 'active' : ''}`}
+                          onClick={() => toggleTag(tag)}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="hint">Loading tags…</p>
+            )}
+            {filterTags.length > 0 && (
+              <p className="selected-summary">
+                已选 {filterTags.length} 个 tag：{filterTags.join(', ')}
+              </p>
+            )}
           </div>
         </div>
 
@@ -196,7 +237,6 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
       )}
 
       <div className="form-actions-bar">
-        {/* Could add Delete button here for Edit mode */}
         <button type="submit" className="primary-btn" disabled={submitting}>
           {submitting ? 'Saving…' : 'Save'}
         </button>
@@ -238,6 +278,11 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
           font-weight: 600;
           color: #1e293b;
         }
+        .hint {
+          font-size: 13px;
+          color: #64748b;
+          margin: -8px 0 12px;
+        }
         .form-field {
           display: flex;
           flex-direction: column;
@@ -275,7 +320,52 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
           align-items: center;
           gap: 8px;
           cursor: pointer;
-          white-space: nowrap; /* Prevent text wrapping */
+          white-space: nowrap;
+        }
+        .tag-groups {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+        .tag-group-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #94a3b8;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 6px;
+        }
+        .tag-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .tag-chip {
+          padding: 4px 10px;
+          border-radius: 20px;
+          border: 1px solid #cbd5e1;
+          background: white;
+          font-size: 13px;
+          color: #475569;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .tag-chip:hover {
+          border-color: #2563eb;
+          color: #2563eb;
+        }
+        .tag-chip.active {
+          background: #2563eb;
+          border-color: #2563eb;
+          color: white;
+        }
+        .selected-summary {
+          margin-top: 12px;
+          font-size: 12px;
+          color: #475569;
+          background: #f1f5f9;
+          padding: 8px 10px;
+          border-radius: 6px;
         }
         .form-actions-bar {
           display: flex;
@@ -323,5 +413,3 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
     </form>
   );
 }
-
-

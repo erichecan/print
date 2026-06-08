@@ -2,7 +2,7 @@
 
 import useSWR from 'swr';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { TAG_TAXONOMY, type DimensionKey, serializeTagsParam, parseTagsParam } from '@/lib/tag-taxonomy';
+import { serializeTagsParam, parseTagsParam } from '@/lib/tag-taxonomy';
 import { productsApi } from '@/lib/api';
 
 // Gildan 标准色准确 hex（DB 存储的 hex 值不准确，以此为准）
@@ -64,12 +64,6 @@ function getColorDbNames(canonical: string): string[] {
   return COLOR_ALIASES[canonical] ?? [canonical];
 }
 
-// audience handled by nav tree L2; neckline handled by nav tree L3; artTheme moved to /gallery page
-const FILTER_DIMS: DimensionKey[] = [];
-
-// dimensions where only one tag can be active at a time
-const SINGLE_SELECT_DIMS = new Set<DimensionKey>();
-
 const SIZES = ['S', 'M', 'L', 'XL', '2XL', '3XL'];
 
 const PRICE_RANGES = [
@@ -97,13 +91,10 @@ export function TagFilterPanel() {
   const activeMinPrice = searchParams?.get('minPrice') ?? null;
   const activeMaxPrice = searchParams?.get('maxPrice') ?? null;
 
-  const hasActiveTagFilters = FILTER_DIMS.some((dim) =>
-    (TAG_TAXONOMY[dim].tags as unknown as string[]).some((t) => activeTags.includes(t))
-  );
   const hasActiveSizeFilters = activeSizes.length > 0;
   const hasActiveColorFilters = activeColors.length > 0;
   const hasActivePriceFilter = activeMinPrice !== null || activeMaxPrice !== null;
-  const hasActiveFilters = hasActiveTagFilters || hasActiveSizeFilters || hasActiveColorFilters || hasActivePriceFilter;
+  const hasActiveFilters = hasActiveSizeFilters || hasActiveColorFilters || hasActivePriceFilter;
 
   function pushParams(updates: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
@@ -126,14 +117,6 @@ export function TagFilterPanel() {
     const next = activeTags.includes(tag)
       ? activeTags.filter((t) => t !== tag)
       : [...activeTags, tag];
-    applyTags(next);
-  }
-
-  function selectSingleTag(dimKey: DimensionKey, tag: string) {
-    const dimTags = TAG_TAXONOMY[dimKey].tags as unknown as string[];
-    // remove all tags from this dimension, then add the clicked one (unless it was already active)
-    const withoutDim = activeTags.filter((t) => !dimTags.includes(t));
-    const next = activeTags.includes(tag) ? withoutDim : [...withoutDim, tag];
     applyTags(next);
   }
 
@@ -168,11 +151,8 @@ export function TagFilterPanel() {
   }
 
   function clearFilters() {
-    const keepTags = activeTags.filter(
-      (t) => !FILTER_DIMS.some((dim) => (TAG_TAXONOMY[dim].tags as unknown as string[]).includes(t))
-    );
     pushParams({
-      tags: keepTags.length > 0 ? serializeTagsParam(keepTags) : null,
+      tags: activeTags.length > 0 ? serializeTagsParam(activeTags) : null,
       size: null,
       color: null,
       minPrice: null,
@@ -192,40 +172,6 @@ export function TagFilterPanel() {
             </button>
           )}
         </div>
-
-        {/* Neckline filter (from TAG_TAXONOMY) */}
-        {FILTER_DIMS.map((dimKey) => {
-          const dim = TAG_TAXONOMY[dimKey];
-          const dimTags = dim.tags as unknown as string[];
-          const groupOpen = dimTags.some((t) => activeTags.includes(t));
-
-          return (
-            <details key={dimKey} className="tfp__group" open={groupOpen}>
-              <summary className="tfp__summary">
-                <span>{dim.label}</span>
-                <span className="tfp__chevron" aria-hidden="true" />
-              </summary>
-              <ul className="tfp__list">
-                {dimTags.map((tag) => {
-                  const isActive = activeTags.includes(tag);
-                  const isSingle = SINGLE_SELECT_DIMS.has(dimKey);
-                  return (
-                    <li key={tag}>
-                      <button
-                        type="button"
-                        className={`tfp__item${isActive ? ' tfp__item--active' : ''}`}
-                        onClick={() => isSingle ? selectSingleTag(dimKey, tag) : toggleTag(tag)}
-                        aria-pressed={isActive}
-                      >
-                        {tag}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </details>
-          );
-        })}
 
         {/* Color filter */}
         {colorOptions.length > 0 && (

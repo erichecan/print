@@ -50,16 +50,6 @@ const FIXED_COLOR_LIST = [
   { name: 'Tie-Dye', hex: '#FF00FF', pattern: true },
 ];
 
-// Tag-based mapping: when a category has no direct product assignments,
-// fall back to filtering by product tags. This keeps category pages in sync
-// automatically whenever products are tagged correctly — no junction table maintenance needed.
-const CATEGORY_TAG_MAP = {
-  'hoodies-sweatshirts': ['Hoodie', 'Crewneck Sweatshirt'],
-  'kids':                ['Youth'],
-  'women-s':             ["Women's"],
-  'hats':                ['Cap', 'Hat', 'Beanie'],
-  'jackets-vests':       ['Jacket', 'Vest', 'Wind Jacket'],
-};
 
 // 递归获取分类及其所有子分类的 ID
 async function getCategoryIdsIncludingChildren(categorySlug) {
@@ -569,19 +559,21 @@ exports.getProducts = async (req, res) => {
     }
 
     // Filter by category (slug)
-    // For categories in CATEGORY_TAG_MAP, use tag-based filtering so that products
-    // auto-appear whenever their tags are correct — no junction table or category_id assignment needed.
-    // For all other categories, fall back to the direct category_id tree lookup.
+    // Uses category.filterTags if set — products appear on the page by tag matching.
+    // Falls back to direct category_id tree lookup for categories without filterTags.
     if (categorySlug) {
-      const tagOverride = CATEGORY_TAG_MAP[categorySlug];
-      if (tagOverride) {
-        andConditions.push({ tags: { hasSome: tagOverride } });
+      const categoryMeta = await prisma.category.findUnique({
+        where: { slug: categorySlug },
+        select: { filterTags: true },
+      });
+      if (categoryMeta?.filterTags?.length > 0) {
+        andConditions.push({ tags: { hasSome: categoryMeta.filterTags } });
       } else {
         const categoryIds = await getCategoryIdsIncludingChildren(categorySlug);
         if (categoryIds.length > 0) {
           andConditions.push({ categoryId: { in: categoryIds } });
         } else {
-          andConditions.push({ categoryId: { in: [] } });
+          andConditions.push({ id: { in: [] } });
         }
       }
     }

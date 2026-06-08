@@ -9,9 +9,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { useProductWizard } from '../ProductWizard';
 import { ProductCardPreview } from '../ProductCardPreview';
-import { adminCategoriesApi, AdminCategorySummary } from '@/lib/api';
+import { adminCategoriesApi, tagGroupsApi, AdminCategorySummary, TagGroup } from '@/lib/api';
 import useSWR from 'swr';
-import { TAG_TAXONOMY } from '@/lib/tag-taxonomy';
 
 export function Step1BasicInfo() {
   const { wizardData, updateWizardData, nextStep, saveDraft, isLoading } = useProductWizard();
@@ -25,6 +24,7 @@ export function Step1BasicInfo() {
     ['admin-categories', 'all'],
     () => adminCategoriesApi.list({ limit: 200 })
   );
+  const { data: tagGroups = [] } = useSWR<TagGroup[]>('tag-groups', () => tagGroupsApi.list());
 
   const categories = categoryResponse?.data ?? [];
 
@@ -215,6 +215,7 @@ export function Step1BasicInfo() {
               {errors.categoryId && (
                 <span className="form-field__error">{errors.categoryId}</span>
               )}
+              <p className="form-field__hint">仅用于后台管理分组，不影响前台类目页展示。例如 Hoodie 选 Gildan Blanks 即可。</p>
             </div>
 
             {/* Description */}
@@ -298,14 +299,26 @@ export function Step1BasicInfo() {
 
             {/* Product Tags */}
             <div className="form-field">
-              <label className="form-field__label">商品标签</label>
-              <p className="form-field__hint">为商品选择适当的标签，用于前台筛选分类</p>
+              <label className="form-field__label">
+                商品标签 <span className="required">*</span>
+              </label>
+              <div className="tags-routing-notice">
+                <strong>商品打了什么 tag → 自动出现在对应类目页，无需其他操作</strong>
+                <div className="tags-routing-map">
+                  <span>Hoodie / Crewneck Sweatshirt → Hoodies &amp; Sweatshirts</span>
+                  <span>T-Shirt → T-Shirts</span>
+                  <span>Youth → Kids</span>
+                  <span>Women&apos;s → Women&apos;s</span>
+                  <span>Cap / Hat / Beanie → Hats</span>
+                  <span>Mug → Mugs</span>
+                </div>
+              </div>
               <div className="tags-editor">
-                {Object.entries(TAG_TAXONOMY).map(([dimKey, dim]) => (
-                  <div key={dimKey} className="tags-dimension">
-                    <div className="tags-dimension__label">{dim.label}</div>
+                {tagGroups.filter((g) => g.isActive).map((group) => (
+                  <div key={group.id} className="tags-dimension">
+                    <div className="tags-dimension__label">{group.name}</div>
                     <div className="tags-dimension__chips">
-                      {dim.tags.map((tag) => {
+                      {group.tags.map((tag) => {
                         const isOn = activeTags.includes(tag);
                         return (
                           <button
@@ -570,6 +583,33 @@ export function Step1BasicInfo() {
         .btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+
+        .tags-routing-notice {
+          padding: 10px 12px;
+          background: #f0f7ff;
+          border: 1px solid #b3d4ff;
+          border-radius: 6px;
+          font-size: 13px;
+          color: #202223;
+        }
+
+        .tags-routing-notice strong {
+          display: block;
+          margin-bottom: 8px;
+          color: #005bd3;
+        }
+
+        .tags-routing-map {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px 16px;
+        }
+
+        .tags-routing-map span {
+          font-size: 12px;
+          color: #6d7175;
+          white-space: nowrap;
         }
 
         .tags-editor {

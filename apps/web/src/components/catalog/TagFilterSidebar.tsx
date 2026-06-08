@@ -1,9 +1,11 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { TAG_TAXONOMY, type DimensionKey, serializeTagsParam, parseTagsParam } from '@/lib/tag-taxonomy';
+import useSWR from 'swr';
+import { tagGroupsApi, type TagGroup } from '@/lib/api';
+import { serializeTagsParam, parseTagsParam } from '@/lib/tag-taxonomy';
 
-const DIMENSIONS: DimensionKey[] = ['audience', 'neckline', 'material', 'fit'];
+const DIMENSION_SLUGS = ['audience', 'neckline', 'material', 'fit'];
 
 interface TagFilterSidebarProps {
   fixedTag?: string;
@@ -14,11 +16,16 @@ export function TagFilterSidebar({ fixedTag }: TagFilterSidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const activeTags = parseTagsParam(searchParams.get('tags'));
+  const { data: allGroups = [] } = useSWR<TagGroup[]>('tag-groups', () => tagGroupsApi.list());
+  const groups = DIMENSION_SLUGS
+    .map((slug) => allGroups.find((g) => g.slug === slug && g.isActive))
+    .filter((g): g is TagGroup => g !== undefined);
+
+  const activeTags = parseTagsParam(searchParams?.get('tags') ?? null);
   const hasActive = activeTags.length > 0;
 
   function applyTags(nextTags: string[]) {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
     if (nextTags.length > 0) {
       params.set('tags', serializeTagsParam(nextTags));
     } else {
@@ -65,18 +72,17 @@ export function TagFilterSidebar({ fixedTag }: TagFilterSidebarProps) {
         </div>
       )}
 
-      {DIMENSIONS.map((dimKey) => {
-        const dim = TAG_TAXONOMY[dimKey];
-        const groupHasActive = dim.tags.some((t) => activeTags.includes(t));
+      {groups.map((group) => {
+        const groupHasActive = group.tags.some((t) => activeTags.includes(t));
 
         return (
-          <details key={dimKey} className="tfs__group" open={groupHasActive}>
+          <details key={group.id} className="tfs__group" open={groupHasActive}>
             <summary className="tfs__summary">
-              <span>{dim.label}</span>
+              <span>{group.name}</span>
               <span className="tfs__toggle-icon" aria-hidden="true" />
             </summary>
             <ul className="tfs__list">
-              {dim.tags.map((tag) => {
+              {group.tags.map((tag) => {
                 const isActive = activeTags.includes(tag);
                 return (
                   <li key={tag}>

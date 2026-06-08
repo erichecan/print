@@ -111,6 +111,7 @@ exports.createCategory = async (req, res) => {
       parentId,
       sortOrder = 0,
       isActive = true,
+      filterTags,
     } = req.body || {};
 
     if (!name || !slug) {
@@ -127,6 +128,7 @@ exports.createCategory = async (req, res) => {
           parentId: parentId || null,
           sortOrder,
           isActive,
+          ...(Array.isArray(filterTags) ? { filterTags } : {}),
         },
       });
 
@@ -155,6 +157,7 @@ exports.updateCategory = async (req, res) => {
       parentId,
       sortOrder,
       isActive,
+      filterTags,
     } = req.body || {};
 
     const existing = await prisma.category.findUnique({
@@ -177,6 +180,7 @@ exports.updateCategory = async (req, res) => {
           ...(parentId !== undefined ? { parentId: parentId || null } : {}),
           ...(sortOrder !== undefined ? { sortOrder } : {}),
           ...(isActive !== undefined ? { isActive } : {}),
+          ...(Array.isArray(filterTags) ? { filterTags } : {}),
         },
       });
 
