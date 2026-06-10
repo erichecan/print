@@ -27,14 +27,14 @@ export interface ReferralConfig {
   tierAmounts: [number, number, number];
 }
 
-export const REFERRAL_TIERS = [200, 400, 800] as const;
+export const REFERRAL_TIERS = [25, 40, 60] as const;
 export const REFERRAL_CAP = 3;
-export const PRODUCT_PRICE = 1000;
+export const PRODUCT_PRICE = 125;
 
 export const DEFAULT_REFERRAL_CONFIG: ReferralConfig = {
   maxInvitees: 3,
-  orderThreshold: 1000,
-  tierAmounts: [200, 400, 800],
+  orderThreshold: 0,
+  tierAmounts: [25, 40, 60],
 };
 
 /** 社交平台海报：平台名、文案、图片（导出后放入 public/referral-posters/） */

@@ -5,11 +5,12 @@
  */
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 // 修复 fabric.js 导入：在 Next.js 中使用命名空间导入
 import * as fabric from 'fabric';
 import { UploadEditControls } from '../../../design-lab5/toolbar/controls'; // 复用 Upload 工具栏组件
 import { applyCornerControls } from '../../../design-lab5/upload-controls/registerUploadCornerControls'; // 导入角控件应用函数
+import { removeBackground, getBgRemoveUsage, type BgRemoveUsage } from '../../api/bgRemove';
 
 interface EditUploadPanelProps {
   selectedImage: fabric.Image | null;
@@ -43,6 +44,11 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // 比例锁状态
   const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽高比
 
+  // Remove Background state
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [bgUsage, setBgUsage] = useState<BgRemoveUsage | null>(null);
+  const [bgError, setBgError] = useState<string | null>(null);
+
   // 保存原始图片数据用于 Reset
   useEffect(() => {
     if (selectedImage && !originalImageData) {
@@ -75,6 +81,82 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       }
     }
   }, [selectedImage]);
+
+  // Fetch bg-remove usage when panel mounts or selectedImage changes
+  useEffect(() => {
+    getBgRemoveUsage().then(setBgUsage).catch(() => {});
+  }, [selectedImage]);
+
+  const handleRemoveBackground = useCallback(async () => {
+    if (!selectedImage || !canvas || isRemoving) return;
+    setBgError(null);
+    setIsRemoving(true);
+
+    try {
+      // Export the current image element to a PNG blob
+      const el: HTMLImageElement = (selectedImage as any)._element ?? (selectedImage as any).getElement?.();
+      if (!el) throw new Error('Cannot access image element');
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = el.naturalWidth || el.width;
+      tempCanvas.height = el.naturalHeight || el.height;
+      const ctx = tempCanvas.getContext('2d');
+      if (!ctx) throw new Error('Cannot get canvas context');
+      ctx.drawImage(el, 0, 0);
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        tempCanvas.toBlob((b) => b ? resolve(b) : reject(new Error('toBlob failed')), 'image/png');
+      });
+
+      const result = await removeBackground(blob);
+
+      if (!result.ok) {
+        setBgError(result.error);
+        if (result.requiresSignup) {
+          // Show guest upsell — use a simple alert for now; can be replaced with a modal later
+          setBgError('Guest limit reached. Sign up for free to get 5 uses per day.');
+        }
+        return;
+      }
+
+      // Refresh usage count
+      getBgRemoveUsage().then(setBgUsage).catch(() => {});
+
+      // Replace the canvas image with the result, preserving visual dimensions
+      // (new image from OpenAI may have different pixel dimensions, so recalculate scale)
+      const originalVisualWidth = (selectedImage.width || 1) * (selectedImage.scaleX || 1);
+      const originalVisualHeight = (selectedImage.height || 1) * (selectedImage.scaleY || 1);
+
+      const newImg = await fabric.Image.fromURL(result.url, { crossOrigin: 'anonymous' });
+      const newScaleX = originalVisualWidth / (newImg.width || 1);
+      const newScaleY = originalVisualHeight / (newImg.height || 1);
+      newImg.set({
+        left: selectedImage.left,
+        top: selectedImage.top,
+        scaleX: newScaleX,
+        scaleY: newScaleY,
+        angle: selectedImage.angle,
+        originX: selectedImage.originX,
+        originY: selectedImage.originY,
+        flipX: selectedImage.flipX,
+        flipY: selectedImage.flipY,
+        name: (selectedImage as any).name,
+        data: (selectedImage as any).data ? { ...(selectedImage as any).data } : undefined,
+      });
+      canvas.remove(selectedImage);
+      canvas.add(newImg);
+
+      try { applyCornerControls({ canvas, obj: newImg }); } catch (_) {}
+
+      canvas.setActiveObject(newImg);
+      canvas.renderAll();
+      onUpdate();
+    } catch (err: any) {
+      setBgError(err?.message ?? 'Failed to remove background');
+    } finally {
+      setIsRemoving(false);
+    }
+  }, [selectedImage, canvas, isRemoving, onUpdate]);
 
   // Center 按钮
   // 添加调试日志和错误处理
@@ -495,6 +577,48 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
           onRotationInputChange={handleRotationInputChange}
           isMobile={isMobile}
         />
+        {/* Remove Background */}
+        <div className="dl-edit-upload-panel__section">
+          <button
+            className="dl-edit-upload-panel__action-btn dl-edit-upload-panel__action-btn--outline dl-edit-upload-panel__action-btn--full"
+            type="button"
+            onClick={handleRemoveBackground}
+            disabled={isRemoving || (bgUsage !== null && bgUsage.remaining === 0)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+          >
+            {isRemoving ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
+                Removing…
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="2" width="20" height="20" rx="3" strokeDasharray="4 2" />
+                  <path d="M9 12l2 2 4-4" />
+                </svg>
+                Remove Background
+              </>
+            )}
+          </button>
+          {bgUsage && (
+            <p style={{ fontSize: 11, color: bgUsage.remaining === 0 ? '#e53e3e' : '#718096', marginTop: 4, textAlign: 'center' }}>
+              {bgUsage.remaining === 0
+                ? bgUsage.isGuest
+                  ? 'Guest limit reached — sign up for 5/day free'
+                  : 'Daily limit reached (resets at midnight UTC)'
+                : bgUsage.isGuest
+                  ? `${bgUsage.remaining} free use remaining (sign up for 5/day)`
+                  : `${bgUsage.remaining} of ${bgUsage.limit} uses remaining today`}
+            </p>
+          )}
+          {bgError && (
+            <p style={{ fontSize: 11, color: '#e53e3e', marginTop: 4, textAlign: 'center' }}>{bgError}</p>
+          )}
+        </div>
+
         {/* Action Buttons */}
         <div className="dl-edit-upload-panel__section">
           <div className="dl-edit-upload-panel__actions">

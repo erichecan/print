@@ -22,7 +22,7 @@ interface BottomTabBarProps {
 export function BottomTabBar({ active, onChange }: BottomTabBarProps) {
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E8E8E8] flex z-50"
+      className="fixed bottom-0 left-0 right-0 bg-[#0D0D0D] border-t border-[#2A2A2A] flex z-50"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {TABS.map((tab) => {
@@ -37,12 +37,12 @@ export function BottomTabBar({ active, onChange }: BottomTabBarProps) {
             <span className="text-lg leading-none">{tab.icon}</span>
             <span
               className="text-[11px] font-medium"
-              style={{ color: isActive ? '#04954A' : '#999' }}
+              style={{ color: isActive ? '#E42313' : '#666' }}
             >
               {tab.label}
             </span>
             {isActive && (
-              <span className="absolute bottom-0 w-8 h-0.5 bg-[#07C160] rounded-full" />
+              <span className="absolute bottom-0 w-8 h-0.5 bg-[#E42313] rounded-full" />
             )}
           </button>
         );

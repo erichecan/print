@@ -7,38 +7,13 @@ import { useReferral } from '@/contexts/ReferralContext';
 import { EarningsCard } from '../components/EarningsCard';
 import { MilestoneBar } from '../components/MilestoneBar';
 import { FriendStatusList } from '../components/FriendStatusList';
-import { InviteCodeCard } from '../components/InviteCodeCard';
 import { ShareTextCard } from '../components/ShareTextCard';
 import { RewardsList } from '../components/RewardsList';
 import { BottomTabBar, type ReferralTab } from '../components/BottomTabBar';
-import { generateInviteCode } from '../lib/inviteCode';
+import { InviteShareModal } from '../components/InviteShareModal';
 
 function ProgressTab() {
-  const { user } = useAuth();
-  const router = useRouter();
-  const inviteCode = user ? generateInviteCode(user.id) : '';
-  const inviteLink =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/referral/invite?ref=${inviteCode}`
-      : '';
-
-  const handleShare = async () => {
-    if (navigator.share && inviteLink) {
-      try {
-        await navigator.share({
-          title: 'PrintNGo 专属邀请',
-          text: `用我的邀请码 ${inviteCode} 下单，立享专属优惠！`,
-          url: inviteLink,
-        });
-        return;
-      } catch {
-        // fallback to copy
-      }
-    }
-    if (inviteLink) {
-      await navigator.clipboard.writeText(inviteLink);
-    }
-  };
+  const [shareOpen, setShareOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-3">
@@ -46,14 +21,15 @@ function ProgressTab() {
       <MilestoneBar />
       <FriendStatusList />
 
-      {/* CTA */}
       <button
         type="button"
-        onClick={handleShare}
-        className="w-full py-4 bg-[#07C160] rounded-2xl text-white font-semibold text-base active:opacity-90 transition-opacity"
+        onClick={() => setShareOpen(true)}
+        className="w-full py-4 bg-[#E42313] rounded-2xl text-white font-bold text-base active:opacity-90 transition-opacity"
       >
-        立即邀请好友
+        立即邀请好友 →
       </button>
+
+      <InviteShareModal open={shareOpen} onClose={() => setShareOpen(false)} />
     </div>
   );
 }
@@ -61,17 +37,16 @@ function ProgressTab() {
 function ShareTab() {
   return (
     <div className="flex flex-col gap-3">
-      <div className="bg-[#E8F8EE] rounded-2xl p-4 flex items-start gap-3">
+      <div className="bg-[#1C1C1C] rounded-2xl p-4 flex items-start gap-3 border border-[#2A2A2A]">
         <span className="text-2xl flex-shrink-0">🎁</span>
         <div>
-          <p className="text-sm font-semibold text-[#1a1a1a] mb-0.5">邀请即送，购买即返</p>
-          <p className="text-xs text-[#555] leading-relaxed">
+          <p className="text-sm font-semibold text-white mb-0.5">邀请即送，购买即返</p>
+          <p className="text-xs text-[#666] leading-relaxed">
             好友通过你的链接下单后，你立即获得阶梯返现。邀满 3 位 = 免费拿一套印刷服务！
           </p>
         </div>
       </div>
-      <InviteCodeCard />
-      <ShareTextCard />
+<ShareTextCard />
     </div>
   );
 }
@@ -87,8 +62,8 @@ export default function ReferralMePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[#07C160] border-t-transparent animate-spin" />
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#E42313] border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -99,10 +74,10 @@ export default function ReferralMePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5]">
+    <div className="min-h-screen bg-[#0D0D0D]">
       {/* Top header */}
       <div
-        className="bg-white px-4 pb-3 border-b border-[#EFEFEF]"
+        className="bg-[#0D0D0D] px-4 pb-3 border-b border-[#2A2A2A]"
         style={{ paddingTop: 'calc(12px + env(safe-area-inset-top))' }}
       >
         <div className="flex items-center justify-between">
@@ -114,7 +89,7 @@ export default function ReferralMePage() {
           >
             ←
           </button>
-          <h1 className="text-base font-semibold text-[#1a1a1a]">我的推广</h1>
+          <h1 className="text-base font-semibold text-white">我的推广</h1>
           <div className="w-8" />
         </div>
       </div>

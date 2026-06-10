@@ -1,8 +1,3 @@
-/**
- * Referral 我的钱包 - 佣金明细与提现
- * 展示钱包余额、交易列表、提现/兑换占位按钮
- * 2025-02-20 创建
- */
 'use client';
 
 import { useEffect } from 'react';
@@ -29,23 +24,20 @@ export default function ReferralWalletPage() {
 
   if (authLoading || !user) {
     return (
-      <div className="container mx-auto px-8 py-10">
-        <p className="text-[#7A7A7A]">加载中...</p>
+      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[#E42313] border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-8 py-10 max-w-2xl">
-      <h1 className="text-lg font-bold text-[#0D0D0D] mb-6">我的钱包</h1>
+    <div className="min-h-screen bg-[#0D0D0D] px-4 py-10 max-w-2xl mx-auto">
+      <h1 className="text-lg font-bold text-white mb-6">我的钱包</h1>
 
-      <div className="bg-[#FAFAFA] p-7 mb-6 border border-[#E8E8E8]">
-        <p className="text-xs text-[#7A7A7A] mb-1">可用余额</p>
-        <p className="text-4xl font-bold text-[#22C55E]">
-          $
-          {referralLoading
-            ? '...'
-            : walletBalance.toLocaleString()}
+      <div className="bg-[#1C1C1C] p-7 mb-6 border border-[#2A2A2A] rounded-2xl">
+        <p className="text-xs text-[#666] mb-1">可用余额</p>
+        <p className="text-4xl font-black text-[#F5A623]">
+          CA${referralLoading ? '...' : walletBalance.toLocaleString()}
         </p>
       </div>
 
@@ -53,39 +45,39 @@ export default function ReferralWalletPage() {
         <button
           type="button"
           disabled
-          className="flex-1 bg-[#FAFAFA] border border-[#E8E8E8] px-4 py-3 font-medium text-[#B0B0B0] cursor-not-allowed"
+          className="flex-1 bg-[#1C1C1C] border border-[#2A2A2A] px-4 py-3 font-medium text-[#444] cursor-not-allowed rounded-xl"
         >
           提现（即将开放）
         </button>
         <button
           type="button"
           disabled
-          className="flex-1 bg-[#FAFAFA] border border-[#E8E8E8] px-4 py-3 font-medium text-[#B0B0B0] cursor-not-allowed"
+          className="flex-1 bg-[#1C1C1C] border border-[#2A2A2A] px-4 py-3 font-medium text-[#444] cursor-not-allowed rounded-xl"
         >
           兑换（即将开放）
         </button>
       </div>
 
-      <h2 className="text-base font-semibold text-[#0D0D0D] mb-3">佣金明细</h2>
+      <h2 className="text-base font-semibold text-white mb-3">佣金明细</h2>
       {referralLoading ? (
-        <p className="text-[#7A7A7A]">加载中...</p>
+        <p className="text-[#666]">加载中...</p>
       ) : transactionHistory.length === 0 ? (
-        <p className="text-[#7A7A7A] py-8 text-center">暂无佣金记录</p>
+        <p className="text-[#666] py-8 text-center">暂无佣金记录</p>
       ) : (
-        <ul className="divide-y divide-[#E8E8E8] border border-[#E8E8E8] bg-white">
+        <ul className="divide-y divide-[#2A2A2A] border border-[#2A2A2A] bg-[#1C1C1C] rounded-2xl overflow-hidden">
           {transactionHistory.map((tx) => (
             <li
               key={tx.id}
-              className="flex items-center justify-between px-4 py-3 bg-[#FAFAFA]"
+              className="flex items-center justify-between px-4 py-3"
             >
               <div>
-                <p className="font-medium text-[#0D0D0D]">{tx.description}</p>
-                <p className="text-xs text-[#7A7A7A]">
+                <p className="font-medium text-white">{tx.description}</p>
+                <p className="text-xs text-[#666]">
                   {new Date(tx.createdAt).toLocaleString()}
                 </p>
               </div>
-              <span className="font-semibold text-[#22C55E]">
-                +${tx.amount}
+              <span className="font-semibold text-[#F5A623]">
+                +CA${tx.amount}
               </span>
             </li>
           ))}

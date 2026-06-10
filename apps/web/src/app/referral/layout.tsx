@@ -7,7 +7,7 @@ export default function ReferralLayout({
 }) {
   return (
     <ReferralProvider>
-      <div className="min-h-screen bg-[#F5F5F5]">
+      <div className="min-h-screen bg-[#0D0D0D]">
         {children}
       </div>
     </ReferralProvider>

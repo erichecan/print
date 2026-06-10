@@ -3134,6 +3134,64 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
     reader.readAsDataURL(file);
   };
 
+  // Load a GCS/remote URL directly onto the canvas (used by bg-removed images gallery)
+  const handleUrlUpload = (url: string) => {
+    if (!fabricCanvasRef.current || !fabricRef.current) return;
+    const fabric = fabricRef.current;
+    const canvas = fabricCanvasRef.current;
+
+    fabric.Image.fromURL(url, { crossOrigin: 'anonymous' }).then((fabricImage: any) => {
+      fabricImage.set({
+        selectable: true,
+        evented: true,
+        hasControls: true,
+        hasBorders: false,
+        borderColor: 'transparent',
+        borderScaleFactor: 2,
+        lockMovementX: false,
+        lockMovementY: false,
+        data: { layerType: 'upload', zIndex: 10 },
+      });
+
+      const SCALE_RATIO = 0.3;
+      const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
+      const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
+      const originalWidth = fabricImage.width || 1;
+      const originalHeight = fabricImage.height || 1;
+      const scale = Math.min(targetMaxWidth / originalWidth, targetMaxHeight / originalHeight, 1);
+      fabricImage.scale(scale);
+
+      fabricImage.set({
+        left: CANVAS_WIDTH / 2,
+        top: CANVAS_HEIGHT / 2,
+        originX: 'center',
+        originY: 'center',
+        name: `image_${Date.now()}`,
+      });
+
+      fabricImage.setCoords();
+      canvas.add(fabricImage);
+
+      if ((canvas as any).addIconControlsToObject) {
+        (canvas as any).addIconControlsToObject(fabricImage);
+      }
+
+      canvas.setActiveObject(fabricImage);
+
+      const layers = serializeCanvas(canvas);
+      setViewLayers(currentView, layers);
+      commitToStore();
+
+      canvas.renderAll();
+
+      setSelectedImage(fabricImage);
+      setToolPanelType('edit-upload');
+      setActiveTool(null);
+    }).catch((err: unknown) => {
+      console.error('[DesignLab Mobile] handleUrlUpload error:', err);
+    });
+  };
+
   // Add Text: 添加文本到 Fabric canvas（与 4.0/PRD 一致：Add Text → 画布生成文本对象 → 自动进入 Edit Text）
   const handleAddText = (text: string) => {
     const canvas = fabricCanvasRef.current;
@@ -3686,6 +3744,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
                       onFileSelect={handleFileUpload}
                       onBrowseClick={() => { }}
                       onClose={handleBackToHome}
+                      onUrlSelect={handleUrlUpload}
                     />
                   </div>
                 )}

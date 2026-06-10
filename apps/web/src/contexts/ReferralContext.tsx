@@ -24,7 +24,7 @@ interface ReferralContextType extends ReferralState {
 const ReferralContext = createContext<ReferralContextType | undefined>(undefined);
 
 const EMPTY: ReferralState = { referralCount: 0, walletBalance: 0, transactionHistory: [] };
-const DEFAULT_TIERS: [number, number, number] = [200, 400, 800];
+const DEFAULT_TIERS: [number, number, number] = [25, 40, 60];
 const DEFAULT_CAP = 3;
 
 export function ReferralProvider({ children }: { children: ReactNode }) {
@@ -56,9 +56,9 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       const tiers: [number, number, number] = [
-        data.tierAmounts?.[0] ?? 200,
-        data.tierAmounts?.[1] ?? 400,
-        data.tierAmounts?.[2] ?? 800,
+        data.tierAmounts?.[0] ?? 25,
+        data.tierAmounts?.[1] ?? 40,
+        data.tierAmounts?.[2] ?? 60,
       ];
       setTierAmounts(tiers);
       setReferralCap(data.referralCap ?? DEFAULT_CAP);

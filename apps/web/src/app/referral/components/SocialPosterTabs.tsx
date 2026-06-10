@@ -1,8 +1,3 @@
-/**
- * 社交平台海报切换 - INS / Facebook / 小红书
- * 海报在 Pencil 中设计，导出后放入 public/referral-posters/ 即可展示
- * 2026-02-21 创建 | 2026-03-02 支持 imageUrl，与 Pencil 三款海报对应
- */
 'use client';
 
 import Image from 'next/image';
@@ -45,14 +40,14 @@ function PosterImage({
   const [failed, setFailed] = useState(false);
   const onError = useCallback(() => setFailed(true), []);
   if (failed || !src) {
-    return <span>{fallback}</span>;
+    return <span className="text-[#666]">{fallback}</span>;
   }
   return (
     <Image
       src={src}
       alt={alt}
       fill
-      className="object-contain pointer-events-none" // [2026-03-02 06:29:45] 防止海报层拦截点击，保证 Tab 可切换
+      className="object-contain pointer-events-none"
       sizes="(max-width: 640px) 100vw, 400px"
       unoptimized
       onError={onError}
@@ -65,8 +60,8 @@ export function SocialPosterTabs() {
   const current = POSTERS.find((p) => p.platform === active) ?? POSTERS[0];
 
   return (
-    <div className="bg-white border border-[#E8E8E8] overflow-hidden">
-      <div className="flex border-b border-[#E8E8E8]">
+    <div className="bg-[#1C1C1C] border border-[#2A2A2A] rounded-xl overflow-hidden">
+      <div className="flex border-b border-[#2A2A2A]">
         {POSTERS.map((p) => (
           <button
             key={p.platform}
@@ -75,7 +70,7 @@ export function SocialPosterTabs() {
             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
               active === p.platform
                 ? 'bg-[#E42313] text-white'
-                : 'bg-[#FAFAFA] text-[#7A7A7A] hover:bg-[#F0F0F0]'
+                : 'bg-[#242424] text-[#666] hover:bg-[#2A2A2A]'
             }`}
           >
             {p.title}
@@ -83,8 +78,7 @@ export function SocialPosterTabs() {
         ))}
       </div>
       <div className="p-6">
-        {/* [2026-03-02 06:25:30] 限制海报最大高度，避免图片按原始尺寸撑满整个页面 */}
-        <div className="relative mx-auto mb-4 aspect-[4/3] max-h-[420px] w-full bg-[#FAFAFA] flex items-center justify-center text-[#7A7A7A] text-center px-4 border border-[#E8E8E8] overflow-hidden">
+        <div className="relative mx-auto mb-4 aspect-[4/3] max-h-[420px] w-full bg-[#141414] flex items-center justify-center text-center px-4 border border-[#2A2A2A] rounded-xl overflow-hidden">
           {current.imageUrl ? (
             <PosterImage
               src={current.imageUrl}
@@ -92,10 +86,10 @@ export function SocialPosterTabs() {
               fallback={current.imagePlaceholder}
             />
           ) : (
-            current.imagePlaceholder
+            <span className="text-[#666]">{current.imagePlaceholder}</span>
           )}
         </div>
-        <p className="text-sm text-[#0D0D0D]">{current.copy}</p>
+        <p className="text-sm text-[#A0A0A0]">{current.copy}</p>
       </div>
     </div>
   );

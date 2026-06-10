@@ -1,57 +1,111 @@
-/**
- * 管理后台 - 推广活动配置
- * 可设置：邀请人数上限、购物金额门槛、每轮返现金额
- * 2026-02-21 创建
- */
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { ReferralConfig } from '@/types/referral';
-import { DEFAULT_REFERRAL_CONFIG } from '@/types/referral';
+import { authenticatedFetch } from '@/lib/api';
 
-const CONFIG_STORAGE_KEY = 'referral_admin_config';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:3001';
 
-function loadConfig(): ReferralConfig {
-  if (typeof window === 'undefined') return DEFAULT_REFERRAL_CONFIG;
-  try {
-    const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
-    if (!raw) return DEFAULT_REFERRAL_CONFIG;
-    const parsed = JSON.parse(raw) as ReferralConfig;
-    return {
-      maxInvitees: parsed.maxInvitees ?? 3,
-      orderThreshold: parsed.orderThreshold ?? 1000,
-      tierAmounts: Array.isArray(parsed.tierAmounts) && parsed.tierAmounts.length >= 3
-        ? [parsed.tierAmounts[0], parsed.tierAmounts[1], parsed.tierAmounts[2]]
-        : DEFAULT_REFERRAL_CONFIG.tierAmounts,
-    };
-  } catch {
-    return DEFAULT_REFERRAL_CONFIG;
-  }
+interface CampaignData {
+  isActive: boolean;
+  cap: number;
+  tier1Amount: number;
+  tier2Amount: number;
+  tier3Amount: number;
 }
 
+const DEFAULT: CampaignData = {
+  isActive: true,
+  cap: 3,
+  tier1Amount: 25,
+  tier2Amount: 40,
+  tier3Amount: 60,
+};
+
 export default function AdminReferralSettingsPage() {
-  const [config, setConfig] = useState<ReferralConfig>(DEFAULT_REFERRAL_CONFIG);
-  const [saved, setSaved] = useState(false);
+  const [data, setData] = useState<CampaignData>(DEFAULT);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    setConfig(loadConfig());
+    authenticatedFetch(`${API_BASE}/api/admin/referral/campaign`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((d) =>
+        setData({
+          isActive: d.isActive,
+          cap: d.cap,
+          tier1Amount: Number(d.tier1Amount),
+          tier2Amount: Number(d.tier2Amount),
+          tier3Amount: Number(d.tier3Amount),
+        })
+      )
+      .catch((e) => setErrorMsg(`加载失败：${e}`))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaving(true);
+    setStatus('idle');
+    try {
+      const res = await authenticatedFetch(`${API_BASE}/api/admin/referral/campaign`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setStatus('saved');
+      setTimeout(() => setStatus('idle'), 2500);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : '保存失败');
+      setStatus('error');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="admin-content">
+        <p className="text-slate-500">加载中…</p>
+      </div>
+    );
+  }
+
+  const maxTotal = data.tier1Amount + data.tier2Amount + data.tier3Amount;
 
   return (
     <div className="admin-content">
-      <h1 className="text-2xl font-bold text-slate-800 mb-6">推广活动配置</h1>
-      <p className="text-slate-600 mb-6">
-        配置邀请人数上限、订单金额门槛、每档返现金额。当前为前端 localStorage 存储，仅本机生效。
+      <h1 className="text-2xl font-bold text-slate-800 mb-2">推广活动配置</h1>
+      <p className="text-slate-500 text-sm mb-6">
+        配置保存到数据库，实时生效。当前最高返现合计：
+        <span className="font-semibold text-slate-700"> CA${maxTotal}</span>
       </p>
 
       <form onSubmit={handleSave} className="max-w-md space-y-6">
+        {/* 活动开关 */}
+        <div className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3">
+          <div>
+            <p className="text-sm font-medium text-slate-700">活动状态</p>
+            <p className="text-xs text-slate-500 mt-0.5">关闭后新邀请不再产生奖励</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setData((d) => ({ ...d, isActive: !d.isActive }))}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              data.isActive ? 'bg-green-500' : 'bg-slate-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                data.isActive ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* 邀请人数上限 */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
             邀请人数上限
@@ -60,101 +114,56 @@ export default function AdminReferralSettingsPage() {
             type="number"
             min={1}
             max={10}
-            value={config.maxInvitees}
-            onChange={(e) =>
-              setConfig((c) => ({ ...c, maxInvitees: parseInt(e.target.value, 10) || 1 }))
-            }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
+            value={data.cap}
+            onChange={(e) => setData((d) => ({ ...d, cap: parseInt(e.target.value, 10) || 1 }))}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           />
-          <p className="text-xs text-slate-500 mt-1">推广者最多可获得几单返现（如 3 表示第 1/2/3 单各一档）</p>
+          <p className="text-xs text-slate-400 mt-1">推广者最多可获得几单返现</p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            购物金额门槛（元）
-          </label>
-          <input
-            type="number"
-            min={0}
-            value={config.orderThreshold}
-            onChange={(e) =>
-              setConfig((c) => ({ ...c, orderThreshold: parseInt(e.target.value, 10) || 0 }))
-            }
-            className="w-full rounded-lg border border-slate-300 px-3 py-2"
-          />
-          <p className="text-xs text-slate-500 mt-1">被邀请人订单达到此金额才计入推广者返现</p>
-        </div>
-
+        {/* 阶梯金额 */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
-            每轮返现金额（元）
+            阶梯返现金额（CA$）
           </label>
           <div className="space-y-2">
-            <label className="flex items-center gap-2">
-              <span className="w-20">第 1 单：</span>
-              <input
-                type="number"
-                min={0}
-                value={config.tierAmounts[0]}
-                onChange={(e) =>
-                  setConfig((c) => ({
-                    ...c,
-                    tierAmounts: [
-                      parseInt(e.target.value, 10) || 0,
-                      c.tierAmounts[1],
-                      c.tierAmounts[2],
-                    ],
-                  }))
-                }
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <span className="w-20">第 2 单：</span>
-              <input
-                type="number"
-                min={0}
-                value={config.tierAmounts[1]}
-                onChange={(e) =>
-                  setConfig((c) => ({
-                    ...c,
-                    tierAmounts: [
-                      c.tierAmounts[0],
-                      parseInt(e.target.value, 10) || 0,
-                      c.tierAmounts[2],
-                    ],
-                  }))
-                }
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
-            <label className="flex items-center gap-2">
-              <span className="w-20">第 3 单：</span>
-              <input
-                type="number"
-                min={0}
-                value={config.tierAmounts[2]}
-                onChange={(e) =>
-                  setConfig((c) => ({
-                    ...c,
-                    tierAmounts: [
-                      c.tierAmounts[0],
-                      c.tierAmounts[1],
-                      parseInt(e.target.value, 10) || 0,
-                    ],
-                  }))
-                }
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2"
-              />
-            </label>
+            {([
+              { label: '第 1 单', key: 'tier1Amount' },
+              { label: '第 2 单', key: 'tier2Amount' },
+              { label: '第 3 单', key: 'tier3Amount' },
+            ] as const).map(({ label, key }) => (
+              <div key={key} className="flex items-center gap-3">
+                <span className="w-14 text-sm text-slate-600 shrink-0">{label}</span>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">CA$</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={data[key]}
+                    onChange={(e) =>
+                      setData((d) => ({ ...d, [key]: parseInt(e.target.value, 10) || 0 }))
+                    }
+                    className="w-full rounded-lg border border-slate-300 pl-10 pr-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
+          <p className="text-xs text-slate-400 mt-2">
+            合计上限：CA${maxTotal}
+          </p>
         </div>
+
+        {status === 'error' && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{errorMsg}</p>
+        )}
 
         <button
           type="submit"
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-white font-medium hover:bg-indigo-700"
+          disabled={saving}
+          className="rounded-lg bg-indigo-600 px-5 py-2 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60 transition-colors"
         >
-          {saved ? '已保存' : '保存配置'}
+          {saving ? '保存中…' : status === 'saved' ? '✓ 已保存' : '保存配置'}
         </button>
       </form>
     </div>

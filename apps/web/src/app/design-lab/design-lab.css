@@ -1283,6 +1283,21 @@
   background: #0052A3;
 }
 
+.dl-edit-upload-panel__action-btn--full {
+  flex: none;
+  width: 100%;
+}
+
+.dl-edit-upload-panel__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 .dl-edit-upload-panel__info-box {
   display: flex;
   align-items: flex-start;
