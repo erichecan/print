@@ -7,13 +7,12 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { getBgRemoveResults, type BgRemovedImage } from '../../api/bgRemove';
+import { getRecentUploads, saveUpload, type RecentUpload } from '../../api/userUploads';
 
 interface UploadPanelProps {
   onFileSelect: (file: File) => void;
   onBrowseClick: () => void;
   onUrlSelect?: (url: string) => void;
-  recentUploads?: Array<{ id: string; url: string; thumbnail: string }>;
-  onRecentUploadClick?: (upload: { id: string; url: string; thumbnail: string }) => void;
   onClose?: () => void;
 }
 
@@ -21,17 +20,26 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   onFileSelect,
   onBrowseClick,
   onUrlSelect,
-  recentUploads = [],
-  onRecentUploadClick,
-  onClose
+  onClose,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [bgRemovedImages, setBgRemovedImages] = useState<BgRemovedImage[]>([]);
+  const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]);
 
-  // Load previously bg-removed images
   useEffect(() => {
     getBgRemoveResults().then(setBgRemovedImages).catch(() => {});
+    getRecentUploads().then(setRecentUploads).catch(() => {});
   }, []);
+
+  const saveAndNotify = (file: File) => {
+    // Save to backend in background, prepend to list on success
+    saveUpload(file).then((saved) => {
+      if (saved) {
+        setRecentUploads((prev) => [saved, ...prev.slice(0, 19)]);
+      }
+    }).catch(() => {});
+    onFileSelect(file);
+  };
 
   // Ctrl+V / Cmd+V paste support
   useEffect(() => {
@@ -43,7 +51,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           const file = item.getAsFile();
           if (file) {
             e.preventDefault();
-            onFileSelect(file);
+            saveAndNotify(file);
             return;
           }
         }
@@ -51,7 +59,8 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     };
     document.addEventListener('paste', handlePaste);
     return () => document.removeEventListener('paste', handlePaste);
-  }, [onFileSelect]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleBrowseClick = () => {
     fileInputRef.current?.click();
@@ -60,9 +69,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      onFileSelect(file);
-    }
+    if (file) saveAndNotify(file);
   };
 
   return (
@@ -117,6 +124,33 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           </p>
         </div>
 
+        {recentUploads.length > 0 && (
+          <div className="dl-upload-panel__recent">
+            <h3 className="dl-upload-panel__recent-title">Recent Uploads</h3>
+            <p className="dl-upload-panel__recent-desc">
+              Click to reuse a previously uploaded image on any view or color.
+            </p>
+            <div className="dl-upload-panel__recent-grid">
+              {recentUploads.map((upload) => (
+                <button
+                  key={upload.id}
+                  className="dl-upload-panel__recent-item"
+                  onClick={() => onUrlSelect?.(upload.url)}
+                  type="button"
+                  title="Click to add to canvas"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={upload.url}
+                    alt="Recent upload"
+                    style={{ background: 'repeating-conic-gradient(#e2e8f0 0% 25%, #fff 0% 50%) 0 0 / 12px 12px' }}
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Background-removed images */}
         {bgRemovedImages.length > 0 && (
           <div className="dl-upload-panel__recent">
@@ -139,28 +173,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                     alt="Removed background"
                     style={{ background: 'repeating-conic-gradient(#e2e8f0 0% 25%, #fff 0% 50%) 0 0 / 12px 12px' }}
                   />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {recentUploads.length > 0 && (
-          <div className="dl-upload-panel__recent">
-            <h3 className="dl-upload-panel__recent-title">Recent Uploads</h3>
-            <p className="dl-upload-panel__recent-desc">
-              Files will be stored in your account for easy access once you save your design.
-            </p>
-            <div className="dl-upload-panel__recent-grid">
-              {recentUploads.map((upload) => (
-                <button
-                  key={upload.id}
-                  className="dl-upload-panel__recent-item"
-                  onClick={() => onRecentUploadClick?.(upload)}
-                  type="button"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={upload.thumbnail} alt="Recent upload" />
                 </button>
               ))}
             </div>

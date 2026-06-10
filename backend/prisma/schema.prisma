@@ -1325,3 +1325,16 @@ model BgRemoveUsage {
   @@index([createdAt])
   @@map("bg_remove_usage")
 }
+
+model UserUpload {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  guestToken String?  @map("guest_token")
+  url        String
+  gcsKey     String   @map("gcs_key")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([guestToken, createdAt])
+  @@map("user_uploads")
+}

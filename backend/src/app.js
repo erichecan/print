@@ -283,6 +283,7 @@ app.use('/api/referral', require('./routes/referral')); // Referral cashback plu
 app.use('/api/admin/referral', require('./routes/adminReferral')); // Admin: referral management
 app.use('/api/admin/influencer', require('./routes/adminInfluencer')); // Admin: influencer code management
 app.use('/api/bg-remove', require('./routes/bgRemove')); // Background removal (OpenAI gpt-image-1)
+app.use('/api/user-uploads', require('./routes/userUploads')); // User upload history
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));
 
