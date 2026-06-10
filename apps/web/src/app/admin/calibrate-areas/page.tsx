@@ -399,6 +399,7 @@ export default function CalibrateAreasPage() {
                 imageUrls={images}
                 areas={areas}
                 onChange={handleCalibChange}
+                imageScale={isDefaultTeeMode ? 1.5 : 1}
               />
             </div>
           )}

@@ -18,6 +18,7 @@ interface Props {
   imageUrls: { front?: string; back?: string; 'left-sleeve'?: string; 'right-sleeve'?: string };
   areas: { front?: AreaRect; back?: AreaRect; 'left-sleeve'?: AreaRect; 'right-sleeve'?: AreaRect };
   onChange: (view: CalibView, area: AreaRect) => void;
+  imageScale?: number;
 }
 
 type Handle = 'move';
@@ -36,7 +37,7 @@ const DEFAULT_AREAS: Record<CalibView, AreaRect> = {
   'right-sleeve':{ x: 350, y: 470, width: 500, height: 500 },
 };
 
-export function PrintableAreaCalibrator({ imageUrls, areas, onChange }: Props) {
+export function PrintableAreaCalibrator({ imageUrls, areas, onChange, imageScale = 1 }: Props) {
   const [activeView, setActiveView] = useState<CalibView>('front');
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(560);
@@ -184,6 +185,8 @@ export function PrintableAreaCalibrator({ imageUrls, areas, onChange }: Props) {
               height: '100%',
               objectFit: 'cover',
               pointerEvents: 'none',
+              transform: imageScale !== 1 ? `scale(${imageScale})` : undefined,
+              transformOrigin: 'center center',
             }}
           />
         ) : (

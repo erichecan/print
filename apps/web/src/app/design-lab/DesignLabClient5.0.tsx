@@ -1518,10 +1518,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         const fabricImg = new fabric.Image(imgElement);
         if (!fabricCanvasRef.current) return;
 
-        const scale = Math.max(
+        const isDefaultTee = productInfo.productName?.includes('Design Lab Default Tee') || productInfo.productName?.includes('Loading');
+        const baseScale = Math.max(
           CANVAS_WIDTH / (fabricImg.width || 1),
           CANVAS_HEIGHT / (fabricImg.height || 1)
         );
+        const scale = isDefaultTee ? baseScale * 1.5 : baseScale;
         fabricImg.set({
           left: CANVAS_WIDTH / 2,
           top: CANVAS_HEIGHT / 2,
@@ -3425,6 +3427,63 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     reader.readAsDataURL(file);
   };
 
+  // Load a GCS/remote URL directly onto the canvas (used by bg-removed images gallery)
+  const handleUrlUpload = (url: string) => {
+    if (!fabricCanvasRef.current || !fabricRef.current) return;
+    const fabric = fabricRef.current;
+    const canvas = fabricCanvasRef.current;
+
+    fabric.Image.fromURL(url, { crossOrigin: 'anonymous' }).then((fabricImage: any) => {
+      fabricImage.set({
+        selectable: true,
+        evented: true,
+        hasControls: true,
+        hasBorders: false,
+        borderColor: 'transparent',
+        borderScaleFactor: 2,
+        lockMovementX: false,
+        lockMovementY: false,
+        data: { layerType: 'upload', zIndex: 10 },
+      });
+
+      const uploadAreaBounds = getCanvasAreaBounds(currentView);
+      const uploadLongerEdge = Math.max(uploadAreaBounds.width, uploadAreaBounds.height);
+      const uploadTargetSize = 0.80 * uploadLongerEdge;
+      const originalWidth = fabricImage.width || 1;
+      const originalHeight = fabricImage.height || 1;
+      const scale = uploadTargetSize / Math.max(originalWidth, originalHeight);
+      fabricImage.scale(scale);
+
+      fabricImage.set({
+        left: uploadAreaBounds.left + uploadAreaBounds.width / 2,
+        top: uploadAreaBounds.top + uploadAreaBounds.height / 2,
+        originX: 'center',
+        originY: 'center',
+        name: `image_${Date.now()}`,
+      });
+
+      fabricImage.setCoords();
+      canvas.add(fabricImage);
+
+      if ((canvas as any).addIconControlsToObject) {
+        (canvas as any).addIconControlsToObject(fabricImage);
+      }
+
+      canvas.setActiveObject(fabricImage);
+
+      const layers = serializeCanvas(canvas);
+      setViewLayers(currentView, layers);
+      commitToStore();
+
+      canvas.renderAll();
+
+      setSelectedImage(fabricImage);
+      setToolPanelType('edit-upload');
+    }).catch((err: unknown) => {
+      console.error('[DesignLab 5.0] handleUrlUpload error:', err);
+    });
+  };
+
   // Add Text: 添加文本到 Fabric canvas（与 4.0/PRD 一致：Add Text → 画布生成文本对象 → 自动进入 Edit Text）
   const handleAddText = (text: string) => {
     const canvas = fabricCanvasRef.current;
@@ -3981,6 +4040,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     onFileSelect={handleFileUpload}
                     onBrowseClick={() => { }}
                     onClose={handleBackToHome}
+                    onUrlSelect={handleUrlUpload}
                   />
                 )}
 
