@@ -890,7 +890,24 @@ exports.updateProduct = async (req, res) => {
     }
 
     if (existing.isSystem) {
-      return res.status(403).json({ error: 'Cannot update a system protected product' });
+      // System products only allow printableArea and garmentType to be updated (calibration data)
+      const allowedKeys = ['printableArea', 'garmentType'];
+      const requestedKeys = Object.keys(req.body || {}).filter(k => req.body[k] !== undefined);
+      const forbidden = requestedKeys.filter(k => !allowedKeys.includes(k));
+      if (forbidden.length > 0) {
+        return res.status(403).json({ error: 'Cannot update a system protected product' });
+      }
+      const systemUpdate = {};
+      if (printableArea !== undefined) systemUpdate.printableAreas = printableArea;
+      if (garmentType !== undefined) systemUpdate.garmentType = garmentType;
+      if (Object.keys(systemUpdate).length === 0) {
+        return res.status(400).json({ error: 'No valid fields to update' });
+      }
+      const updated = await prisma.product.update({
+        where: { id },
+        data: systemUpdate,
+      });
+      return res.json({ id: updated.id, printableArea: updated.printableAreas, garmentType: updated.garmentType });
     }
 
     const result = await prisma.$transaction(async (tx) => {
