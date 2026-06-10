@@ -412,8 +412,12 @@ exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Support lookup by either UUID or slug (for system products like design-lab-default-tee)
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    const whereClause = isUuid ? { id } : { slug: id };
+
     const product = await prisma.product.findUnique({
-      where: { id },
+      where: whereClause,
       include: {
         category: true,
         brand: true,

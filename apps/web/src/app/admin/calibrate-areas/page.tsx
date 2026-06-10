@@ -77,6 +77,8 @@ function matches(p: AdminProductSummary, q: string) {
 }
 
 // ─── page ─────────────────────────────────────────────────────────────────────
+const DEFAULT_TEE_SLUG = 'design-lab-default-tee';
+
 export default function CalibrateAreasPage() {
   const [allProducts, setAllProducts]   = useState<AdminProductSummary[]>([]);
   const [loading, setLoading]           = useState(true);
@@ -86,6 +88,7 @@ export default function CalibrateAreasPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [product, setProduct]           = useState<AdminProductDetail | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(false);
+  const [isDefaultTeeMode, setIsDefaultTeeMode] = useState(false);
 
   // calibration state
   const [garmentType, setGarmentType]   = useState<string>('');
@@ -95,6 +98,22 @@ export default function CalibrateAreasPage() {
   const [saveStatus, setSaveStatus]     = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isDirty, setIsDirty]           = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── load default tee ──────────────────────────────────────────────────────
+  const loadDefaultTee = useCallback(() => {
+    setIsDefaultTeeMode(true);
+    setLoadingProduct(true);
+    setSaveStatus('idle');
+    setIsDirty(false);
+    adminProductsApi.get(DEFAULT_TEE_SLUG)
+      .then(detail => {
+        setProduct(detail);
+        setGarmentType(detail.garmentType ?? '');
+        setAreas(initAreas(detail));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingProduct(false));
+  }, []);
 
   // ── load product list ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -115,6 +134,7 @@ export default function CalibrateAreasPage() {
 
   // ── load full product when index changes ───────────────────────────────────
   useEffect(() => {
+    if (isDefaultTeeMode) return;
     const p = filtered[currentIndex];
     if (!p) { setProduct(null); return; }
 
@@ -129,7 +149,7 @@ export default function CalibrateAreasPage() {
       })
       .catch(() => {})
       .finally(() => setLoadingProduct(false));
-  }, [currentIndex, filtered.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentIndex, filtered.length, isDefaultTeeMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── keyboard navigation ────────────────────────────────────────────────────
   useEffect(() => {
@@ -212,7 +232,41 @@ export default function CalibrateAreasPage() {
         <span style={{ fontSize: 12, color: '#6d7175' }}>← → 键盘切换</span>
       </div>
 
-      {/* ── search + navigation ── */}
+      {/* ── system product shortcuts ── */}
+      <div style={{
+        display: 'flex', gap: 8, marginBottom: 12, padding: '10px 14px',
+        background: '#f6f6f7', border: '1px solid #e1e3e5', borderRadius: 8,
+        alignItems: 'center',
+      }}>
+        <span style={{ fontSize: 12, color: '#6d7175', whiteSpace: 'nowrap' }}>系统商品：</span>
+        <button
+          type="button"
+          onClick={loadDefaultTee}
+          style={{
+            padding: '4px 12px', border: '1px solid #c9cccf', borderRadius: 4,
+            background: isDefaultTeeMode ? '#008060' : '#fff',
+            color: isDefaultTeeMode ? '#fff' : '#202223',
+            fontSize: 13, cursor: 'pointer', fontWeight: isDefaultTeeMode ? 600 : 400,
+          }}
+        >
+          Design Lab 默认 Tee
+        </button>
+        {isDefaultTeeMode && (
+          <button
+            type="button"
+            onClick={() => { setIsDefaultTeeMode(false); setProduct(null); setSaveStatus('idle'); setIsDirty(false); }}
+            style={{
+              padding: '4px 10px', border: '1px solid #c9cccf', borderRadius: 4,
+              background: '#fff', fontSize: 12, cursor: 'pointer', color: '#6d7175',
+            }}
+          >
+            退出 / 回到普通商品
+          </button>
+        )}
+      </div>
+
+      {/* ── search + navigation (hidden in default tee mode) ── */}
+      {!isDefaultTeeMode && (
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'center' }}>
         <input
           type="text"
@@ -264,20 +318,21 @@ export default function CalibrateAreasPage() {
           ▶
         </button>
       </div>
+      )}
 
-      {loading && (
+      {loading && !isDefaultTeeMode && (
         <div style={{ padding: 40, textAlign: 'center', color: '#6d7175', fontSize: 14 }}>
           加载商品列表中…
         </div>
       )}
 
-      {!loading && total === 0 && (
+      {!loading && total === 0 && !isDefaultTeeMode && (
         <div style={{ padding: 40, textAlign: 'center', color: '#6d7175', fontSize: 14 }}>
           没有匹配的商品
         </div>
       )}
 
-      {!loading && total > 0 && (
+      {(!loading && (total > 0 || isDefaultTeeMode)) && (
         <>
           {/* ── product info bar ── */}
           <div style={{
