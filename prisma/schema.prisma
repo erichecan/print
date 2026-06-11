@@ -1514,3 +1514,19 @@ model UserUpload {
   @@index([guestToken, createdAt])
   @@map("user_uploads")
 }
+
+model BgRemoveUsage {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  guestToken   String?  @map("guest_token")
+  ipAddress    String   @map("ip_address")
+  resultGcsKey String   @default("") @map("result_gcs_key")
+  resultUrl    String   @default("") @map("result_url")
+  isProcessing Boolean  @default(false) @map("is_processing")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([guestToken])
+  @@index([createdAt])
+  @@map("bg_remove_usage")
+}
