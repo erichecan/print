@@ -8,7 +8,7 @@ const { uploadBufferToGcs, buildObjectPath } = require('../utils/gcsStorage');
 
 const router = express.Router();
 
-const MAX_INPUT_BYTES = 20 * 1024 * 1024;
+const MAX_INPUT_BYTES = 5 * 1024 * 1024;
 const RECENT_LIMIT = 20;
 
 const upload = multer({

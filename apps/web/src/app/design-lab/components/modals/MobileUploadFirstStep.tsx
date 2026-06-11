@@ -42,7 +42,7 @@ export const MobileUploadFirstStep: React.FC<MobileUploadFirstStepProps> = ({ on
                 </div>
                 <div className="dl-mobile-upload-first-step__info-text">
                     <p>Vector or high resolution artwork of 300 DPI or more will look the best.</p>
-                    <p>Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>20 MB</strong>.</p>
+                    <p>Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>5 MB</strong>.</p>
                 </div>
             </div>
 

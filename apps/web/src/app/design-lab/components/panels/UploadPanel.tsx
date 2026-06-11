@@ -120,7 +120,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             </svg>
           </div>
           <p className="dl-upload-panel__info-text">
-            Vector or high resolution artwork of 300 DPI or more will look the best. Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>20 MB</strong>.
+            Vector or high resolution artwork of 300 DPI or more will look the best. Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>5 MB</strong>.
           </p>
         </div>
 

@@ -45,7 +45,7 @@ const FILE_TYPES = {
   DESIGN: ['application/json', 'image/svg+xml']
 };
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const PAGINATION = {
   DEFAULT_PAGE: 1,

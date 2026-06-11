@@ -3254,11 +3254,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
-    // 文件大小验证（20 MB）
-    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+    // 文件大小验证（5 MB）
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
     if (file.size > MAX_FILE_SIZE) {
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      alert(`File size(${fileSizeMB} MB) exceeds the maximum limit of 20 MB.Please choose a smaller file.`);
+      alert(`File size(${fileSizeMB} MB) exceeds the maximum limit of 5 MB.Please choose a smaller file.`);
       return;
     }
 
