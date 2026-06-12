@@ -12,6 +12,7 @@ import { BillingDetails } from '@/app/offline-orders/components/BillingDetails';
 import { OrderItemColorGroup } from '@/types/order';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 import { useCallback } from 'react';
+import { downloadFile } from '@/utils/download';
 
 export default function SalesOrderDetailPage() {
   const router = useRouter();
@@ -1930,6 +1931,14 @@ export default function SalesOrderDetailPage() {
                           <span className="asset-name">{asset.fileName}</span>
                           <span className="asset-size">{(asset.fileSize / (1024 * 1024)).toFixed(2)} MB</span>
                         </a>
+                        <button
+                          type="button"
+                          title="下载附件"
+                          onClick={() => downloadFile(asset.url, asset.fileName)}
+                          style={{ flexShrink: 0, padding: '4px 8px', color: '#fff', background: '#3b82f6', border: 'none', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}
+                        >
+                          下载
+                        </button>
                         {!showPrintSettings && (
                           <button
                             type="button"

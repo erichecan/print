@@ -36,6 +36,7 @@ import {
   OfflineOrderStatusOption,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { downloadFile } from '@/utils/download';
 
 // ---------------------------------------------------------------------------
 // 常量
@@ -370,6 +371,14 @@ function AssetRow({
         >
           {shortName(asset.fileName)}
         </a>
+        <button
+          type="button"
+          onClick={() => downloadFile(asset.url, asset.fileName)}
+          className="shrink-0 px-1.5 py-0.5 text-[10px] bg-blue-500 text-white rounded hover:bg-blue-600"
+          title="下载"
+        >
+          ↓
+        </button>
         <button
           type="button"
           onClick={() => onDelete(asset.id, asset.fileName)}

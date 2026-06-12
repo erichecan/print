@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState, FormEvent, ChangeEvent, useEffect, DragEvent as ReactDragEvent } from 'react';
+import { downloadFile } from '@/utils/download';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import useSWR from 'swr';
@@ -614,11 +615,19 @@ export default function AdminOfflineOrdersPage() {
                       />
                       <ul className="detail-assets">
                         {(selectedDetail.assets || []).map((asset) => (
-                          <li key={asset.id}>
-                            <a href={asset.url} target="_blank" rel="noopener noreferrer">
+                          <li key={asset.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <a href={asset.url} target="_blank" rel="noopener noreferrer" style={{ flex: 1, minWidth: 0 }}>
                               {asset.fileName}
                             </a>
                             <span>{formatDate(asset.uploadedAt)}</span>
+                            <button
+                              type="button"
+                              onClick={() => downloadFile(asset.url, asset.fileName)}
+                              style={{ flexShrink: 0, padding: '2px 8px', fontSize: '12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                              title="下载"
+                            >
+                              下载
+                            </button>
                           </li>
                         ))}
                       </ul>
