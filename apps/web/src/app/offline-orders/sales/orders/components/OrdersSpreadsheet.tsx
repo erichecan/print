@@ -892,9 +892,10 @@ export default function OrdersSpreadsheet() {
     setLoading(true);
     setError(null);
     try {
-      const res = await authenticatedFetch(`/api/proxy/admin/offline-orders?limit=500`);
+      const res = await authenticatedFetch(`/api/proxy/admin/offline-orders?limit=1000`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
+      console.log('[refreshOrders] returned', json.orders?.length, 'orders, pagination.total:', json.pagination?.total, 'sample IDs:', json.orders?.slice(0,3).map((o: any) => o.id));
       setOrders(json.orders || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败');
@@ -922,6 +923,7 @@ export default function OrdersSpreadsheet() {
     async (id: string, patch: Record<string, unknown>) => {
       const order = orders.find((o) => o.id === id);
       const finalPatch = { ...patch };
+      console.log('[patchOrder] id:', id, 'patch:', finalPatch);
 
       // 乐观更新：把 startDate/dueDate 正确嵌套到 productionWorkOrder，避免 key 不变导致 input 不刷新
       const buildOptimistic = (o: typeof orders[number]) => {
@@ -940,9 +942,11 @@ export default function OrdersSpreadsheet() {
         prev.map((o) => (o.id === id ? (buildOptimistic(o) as any) : o))
       );
       try {
-        await offlineOrdersInlineApi.patch(id, finalPatch);
+        const patchResult = await offlineOrdersInlineApi.patch(id, finalPatch);
+        console.log('[patchOrder] PATCH response:', patchResult);
         await refreshOrders();
       } catch (err) {
+        console.error('[patchOrder] PATCH failed:', err);
         // eslint-disable-next-line no-alert
         alert(`保存失败：${err instanceof Error ? err.message : err}`);
         await refreshOrders();
@@ -981,7 +985,7 @@ export default function OrdersSpreadsheet() {
     }
     setSavingNew(true);
     try {
-      await offlineOrdersInlineApi.create({
+      const createPayload = {
         contactName: newDraft.contactName.trim() || null,
         company: newDraft.company.trim() || null,
         type: newDraft.type || null,
@@ -992,7 +996,10 @@ export default function OrdersSpreadsheet() {
         depositAmount: newDraft.depositAmount ? Number(newDraft.depositAmount) : null,
         description: newDraft.description.trim() || null,
         dueDate: newDraft.dueDate || undefined,
-      });
+      };
+      console.log('[handleCreateInline] creating with payload:', createPayload, 'activeFilters:', filterStatuses);
+      const createResult = await offlineOrdersInlineApi.create(createPayload);
+      console.log('[handleCreateInline] create response:', createResult);
       setNewDraft({
         contactName: '',
         company: '',
@@ -1005,8 +1012,10 @@ export default function OrdersSpreadsheet() {
         invoiceStatus: 'No',
         description: '',
       });
+      setCurrentPage(1);
       await refreshOrders();
     } catch (err) {
+      console.error('[handleCreateInline] create failed:', err);
       // eslint-disable-next-line no-alert
       alert(`新增失败：${err instanceof Error ? err.message : err}`);
     } finally {
@@ -1080,7 +1089,11 @@ export default function OrdersSpreadsheet() {
       const bStart = b.productionWorkOrder?.startDate
         ? new Date(b.productionWorkOrder.startDate).getTime()
         : Number.NEGATIVE_INFINITY;
-      return bStart - aStart;
+      if (aStart !== bStart) return bStart - aStart;
+      // 5. createdAt DESC（无 due/start date 时，最新创建的排前面，新订单不会沉底）
+      const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bCreated - aCreated;
     });
   }, [orders, currentUser, searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
 

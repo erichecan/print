@@ -831,7 +831,7 @@ exports.createOfflineOrder = async (req, res) => {
 exports.listOfflineOrders = async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 500);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 1000);
     const skip = (page - 1) * limit;
 
     const stageFilter = req.query.stageKey ? req.query.stageKey.toString() : null;
@@ -915,7 +915,7 @@ exports.listOfflineOrders = async (req, res, next) => {
         // 先按 productionWorkOrder.dueDate ASC，再按 createdAt DESC 兜底。
         orderBy: [
           { stagePosition: 'asc' },
-          { createdAt: 'asc' }
+          { createdAt: 'desc' }
         ],
         include: {
           // 列表需要全部资产：首张 image 用作缩略图，其余供下载浮层
