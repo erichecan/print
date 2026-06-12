@@ -2103,7 +2103,13 @@ exports.updateOfflineOrder = async (req, res) => {
     logger.error('Failed to update offline order', error);
     res.status(500).json({
       error: 'Server Error',
-      message: 'Failed to update offline order'
+      message: 'Failed to update offline order',
+      ...(process.env.NODE_ENV !== 'production' && {
+        debug: error?.message,
+        code: error?.code,
+        meta: error?.meta,
+        stack: error?.stack?.split('\n').slice(0,5),
+      }),
     });
   }
 };
