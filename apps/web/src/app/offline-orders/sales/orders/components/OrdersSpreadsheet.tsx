@@ -826,6 +826,13 @@ export default function OrdersSpreadsheet() {
   const [filterDepositMin, setFilterDepositMin] = useState('');
   const [filterDepositMax, setFilterDepositMax] = useState('');
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+
+  // 服务端分页状态
+  const PAGE_SIZE = 30;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [refetchKey, setRefetchKey] = useState(0);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -888,20 +895,8 @@ export default function OrdersSpreadsheet() {
   const [savingNew, setSavingNew] = useState(false);
   const router = useRouter();
 
-  const refreshOrders = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await authenticatedFetch(`/api/proxy/admin/offline-orders?limit=1000`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      console.log('[refreshOrders] returned', json.orders?.length, 'orders, pagination.total:', json.pagination?.total, 'sample IDs:', json.orders?.slice(0,3).map((o: any) => o.id));
-      setOrders(json.orders || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载失败');
-    } finally {
-      setLoading(false);
-    }
+  const refreshOrders = useCallback(() => {
+    setRefetchKey((k) => k + 1);
   }, []);
 
   const refreshStatusOptions = useCallback(async () => {
@@ -913,10 +908,60 @@ export default function OrdersSpreadsheet() {
     }
   }, []);
 
+  // 搜索防抖 300ms
   useEffect(() => {
-    refreshOrders();
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // 筛选条件变化时重置到第 1 页（使用 debouncedSearch 避免每次击键都重置）
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
+
+  // 主拉取：服务端分页
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchOrders = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        params.set('page', String(currentPage));
+        params.set('limit', String(PAGE_SIZE));
+        if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
+        if (filterStatuses.length > 0) params.set('statuses', filterStatuses.join(','));
+        if (filterStartFrom) params.set('startFrom', filterStartFrom);
+        if (filterStartTo) params.set('startTo', filterStartTo);
+        if (filterDueFrom) params.set('dueFrom', filterDueFrom);
+        if (filterDueTo) params.set('dueTo', filterDueTo);
+        if (filterQtyMin) params.set('qtyMin', filterQtyMin);
+        if (filterQtyMax) params.set('qtyMax', filterQtyMax);
+        if (filterTotalMin) params.set('totalMin', filterTotalMin);
+        if (filterTotalMax) params.set('totalMax', filterTotalMax);
+        if (filterDepositMin) params.set('depositMin', filterDepositMin);
+        if (filterDepositMax) params.set('depositMax', filterDepositMax);
+
+        const res = await authenticatedFetch(`/api/proxy/admin/offline-orders?${params.toString()}`, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        setOrders(json.orders || []);
+        setServerTotal(json.pagination?.total ?? 0);
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+        setError(err instanceof Error ? err.message : '加载失败');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+    return () => controller.abort();
+  }, [currentPage, debouncedSearch, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax, refetchKey]);
+
+  // 状态选项单独加载
+  useEffect(() => {
     refreshStatusOptions();
-  }, [refreshOrders, refreshStatusOptions]);
+  }, [refreshStatusOptions]);
 
   // 单字段 patch
   const patchOrder = useCallback(
@@ -1023,88 +1068,10 @@ export default function OrdersSpreadsheet() {
     }
   }, [newDraft, refreshOrders, savingNew]);
 
-  const PAGE_SIZE = 30;
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // 过滤 + 排序
-  const renderOrders = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-
-    const filtered = orders.filter((o) => {
-      // 搜索：客户名、电话、邮件、创建者
-      if (q) {
-        const name = (o.contact?.name || '').toLowerCase();
-        const phone = (o.contact?.phone || '').toLowerCase();
-        const email = (o.contact?.email || '').toLowerCase();
-        const creatorName = (o.creator?.name || '').toLowerCase();
-        const creatorEmail = (o.creator?.email || '').toLowerCase();
-        if (!name.includes(q) && !phone.includes(q) && !email.includes(q) && !creatorName.includes(q) && !creatorEmail.includes(q)) return false;
-      }
-      // 状态多选
-      if (filterStatuses.length > 0 && !filterStatuses.includes(o.status ?? '')) return false;
-      // 开始时间区间
-      const startTs = o.productionWorkOrder?.startDate ? new Date(o.productionWorkOrder.startDate).getTime() : null;
-      if (filterStartFrom && (startTs === null || startTs < new Date(filterStartFrom).getTime())) return false;
-      if (filterStartTo && (startTs === null || startTs > new Date(filterStartTo + 'T23:59:59').getTime())) return false;
-      // Due Date 区间
-      const dueTs = o.productionWorkOrder?.dueDate ? new Date(o.productionWorkOrder.dueDate).getTime() : null;
-      if (filterDueFrom && (dueTs === null || dueTs < new Date(filterDueFrom).getTime())) return false;
-      if (filterDueTo && (dueTs === null || dueTs > new Date(filterDueTo + 'T23:59:59').getTime())) return false;
-      // 件数区间
-      const qty = o.quantity ?? null;
-      if (filterQtyMin !== '' && (qty === null || qty < Number(filterQtyMin))) return false;
-      if (filterQtyMax !== '' && (qty === null || qty > Number(filterQtyMax))) return false;
-      // 总金额区间
-      const total = resolveTotalAmount(o);
-      if (filterTotalMin !== '' && total < Number(filterTotalMin)) return false;
-      if (filterTotalMax !== '' && total > Number(filterTotalMax)) return false;
-      // 预付款区间
-      const deposit = o.payment?.depositAmount ?? null;
-      if (filterDepositMin !== '' && (deposit === null || deposit < Number(filterDepositMin))) return false;
-      if (filterDepositMax !== '' && (deposit === null || deposit > Number(filterDepositMax))) return false;
-      return true;
-    });
-
-    return filtered.sort((a, b) => {
-      // 1. 完成沉底
-      const aDone = a.status === '完成' ? 1 : 0;
-      const bDone = b.status === '完成' ? 1 : 0;
-      if (aDone !== bDone) return aDone - bDone;
-      // 2. 当前用户的订单优先
-      const aIsMe = currentUser && a.creator?.id === currentUser.id ? 0 : 1;
-      const bIsMe = currentUser && b.creator?.id === currentUser.id ? 0 : 1;
-      if (aIsMe !== bIsMe) return aIsMe - bIsMe;
-      // 3. Due Date DESC（越晚截止越靠前，null 排最后）
-      const aDue = a.productionWorkOrder?.dueDate
-        ? new Date(a.productionWorkOrder.dueDate).getTime()
-        : Number.NEGATIVE_INFINITY;
-      const bDue = b.productionWorkOrder?.dueDate
-        ? new Date(b.productionWorkOrder.dueDate).getTime()
-        : Number.NEGATIVE_INFINITY;
-      if (aDue !== bDue) return bDue - aDue;
-      // 4. Start Date DESC 兜底（due date 相同时，开始时间越新越靠前）
-      const aStart = a.productionWorkOrder?.startDate
-        ? new Date(a.productionWorkOrder.startDate).getTime()
-        : Number.NEGATIVE_INFINITY;
-      const bStart = b.productionWorkOrder?.startDate
-        ? new Date(b.productionWorkOrder.startDate).getTime()
-        : Number.NEGATIVE_INFINITY;
-      if (aStart !== bStart) return bStart - aStart;
-      // 5. createdAt DESC（无 due/start date 时，最新创建的排前面，新订单不会沉底）
-      const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bCreated - aCreated;
-    });
-  }, [orders, currentUser, searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
-
-  // 筛选条件变化时重置到第 1 页
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
-
-  const totalPages = Math.max(1, Math.ceil(renderOrders.length / PAGE_SIZE));
-  const pagedOrders = renderOrders.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
 
   const exportFile = useCallback((format: 'xlsx' | 'csv') => {
-    const rows = renderOrders.map((o) => ({
+    const rows = orders.map((o) => ({
       '订单编号': o.orderCode || '',
       '开始时间': o.productionWorkOrder?.startDate
         ? new Date(o.productionWorkOrder.startDate).toLocaleDateString('zh-CN')
@@ -1138,7 +1105,7 @@ export default function OrdersSpreadsheet() {
     } else {
       XLSX.writeFile(wb, `orders_${dateStr}.xlsx`);
     }
-  }, [renderOrders]);
+  }, [orders]);
 
   return (
     <div className="w-full">
@@ -1168,7 +1135,7 @@ export default function OrdersSpreadsheet() {
         )}
         {hasActiveFilter && (
           <span className="text-xs text-gray-500 whitespace-nowrap">
-            已筛选 {renderOrders.length} / 共 {orders.length} 条
+            筛选结果 {serverTotal} 条
           </span>
         )}
         <button
@@ -1484,14 +1451,14 @@ export default function OrdersSpreadsheet() {
                 </td>
               </tr>
             )}
-            {!loading && pagedOrders.length === 0 && (
+            {!loading && orders.length === 0 && (
               <tr>
                 <td colSpan={15} className="px-3 py-6 text-center text-gray-500">
                   暂无订单
                 </td>
               </tr>
             )}
-            {pagedOrders.map((order) => {
+            {orders.map((order) => {
               const total = resolveTotalAmount(order);
               const paid = order.payment?.depositAmount ?? 0;
               const displayType =
@@ -1852,8 +1819,8 @@ export default function OrdersSpreadsheet() {
 
         <span className={totalPages <= 1 ? 'ml-auto' : ''}>
           {hasActiveFilter
-            ? `筛选 ${renderOrders.length} / 共 ${orders.length} 条，第 ${currentPage}/${totalPages} 页`
-            : `共 ${renderOrders.length} 条，第 ${currentPage}/${totalPages} 页`}
+            ? `筛选 ${serverTotal} 条，第 ${currentPage}/${totalPages} 页`
+            : `共 ${serverTotal} 条，第 ${currentPage}/${totalPages} 页`}
         </span>
       </div>
     </div>

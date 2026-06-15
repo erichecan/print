@@ -835,13 +835,31 @@ exports.listOfflineOrders = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const stageFilter = req.query.stageKey ? req.query.stageKey.toString() : null;
-    // 2026-04-20: status 由 enum 改为自由文本，直接用原字符串匹配
-    const statusFilter = req.query.status ? req.query.status.toString().trim() : null;
+    // 支持多选 status（逗号分隔），兼容旧版单个 status 参数
+    const statusesFilter = req.query.statuses
+      ? req.query.statuses.split(',').map(s => s.trim()).filter(Boolean)
+      : req.query.status
+        ? [req.query.status.toString().trim()]
+        : null;
     const rushFilter = req.query.rush === 'true' ? true : req.query.rush === 'false' ? false : null;
     const search = req.query.search?.toString().trim();
     const paymentMethod = req.query.paymentMethod?.toString().trim();
     const paymentStatus = req.query.paymentStatus?.toString().toUpperCase();
     const dateFilter = req.query.date?.toString().trim();
+
+    // 日期范围（productionWorkOrder.startDate 和 dueDate）
+    const startFrom = parseDate(req.query.startFrom);
+    const startTo = parseDate(req.query.startTo);
+    const dueFrom = parseDate(req.query.dueFrom);
+    const dueTo = parseDate(req.query.dueTo);
+
+    // 数量和金额范围
+    const qtyMin = req.query.qtyMin != null && req.query.qtyMin !== '' ? parseInt(req.query.qtyMin, 10) : null;
+    const qtyMax = req.query.qtyMax != null && req.query.qtyMax !== '' ? parseInt(req.query.qtyMax, 10) : null;
+    const totalMin = req.query.totalMin != null && req.query.totalMin !== '' ? parseFloat(req.query.totalMin) : null;
+    const totalMax = req.query.totalMax != null && req.query.totalMax !== '' ? parseFloat(req.query.totalMax) : null;
+    const depositMin = req.query.depositMin != null && req.query.depositMin !== '' ? parseFloat(req.query.depositMin) : null;
+    const depositMax = req.query.depositMax != null && req.query.depositMax !== '' ? parseFloat(req.query.depositMax) : null;
 
     const where = {
       AND: []
@@ -851,8 +869,8 @@ exports.listOfflineOrders = async (req, res, next) => {
       where.AND.push({ stageKey: stageFilter });
     }
 
-    if (statusFilter) {
-      where.AND.push({ status: statusFilter });
+    if (statusesFilter && statusesFilter.length > 0) {
+      where.AND.push({ status: { in: statusesFilter } });
     }
 
     if (rushFilter !== null) {
@@ -900,10 +918,39 @@ exports.listOfflineOrders = async (req, res, next) => {
           { projectName: { contains: search, mode: 'insensitive' } },
           { orderCode: { contains: search, mode: 'insensitive' } },
           { email: { contains: search, mode: 'insensitive' } },
-          { company: { contains: search, mode: 'insensitive' } }
+          { company: { contains: search, mode: 'insensitive' } },
+          { contactName: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
         ]
       });
     }
+
+    // productionWorkOrder 日期范围
+    if (startFrom || startTo) {
+      const cond = {};
+      if (startFrom) cond.gte = startFrom;
+      if (startTo) { const e = new Date(startTo); e.setHours(23, 59, 59, 999); cond.lte = e; }
+      where.AND.push({ productionWorkOrder: { startDate: cond } });
+    }
+
+    if (dueFrom || dueTo) {
+      const cond = {};
+      if (dueFrom) cond.gte = dueFrom;
+      if (dueTo) { const e = new Date(dueTo); e.setHours(23, 59, 59, 999); cond.lte = e; }
+      where.AND.push({ productionWorkOrder: { dueDate: cond } });
+    }
+
+    // 数量范围
+    if (qtyMin !== null && !Number.isNaN(qtyMin)) where.AND.push({ quantity: { gte: qtyMin } });
+    if (qtyMax !== null && !Number.isNaN(qtyMax)) where.AND.push({ quantity: { lte: qtyMax } });
+
+    // 总金额范围
+    if (totalMin !== null && !Number.isNaN(totalMin)) where.AND.push({ totalAmount: { gte: totalMin } });
+    if (totalMax !== null && !Number.isNaN(totalMax)) where.AND.push({ totalAmount: { lte: totalMax } });
+
+    // 预付款范围
+    if (depositMin !== null && !Number.isNaN(depositMin)) where.AND.push({ deposit_amount: { gte: depositMin } });
+    if (depositMax !== null && !Number.isNaN(depositMax)) where.AND.push({ deposit_amount: { lte: depositMax } });
 
     const [orders, total, stages] = await Promise.all([
       prisma.offlineOrder.findMany({
