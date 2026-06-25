@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quantity Tier Hint – Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: #f0f2f5; padding: 40px 20px; color: #1a202c; }
+  h3 { font-size: 13px; color: #64748b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ── Modal shell ── */
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 480px;
+    margin: 0 auto 48px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.12);
+    overflow: hidden;
+  }
+  .modal-header {
+    padding: 20px 24px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a202c;
+  }
+  .modal-body { padding: 20px 24px 24px; }
+
+  /* ── Product card (existing) ── */
+  .gp-product-card {
+    border: 1px solid #e2e6ea;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .gp-product-thumb {
+    width: 88px; height: 88px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 700; color: #94a3b8;
+    flex-shrink: 0;
+  }
+  .gp-product-info { flex: 1; }
+  .gp-product-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .gp-product-meta { font-size: 13px; color: #64748b; margin-bottom: 12px; }
+  .gp-sizes-section-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #64748b; margin-bottom: 6px;
+  }
+  .gp-sizes-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-start; }
+  .gp-size-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .gp-size-col-label { font-size: 11px; font-weight: 600; color: #64748b; }
+  .gp-size-input-box {
+    width: 44px; height: 44px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    text-align: center; font-size: 14px;
+    background: #fff;
+  }
+  .gp-size-input-box.has-val {
+    border-color: #2563eb;
+    background: #eff6ff;
+    font-weight: 600; color: #1d4ed8;
+  }
+
+  /* ── Existing inline price summary area ── */
+  .gp-inline-price-summary {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    min-height: 48px;
+    font-size: 14px;
+    color: #64748b;
+  }
+
+  /* ─────────────────────────────────────────────────────
+     OPTION A  –  Compact pill strip (between card & price box)
+     ───────────────────────────────────────────────────── */
+  .tier-strip-A {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .tier-strip-A__label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #94a3b8;
+    white-space: nowrap;
+    margin-right: 2px;
+  }
+  .tier-strip-A__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    white-space: nowrap;
+  }
+  .tier-strip-A__pill.active {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #86efac;
+  }
+  .tier-strip-A__pill .tier-check { font-size: 11px; }
+
+  /* ─────────────────────────────────────────────────────
+     OPTION B  –  Subtle inline row inside the price box
+     ───────────────────────────────────────────────────── */
+  .gp-inline-price-summary--B {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .tier-hint-B {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #e2e8f0;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tier-hint-B__icon { font-size: 13px; margin-right: 4px; }
+  .tier-hint-B__item {
+    font-size: 12px;
+    color: #475569;
+  }
+  .tier-hint-B__item strong { color: #1d4ed8; }
+  .tier-hint-B__sep { color: #cbd5e1; font-size: 11px; }
+  .gp-price-hint-B { font-size: 14px; color: #94a3b8; }
+
+  /* ─────────────────────────────────────────────────────
+     OPTION C  –  Mini progress-bar style nudge
+     ───────────────────────────────────────────────────── */
+  .tier-nudge-C {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .tier-nudge-C__tiers {
+    display: flex;
+    flex: 1;
+    gap: 2px;
+  }
+  .tier-nudge-C__seg {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: #dbeafe;
+  }
+  .tier-nudge-C__seg.filled { background: #3b82f6; }
+  .tier-nudge-C__seg.active { background: #22c55e; }
+  .tier-nudge-C__labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 10px;
+    color: #64748b;
+  }
+  .tier-nudge-C__right {
+    text-align: right;
+    white-space: nowrap;
+  }
+  .tier-nudge-C__pct {
+    font-size: 18px; font-weight: 800; color: #15803d; line-height: 1;
+  }
+  .tier-nudge-C__desc { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .tier-nudge-C__wrap { flex: 1; }
+
+  /* divider */
+  .preview-divider {
+    text-align: center; font-size: 11px; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .08em;
+    margin: 40px 0 24px;
+  }
+  .cta-btn {
+    width: 100%;
+    padding: 14px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h3>Option A — Pill strip（卡片下方，价格框上方）</h3>
+<div class="modal">
+  <div class="modal-header">Sizes &amp; Quantities</div>
+  <div class="modal-body">
+
+    <!-- Product card -->
+    <div class="gp-product-card">
+      <div class="gp-product-thumb">G</div>
+      <div class="gp-product-info">
+        <div class="gp-product-name">Gildan 5000 Heavy Cotton Tee</div>
+        <div class="gp-product-meta">🖨️ DTF Print · 5"–11"</div>
+        <div class="gp-sizes-section-label">Adult</div>
+        <div class="gp-sizes-row">
+          <div class="gp-size-col"><span class="gp-size-col-label">S</span><input class="gp-size-input-box" value="0" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">M</span><input class="gp-size-input-box has-val" value="12" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">L</span><input class="gp-size-input-box has-val" value="8" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">XL</span><input class="gp-size-input-box" value="0" readonly></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION A: pill strip -->
+    <div class="tier-strip-A">
+      <span class="tier-strip-A__label">Bulk discount</span>
+      <span class="tier-strip-A__pill active"><span class="tier-check">✓</span> 10+ pcs · 5% off</span>
+      <span class="tier-strip-A__pill">25+ pcs · 10% off</span>
+      <span class="tier-strip-A__pill">50+ pcs · 15% off</span>
+    </div>
+
+    <!-- Price box -->
+    <div class="gp-inline-price-summary">
+      20 items · $13.59/item after 5% bulk discount · <strong>Total $271.80</strong>
+    </div>
+
+    <button class="cta-btn">Add to Cart</button>
+  </div>
+</div>
+
+
+<div class="preview-divider">Option B — Inside the price box</div>
+
+<h3>Option B — 阶梯嵌在价格框顶部（一行分隔线隔开）</h3>
+<div class="modal">
+  <div class="modal-header">Sizes &amp; Quantities</div>
+  <div class="modal-body">
+
+    <div class="gp-product-card">
+      <div class="gp-product-thumb">G</div>
+      <div class="gp-product-info">
+        <div class="gp-product-name">Gildan 5000 Heavy Cotton Tee</div>
+        <div class="gp-product-meta">🖨️ DTF Print · 5"–11"</div>
+        <div class="gp-sizes-section-label">Adult</div>
+        <div class="gp-sizes-row">
+          <div class="gp-size-col"><span class="gp-size-col-label">S</span><input class="gp-size-input-box" value="0" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">M</span><input class="gp-size-input-box has-val" value="12" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">L</span><input class="gp-size-input-box has-val" value="8" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">XL</span><input class="gp-size-input-box" value="0" readonly></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION B: inside the price box -->
+    <div class="gp-inline-price-summary--B">
+      <div class="tier-hint-B">
+        <span class="tier-hint-B__icon">🏷️</span>
+        <span class="tier-hint-B__item"><strong>10+ pcs 5% off</strong></span>
+        <span class="tier-hint-B__sep">·</span>
+        <span class="tier-hint-B__item"><strong>25+ pcs 10% off</strong></span>
+        <span class="tier-hint-B__sep">·</span>
+        <span class="tier-hint-B__item"><strong>50+ pcs 15% off</strong></span>
+      </div>
+      <span class="gp-price-hint-B">20 items · $13.59/item after 5% bulk discount · <strong>Total $271.80</strong></span>
+    </div>
+
+    <button class="cta-btn">Add to Cart</button>
+  </div>
+</div>
+
+
+<div class="preview-divider">Option C — Progress nudge bar</div>
+
+<h3>Option C — 进度条式 nudge（强调"差几件就能升档"）</h3>
+<div class="modal">
+  <div class="modal-header">Sizes &amp; Quantities</div>
+  <div class="modal-body">
+
+    <div class="gp-product-card">
+      <div class="gp-product-thumb">G</div>
+      <div class="gp-product-info">
+        <div class="gp-product-name">Gildan 5000 Heavy Cotton Tee</div>
+        <div class="gp-product-meta">🖨️ DTF Print · 5"–11"</div>
+        <div class="gp-sizes-section-label">Adult</div>
+        <div class="gp-sizes-row">
+          <div class="gp-size-col"><span class="gp-size-col-label">S</span><input class="gp-size-input-box" value="0" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">M</span><input class="gp-size-input-box has-val" value="12" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">L</span><input class="gp-size-input-box has-val" value="8" readonly></div>
+          <div class="gp-size-col"><span class="gp-size-col-label">XL</span><input class="gp-size-input-box" value="0" readonly></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION C: nudge bar -->
+    <div class="tier-nudge-C">
+      <div class="tier-nudge-C__wrap">
+        <div style="font-size:12px;color:#374151;font-weight:600;margin-bottom:6px;">
+          ✅ 5% off unlocked · add 5 more → <span style="color:#1d4ed8;font-weight:700;">10% off</span>
+        </div>
+        <div class="tier-nudge-C__tiers">
+          <div class="tier-nudge-C__seg active"></div>
+          <div style="width:4px"></div>
+          <div class="tier-nudge-C__seg filled" style="flex:1.5"></div>
+          <div style="width:4px"></div>
+          <div class="tier-nudge-C__seg" style="flex:2.5"></div>
+        </div>
+        <div class="tier-nudge-C__labels">
+          <span>10 pcs</span>
+          <span>25 pcs</span>
+          <span>50 pcs</span>
+        </div>
+      </div>
+      <div class="tier-nudge-C__right">
+        <div class="tier-nudge-C__pct">5%</div>
+        <div class="tier-nudge-C__desc">current<br>discount</div>
+      </div>
+    </div>
+
+    <div class="gp-inline-price-summary">
+      20 items · $13.59/item after 5% bulk discount · <strong>Total $271.80</strong>
+    </div>
+
+    <button class="cta-btn">Add to Cart</button>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrintNGo 裂变系统 · 全流程运营手册</title>
+<style>
+  :root {
+    --green: #07C160;
+    --green-dark: #04954A;
+    --green-bg: #E8F8EE;
+    --red: #E42313;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --text-light: #888;
+    --border: #E8E8E8;
+    --bg: #F7F8FA;
+    --white: #ffffff;
+    --warning-bg: #FFF7E0;
+    --warning-border: #F5A623;
+    --info-bg: #EEF4FF;
+    --info-border: #4E7CF6;
+    --danger-bg: #FFF0EF;
+    --danger-border: #E42313;
+    --step-num: #07C160;
+    --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* ─── TOP NAV ────────────────────────────────── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 56px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .nav-logo {
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--green);
+    text-decoration: none;
+    letter-spacing: -0.3px;
+    flex-shrink: 0;
+  }
+  .nav-badge {
+    background: var(--green-bg);
+    color: var(--green-dark);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 100px;
+    flex-shrink: 0;
+  }
+  .nav-links {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-left: auto;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links a {
+    white-space: nowrap;
+    padding: 6px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-links a:hover { background: var(--bg); color: var(--text); }
+
+  /* ─── HERO ────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, #07C160 0%, #04954A 100%);
+    color: white;
+    padding: 56px 24px 48px;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 100px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+  .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
+  .hero p { font-size: 15px; color: rgba(255,255,255,0.85); max-width: 520px; margin: 0 auto 28px; }
+  .hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat-num { font-size: 26px; font-weight: 800; }
+  .hero-stat-label { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+
+  /* ─── LAYOUT ──────────────────────────────────── */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  /* ─── TOC ─────────────────────────────────────── */
+  .toc {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin: 32px 0;
+    box-shadow: var(--shadow);
+  }
+  .toc-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 6px;
+  }
+  .toc a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 14px;
+    transition: background 0.12s;
+  }
+  .toc a:hover { background: var(--bg); }
+  .toc-icon { font-size: 16px; width: 22px; text-align: center; }
+
+  /* ─── SECTION ─────────────────────────────────── */
+  .section {
+    margin-bottom: 48px;
+    scroll-margin-top: 72px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--green-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .section-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  /* ─── CARDS ───────────────────────────────────── */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card p { color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
+  .card p:last-child { margin-bottom: 0; }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  /* ─── STEPS ───────────────────────────────────── */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex;
+    gap: 16px;
+    position: relative;
+  }
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 19px;
+    top: 40px;
+    bottom: -4px;
+    width: 2px;
+    background: var(--green-bg);
+  }
+  .step-num {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .step-body {
+    padding-top: 8px;
+    padding-bottom: 24px;
+    flex: 1;
+  }
+  .step-title { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .step-desc { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
+
+  /* ─── FLOW DIAGRAM ────────────────────────────── */
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 16px 0;
+  }
+  .flow-item {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    min-width: 100px;
+  }
+  .flow-item.active { border-color: var(--green); background: var(--green-bg); color: var(--green-dark); }
+  .flow-item.warn { border-color: var(--warning-border); background: var(--warning-bg); }
+  .flow-arrow { color: var(--text-light); font-size: 18px; flex-shrink: 0; }
+
+  /* ─── TIER TABLE ──────────────────────────────── */
+  .tier-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+  .tier-table th {
+    background: var(--bg);
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .tier-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-table tr:hover td { background: var(--bg); }
+  .amount-chip {
+    display: inline-block;
+    background: var(--green-bg);
+    color: var(--green-dark);
+    font-size: 15px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 8px;
+  }
+  .status-chip {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 100px;
+  }
+  .status-pending { background: var(--warning-bg); color: #C68000; }
+  .status-paid    { background: var(--green-bg);   color: var(--green-dark); }
+  .status-cancel  { background: #F3F3F3;            color: #999; }
+
+  /* ─── CALLOUTS ────────────────────────────────── */
+  .callout {
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    border-left: 4px solid;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+  .callout.warn  { background: var(--warning-bg); border-color: var(--warning-border); color: #7A5200; }
+  .callout.info  { background: var(--info-bg);    border-color: var(--info-border);    color: #1e3a8a; }
+  .callout.danger{ background: var(--danger-bg);  border-color: var(--danger-border);  color: #7A0A00; }
+  .callout.success{ background: var(--green-bg);  border-color: var(--green);          color: #0a5a28; }
+
+  /* ─── URL BADGE ───────────────────────────────── */
+  .url-box {
+    background: #1e1e2e;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 13px;
+    color: #a9dc76;
+    margin-bottom: 14px;
+    word-break: break-all;
+    position: relative;
+  }
+  .url-box .comment { color: #676e95; }
+  .url-box .highlight { color: #ffd866; }
+
+  /* ─── CHECKLIST ───────────────────────────────── */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-box {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ─── CS SCRIPTS ──────────────────────────────── */
+  .qa-block { margin-bottom: 16px; }
+  .qa-q {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    gap: 8px;
+  }
+  .qa-tag {
+    background: var(--info-bg);
+    color: #4E7CF6;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 100px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .qa-a {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    border-left: 3px solid var(--green);
+  }
+
+  /* ─── TIMELINE ────────────────────────────────── */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .timeline-item {
+    display: flex;
+    gap: 14px;
+    position: relative;
+  }
+  .timeline-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 32px;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .timeline-dot.active { border-color: var(--green); background: var(--green-bg); }
+  .timeline-content {
+    padding-top: 4px;
+    padding-bottom: 20px;
+    flex: 1;
+  }
+  .timeline-day { font-size: 12px; font-weight: 700; color: var(--green); margin-bottom: 3px; }
+  .timeline-text { font-size: 14px; color: var(--text-muted); }
+
+  /* ─── METRICS ─────────────────────────────────── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .metric-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .metric-num { font-size: 24px; font-weight: 800; color: var(--text); }
+  .metric-label { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+
+  /* ─── FOOTER ──────────────────────────────────── */
+  .footer {
+    text-align: center;
+    padding: 32px 24px;
+    color: var(--text-light);
+    font-size: 13px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  /* ─── RESPONSIVE ──────────────────────────────── */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 22px; }
+    .hero-stats { gap: 20px; }
+    .nav-links { display: none; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+
+  @media print {
+    .nav { display: none; }
+    .hero { padding: 28px 16px; }
+    .card { break-inside: avoid; }
+    .section { break-before: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─────────────────────────────────────────────── -->
+<nav class="nav">
+  <span class="nav-logo">PrintNGo</span>
+  <span class="nav-badge">裂变运营手册 v1.0</span>
+  <div class="nav-links">
+    <a href="#overview">系统概览</a>
+    <a href="#setup">后台配置</a>
+    <a href="#launch">上线流程</a>
+    <a href="#promote">推广打法</a>
+    <a href="#flow">裂变流程</a>
+    <a href="#cs">客服处理</a>
+    <a href="#cashback">返现核销</a>
+    <a href="#monitor">数据监控</a>
+  </div>
+</nav>
+
+<!-- ─── HERO ─────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-badge">PRINTNGО · 推荐裂变系统</div>
+  <h1>全流程运营手册</h1>
+  <p>从后台配置、活动上线、推广打法，到客服话术、返现核销的一站式操作指南</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">CA$1400</div>
+      <div class="hero-stat-label">单用户最高返现</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">3 档</div>
+      <div class="hero-stat-label">阶梯返现规则</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">7–14天</div>
+      <div class="hero-stat-label">返现到账周期</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ─── TOC ────────────────────────────────────────────── -->
+  <div class="toc">
+    <div class="toc-title">目录 · Table of Contents</div>
+    <div class="toc-grid">
+      <a href="#overview"><span class="toc-icon">🗺</span>系统架构概览</a>
+      <a href="#setup"><span class="toc-icon">⚙️</span>后台配置手册</a>
+      <a href="#launch"><span class="toc-icon">🚀</span>活动上线清单</a>
+      <a href="#promote"><span class="toc-icon">📣</span>推广打法</a>
+      <a href="#flow"><span class="toc-icon">🔄</span>裂变全流程</a>
+      <a href="#cs"><span class="toc-icon">💬</span>客服话术</a>
+      <a href="#cashback"><span class="toc-icon">💸</span>返现核销操作</a>
+      <a href="#monitor"><span class="toc-icon">📊</span>数据监控</a>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 — 系统概览
+  ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="overview">
+    <div class="section-header">
+      <div class="section-icon">🗺</div>
+      <div>
+        <div class="section-num">Section 01</div>
+        <div class="section-title">系统架构概览</div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">🎯 核心玩法</div>
+        <p>老用户分享专属邀请链接，好友通过链接完成首单付款后，老用户自动获得阶梯返现奖励。</p>
+        <p>每个用户最多邀请 <strong>3 位</strong>好友，累计最高返现 <strong>CA$1400</strong>。</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🏗 技术架构</div>
+        <p><strong>前端：</strong>Next.js 落地页、分享页、用户钱包页面（路径 <code>/referral/*</code>）</p>
+        <p><strong>后端：</strong>Express.js API（<code>/api/referral/*</code> 和 <code>/api/admin/referral/*</code>）</p>
+        <p><strong>数据库：</strong>PostgreSQL，Prisma ORM 管理 3 张裂变专属表</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 数据模型说明</div>
+      <table class="tier-table">
+        <thead>
+          <tr>
+            <th>数据表</th>
+            <th>用途</th>
+            <th>关键字段</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>referral_campaigns</code></td>
+            <td>活动配置（全局唯一）</td>
+            <td>isActive、cap（上限）、tier1/2/3Amount（各档返现金额）</td>
+          </tr>
+          <tr>
+            <td><code>referral_user_codes</code></td>
+            <td>用户专属邀请码</td>
+            <td>userId、code（格式 PNG+哈希，如 PNG7A3F2B）</td>
+          </tr>
+          <tr>
+            <td><code>referral_links</code></td>
+            <td>每笔推荐记录</td>
+            <td>promoterUserId、referredUserId、orderId、tier、rewardAmount、rewardStatus</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔗 关键页面路由</div>
+      <table class="tier-table">
+        <thead>
+          <tr><th>路径</th><th>受众</th><th>说明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>/referral</code></td><td>所有人</td><td>活动介绍落地页，可带 <code>?ref=CODE</code> 参数</td></tr>
+          <tr><td><code>/referral/invite?ref=CODE</code></td><td>被邀请人</td><td>好友收到链接后的落地页</td></tr>
+          <tr><td><code>/referral/me</code> / <code>/referral/dashboard</code></td><td>推广者（登录）</td><td>查看邀请进度、钱包余额</td></tr>
+          <tr><td><code>/referral/share</code></td><td>推广者（登录）</td><td>获取专属链接、一键分享</td></tr>
+          <tr><td><code>/referral/wallet</code></td><td>推广者（登录）</td><td>返现明细流水</td></tr>
+          <tr><td><code>/admin/referral-settings</code></td><td>管理员</td><td>配置活动参数</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-title">ℹ️ 系统防护机制</div>
+      <ul style="padding-left: 16px; margin-top: 4px;">
+        <li>禁止自买：推广者和被邀请人为同一账号时，系统自动拒绝记录</li>
+        <li>一次生效：同一被邀请人只计入一次推荐（已参与过的不重复计算）</li>
+        <li>上限保护：超出 cap（默认 3）后的订单不再触发奖励</li>
+        <li>幂等保护：同一 orderId 不会被重复处理</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 — 后台配置
+  ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="setup">
+    <div class="section-header">
+      <div class="section-icon">⚙️</div>
+      <div>
+        <div class="section-num">Section 02</div>
+        <div class="section-title">后台配置手册</div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">⚠️ 配置生效范围</div>
+      后台修改「活动配置」后立即全局生效，无需重启服务。建议在<strong>正式上线前 30 分钟内</strong>完成最终配置，避免用户在过渡期看到不一致数据。
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚙️ 第一步：进入管理后台活动配置</div>
+      <div class="url-box">
+        <span class="comment"># 生产环境管理后台</span><br>
+        https://printngoplus.com/admin/referral-settings<br><br>
+        <span class="comment"># 本地开发环境</span><br>
+        http://localhost:3000/admin/referral-settings
+      </div>
+      <p>需要管理员账号登录。配置页面对应后端 API：<code>PUT /api/admin/referral/campaign</code></p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎛 可配置参数说明</div>
+      <table class="tier-table">
+        <thead>
+          <tr><th>参数名</th><th>含义</th><th>默认值</th><th>建议范围</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>isActive</code></td>
+            <td>活动开关（关闭后所有新推荐均不生效）</td>
+            <td>true（开启）</td>
+            <td>上线时设为 true；节假日关闭时设为 false</td>
+          </tr>
+          <tr>
+            <td><code>cap</code></td>
+            <td>每位推广者最多可获奖励的邀请人数</td>
+            <td>3</td>
+            <td>3–5，超出后系统不再记录新奖励</td>
+          </tr>
+          <tr>
+            <td><code>tier1Amount</code></td>
+            <td>邀请第 1 位好友的返现金额（CA$）</td>
+            <td>200</td>
+            <td>150–300，设为订单均价的 15–25%</td>
+          </tr>
+          <tr>
+            <td><code>tier2Amount</code></td>
+            <td>邀请第 2 位好友的返现金额（CA$）</td>
+            <td>400</td>
+            <td>应大于 tier1，建议 2× tier1</td>
+          </tr>
+          <tr>
+            <td><code>tier3Amount</code></td>
+            <td>邀请第 3 位好友的返现金额（CA$）</td>
+            <td>800</td>
+            <td>应大于 tier2，建议 4× tier1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💡 返现比例设计原则</div>
+      <p>以下为默认配置（CA$200 / CA$400 / CA$800）的成本分析，供参考：</p>
+      <table class="tier-table" style="margin-top: 10px;">
+        <thead>
+          <tr><th>档次</th><th>返现</th><th>假设客单价</th><th>推广成本率</th><th>备注</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>第 1 单</td>
+            <td><span class="amount-chip">CA$200</span></td>
+            <td>CA$1000+</td>
+            <td>≈20%</td>
+            <td>低于传统广告 CAC，合理</td>
+          </tr>
+          <tr>
+            <td>第 2 单</td>
+            <td><span class="amount-chip">CA$400</span></td>
+            <td>CA$1000+</td>
+            <td>≈40%</td>
+            <td>第 2 单毛利覆盖返现即可</td>
+          </tr>
+          <tr>
+            <td>第 3 单</td>
+            <td><span class="amount-chip">CA$800</span></td>
+            <td>CA$1000+</td>
+            <td>≈80%</td>
+            <td>第 3 单引流价值 &gt; 利润</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top: 10px;">三挡设计逻辑：越往后越难完成，奖励越高，刺激推广者持续拉新。</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔌 API 快速验证（配置后执行）</div>
+      <div class="url-box">
+        <span class="comment"># 查看当前活动配置</span><br>
+        curl -H "Authorization: Bearer <span class="highlight">YOUR_ADMIN_TOKEN</span>" \<br>
+        &nbsp;&nbsp;https://printngoplus.com/api/admin/referral/campaign<br><br>
+        <span class="comment"># 开启活动（将 isActive 改为 true）</span><br>
+        curl -X PUT -H "Authorization: Bearer <span class="highlight">YOUR_ADMIN_TOKEN</span>" \<br>
+        &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+        &nbsp;&nbsp;-d '{"isActive":true,"cap":3,"tier1Amount":200,"tier2Amount":400,"tier3Amount":800}' \<br>
+        &nbsp;&nbsp;https://printngoplus.com/api/admin/referral/campaign
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 3 — 活动上线清单
+  ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="launch">
+    <div class="section-header">
+      <div class="section-icon">🚀</div>
+      <div>
+        <div class="section-num">Section 03</div>
+        <div class="section-title">活动上线清单</div>
+      </div>
+    </div>
+
+    <div class="callout success">
+      <div class="callout-title">✅ 执行原则</div>
+      按顺序勾选，全部通过后才发布推广物料。跳过任何一项都可能导致用户进入流程后无法完单或返现计算错误。
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 D-3（上线前 3 天）</div>
+      <ul class="checklist">
+        <li><span class="check-box"></span>确认返现金额和档次，在管理后台保存配置</li>
+        <li><span class="check-box"></span>确认 <code>isActive = true</code>，活动开关已开启</li>
+        <li><span class="check-box"></span>确认 <code>cap = 3</code>（或你想要的上限数字）</li>
+        <li><span class="check-box"></span>准备至少一个测试账号，验证邀请码生成（访问 <code>/referral/me</code>）</li>
+        <li><span class="check-box"></span>确认支付流程正常（用测试账号完成一笔订单）</li>
+        <li><span class="check-box"></span>确认推广者钱包页面正确显示 PENDING 奖励</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 D-1（上线前 1 天）</div>
+      <ul class="checklist">
+        <li><span class="check-box"></span>准备推广物料：朋友圈海报、微信消息模板、群发话术（见 Section 04）</li>
+        <li><span class="check-box"></span>向现有用户发送活动预热通知（邮件/微信）</li>
+        <li><span class="check-box"></span>客服同学阅读 Section 06 客服话术，准备回复模板</li>
+        <li><span class="check-box"></span>配置好返现核销流程，明确打款负责人</li>
+        <li><span class="check-box"></span>生产环境二次验证：用真实账号从 <code>/referral/invite?ref=CODE</code> 走完整个流程</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 D-day（上线当天）</div>
+      <ul class="checklist">
+        <li><span class="check-box"></span>09:00 — 发布朋友圈/公众号推文</li>
+        <li><span class="check-box"></span>09:30 — 在老用户群发送活动通知</li>
+        <li><span class="check-box"></span>10:00 — 检查管理后台 stats（第一批邀请链接是否生成）</li>
+        <li><span class="check-box"></span>全天 — 监控 Cloud Run 日志，确认 <code>[Referral] Reward created</code> 正常出现</li>
+        <li><span class="check-box"></span>18:00 — 汇总当日数据：新增推荐数、新增订单数、待付返现总额</li>
+      </ul>
+    </div>
+
+    <div class="callout danger">
+      <div class="callout-title">🚨 上线后 30 分钟内必测</div>
+      用一个全新账号（从未下过单）通过邀请链接下单，确认：<br>
+      ① 推广者后台显示「第 1 单 PENDING CA$200」<br>
+      ② 被邀请人下单成功，无报错<br>
+      ③ 后台 <code>GET /api/admin/referral/stats</code> 返回 totalReferrals = 1
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 — 推广打法
+  ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="promote">
+    <div class="section-header">
+      <div class="section-icon">📣</div>
+      <div>
+        <div class="section-num">Section 04</div>
+        <div class="section-title">推广打法</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📱 种子用户激活（Day 1–3）</div>
+      <p>最先激活的一批用户是裂变能否启动的关键。优先触达<strong>近 60 天内下过单的用户</strong>，他们对品牌信任度最高。</p>
+
+      <div style="margin-top: 14px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">微信私信话术（1 对 1 发送）</div>
+        <div class="qa-a">
+          [姓名]你好！我们 PrintNGo 搞了个好友返现活动，邀请 3 个朋友下单，最多可以返 CA$1400，相当于下次印刷直接免费！<br><br>
+          你是我们的老客户，想第一个告诉你。进入 <strong>https://printngoplus.com/referral/me</strong> 就能看到你的专属邀请码，直接发给朋友就行。<br><br>
+          有问题随时找我～
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">朋友圈文案</div>
+        <div class="qa-a">
+          🎁 分享好友拿最高 CA$1400 返现！<br><br>
+          使用 PrintNGo 定制印刷？把你的体验分享给 3 个朋友，每位好友下单成功你就拿钱：<br>
+          第 1 位 → CA$200<br>
+          第 2 位 → CA$400<br>
+          第 3 位 → CA$800<br><br>
+          进入 👉 [你的专属链接] 开始邀请<br>
+          活动时间有限，先到先得！
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💼 B2B 推广场景（适合大客户）</div>
+      <p>PrintNGo 的客户多为公司、组织、活动主办方，这类客户本身有"带其他组织一起用印刷"的场景。</p>
+
+      <div class="card-grid" style="margin-top: 12px;">
+        <div class="card" style="margin-bottom: 0; background: var(--bg);">
+          <div class="card-title" style="font-size: 14px;">🏢 企业客户</div>
+          <p>向 HR、行政、品牌总监发起 1 对 1 触达，话术重点强调"帮同行业其他公司省采购成本，顺带拿返现"</p>
+        </div>
+        <div class="card" style="margin-bottom: 0; background: var(--bg);">
+          <div class="card-title" style="font-size: 14px;">🎪 活动策划</div>
+          <p>活动策划公司有稳定的印刷需求。邀请他们，每拉一家客户上来下单，直接到手 CA$200+</p>
+        </div>
+        <div class="card" style="margin-bottom: 0; background: var(--bg);">
+          <div class="card-title" style="font-size: 14px;">🤝 校园/社群</div>
+          <p>学生会、社团干部有团建 T 恤需求，且人脉网络集中。邀请一位活跃干部可带来多笔转化</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 运营节奏建议</div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot active">W1</div>
+          <div class="timeline-content">
+            <div class="timeline-day">第 1 周：冷启动</div>
+            <div class="timeline-text">私信触达 30–50 位老客户；群内发 1 次公告；朋友圈 2 次。目标：产生 5–10 条推荐链接</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot active">W2</div>
+          <div class="timeline-content">
+            <div class="timeline-day">第 2 周：放大</div>
+            <div class="timeline-text">针对 W1 产生的推广者二次提醒（"你还差 X 位好友就能拿 CA$400 了"）；复盘转化率，优化话术</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">W3</div>
+          <div class="timeline-content">
+            <div class="timeline-day">第 3 周：收尾或延长</div>
+            <div class="timeline-text">若数据好看，向全部注册用户发推送延长活动；若数据差，分析原因：是落地页问题还是链接传播问题</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot">W4+</div>
+          <div class="timeline-content">
+            <div class="timeline-day">第 4 周后：常态化</div>
+            <div class="timeline-text">裂变系统保持开启作为常规激励；在订单完成页、账户设置页嵌入"邀请好友"入口；每季度重新推一轮</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔗 分享链接格式说明</div>
+      <div class="url-box">
+        <span class="comment"># 推广者的专属邀请链接（从 /referral/me 页面获取）</span><br>
+        https://printngoplus.com/referral/invite?ref=<span class="highlight">PNG7A3F2B</span><br><br>
+        <span class="comment"># 活动介绍页（不含邀请码，适合放在公众号等无法携带参数的场景）</span><br>
+        https://printngoplus.com/referral
+      </div>
+      <p>注意：<code>ref</code> 参数值即用户的专属邀请码（PNG + 6 位字母数字），由系统在用户首次访问推广中心时自动生成，不会改变。</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 5 — 裂变全流程
+  ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="flow">
+    <div class="section-header">
+      <div class="section-icon">🔄</div>
+      <div>
+        <div class="section-num">Section 05</div>
+        <div class="section-title">裂变全流程详解</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📌 推广者视角（老用户）</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">获取专属邀请码</div>
+            <div class="step-desc">推广者访问 <code>/referral/me</code> 或 <code>/referral/share</code>，系统自动为账号生成唯一邀请码（格式：PNG + 6 位字母数字，如 <code>PNG7A3F2B</code>）。码一旦生成永不变化。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">分享邀请链接</div>
+            <div class="step-desc">点击「邀请好友」按钮，复制链接：<br><code>https://printngoplus.com/referral/invite?ref=PNG7A3F2B</code><br>可发送给微信好友、群、朋友圈等任意渠道。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">等待好友下单</div>
+            <div class="step-desc">好友打开链接、登录账号（或注册新账号）、完成下单并支付。推广者无需做任何额外操作。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">奖励进入钱包（PENDING 状态）</div>
+            <div class="step-desc">好友支付成功后，系统自动在钱包记录一笔 PENDING 奖励（第 1 单 CA$200）。推广者可在 <code>/referral/wallet</code> 查看。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-title">运营人工审核后打款</div>
+            <div class="step-desc">运营人员在后台确认订单无异常后，将状态标记为 PAID，通过微信/支付宝等渠道将返现打给推广者。打款时间：7–14 个工作日内。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📌 被邀请人视角（新客户）</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">打开邀请链接</div>
+            <div class="step-desc">点开好友发来的链接，进入 <code>/referral/invite?ref=CODE</code> 页面，浏览器将邀请码临时存入 sessionStorage。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">登录或注册账号</div>
+            <div class="step-desc">未登录用户被引导至登录页，登录后自动跳回带邀请码的结账页。邀请码在整个会话中保持有效。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">选择商品、完成支付</div>
+            <div class="step-desc">正常浏览商品目录、加入购物车、完成支付。系统在支付成功时自动将邀请码关联到该订单。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">自动获得推广资格</div>
+            <div class="step-desc">完成首单后，被邀请人自动获得自己的邀请码，可进入 <code>/referral/me</code> 开始邀请自己的好友，实现裂变扩散。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔄 技术流程图</div>
+      <div class="flow">
+        <div class="flow-item active">好友点击链接</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item">sessionStorage<br>存储 ref</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item active">登录 / 注册</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item">选品下单</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item active">Stripe 支付成功</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item">onOrderPaid()<br>触发</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item active">ReferralLink<br>记录创建</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-item warn">等待人工<br>核销打款</div>
+      </div>
+      <p style="font-size: 13px; color: var(--text-light); margin-top: 8px;">注：<code>onOrderPaid()</code> 在 checkout controller 中调用，传入 orderId + referralCode + referredUserId</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚠️ 系统会拒绝的情况</div>
+      <table class="tier-table">
+        <thead>
+          <tr><th>触发条件</th><th>系统行为</th><th>运营处理方式</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>推广者 = 被邀请人（自买）</td>
+            <td>静默拒绝，不记录奖励</td>
+            <td>向用户解释不能为自己邀请，建议邀请真实好友</td>
+          </tr>
+          <tr>
+            <td>被邀请人已使用过邀请码</td>
+            <td>静默拒绝，不重复计算</td>
+            <td>每位新用户只计一次，不受理重复申诉</td>
+          </tr>
+          <tr>
+            <td>推广者邀请数已达 cap（默认 3）</td>
+            <td>静默拒绝，超出部分不计</td>
+            <td>告知用户活动上限已满，感谢参与</td>
+          </tr>
+          <tr>
+            <td>活动 isActive = false</td>
+            <td>所有新推荐均不生效</td>
+            <td>在推广渠道及时发公告说明活动结束</td>
+          </tr>
+          <tr>
+            <td>同一订单 orderId 重复触发</td>
+            <td>幂等保护，直接跳过</td>
+            <td>正常情况，不需处理</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 6 — 客服话术
+  ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="cs">
+    <div class="section-header">
+      <div class="section-icon">💬</div>
+      <div>
+        <div class="section-num">Section 06</div>
+        <div class="section-title">客服话术 & 问题处理</div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-title">ℹ️ 客服处理原则</div>
+      先安抚用户情绪，再查后台数据，再解释规则。绝不承诺「系统没有的功能」（如手动补录超上限奖励）。所有例外情况须升级给运营主管决策。
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q">
+        <span class="qa-tag">Q1</span>
+        我邀请了好友，为什么返现没到账？
+      </div>
+      <div class="qa-a">
+        您好！返现需要在好友<strong>完成支付后 7–14 个工作日内</strong>到账，这段时间我们会人工核实订单状态。<br><br>
+        您可以先在「我的推广中心」→「钱包」查看是否显示 PENDING（待审核）状态——如果显示了，说明系统已经记录，等待我们核实后打款即可。<br><br>
+        如果好友确实已付款但钱包里没有任何记录，请告诉我好友的订单号，我帮您核查一下。
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q">
+        <span class="qa-tag">Q2</span>
+        我买了好几次，为什么推广者只记了一单？
+      </div>
+      <div class="qa-a">
+        活动规则是：同一位被邀请人只有<strong>第一笔订单</strong>计入推荐，后续复购不重复计算。这是为了保证活动的公平性，在活动说明页面有说明。<br><br>
+        如果您还有其他朋友尚未下过 PrintNGo 的单，邀请他们也可以继续累积返现哦！
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q">
+        <span class="qa-tag">Q3</span>
+        好友通过我的链接下单了，但系统显示"不符合条件"
+      </div>
+      <div class="qa-a">
+        可能有以下几种情况，我帮您逐一排查：<br><br>
+        1. <strong>好友之前已经用过别人的邀请链接</strong> —— 每位用户只能被邀请一次，已使用过则不再计入<br>
+        2. <strong>好友的订单金额未达到门槛</strong> —— 请确认订单已成功付款<br>
+        3. <strong>您自己的邀请上限已满</strong>（最多 3 位）—— 请登录查看当前推荐进度<br><br>
+        请提供好友的订单号，我来具体核查是哪种情况。
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q">
+        <span class="qa-tag">Q4</span>
+        返现什么时候打过来？用什么方式？
+      </div>
+      <div class="qa-a">
+        好友支付成功后，我们会在 <strong>7–14 个工作日</strong>内通过<strong>微信转账 / 支付宝</strong>将返现打给您（具体方式届时我们会主动联系您确认收款账号）。<br><br>
+        如果超过 14 个工作日仍未收到，请直接联系我们，我们第一时间处理！
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q">
+        <span class="qa-tag">Q5</span>
+        我能不能一次性邀请很多人，超过 3 个？
+      </div>
+      <div class="qa-a">
+        活动规则每个账号最多获得 3 单返现奖励（共 CA$1400），超出 3 位好友的下单不会再产生奖励记录。<br><br>
+        当然您可以继续推荐更多朋友使用 PrintNGo，虽然超出部分无返现，但感谢您的支持！如果后续我们调整了上限，会在官方渠道第一时间通知。
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q">
+        <span class="qa-tag">Q6</span>
+        链接打开了但好友说看不到优惠/下单入口在哪？
+      </div>
+      <div class="qa-a">
+        邀请链接打开后会进入邀请落地页，好友点击「<strong>立即下单</strong>」按钮，跳转到商品目录即可正常选购。如果是第一次用，需要先注册或登录，注册后会自动回到下单流程。<br><br>
+        如果页面加载有问题，可以尝试：换一个浏览器打开、或者复制链接到 Chrome/Safari 重新打开。
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 24px;">
+      <div class="card-title">🚨 需要升级处理的情形</div>
+      <table class="tier-table">
+        <thead>
+          <tr><th>情形</th><th>判断标准</th><th>升级对象</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>用户声称有系统 bug 导致奖励未记录</td>
+            <td>后台 logs 无 <code>[Referral] Reward created</code> 记录，且订单存在</td>
+            <td>技术负责人排查 referralService 日志</td>
+          </tr>
+          <tr>
+            <td>用户要求补发超上限奖励</td>
+            <td>推荐数已 ≥ cap，用户情绪激动</td>
+            <td>运营主管决策是否例外处理</td>
+          </tr>
+          <tr>
+            <td>疑似批量刷单（同一 IP 大量新账号）</td>
+            <td>短时间内 referral_links 大量增加，但订单地址/IP 相同</td>
+            <td>运营主管 + 技术，暂停异常推广者奖励</td>
+          </tr>
+          <tr>
+            <td>用户要求退款但推广者已获奖励</td>
+            <td>被邀请人申请退款后，对应的 referral_link 应标记 CANCELLED</td>
+            <td>技术手动更新 rewardStatus = CANCELLED</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 7 — 返现核销操作
+  ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="cashback">
+    <div class="section-header">
+      <div class="section-icon">💸</div>
+      <div>
+        <div class="section-num">Section 07</div>
+        <div class="section-title">返现核销操作流程</div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-title">⚠️ 操作权限</div>
+      核销打款操作（markRewardPaid）需要管理员权限，普通客服账号无权限执行。所有打款操作须由运营主管或财务负责人执行，并保留打款凭证。
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 核销流程（每周定期执行）</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">拉取 PENDING 奖励列表</div>
+            <div class="step-desc">
+              访问管理后台或调用 API 获取所有待核销记录：
+              <div class="url-box" style="margin-top: 8px;">
+                curl -H "Authorization: Bearer <span class="highlight">ADMIN_TOKEN</span>" \<br>
+                "https://printngoplus.com/api/admin/referral/links?status=PENDING&limit=50"
+              </div>
+              返回字段包括：推广者 userId、被邀请人 userId、orderId、tier、rewardAmount、createdAt
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">逐一核验订单状态</div>
+            <div class="step-desc">
+              检查每条记录对应的 orderId 是否已完成（未退款）。可通过管理后台 <code>/admin/online-orders</code> 查询订单状态。<br>
+              <strong>如订单已退款</strong>：在数据库将对应 referralLink 的 rewardStatus 改为 CANCELLED，不予打款。
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">联系推广者确认收款账号</div>
+            <div class="step-desc">
+              通过推广者账号邮箱或预留手机号，联系确认打款方式（微信/支付宝）和账号。<br>
+              建议用统一格式记录：<code>推广者ID | 金额 | 微信/支付宝 | 账号 | 核实日期</code>
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-title">完成打款</div>
+            <div class="step-desc">通过微信/支付宝完成转账，备注「PrintNGo 推荐返现 #ORDERID」，保留截图。</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-title">在后台标记为 PAID</div>
+            <div class="step-desc">
+              打款成功后，调用 API 将记录标为已付款：
+              <div class="url-box" style="margin-top: 8px;">
+                curl -X PUT \<br>
+                &nbsp;&nbsp;-H "Authorization: Bearer <span class="highlight">ADMIN_TOKEN</span>" \<br>
+                &nbsp;&nbsp;"https://printngoplus.com/api/admin/referral/rewards/<span class="highlight">LINK_ID</span>/paid"
+              </div>
+              此操作会自动记录 paidAt 时间戳，推广者钱包状态同步更新为 PAID。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 奖励状态说明</div>
+      <table class="tier-table">
+        <thead>
+          <tr><th>状态</th><th>含义</th><th>推广者看到什么</th><th>运营操作</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="status-chip status-pending">PENDING</span></td>
+            <td>好友已付款，等待运营核实打款</td>
+            <td>「待到账 CA$XXX」</td>
+            <td>核实订单后打款，改为 PAID</td>
+          </tr>
+          <tr>
+            <td><span class="status-chip status-paid">PAID</span></td>
+            <td>返现已打款给推广者</td>
+            <td>「已到账 CA$XXX」</td>
+            <td>无需操作</td>
+          </tr>
+          <tr>
+            <td><span class="status-chip status-cancel">CANCELLED</span></td>
+            <td>订单退款或违规，返现取消</td>
+            <td>「已取消」</td>
+            <td>无需打款，可向用户说明原因</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 建议打款周期</div>
+      <div class="card-grid">
+        <div class="card" style="margin-bottom: 0; background: var(--bg);">
+          <div class="card-title" style="font-size: 14px;">🗓 每周一固定批量处理</div>
+          <p>每周一上午拉取上周产生的 PENDING 记录，统一联系、统一打款，提高效率，避免漏单。</p>
+        </div>
+        <div class="card" style="margin-bottom: 0; background: var(--bg);">
+          <div class="card-title" style="font-size: 14px;">⏱ 最长等待承诺：14 个工作日</div>
+          <p>对外承诺 7–14 个工作日到账，内部目标是 7 个工作日内处理完毕，预留缓冲时间应对用户询问。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout danger">
+      <div class="callout-title">🚨 严禁操作</div>
+      <ul style="padding-left: 16px; margin-top: 4px;">
+        <li>不得在订单退款期间（通常下单后 7 天内）提前打款，防止退款后返现无法追回</li>
+        <li>不得手动跳过 API 直接修改数据库状态（会导致 paidAt 时间戳丢失）</li>
+        <li>不得在未核实推广者身份（账号真实、未违规）的情况下打款</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 8 — 数据监控
+  ══════════════════════════════════════════════════════════ -->
+  <div class="section" id="monitor">
+    <div class="section-header">
+      <div class="section-icon">📊</div>
+      <div>
+        <div class="section-num">Section 08</div>
+        <div class="section-title">数据监控 & 健康指标</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📈 核心指标看板（每日 09:00 检查）</div>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-num" style="color: var(--green);">推荐总数</div>
+          <div class="metric-label">referral_links 总行数</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num" style="color: #F5A623;">PENDING 数</div>
+          <div class="metric-label">待核销奖励笔数</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num" style="color: var(--green);">PAID 数</div>
+          <div class="metric-label">已核销奖励笔数</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-num" style="color: var(--red);">待打款总额</div>
+          <div class="metric-label">PENDING rewardAmount 之和</div>
+        </div>
+      </div>
+      <div class="url-box">
+        <span class="comment"># 一键获取所有统计数据</span><br>
+        curl -H "Authorization: Bearer <span class="highlight">ADMIN_TOKEN</span>" \<br>
+        "https://printngoplus.com/api/admin/referral/stats"<br><br>
+        <span class="comment"># 返回示例</span><br>
+        {<br>
+        &nbsp;&nbsp;"campaign": { "isActive": true, "cap": 3, "tier1Amount": 200, ... },<br>
+        &nbsp;&nbsp;"stats": {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"totalReferrals": 47,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"pendingCount": 12,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"paidCount": 35,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"pendingAmount": 3600,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"paidAmount": 8200<br>
+        &nbsp;&nbsp;}<br>
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔍 需要排查的异常信号</div>
+      <table class="tier-table">
+        <thead>
+          <tr><th>异常现象</th><th>可能原因</th><th>排查步骤</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>推荐数突然停止增长</td>
+            <td>活动被关闭 / onOrderPaid 未调用 / 结账流程 bug</td>
+            <td>检查 isActive；查 Cloud Run 日志是否有 <code>[Referral] Reward created</code></td>
+          </tr>
+          <tr>
+            <td>PENDING 数量异常飙升</td>
+            <td>疑似刷单；或上周核销积压</td>
+            <td>对比 IP / 设备，判断是否有异常账号集中下单</td>
+          </tr>
+          <tr>
+            <td>用户反馈奖励未记录</td>
+            <td>代码 bug / 邀请码未正确传递</td>
+            <td>在 referral_links 查 orderId；查 logger 日志</td>
+          </tr>
+          <tr>
+            <td>某推广者奖励档次错误</td>
+            <td>tier 计算 bug / 手动操作导致数据不一致</td>
+            <td>查该用户所有 referral_links 记录，核对 completedCount 逻辑</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📉 活动效果评估指标</div>
+      <table class="tier-table">
+        <thead>
+          <tr><th>指标</th><th>计算方式</th><th>健康范围参考</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>邀请转化率</td>
+            <td>完成下单的被邀请人数 ÷ 点击邀请链接人数</td>
+            <td>≥ 15%（低于 10% 需优化落地页）</td>
+          </tr>
+          <tr>
+            <td>活跃推广者比例</td>
+            <td>产生 ≥1 条 referral_link 的用户 ÷ 总注册用户</td>
+            <td>≥ 5%（低于 2% 说明种子用户激活不足）</td>
+          </tr>
+          <tr>
+            <td>平均档次完成数</td>
+            <td>referral_links 总数 ÷ 参与推广者数</td>
+            <td>目标 &gt; 1.5（说明推广者持续推荐而非仅推一次）</td>
+          </tr>
+          <tr>
+            <td>推广成本率</td>
+            <td>已打款 paidAmount ÷ 对应订单总 GMV</td>
+            <td>≤ 25%（控制在合理 CAC 范围）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 运营日志建议（每日记录）</div>
+      <div class="url-box">
+        <span class="comment"># 建议每日在运营文档中记录以下数据</span><br>
+        日期: 2026-06-04<br>
+        新增推荐数: 3<br>
+        新增订单数 (referral带来): 3<br>
+        今日 GMV (referral): CA$4,200<br>
+        PENDING 总数: 12 | 待付金额: CA$3,600<br>
+        本周已打款: 5笔 | 已付金额: CA$1,800<br>
+        异常: 无
+      </div>
+    </div>
+
+    <div class="callout success">
+      <div class="callout-title">✅ 裂变系统健康标志</div>
+      <ul style="padding-left: 16px; margin-top: 4px;">
+        <li>Cloud Run 日志每天出现 <code>[Referral] Reward created</code> 至少 1 条</li>
+        <li>没有同一 orderId 的重复记录（幂等保护正常工作）</li>
+        <li>PENDING 奖励在 14 个工作日内清零（核销及时）</li>
+        <li>没有 <code>[Referral] onOrderPaid error</code> 日志</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ─── APPENDIX ────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon">📎</div>
+      <div>
+        <div class="section-num">Appendix</div>
+        <div class="section-title">附录：快速参考</div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-title">🔑 管理员 API 列表</div>
+        <table class="tier-table" style="font-size: 12px;">
+          <tbody>
+            <tr><td><code>GET /api/admin/referral/campaign</code></td><td>查看当前配置</td></tr>
+            <tr><td><code>PUT /api/admin/referral/campaign</code></td><td>更新配置</td></tr>
+            <tr><td><code>GET /api/admin/referral/stats</code></td><td>汇总统计</td></tr>
+            <tr><td><code>GET /api/admin/referral/links</code></td><td>分页列表（支持 status 筛选）</td></tr>
+            <tr><td><code>PUT /api/admin/referral/rewards/:id/paid</code></td><td>标记已付款</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">📱 用户侧页面路由</div>
+        <table class="tier-table" style="font-size: 12px;">
+          <tbody>
+            <tr><td><code>/referral</code></td><td>活动介绍主页</td></tr>
+            <tr><td><code>/referral/invite?ref=CODE</code></td><td>被邀请人落地页</td></tr>
+            <tr><td><code>/referral/me</code></td><td>推广进度（需登录）</td></tr>
+            <tr><td><code>/referral/dashboard</code></td><td>活动控制台（需登录）</td></tr>
+            <tr><td><code>/referral/share</code></td><td>获取分享链接（需登录）</td></tr>
+            <tr><td><code>/referral/wallet</code></td><td>返现钱包明细（需登录）</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🗂 数据库快速查询（Prisma Studio 或 SQL）</div>
+      <div class="url-box">
+        <span class="comment">-- 查看所有待核销奖励（按时间降序）</span><br>
+        SELECT rl.id, rl.promoter_user_id, rl.referred_user_id,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rl.order_id, rl.tier, rl.reward_amount, rl.created_at<br>
+        FROM referral_links rl<br>
+        WHERE rl.reward_status = 'PENDING'<br>
+        ORDER BY rl.created_at DESC;<br><br>
+        <span class="comment">-- 统计某推广者的总返现</span><br>
+        SELECT SUM(reward_amount) FROM referral_links<br>
+        WHERE promoter_user_id = '<span class="highlight">USER_ID</span>' AND reward_status != 'CANCELLED';<br><br>
+        <span class="comment">-- 查看某用户的邀请码</span><br>
+        SELECT code FROM referral_user_codes WHERE user_id = '<span class="highlight">USER_ID</span>';
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📞 紧急联系</div>
+      <table class="tier-table">
+        <thead>
+          <tr><th>问题类型</th><th>负责人</th><th>联系方式</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>技术 bug / 奖励未记录</td><td>技术负责人</td><td>（填写内部联系方式）</td></tr>
+          <tr><td>打款授权 / 例外处理</td><td>运营主管</td><td>（填写内部联系方式）</td></tr>
+          <tr><td>用户投诉升级</td><td>客服主管</td><td>（填写内部联系方式）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div class="footer">
+  PrintNGo 裂变系统运营手册 · 生成日期 2026-06-04 · 版本 v1.0<br>
+  如有问题请联系技术或运营团队
+</div>
+
+<script>
+  // 平滑滚动
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>

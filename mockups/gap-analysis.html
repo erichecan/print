@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrintNgo vs CustomInk — 功能差距 & 开发评估 v3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    padding: 40px 48px;
+  }
+  .page-header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .page-header .subtitle { color: #94a3b8; font-size: 13px; }
+  .page-header .meta { margin-top: 20px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .meta-item { background: rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 16px; }
+  .meta-item .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .meta-item .value { font-size: 22px; font-weight: 800; color: white; }
+  .meta-item.highlight { background: rgba(34,197,94,0.18); }
+  .meta-item.highlight .value { color: #86efac; }
+
+  .container { max-width: 1320px; margin: 0 auto; padding: 32px 48px; }
+
+  /* Flow legend */
+  .flow-legend {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    background: white; border-radius: 10px; padding: 14px 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+    align-items: center;
+  }
+  .flow-legend .legend-title { font-size: 12px; font-weight: 700; color: #64748b; margin-right: 4px; }
+  .flow-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .ft-design  { background: #ede9fe; color: #6d28d9; }
+  .ft-purchase { background: #dbeafe; color: #1d4ed8; }
+  .ft-group   { background: #d1fae5; color: #065f46; }
+  .ft-extra   { background: #f1f5f9; color: #64748b; }
+
+  /* Confidence badge */
+  .conf {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; white-space: nowrap;
+  }
+  .conf-high   { background: #dcfce7; color: #15803d; }
+  .conf-mid    { background: #fef9c3; color: #854d0e; }
+  .conf-low    { background: #fee2e2; color: #b91c1c; }
+
+  /* Scope badge */
+  .scope {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 700;
+  }
+  .scope-in    { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+  .scope-defer { background: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+
+
+  .section { margin-bottom: 36px; }
+  .section-title {
+    font-size: 16px; font-weight: 700; color: #1a1a2e;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Main table */
+  .gap-table {
+    width: 100%; border-collapse: collapse;
+    background: white; border-radius: 12px;
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .gap-table thead { background: #1e293b; color: white; }
+  .gap-table thead th {
+    padding: 11px 14px; text-align: left;
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+  }
+  .gap-table tbody tr { border-bottom: 1px solid #f1f5f9; }
+  .gap-table tbody tr:last-child { border-bottom: none; }
+  .gap-table tbody tr:hover { background: #f8fafc; }
+  .gap-table tbody tr.row-defer { opacity: 0.6; }
+  .gap-table tbody tr.row-defer td { background: #fafafa; }
+  .gap-table td { padding: 12px 14px; vertical-align: top; }
+
+  .feature-name { font-weight: 600; color: #1e293b; font-size: 13px; }
+  .feature-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .feature-tags { margin-top: 5px; display: flex; gap: 4px; flex-wrap: wrap; }
+
+  .hours-block { }
+  .hours-row { display: flex; justify-content: space-between; font-size: 12px; color: #475569; line-height: 1.8; }
+  .hours-row.total { font-weight: 700; color: #1e293b; border-top: 1px solid #e2e8f0; margin-top: 2px; padding-top: 2px; }
+  .hours-num { font-variant-numeric: tabular-nums; }
+  .churn-warn { font-size: 11px; color: #92400e; background: #fffbeb; padding: 1px 5px; border-radius: 3px; margin-top: 3px; display: block; }
+
+  .status {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 500; white-space: nowrap;
+  }
+  .s-done    { background: #dcfce7; color: #15803d; }
+  .s-partial { background: #fef9c3; color: #854d0e; }
+  .s-missing { background: #fee2e2; color: #b91c1c; }
+
+  .note-text { font-size: 12px; color: #475569; line-height: 1.5; }
+  .code { display: inline-block; background: #f1f5f9; color: #334155; padding: 0 4px; border-radius: 3px; font-family: monospace; font-size: 11px; }
+
+
+
+  .page-footer {
+    background: #1e293b; color: #64748b;
+    text-align: center; padding: 18px;
+    font-size: 12px; margin-top: 40px;
+  }
+
+  @media (max-width: 900px) {
+    .container { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>PrintNgo vs CustomInk — 功能差距 &amp; 开发评估 v3</h1>
+  <div class="subtitle">160–180h 版本 · 按流程分类 · 反推可行性评级 · Claude 辅助开发</div>
+  <div class="meta">
+    <div class="meta-item">
+      <div class="label">本版纳入项</div>
+      <div class="value">11项</div>
+    </div>
+    <div class="meta-item highlight">
+      <div class="label">纳入范围总工时</div>
+      <div class="value">~166h</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">暂缓功能</div>
+      <div class="value">5项</div>
+    </div>
+    <div class="meta-item">
+      <div class="label">暂缓工时（后续）</div>
+      <div class="value">~202h</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Flow Legend -->
+  <div class="flow-legend">
+    <span class="legend-title">流程归属：</span>
+    <span class="flow-tag ft-design">🎨 定制流程</span>
+    <span class="flow-tag ft-purchase">🛒 购买流程</span>
+    <span class="flow-tag ft-group">🔗 独立流程（Group Order）</span>
+    <span class="flow-tag ft-extra">➕ 额外功能</span>
+    &nbsp;&nbsp;
+    <span class="scope scope-in">纳入 160h</span>
+    <span class="scope scope-defer">暂缓</span>
+  </div>
+
+  <!-- Section 1: Design Lab -->
+  <div class="section">
+    <div class="section-title">🎨 1. Design Lab — 设计工具</div>
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th style="width:18%">功能点 + 流程归属</th>
+          <th style="width:11%">PrintNgo 现状</th>
+                    <th style="width:20%">工时拆分（小时）</th>
+          <th style="width:41%">实施说明 &amp; 风险</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td>
+            <div class="feature-name">Design Lab 实时价格展示</div>
+            <div class="feature-sub">设计过程中常驻显示当前单价</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-design">🎨 定制流程</span>
+            </div>
+          </td>
+          <td><span class="status s-missing">❌ 缺失</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">6h</span></div>
+              <div class="hours-row"><span>🧪 测试&amp;联调</span><span class="hours-num">4h</span></div>
+              <div class="hours-row"><span>🔁 修改&amp;确认</span><span class="hours-num">4h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">14h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            纯前端，数据已有。复用 <span class="code">GetPriceFlowModal</span> 内现有的 sizeAdjustments + 阶梯价格逻辑，在 DesignLabClient 右侧/底部加常驻价格条，无需新 API。<br>
+            <span class="churn-warn">⚠️ 变更风险：客户可能对显示位置/格式反复要求调整。</span>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="feature-name">Names &amp; Numbers 完整集成</div>
+            <div class="feature-sub">每件填姓名+号码，渲染到画布</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-design">🎨 定制流程</span>
+              <span class="flow-tag ft-purchase">🛒 购买流程</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ Modal 70%，未接入</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">12h</span></div>
+              <div class="hours-row"><span>🧪 测试&amp;联调</span><span class="hours-num">8h</span></div>
+              <div class="hours-row"><span>🔁 修改&amp;确认</span><span class="hours-num">8h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">28h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            UI 流程完全可从 CustomInk 观察；中信心的原因是 Canvas 文字渲染位置（字体、颜色、对齐）需要视觉迭代，第一版和客户预期不完全一致是正常的。<br>
+            剩余工作：① 名字/号码渲染到 Fabric canvas；② checkout 时把 per-item 数据传后端；③ 后端存储并传给印刷商。<br>
+            <span class="churn-warn">⚠️ 字体/颜色/位置是客户眼睛最敏感的地方，几乎必然有返工。</span>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="feature-name">Clipart 图库内容充实</div>
+            <div class="feature-sub">品类深度和图标数量</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-design">🎨 定制流程</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 技术完整，内容稀少</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 导入脚本</span><span class="hours-num">4h</span></div>
+              <div class="hours-row"><span>🧪 内容验证</span><span class="hours-num">8h</span></div>
+              <div class="hours-row"><span>🔁 分类调整</span><span class="hours-num">4h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">16h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            ArtPanel 技术架构已完整，API、GCS 代理、搜索、分页全有。主要工作是内容运营：批量导入 SVG 图标（可购买授权图库，约 CA$29–99 一次性费用）。代码只需写批量导入脚本。
+          </td>
+        </tr>
+
+        <tr class="row-defer">
+          <td>
+            <div class="feature-name">AI 文字生成设计图</div>
+            <div class="feature-sub">输入描述 → 生成可用图案</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-extra">➕ 额外功能</span>
+            </div>
+          </td>
+          <td><span class="status s-missing">❌ 缺失</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>预估</span><span class="hours-num">36h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            低信心原因：CustomInk 使用自有 AI 模型，我们只能接 DALL-E 3 / Stability AI。<strong>生成质量取决于 Prompt 工程，不是改代码能解决的。</strong>客户如果对效果不满意，无法用开发工时解决。建议等客户明确验收标准后再做。
+          </td>
+        </tr>
+
+        <tr class="row-defer">
+          <td>
+            <div class="feature-name">设计模板库</div>
+            <div class="feature-sub">预设完整设计，一键使用</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-extra">➕ 额外功能</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 面板框架存在</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>预估</span><span class="hours-num">18h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            技术可行，但初始模板内容需要设计师制作（不计入工时）。建议等 Clipart 内容充实后、有设计素材时再推进。
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 2: Pricing -->
+  <div class="section">
+    <div class="section-title">💰 2. 定价体验</div>
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th style="width:18%">功能点 + 流程归属</th>
+          <th style="width:11%">PrintNgo 现状</th>
+                    <th style="width:20%">工时拆分（小时）</th>
+          <th style="width:41%">实施说明 &amp; 风险</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td>
+            <div class="feature-name">量价阶梯常驻可见</div>
+            <div class="feature-sub">不同数量对应单价一览</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-design">🎨 定制流程</span>
+              <span class="flow-tag ft-purchase">🛒 购买流程</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 弹窗内有，不常驻</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">4h</span></div>
+              <div class="hours-row"><span>🧪 测试&amp;联调</span><span class="hours-num">2h</span></div>
+              <div class="hours-row"><span>🔁 修改&amp;确认</span><span class="hours-num">3h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">9h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            把 GetPriceFlowModal 内现有的阶梯表格提取到产品页和 Design Lab 侧边。数据已有，主要是 UI 布局工作。无后端改动。
+          </td>
+        </tr>
+
+        <tr class="row-defer">
+          <td>
+            <div class="feature-name">All-Inclusive 定价展示</div>
+            <div class="feature-sub">运费打包进单价</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-extra">➕ 额外功能</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 单价存在，运费分离</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>预估</span><span class="hours-num">26h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            低信心原因：运费均摊规则（按地区？按重量？固定值？）是纯业务决策，无法从 CustomInk 的 UI 反推。规则不清晰时代码写了也要推倒重来。需要客户先拍板规则再动手。
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 3: Order Flow -->
+  <div class="section">
+    <div class="section-title">📦 3. 订单流程</div>
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th style="width:18%">功能点 + 流程归属</th>
+          <th style="width:11%">PrintNgo 现状</th>
+                    <th style="width:20%">工时拆分（小时）</th>
+          <th style="width:41%">实施说明 &amp; 风险</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td>
+            <div class="feature-name">Group Order 后端 MVP</div>
+            <div class="feature-sub">组织者主导填尺码→分享→汇总下单</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-group">🔗 独立流程</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 营销页存在，后端为零</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">12h</span></div>
+              <div class="hours-row"><span>🧪 测试&amp;联调</span><span class="hours-num">6h</span></div>
+              <div class="hours-row"><span>🔁 修改&amp;确认</span><span class="hours-num">6h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">24h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            <strong>MVP 范围（24h）</strong>：组织者填好所有人的尺码和地址 → 生成汇总 → 一次性支付 → 单地址配送。这个流程在 CustomInk 上完全可见。<br>
+            <strong>不包含</strong>：成员自填表单、成员独立付款、多地址配送（这些属于"完整版"，另计 52h，已移入暂缓）。<br>
+            <span class="churn-warn">⚠️ 中信心原因：最小订单量执行逻辑、超时处理规则是业务决策，需要客户提前确认，否则第一版一定有返工。</span>
+          </td>
+        </tr>
+
+        <tr class="row-defer">
+          <td>
+            <div class="feature-name">Group Order 完整版</div>
+            <div class="feature-sub">成员自填 + 独立付款 + 多地址</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-group">🔗 独立流程</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 依赖 MVP 完成</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>预估（增量）</span><span class="hours-num">+52h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            在 MVP 基础上追加：成员专属表单页、Stripe 独立付款、多地址拆分子订单、退款规则、组织者管理后台。这些逻辑复杂且需要客户对退款/截止规则提前决策。
+          </td>
+        </tr>
+
+        <tr class="row-defer">
+          <td>
+            <div class="feature-name">Fundraiser 筹款模式</div>
+            <div class="feature-sub">设定目标+时间窗，利润分成</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-extra">➕ 额外功能</span>
+            </div>
+          </td>
+          <td><span class="status s-missing">❌ 仅前端枚举，无后端</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>预估</span><span class="hours-num">46h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            低信心原因：利润分成比例、最低提现金额、未达目标的退款逻辑——这些核心规则在 CustomInk UI 上看不到。需要客户先定义业务规则再开发，否则开发完客户说"不是这样的"成本极高。
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 4: Catalog & Trust -->
+  <div class="section">
+    <div class="section-title">🛍️ 4. 产品目录 &amp; 信任体系</div>
+    <table class="gap-table">
+      <thead>
+        <tr>
+          <th style="width:18%">功能点 + 流程归属</th>
+          <th style="width:11%">PrintNgo 现状</th>
+                    <th style="width:20%">工时拆分（小时）</th>
+          <th style="width:41%">实施说明 &amp; 风险</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td>
+            <div class="feature-name">产品评论系统</div>
+            <div class="feature-sub">下单后提交评价，产品页展示</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-purchase">🛒 购买流程</span>
+            </div>
+          </td>
+          <td><span class="status s-missing">❌ 页面仅占位</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">16h</span></div>
+              <div class="hours-row"><span>🧪 测试&amp;联调</span><span class="hours-num">8h</span></div>
+              <div class="hours-row"><span>🔁 修改&amp;确认</span><span class="hours-num">6h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">30h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            标准功能，不需要反推 CustomInk。后端：Review 数据模型 + POST/GET 接口。前端：产品详情页评论区 + 星级汇总 + 发货后自动触发邮件邀请。<br>
+            注意：有功能不等于有内容——评论需要真实订单积累，上线初期显示 "0 条评论" 是正常的。
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="feature-name">产品目录高级过滤</div>
+            <div class="feature-sub">面料/场景/价格区间/品牌等</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-purchase">🛒 购买流程</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 基础标签过滤</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">10h</span></div>
+              <div class="hours-row"><span>🧪 测试&amp;联调</span><span class="hours-num">6h</span></div>
+              <div class="hours-row"><span>🔁 修改&amp;确认</span><span class="hours-num">6h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">22h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            <span class="code">TagFilterSidebar.tsx</span> 框架已有。扩充过滤维度（面料/价格/场景/品牌），配套数据标注工作。技术量不大，但数据质量决定过滤体验。
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="feature-name">Live Chat 接入</div>
+            <div class="feature-sub">右下角实时客服入口</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-purchase">🛒 购买流程</span>
+            </div>
+          </td>
+          <td><span class="status s-missing">❌ 缺失</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">2h</span></div>
+              <div class="hours-row"><span>🧪 测试</span><span class="hours-num">1h</span></div>
+              <div class="hours-row"><span>🔁 配置调整</span><span class="hours-num">1h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">4h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            接入 Crisp 免费计划（0 成本），3 行 JS 代码，半天搞定。客服人力配备是另一个问题，技术侧极简。
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="feature-name">满意度保证 &amp; 信任信号</div>
+            <div class="feature-sub">100% 满意保证、电话号码展示</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-purchase">🛒 购买流程</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 不突出</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">4h</span></div>
+              <div class="hours-row"><span>🔁 文案&amp;确认</span><span class="hours-num">3h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">7h</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            在 Header、产品页、Checkout 三处加保证横幅组件。纯 UI + 文案，无后端。<br>
+            <span class="churn-warn">⚠️ 文案措辞、位置、视觉样式客户通常有强主观意见，预留修改时间。</span>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="feature-name">目录评分展示</div>
+            <div class="feature-sub">产品卡片显示星级</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-purchase">🛒 购买流程</span>
+            </div>
+          </td>
+          <td><span class="status s-missing">❌ 缺失</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 编码</span><span class="hours-num">4h</span></div>
+              <div class="hours-row"><span>🔁 调整</span><span class="hours-num">2h</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">6h</span></div>
+            </div>
+          </td>
+          <td class="note-text">依赖评论系统先完成（同批次）。在产品卡片组件加 rating 聚合查询字段，约半天工作。</td>
+        </tr>
+
+        <tr>
+          <td>
+            <div class="feature-name">SKU 数量扩充</div>
+            <div class="feature-sub">更多品牌/款式/品类</div>
+            <div class="feature-tags">
+              <span class="flow-tag ft-purchase">🛒 购买流程</span>
+            </div>
+          </td>
+          <td><span class="status s-partial">⚠️ 品类有限</span></td>
+          <td>
+            <div class="hours-block">
+              <div class="hours-row"><span>🤖 导入脚本</span><span class="hours-num">6h</span></div>
+              <div class="hours-row"><span>🧪 数据验证</span><span class="hours-num">持续</span></div>
+              <div class="hours-row total"><span>合计</span><span class="hours-num">6h+运营</span></div>
+            </div>
+          </td>
+          <td class="note-text">
+            shopify/ pipeline 已有爬取→AI 图片→CSV 流程。技术侧写一次批量导入脚本，之后是持续运营工作。目标 3 个月内达到 500+ SKU。
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  
+</div>
+
+<div class="page-footer">
+  PrintNgo Gap Analysis v3 — 2026-05-26 · 160–180h 版本 · 流程分类 + 反推可行性 · 工时含需求变更缓冲，不含设计师/内容运营工时
+</div>
+
+</body>
+</html>

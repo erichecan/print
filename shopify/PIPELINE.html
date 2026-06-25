@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrintNGo 产品导入流程文档</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f1117;
+    --surface:   #161b27;
+    --card:      #1e2433;
+    --border:    #2a3145;
+    --accent:    #3b82f6;
+    --accent2:   #8b5cf6;
+    --green:     #22c55e;
+    --yellow:    #eab308;
+    --red:       #ef4444;
+    --text:      #e2e8f0;
+    --muted:     #8892a4;
+    --code-bg:   #0d1117;
+    --code-border:#2a3145;
+    --arrow:     #475569;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  /* ── Header ── */
+  .page-header { margin-bottom: 56px; border-bottom: 1px solid var(--border); padding-bottom: 32px; }
+  .page-header h1 { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  .page-header .subtitle { color: var(--muted); margin-top: 6px; font-size: 14px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    margin-right: 6px;
+  }
+  .badge-blue  { background: rgba(59,130,246,.15); color: #60a5fa; border: 1px solid rgba(59,130,246,.3); }
+  .badge-green { background: rgba(34,197,94,.12);  color: #4ade80; border: 1px solid rgba(34,197,94,.3); }
+  .badge-purple{ background: rgba(139,92,246,.15); color: #a78bfa; border: 1px solid rgba(139,92,246,.3); }
+
+  /* ── Section ── */
+  .section { margin-bottom: 64px; }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 22px;
+    background: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .section-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+  p { margin-bottom: 12px; color: var(--text); }
+
+  /* ── Pipeline flow diagram ── */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+    margin: 28px 0;
+  }
+  .flow-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-width: 120px;
+    text-align: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .flow-box .step-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
+  }
+  .flow-box .step-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.3;
+  }
+  .flow-box .step-cmd {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: "SF Mono", "Fira Code", Consolas, monospace;
+    margin-top: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .flow-box.input-box  { border-color: var(--green);  }
+  .flow-box.output-box { border-color: var(--green);  }
+  .flow-box.branch-a   { border-color: var(--accent);  }
+  .flow-box.branch-b   { border-color: var(--accent2); }
+  .flow-box.review-box { border-color: var(--yellow);  }
+  .flow-arrow {
+    color: var(--arrow);
+    font-size: 20px;
+    padding: 0 6px;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: -20px;
+  }
+  .flow-branch {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .branch-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+  }
+  .branch-label.a { background: rgba(59,130,246,.2); color: #60a5fa; }
+  .branch-label.b { background: rgba(139,92,246,.2); color: #a78bfa; }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-family: "SF Mono", "Fira Code", Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 12px 0 20px;
+    color: #c9d1d9;
+  }
+  code {
+    font-family: "SF Mono", "Fira Code", Consolas, monospace;
+    font-size: 13px;
+    background: rgba(99,102,241,.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: #a5b4fc;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+
+  /* syntax highlight approximations */
+  .kw { color: #ff7b72; }  /* keywords */
+  .st { color: #a5d6ff; }  /* strings */
+  .cm { color: #6e7681; font-style: italic; }  /* comments */
+  .fn { color: #d2a8ff; }  /* function names */
+  .va { color: #79c0ff; }  /* variables */
+  .nu { color: #f8c555; }  /* numbers */
+  .op { color: #e2e8f0; }  /* operators */
+
+  /* ── Detail cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  /* ── Info boxes ── */
+  .info-box {
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+    border-left: 4px solid;
+  }
+  .info-box.note    { background: rgba(59,130,246,.08);  border-color: var(--accent);  }
+  .info-box.warning { background: rgba(234,179,8,.08);   border-color: var(--yellow);  }
+  .info-box.success { background: rgba(34,197,94,.08);   border-color: var(--green);   }
+  .info-box .label  { font-weight: 700; margin-right: 6px; }
+  .info-box.note    .label { color: #60a5fa; }
+  .info-box.warning .label { color: #fbbf24; }
+  .info-box.success .label { color: #4ade80; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13.5px; }
+  th { background: var(--surface); color: var(--muted); font-weight: 600; text-align: left;
+       padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(42,49,69,.6); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td code { font-size: 12px; }
+
+  /* ── File tree ── */
+  .file-tree {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 8px;
+    padding: 18px 22px;
+    font-family: "SF Mono", "Fira Code", Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .file-tree .dir  { color: #60a5fa; font-weight: 600; }
+  .file-tree .file { color: #c9d1d9; }
+  .file-tree .note { color: #6e7681; font-style: italic; }
+
+  /* ── Cost callout ── */
+  .cost-callout {
+    display: flex;
+    gap: 16px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+  }
+  .cost-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    flex: 1;
+    min-width: 160px;
+  }
+  .cost-item .amount { font-size: 22px; font-weight: 700; color: var(--green); }
+  .cost-item .desc   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── View grid ── */
+  .view-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .view-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .view-item .vkey  { font-family: monospace; font-size: 12px; color: var(--accent); font-weight: 600; }
+  .view-item .vdesc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .view-item .vsize { font-family: monospace; font-size: 11px; color: var(--yellow); margin-top: 4px; }
+
+  /* ── Checklist ── */
+  .checklist { list-style: none; margin: 12px 0; }
+  .checklist li {
+    padding: 8px 0 8px 28px;
+    border-bottom: 1px solid rgba(42,49,69,.5);
+    position: relative;
+    font-size: 14px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: '○';
+    position: absolute;
+    left: 2px;
+    color: var(--border);
+    font-size: 13px;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 48px;
+    font-size: 14px;
+  }
+  .toc h3 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase;
+             letter-spacing: 0.7px; margin-bottom: 12px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { padding: 3px 0; }
+  .toc a  { color: var(--accent); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  /* ── Manifest example ── */
+  .manifest-key   { color: #79c0ff; }
+  .manifest-value { color: #a5d6ff; }
+
+  @media (max-width: 640px) {
+    .flow { flex-direction: column; align-items: flex-start; }
+    .flow-arrow { transform: rotate(90deg); margin: 0 auto; }
+    .cost-callout { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ═══════════════════════════════════════════════ HEADER -->
+  <header class="page-header">
+    <h1>PrintNGo 产品导入流程</h1>
+    <p class="subtitle">
+      <span class="badge badge-blue">技术文档</span>
+      <span class="badge badge-green">v2.0</span>
+      从抓取竞品参考图到上线 printngoplus.com 的完整 Pipeline
+    </p>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════ TOC -->
+  <nav class="toc">
+    <h3>目录</h3>
+    <ol>
+      <li><a href="#overview">流程总览</a></li>
+      <li><a href="#step1">第一步：抓取竞品参考图</a></li>
+      <li><a href="#step2a">第二步A：OpenAI gpt-image-2 生成（标准路线）</a></li>
+      <li><a href="#step2b">第二步B：Codex CLI 生成（精品路线）</a></li>
+      <li><a href="#step3">第三步：人工审核</a></li>
+      <li><a href="#step4">第四步：上传 Shopify CDN</a></li>
+      <li><a href="#step5">第五步：数据库入库</a></li>
+      <li><a href="#newtype">新增产品类型 Checklist</a></li>
+      <li><a href="#files">文件结构</a></li>
+      <li><a href="#config">配置参考</a></li>
+    </ol>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════ OVERVIEW -->
+  <section class="section" id="overview">
+    <h2 class="section-title">流程总览</h2>
+    <p>整个 pipeline 从一个 CustomInk 商品 URL 出发，经过抓取、AI 生图、人工审核、CDN 上传，最终写入 printngoplus.com 的 PostgreSQL 数据库。</p>
+
+    <!-- Flow diagram -->
+    <div class="flow" style="align-items:flex-start; gap:0;">
+
+      <!-- Input -->
+      <div class="flow-box input-box" style="margin-top:28px;">
+        <div class="step-num">输入</div>
+        <div class="step-name">CustomInk URL</div>
+        <div class="step-cmd">customink_urls.csv</div>
+      </div>
+      <div class="flow-arrow" style="margin-top:28px;">→</div>
+
+      <!-- Step 1 -->
+      <div class="flow-box" style="margin-top:28px;">
+        <div class="step-num">Step 1</div>
+        <div class="step-name">抓取竞品</div>
+        <div class="step-cmd">batch_customink.py</div>
+      </div>
+      <div class="flow-arrow" style="margin-top:28px;">→</div>
+
+      <!-- Branch point -->
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:0;">
+        <!-- Branch A -->
+        <div style="display:flex; align-items:center; gap:0;">
+          <div class="flow-box branch-a">
+            <div class="step-num"><span class="branch-label a" style="padding:1px 6px; border-radius:3px; background:rgba(59,130,246,.2); color:#60a5fa; font-size:10px; font-weight:700;">2A · 标准</span></div>
+            <div class="step-name">OpenAI 生成</div>
+            <div class="step-cmd">pipeline.py</div>
+          </div>
+        </div>
+        <!-- Branch B -->
+        <div style="display:flex; align-items:center; gap:0;">
+          <div class="flow-box branch-b">
+            <div class="step-num"><span class="branch-label b" style="padding:1px 6px; border-radius:3px; background:rgba(139,92,246,.2); color:#a78bfa; font-size:10px; font-weight:700;">2B · 精品</span></div>
+            <div class="step-name">Codex CLI 生成</div>
+            <div class="step-cmd">generate_bags_codex.py</div>
+          </div>
+        </div>
+      </div>
+      <div class="flow-arrow" style="margin-top:28px;">→</div>
+
+      <!-- Step 3 -->
+      <div class="flow-box review-box" style="margin-top:28px;">
+        <div class="step-num">Step 3</div>
+        <div class="step-name">人工审核</div>
+        <div class="step-cmd">open review.html</div>
+      </div>
+      <div class="flow-arrow" style="margin-top:28px;">→</div>
+
+      <!-- Step 4 -->
+      <div class="flow-box" style="margin-top:28px;">
+        <div class="step-num">Step 4</div>
+        <div class="step-name">上传 CDN</div>
+        <div class="step-cmd">upload_to_shopify.py</div>
+      </div>
+      <div class="flow-arrow" style="margin-top:28px;">→</div>
+
+      <!-- Step 5 -->
+      <div class="flow-box" style="margin-top:28px;">
+        <div class="step-num">Step 5</div>
+        <div class="step-name">数据库入库</div>
+        <div class="step-cmd">seed-xxx-online.js</div>
+      </div>
+      <div class="flow-arrow" style="margin-top:28px;">→</div>
+
+      <!-- Output -->
+      <div class="flow-box output-box" style="margin-top:28px;">
+        <div class="step-num">上线</div>
+        <div class="step-name">printngoplus.com</div>
+        <div class="step-cmd">PostgreSQL DB</div>
+      </div>
+
+    </div>
+
+    <div class="info-box note">
+      <span class="label">注意</span>
+      Shopify CDN 仅作为图片托管使用，最终目标平台是 <strong>printngoplus.com</strong>（PostgreSQL 数据库），不是 Shopify 商店。
+    </div>
+
+    <p class="section-subtitle">快速启动（全流程）</p>
+    <pre><code><span class="cm"># 激活 Python 虚拟环境</span>
+<span class="kw">source</span> shopify/.venv/bin/activate
+
+<span class="cm"># 或者使用统一入口脚本</span>
+python shopify/run.py all --url https://www.customink.com/products/bags/tote-bags/medium-cotton-canvas-tote-bag/2435100</code></pre>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ STEP 1 -->
+  <section class="section" id="step1">
+    <h2 class="section-title">第一步：抓取竞品参考图</h2>
+
+    <p>读取 <code>customink_urls.csv</code> 或通过 <code>--url</code> 传入单个 URL，为每种颜色下载正面参考图，结果写入 SQLite 数据库 <code>products.db</code>。</p>
+
+    <p class="section-subtitle">命令</p>
+    <pre><code><span class="cm"># 单个 URL</span>
+python app/batch_customink.py --url https://www.customink.com/products/bags/tote-bags/...
+
+<span class="cm"># 批量读取 customink_urls.csv</span>
+python app/batch_customink.py
+
+<span class="cm"># 强制重新下载已存在的图片</span>
+python app/batch_customink.py --force
+
+<span class="cm"># 使用自定义 CSV 文件</span>
+python app/batch_customink.py --csv my_urls.csv</code></pre>
+
+    <p class="section-subtitle">颜色发现策略</p>
+    <div class="card">
+      <h4>主路线：MMS Styles API</h4>
+      <p>优先调用 CustomInk 内部 API，一次性获取该产品所有颜色及其 colorId：</p>
+      <pre style="margin-top:8px;"><code>GET https://www.customink.com/mms/api/out/v2/styles.json?ids={product_id}</code></pre>
+      <p style="margin-top:8px; font-size:13px; color:var(--muted);">返回 JSON 中的 <code>colors</code> / <code>color_groups</code> 数组，每项包含 <code>id</code>（colorId）和 <code>name</code>。</p>
+    </div>
+
+    <div class="card">
+      <h4>Fallback：Playwright 页面扫描</h4>
+      <p>若 MMS API 失败（返回空或报错），自动启动无头 Chromium：</p>
+      <ul style="margin: 8px 0 0 18px; font-size:13.5px; color:var(--muted);">
+        <li>拦截 CDN 图片请求，从 URL 提取 colorId</li>
+        <li>拦截页面内的 <code>styles.json</code> / <code>colors.json</code> API 响应</li>
+        <li>从 DOM color swatch 元素读取 <code>data-color-id</code> + 颜色名称</li>
+        <li>三路结果合并，以 MMS API 数据优先</li>
+      </ul>
+    </div>
+
+    <p class="section-subtitle">CDN 图片下载</p>
+    <pre><code><span class="cm"># 每种颜色的正面参考图 URL 格式</span>
+https://mms-images-prod.imgix.net/mms/images/catalog/colors/<span class="va">{color_id}</span>/views/alt/front_large_extended.png
+
+<span class="cm"># 本地保存路径</span>
+shopify/data/originals/customink_<span class="va">{product_id}</span>_<span class="va">{color_id}</span>_front.png</code></pre>
+
+    <p class="section-subtitle">SQLite 状态写入</p>
+    <table>
+      <thead><tr><th>字段</th><th>说明</th><th>示例</th></tr></thead>
+      <tbody>
+        <tr><td><code>supplier_url</code></td><td>去掉查询参数的 URL（唯一键之一）</td><td><code>https://www.customink.com/.../2435100</code></td></tr>
+        <tr><td><code>color</code></td><td>颜色名称（唯一键之一）</td><td><code>Black</code></td></tr>
+        <tr><td><code>style_number</code></td><td>从 URL 提取的产品 ID</td><td><code>2435100</code></td></tr>
+        <tr><td><code>category</code></td><td>从 URL 路径解析的分类</td><td><code>tote bags</code></td></tr>
+        <tr><td><code>original_image_path</code></td><td>相对于 repo 根目录的路径</td><td><code>shopify/data/originals/...</code></td></tr>
+        <tr><td><code>status</code></td><td>下载成功为 <code>scraped</code>，失败为 <code>failed</code></td><td><code>scraped</code></td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <span class="label">幂等性</span>
+      以 <code>(supplier_url, color)</code> 为唯一键做 upsert，重复运行不产生副作用。
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ STEP 2A -->
+  <section class="section" id="step2a">
+    <h2 class="section-title">第二步A：OpenAI gpt-image-2 生成（标准路线）</h2>
+    <p class="badge badge-blue">适用：T恤 / 卫衣 / 杯子 / Tote 包所有类型</p>
+
+    <p class="section-subtitle">命令</p>
+    <pre><code>python app/pipeline.py                  <span class="cm"># 全量处理所有 status=scraped 的产品</span>
+python app/pipeline.py --force          <span class="cm"># 强制重新生成（覆盖已有文件）</span>
+python app/pipeline.py --quality high   <span class="cm"># 高质量模式（成本约 3x）</span>
+python app/pipeline.py --ids 113,114    <span class="cm"># 只处理指定 product ID</span></code></pre>
+
+    <p class="section-subtitle">Anchor 颜色选择策略</p>
+    <p>Pipeline 将同一 <code>supplier_url</code> 下所有颜色按组处理。每组只用 <strong>一种颜色（anchor）</strong>调用 OpenAI API，其余颜色通过 Python 色相旋转免费生成。</p>
+
+    <div class="card">
+      <h4>Anchor 选择优先级</h4>
+      <table>
+        <thead><tr><th>优先级</th><th>颜色</th><th>原因</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>051 Royal Blue</td><td>色彩鲜明，与皮肤色调和牛仔裤色调分离度高</td></tr>
+          <tr><td>2</td><td>040 Red</td><td>已验证在 G64000L 上效果良好</td></tr>
+          <tr><td>3</td><td>194 Cherry Red</td><td>备选强饱和色</td></tr>
+          <tr><td>4</td><td>098 Daisy（黄）</td><td>备选暖色</td></tr>
+          <tr><td>…</td><td>036 Black / 030 White</td><td>无色相，仅在无其他颜色时才直接 API 生成</td></tr>
+          <tr><td colspan="3" style="color:var(--muted); font-size:12px;">CustomInk 产品使用颜色名称匹配；凡 BLACK/WHITE/NATURAL/ASH/GREY 等非彩色均被排除在 anchor 候选外</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="section-subtitle">三阶段执行</p>
+    <div class="card">
+      <h4>Phase 1 — gpt-image-2 API 调用（anchor + 无彩色备用）</h4>
+      <p>调用 <code>images.edit()</code>，以 anchor 颜色的供应商参考图为输入，生成每个视角的产品图。</p>
+      <div class="cost-callout">
+        <div class="cost-item">
+          <div class="amount">$0.063</div>
+          <div class="desc">每张 portrait 视图<br>1024×1536，medium quality</div>
+        </div>
+        <div class="cost-item">
+          <div class="amount">$0.042</div>
+          <div class="desc">每张 square 视图<br>1024×1024，medium quality</div>
+        </div>
+        <div class="cost-item">
+          <div class="amount">~$0.34</div>
+          <div class="desc">每个 anchor 颜色总成本<br>4 portrait + 2 square</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h4>Phase 2 — Python 色相旋转（免费）</h4>
+      <p>对 anchor 的 6 张图做 HSV 色相旋转，批量生成所有其他颜色变体。通过 <code>recolor.py</code> 中的 numpy 向量化操作实现，无 API 费用。</p>
+      <div class="info-box warning">
+        <span class="label">限制</span>
+        Anchor 必须是彩色（有色相）才能驱动 recolor。若产品只有黑/白/灰，每种颜色都需单独调用 API。
+      </div>
+    </div>
+    <div class="card">
+      <h4>Phase 3 — 重建 review.html</h4>
+      <p>调用 <code>app/make_review_html.py</code>，将 <code>data/generated/</code> 下所有图片渲染为画廊 HTML，供人工审核。</p>
+    </div>
+
+    <p class="section-subtitle">各产品类型的视角（view keys）</p>
+    <p>视角定义在 <code>app/prompts.py</code> 中，<code>VIEW_SIZE</code> 在 <code>app/generate.py</code> 中配置尺寸：</p>
+
+    <div style="margin-bottom: 20px;">
+      <p style="font-size:13px; font-weight:600; color:var(--muted); margin-bottom:8px;">GARMENTS（T恤 / 卫衣 / Polo / 外套等）</p>
+      <div class="view-grid">
+        <div class="view-item"><div class="vkey">front</div><div class="vdesc">模特正面，全身</div><div class="vsize">1024×1536</div></div>
+        <div class="view-item"><div class="vkey">back</div><div class="vdesc">模特背面</div><div class="vsize">1024×1536</div></div>
+        <div class="view-item"><div class="vkey">left</div><div class="vdesc">模特左侧</div><div class="vsize">1024×1536</div></div>
+        <div class="view-item"><div class="vkey">right</div><div class="vdesc">模特右侧</div><div class="vsize">1024×1536</div></div>
+        <div class="view-item"><div class="vkey">neckline</div><div class="vdesc">领口特写</div><div class="vsize">1024×1024</div></div>
+        <div class="view-item"><div class="vkey">fabric</div><div class="vdesc">面料纹理特写</div><div class="vsize">1024×1024</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <p style="font-size:13px; font-weight:600; color:var(--muted); margin-bottom:8px;">MUGS（杯子）</p>
+      <div class="view-grid">
+        <div class="view-item"><div class="vkey">mug_front</div><div class="vdesc">正面产品图</div><div class="vsize">1024×1024</div></div>
+        <div class="view-item"><div class="vkey">mug_angle</div><div class="vdesc">45° 斜视角</div><div class="vsize">1024×1024</div></div>
+        <div class="view-item"><div class="vkey">mug_handle</div><div class="vdesc">把手侧</div><div class="vsize">1024×1024</div></div>
+        <div class="view-item"><div class="vkey">mug_top</div><div class="vdesc">俯视杯口</div><div class="vsize">1024×1024</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <p style="font-size:13px; font-weight:600; color:var(--muted); margin-bottom:8px;">BAGS（Tote 包，标准路线）</p>
+      <div class="view-grid">
+        <div class="view-item"><div class="vkey">bag_front</div><div class="vdesc">正面悬挂产品图</div><div class="vsize">1024×1536</div></div>
+        <div class="view-item"><div class="vkey">bag_lifestyle</div><div class="vdesc">模特手持生活场景</div><div class="vsize">1024×1536</div></div>
+        <div class="view-item"><div class="vkey">bag_flat</div><div class="vdesc">俯拍平铺</div><div class="vsize">1024×1024</div></div>
+        <div class="view-item"><div class="vkey">bag_detail</div><div class="vdesc">缝线/材质特写</div><div class="vsize">1024×1024</div></div>
+      </div>
+    </div>
+
+    <p class="section-subtitle">输出路径</p>
+    <pre><code>shopify/data/generated/<span class="va">{product_id:06d}</span>_<span class="va">{color_slug}</span>_<span class="va">{view_key}</span>.jpg
+
+<span class="cm"># 示例</span>
+shopify/data/generated/000121_Black_bag_front.jpg
+shopify/data/generated/000121_Black_bag_lifestyle.jpg</code></pre>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ STEP 2B -->
+  <section class="section" id="step2b">
+    <h2 class="section-title">第二步B：Codex CLI 生成（精品路线）</h2>
+    <p class="badge badge-purple">当前适用：Tote 包（Black / Natural 两色）</p>
+
+    <p>使用 Codex CLI 的 <code>imagegen</code> 工具生成超写实产品照，效果远优于 OpenAI 标准 path，适合旗舰产品首批上线。</p>
+
+    <p class="section-subtitle">命令</p>
+    <pre><code><span class="kw">cd</span> shopify/
+python generate_bags_codex.py              <span class="cm"># 生成全部（跳过已存在）</span>
+python generate_bags_codex.py --force      <span class="cm"># 强制覆盖重新生成</span>
+python generate_bags_codex.py --dry-run    <span class="cm"># 预览 prompts，不实际生成</span></code></pre>
+
+    <p class="section-subtitle">Codex CLI 调用模式</p>
+    <pre><code><span class="cm"># 核心命令构造</span>
+cmd = [<span class="st">"codex"</span>, <span class="st">"exec"</span>,
+       <span class="st">"--ephemeral"</span>,
+       <span class="st">"--skip-git-repo-check"</span>,
+       <span class="st">"--sandbox"</span>, <span class="st">"read-only"</span>,
+       <span class="st">"--color"</span>, <span class="st">"never"</span>]
+
+<span class="cm"># 可选：传入参考图（--image 只支持一张）</span>
+<span class="kw">if</span> ref_img <span class="kw">and</span> Path(ref_img).exists():
+    cmd += [<span class="st">"--image"</span>, ref_img]
+cmd.append(<span class="st">"-"</span>)   <span class="cm"># 从 stdin 读取 prompt</span>
+
+<span class="cm"># Prompt 格式（JSON 描述，通过 stdin 传入）</span>
+body = (
+    <span class="st">"Use imagegen to create an image with this request:\n"</span>
+    + json.dumps(prompt, ensure_ascii=<span class="kw">False</span>)
+    + <span class="st">"\n\nRequirements:\n"</span>
+      <span class="st">"- Generate the image directly\n"</span>
+      <span class="st">"- Do not provide explanation\n"</span>
+      <span class="st">"- Return only the image result"</span>
+)
+
+<span class="cm"># 执行（timeout=240s）</span>
+result = subprocess.run(cmd, input=body, capture_output=<span class="kw">True</span>, text=<span class="kw">True</span>, timeout=<span class="nu">240</span>)</code></pre>
+
+    <p class="section-subtitle">输出收集逻辑</p>
+    <pre><code><span class="cm"># Codex 把生成图写到 ~/.codex/generated_images/{session_ulid}/</span>
+CODEX_BASE = Path.home() / <span class="st">".codex"</span> / <span class="st">"generated_images"</span>
+
+<span class="cm"># 1. 执行前快照现有目录</span>
+before = {d <span class="kw">for</span> d <span class="kw">in</span> CODEX_BASE.glob(<span class="st">"*/"</span>) <span class="kw">if</span> d.is_dir()}
+
+<span class="cm"># 2. 执行 Codex CLI ...</span>
+
+<span class="cm"># 3. 等待新目录出现（最多 30s 轮询）</span>
+<span class="kw">while</span> time.time() &lt; deadline:
+    after = {d <span class="kw">for</span> d <span class="kw">in</span> CODEX_BASE.glob(<span class="st">"*/"</span>) <span class="kw">if</span> d.is_dir()}
+    new = after - before
+    <span class="kw">if</span> new:
+        sess = sorted(new, key=<span class="kw">lambda</span> p: p.stat().st_ctime)[-<span class="nu">1</span>]
+        imgs = list(sess.glob(<span class="st">"*.png"</span>)) + list(sess.glob(<span class="st">"*.jpg"</span>))
+        <span class="kw">if</span> imgs: <span class="kw">break</span>
+
+<span class="cm"># 4. 复制到 data/generated/，删除临时 session 目录</span>
+shutil.copy2(imgs[<span class="nu">0</span>], out_path)
+shutil.rmtree(sess, ignore_errors=<span class="kw">True</span>)</code></pre>
+
+    <p class="section-subtitle">Prompt 设计原则</p>
+    <table>
+      <thead><tr><th>字段</th><th>要求</th></tr></thead>
+      <tbody>
+        <tr><td><code>type</code></td><td>明确摄影类型（e-commerce / editorial lifestyle / overhead flat lay / macro）</td></tr>
+        <tr><td><code>camera</code></td><td>指定相机型号：<strong>Canon EOS R5</strong>，配焦距和光圈</td></tr>
+        <tr><td><code>quality</code></td><td>必须包含 <strong>"REAL PHOTOGRAPH NOT AI mockup"</strong></td></tr>
+        <tr><td><code>model</code>（lifestyle 视角）</td><td>白人女性，25–32 岁，白色圆领 T-shirt + 米色亚麻阔腿裤</td></tr>
+        <tr><td><code>lighting</code></td><td>描述光源方向、阴影特征、是否有 bokeh</td></tr>
+        <tr><td><code>background</code></td><td>明确说明（白色背景 / 城市街道 / 白色大理石等）</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box note">
+      <span class="label">当前产品配置</span>
+      <code>000121 Black</code> 参考图: <code>customink_2435100_2435100_front.png</code><br>
+      <code>000130 Natural</code> 参考图: <code>customink_2435100_2435103_front.png</code>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ STEP 3 -->
+  <section class="section" id="step3">
+    <h2 class="section-title">第三步：人工审核</h2>
+
+    <p>打开生成的 review.html 进行可视化质量检查，对不满意的图片重新生成或用 <code>--force</code> 覆盖。</p>
+
+    <pre><code><span class="cm"># pipeline.py 自动在 Phase 3 重建 review.html，也可手动触发：</span>
+python app/make_review_html.py && open review.html
+
+<span class="cm"># 或直接打开（若已存在）</span>
+open shopify/review.html</code></pre>
+
+    <div class="info-box note">
+      <span class="label">审核重点</span>
+      检查：1) 颜色是否准确；2) 模特图是否出现真实人像；3) 产品细节是否清晰；4) 背景是否干净。
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ STEP 4 -->
+  <section class="section" id="step4">
+    <h2 class="section-title">第四步：上传 Shopify CDN</h2>
+
+    <p>将 <code>data/generated/</code> 下的所有图片上传到 Shopify Files API，获取持久 CDN URL，写入 manifest 文件。</p>
+
+    <pre><code><span class="cm"># 只上传新文件（manifest 中不存在的）</span>
+python app/upload_to_shopify.py
+
+<span class="cm"># 强制重新上传所有文件</span>
+python app/upload_to_shopify.py --force
+
+<span class="cm"># 指定并发数（默认 3，Shopify 有频率限制）</span>
+python app/upload_to_shopify.py --workers 2</code></pre>
+
+    <p class="section-subtitle">两阶段上传协议（GraphQL Admin API）</p>
+    <div class="card">
+      <h4>Stage 1 — 申请预签名上传地址</h4>
+      <pre><code>mutation <span class="fn">stagedUploadsCreate</span>($input: [StagedUploadInput!]!) {
+  <span class="fn">stagedUploadsCreate</span>(input: $input) {
+    stagedTargets {
+      url           <span class="cm"># S3 presigned POST URL</span>
+      resourceUrl   <span class="cm"># 上传后用于注册的资源 URL</span>
+      parameters { name value }
+    }
+  }
+}</code></pre>
+    </div>
+    <div class="card">
+      <h4>Stage 2 — PUT 文件到 S3 → 注册为 Shopify File → 轮询 READY</h4>
+      <pre><code><span class="cm"># POST 文件字节到 target.url（S3 presigned URL）</span>
+requests.post(target[<span class="st">"url"</span>], data=form, files={<span class="st">"file"</span>: ...})
+
+<span class="cm"># 注册为 Shopify File，获取 file_id</span>
+mutation <span class="fn">fileCreate</span>($files: [FileCreateInput!]!) { ... }
+
+<span class="cm"># 轮询 node(id: file_id) 直到 fileStatus == "READY"</span>
+<span class="kw">for</span> attempt <span class="kw">in</span> range(<span class="nu">40</span>):   <span class="cm"># 最多等 ~80s</span>
+    time.sleep(<span class="nu">1</span> <span class="kw">if</span> attempt &lt; <span class="nu">5</span> <span class="kw">else</span> <span class="nu">2</span>)
+    node = graphql(FILE_NODE_QUERY, {<span class="st">"id"</span>: file_id})
+    <span class="kw">if</span> node[<span class="st">"fileStatus"</span>] == <span class="st">"READY"</span>:
+        <span class="kw">return</span> node[<span class="st">"image"</span>][<span class="st">"url"</span>]  <span class="cm"># cdn.shopify.com URL</span></code></pre>
+    </div>
+
+    <p class="section-subtitle">Manifest 文件格式</p>
+    <p>上传结果持久化到 <code>shopify/shopify_upload_manifest.json</code>：</p>
+    <pre><code>{
+  <span class="manifest-key">"000121_Black_bag_front.jpg"</span>:     <span class="manifest-value">"https://cdn.shopify.com/s/files/1/0746/6817/9644/files/000121_Black_bag_front.jpg?v=..."</span>,
+  <span class="manifest-key">"000121_Black_bag_lifestyle.jpg"</span>: <span class="manifest-value">"https://cdn.shopify.com/s/files/1/0746/6817/9644/files/000121_Black_bag_lifestyle.jpg?v=..."</span>,
+  <span class="manifest-key">"000121_Black_bag_flat.jpg"</span>:      <span class="manifest-value">"https://cdn.shopify.com/s/files/1/0746/6817/9644/files/000121_Black_bag_flat.jpg?v=..."</span>,
+  <span class="manifest-key">"000121_Black_bag_detail.jpg"</span>:    <span class="manifest-value">"https://cdn.shopify.com/s/files/1/0746/6817/9644/files/000121_Black_bag_detail.jpg?v=..."</span>
+}</code></pre>
+
+    <div class="info-box success">
+      <span class="label">幂等性</span>
+      Manifest 中已有的 key 直接跳过，不重复上传。每上传 5 个文件做一次 checkpoint 写入 manifest，中断后可安全续传。
+    </div>
+
+    <p class="section-subtitle">所需 Shopify 权限</p>
+    <p>Shopify Admin → Settings → Apps → Develop apps → 创建 Custom App → 勾选：</p>
+    <ul style="margin: 8px 0 0 18px; font-size:13.5px; color:var(--muted);">
+      <li><code>write_files</code> — 上传文件</li>
+      <li><code>read_files</code> — 查询文件状态</li>
+    </ul>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ STEP 5 -->
+  <section class="section" id="step5">
+    <h2 class="section-title">第五步：数据库入库</h2>
+
+    <p>读取 manifest → 从 CDN URL 填充图片 → 通过 Prisma upsert 写入 PostgreSQL：<code>Product</code> + <code>Variant</code> + <code>ProductImage</code> + <code>ProductCategory</code>。</p>
+
+    <p class="section-subtitle">命令</p>
+    <pre><code><span class="cm"># 开发环境（自动读 backend/.env 里的 DATABASE_URL）</span>
+node scripts/seed-tote-bags-online.js
+node scripts/seed-mugs-online.js
+
+<span class="cm"># 生产环境（从 GCP Secret Manager 读取连接串）</span>
+DATABASE_URL=$(gcloud secrets versions access latest \
+  --secret=database-url \
+  --project=&lt;PROJECT_ID&gt;) \
+  node scripts/seed-tote-bags-online.js</code></pre>
+
+    <p class="section-subtitle">Seed 脚本模式（以 seed-tote-bags-online.js 为参考）</p>
+    <pre><code><span class="cm">// 1. 读 manifest</span>
+<span class="kw">const</span> manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, <span class="st">'utf8'</span>));
+
+<span class="cm">// 2. 构建 CDN URL（key 格式必须和 pipeline.py 输出一致）</span>
+<span class="kw">function</span> <span class="fn">cdnUrl</span>(manifest, productId, colorSlug, view) {
+  <span class="kw">const</span> key = <span class="st">`${productId}_${colorSlug}_${view}.jpg`</span>;
+  <span class="kw">const</span> url = manifest[key];
+  <span class="kw">if</span> (!url) <span class="kw">throw new</span> Error(<span class="st">`Manifest missing key: ${key}`</span>);
+  <span class="kw">return</span> url;
+}
+
+<span class="cm">// 3. 对每个颜色：先删旧记录（refresh 模式）再创建</span>
+<span class="kw">const</span> existing = <span class="kw">await</span> prisma.product.findUnique({ where: { slug: productSlug } });
+<span class="kw">if</span> (existing) {
+  <span class="kw">await</span> prisma.productImage.deleteMany({ where: { productId: existing.id } });
+  <span class="kw">await</span> prisma.variant.deleteMany({     where: { productId: existing.id } });
+  <span class="kw">await</span> prisma.productCategory.deleteMany({ where: { productId: existing.id } });
+  <span class="kw">await</span> prisma.product.delete({ where: { id: existing.id } });
+}
+
+<span class="cm">// 4. 创建 Product with nested variants + images + category</span>
+<span class="kw">await</span> prisma.product.create({
+  data: {
+    name, slug, basePrice: <span class="nu">1999</span>,  <span class="cm">// 单位：分</span>
+    sku, stockQuantity: <span class="nu">300</span>, isActive: <span class="kw">true</span>,
+    variants:          { create: [variant] },
+    images:            { create: productImages },
+    productCategories: { create: { categoryId: bagsCategory.id } },
+  }
+});</code></pre>
+
+    <p class="section-subtitle">图片文件名规范</p>
+    <table>
+      <thead><tr><th>部分</th><th>规则</th><th>示例</th></tr></thead>
+      <tbody>
+        <tr><td><code>productId</code></td><td>6 位零填充，来自 <code>products.db</code></td><td><code>000121</code></td></tr>
+        <tr><td><code>colorSlug</code></td><td>颜色名称原样（首字母大写）</td><td><code>Black</code>, <code>Natural</code></td></tr>
+        <tr><td><code>view_key</code></td><td>来自 <code>app/prompts.py</code> 中定义的 VIEWS 列表</td><td><code>bag_front</code></td></tr>
+        <tr><td>扩展名</td><td>固定 <code>.jpg</code></td><td><code>000121_Black_bag_front.jpg</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ NEW TYPE CHECKLIST -->
+  <section class="section" id="newtype">
+    <h2 class="section-title">新增产品类型 Checklist</h2>
+
+    <p>只需改 <strong>2 个文件</strong>，scraper / pipeline / upload 脚本无需改动（它们消费 <code>build_prompts()</code> 的输出）：</p>
+
+    <ul class="checklist">
+      <li>
+        <strong><code>app/prompts.py</code></strong> — 新增 4 处：
+        <ol style="margin: 6px 0 0 20px; font-size:13.5px; color:var(--muted);">
+          <li><code>VIEWS_NEWTYPE</code> 列表（每项含 key / label / summary / needs_model / directive / aspect）</li>
+          <li><code>is_newtype_product(product)</code> 函数 — 检查 <code>_full_text(product)</code> 是否含关键词</li>
+          <li>在 <code>build_prompts()</code> 和 <code>build_prompt()</code> 中路由到新类型</li>
+          <li>在 <code>guess_garment()</code> 中返回产品标签文字</li>
+          <li>把 <code>VIEWS_NEWTYPE</code> 追加到 <code>ALL_VIEWS</code></li>
+        </ol>
+      </li>
+      <li>
+        <strong><code>app/generate.py</code></strong> — 在 <code>VIEW_SIZE</code> 字典中添加新 view key 的尺寸：<br>
+        <span style="font-size:13px; color:var(--muted);">portrait 模特视角 → <code>"1024x1536"</code>；平铺/特写视角 → <code>"1024x1024"</code></span>
+      </li>
+      <li>
+        <strong><code>scripts/seed-{newtype}-online.js</code></strong> — 参照 <code>seed-tote-bags-online.js</code> 创建入库脚本
+      </li>
+    </ul>
+
+    <div class="info-box success">
+      <span class="label">规则</span>
+      标准服装类（T恤/卫衣/Polo/外套/帽子）无需改代码。URL slug 自动成为 <code>product_name</code>，<code>guess_garment()</code> 自动解析，走 <code>VIEWS</code> 默认路由。
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ FILE STRUCTURE -->
+  <section class="section" id="files">
+    <h2 class="section-title">文件结构</h2>
+
+    <p class="section-subtitle">shopify/（Python pipeline）</p>
+    <div class="file-tree">
+<span class="dir">shopify/</span>
+├── <span class="dir">app/</span>
+│   ├── <span class="file">batch_customink.py</span>    <span class="note"># Step 1: CustomInk 抓取器</span>
+│   ├── <span class="file">pipeline.py</span>           <span class="note"># Step 2A: OpenAI 编排器（anchor + recolor）</span>
+│   ├── <span class="file">generate.py</span>           <span class="note"># OpenAI gpt-image-2 API 调用</span>
+│   ├── <span class="file">recolor.py</span>            <span class="note"># 免费 HSV 色相旋转</span>
+│   ├── <span class="file">prompts.py</span>            <span class="note"># 各产品类型的 prompt 模板 + VIEWS 定义</span>
+│   ├── <span class="file">upload_to_shopify.py</span>  <span class="note"># Step 4: CDN 上传 + manifest 写入</span>
+│   ├── <span class="file">make_review_html.py</span>   <span class="note"># 生成 review.html</span>
+│   ├── <span class="file">db.py</span>                 <span class="note"># SQLite 操作（upsert_scraped_product 等）</span>
+│   ├── <span class="file">paths.py</span>              <span class="note"># 路径常量（ROOT_DIR / ORIGINALS_DIR / GENERATED_DIR）</span>
+│   └── <span class="file">config.py</span>             <span class="note"># Settings 类（读取 .env，含 Shopify 凭据）</span>
+├── <span class="file">generate_bags_codex.py</span>    <span class="note"># Step 2B: Codex CLI tote bag 精品生成</span>
+├── <span class="file">run.py</span>                    <span class="note"># 统一入口脚本（本文件）</span>
+├── <span class="dir">data/</span>
+│   ├── <span class="dir">originals/</span>            <span class="note"># 抓取的供应商参考图</span>
+│   └── <span class="dir">generated/</span>            <span class="note"># AI 生成的产品图</span>
+├── <span class="file">customink_urls.csv</span>        <span class="note"># 输入：要处理的 CustomInk 产品 URL 列表</span>
+├── <span class="file">shopify_upload_manifest.json</span>  <span class="note"># CDN URL 注册表（filename → URL）</span>
+├── <span class="file">products.db</span>               <span class="note"># SQLite 状态数据库</span>
+├── <span class="file">review.html</span>               <span class="note"># 人工审核画廊（自动生成）</span>
+└── <span class="file">.env</span>                      <span class="note"># OPENAI_API_KEY + SHOPIFY_* 凭据</span>
+    </div>
+
+    <p class="section-subtitle" style="margin-top:24px;">scripts/（Node.js 入库脚本，位于 repo 根目录）</p>
+    <div class="file-tree">
+<span class="dir">scripts/</span>
+├── <span class="file">seed-tote-bags-online.js</span>   <span class="note"># 入库 tote bags → PostgreSQL</span>
+├── <span class="file">seed-mugs-online.js</span>        <span class="note"># 入库 mugs → PostgreSQL</span>
+└── <span class="file">seed-{newtype}-online.js</span>   <span class="note"># 新产品类型入库脚本模板</span>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ═══════════════════════════════════════════════ CONFIG -->
+  <section class="section" id="config">
+    <h2 class="section-title">配置参考</h2>
+
+    <p class="section-subtitle">shopify/.env</p>
+    <pre><code><span class="cm"># OpenAI（Step 2A pipeline.py 必须）</span>
+OPENAI_API_KEY=sk-...
+
+<span class="cm"># Shopify CDN 上传（Step 4 upload_to_shopify.py 必须）</span>
+SHOPIFY_SHOP_DOMAIN=your-store.myshopify.com
+SHOPIFY_ADMIN_API_TOKEN=shpat_...
+
+<span class="cm"># 可选覆盖</span>
+OPENAI_IMAGE_QUALITY=medium        <span class="cm"># low | medium | high | auto</span>
+SHOPIFY_API_VERSION=2024-01        <span class="cm"># Shopify GraphQL API 版本</span>
+REQUEST_TIMEOUT_SECONDS=60</code></pre>
+
+    <p class="section-subtitle">backend/.env（seed 脚本数据库连接）</p>
+    <pre><code><span class="cm"># 开发环境（Neon PostgreSQL）</span>
+DATABASE_URL="postgresql://user:password@ep-xxx.us-east-1.aws.neon.tech/dbname?sslmode=require"</code></pre>
+
+    <p class="section-subtitle">环境初始化</p>
+    <pre><code><span class="kw">cd</span> shopify/
+python3 -m venv .venv
+<span class="kw">source</span> .venv/bin/activate
+pip install -r requirements.txt
+python -m playwright install chromium   <span class="cm"># Playwright fallback 必须安装</span></code></pre>
+
+    <p class="section-subtitle">Codex CLI（Step 2B 需要）</p>
+    <pre><code><span class="cm"># 确认 codex 已在 PATH 中</span>
+codex --version
+
+<span class="cm"># codex exec 需要 OpenAI API key（同一个 OPENAI_API_KEY 即可）</span></code></pre>
+  </section>
+
+</div>
+</body>
+</html>

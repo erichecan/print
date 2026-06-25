@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>独立站引流执行计划</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f4ede0;
+    --paper-deep: #ebe1cf;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-faint: #8a8275;
+    --moss: #2d4a3a;
+    --vermilion: #b8412a;
+    --gold: #a8864a;
+    --line: #d6c9ad;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    background-image:
+      radial-gradient(at 20% 10%, rgba(168, 134, 74, 0.08) 0px, transparent 50%),
+      radial-gradient(at 80% 80%, rgba(45, 74, 58, 0.06) 0px, transparent 50%);
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: multiply;
+  }
+  .serif { font-family: 'Noto Serif SC', serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .ink { color: var(--ink); }
+  .ink-soft { color: var(--ink-soft); }
+  .ink-faint { color: var(--ink-faint); }
+  .moss { color: #2d4a3a; }
+  .vermilion { color: var(--vermilion); }
+  .gold { color: var(--gold); }
+  .bg-moss { background: #2d4a3a; }
+  .bg-vermilion { background: var(--vermilion); }
+  .bg-paper-deep { background: var(--paper-deep); }
+  .border-line { border-color: var(--line); }
+  .border-ink { border-color: var(--ink); }
+
+  /* Stamp / seal effect */
+  .seal {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--vermilion);
+    color: var(--paper);
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    transform: rotate(-2deg);
+    box-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+  }
+
+  /* Custom checkbox */
+  .check {
+    width: 22px;
+    height: 22px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .check:hover {
+    background: rgba(45, 74, 58, 0.08);
+  }
+  .check.done {
+    background: #2d4a3a;
+    border-color: #2d4a3a;
+  }
+  .check.done::after {
+    content: '';
+    width: 11px;
+    height: 6px;
+    border-left: 2px solid var(--paper);
+    border-bottom: 2px solid var(--paper);
+    transform: rotate(-45deg) translate(1px, -1px);
+  }
+
+  .task-done .task-text {
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    text-decoration-color: var(--ink-faint);
+    text-decoration-thickness: 1px;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    height: 8px;
+    background: var(--paper-deep);
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #2d4a3a;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 6px,
+      rgba(255,255,255,0.08) 6px,
+      rgba(255,255,255,0.08) 12px
+    );
+  }
+
+  /* Week card */
+  .week-card {
+    background: rgba(244, 237, 224, 0.6);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+    position: relative;
+  }
+  .week-card.active {
+    border-color: var(--ink);
+    border-width: 1.5px;
+    box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.08);
+  }
+  .week-card.complete {
+    border-color: #2d4a3a;
+    background: rgba(45, 74, 58, 0.04);
+  }
+
+  .week-num {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 900;
+    font-size: 6rem;
+    line-height: 0.9;
+    color: var(--ink);
+    opacity: 0.9;
+  }
+  .week-num-bg {
+    position: absolute;
+    top: -20px;
+    right: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 8rem;
+    color: var(--ink);
+    opacity: 0.04;
+    pointer-events: none;
+    line-height: 1;
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--line);
+    position: relative;
+  }
+  .divider::after {
+    content: '◆';
+    position: absolute;
+    left: 50%;
+    top: -8px;
+    transform: translateX(-50%);
+    background: var(--paper);
+    padding: 0 12px;
+    color: var(--gold);
+    font-size: 10px;
+  }
+
+  /* Hero */
+  .hero-title {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+  .hero-vertical {
+    writing-mode: vertical-rl;
+    font-family: 'Noto Serif SC', serif;
+    letter-spacing: 0.3em;
+  }
+
+  /* Stat */
+  .stat-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  /* Task row */
+  .task-row {
+    padding: 12px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    border-bottom: 1px dashed var(--line);
+    cursor: pointer;
+    transition: padding-left 0.2s ease;
+  }
+  .task-row:hover {
+    padding-left: 6px;
+  }
+  .task-row:last-child {
+    border-bottom: none;
+  }
+  .task-text {
+    font-size: 14.5px;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .copy-btn {
+    opacity: 0.35;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    color: var(--ink-faint);
+    padding: 0;
+  }
+  .task-row:hover .copy-btn {
+    opacity: 1;
+  }
+  .copy-btn:hover {
+    background: var(--paper-deep);
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+  .copy-btn.copied {
+    opacity: 1;
+    color: #2d4a3a;
+    border-color: #2d4a3a;
+  }
+
+  /* Section heading */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .section-head .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--vermilion);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+  }
+  .section-head .label {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    font-size: 17px;
+  }
+
+  /* Status pill */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    background: var(--paper);
+  }
+  .pill-active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .pill-done {
+    background: #2d4a3a;
+    color: var(--paper);
+    border-color: #2d4a3a;
+  }
+
+  /* Quote box */
+  .quote {
+    border-left: 3px solid var(--vermilion);
+    padding: 8px 0 8px 18px;
+    font-family: 'Noto Serif SC', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+
+  /* Tab nav */
+  .week-tab {
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    transition: all 0.15s ease;
+  }
+  .week-tab:hover {
+    border-color: var(--ink);
+  }
+  .week-tab.current {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* Loading */
+  .skeleton {
+    background: linear-gradient(90deg, var(--paper-deep) 25%, var(--paper) 50%, var(--paper-deep) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Fade in */
+  .fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+    opacity: 0;
+  }
+  @keyframes fadeIn {
+    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(8px); }
+  }
+
+  /* Stamp date */
+  .date-stamp {
+    display: inline-block;
+    padding: 4px 10px;
+    border: 1.5px solid var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    background: var(--paper);
+  }
+
+  @media (max-width: 768px) {
+    .week-num { font-size: 4rem; }
+    .week-num-bg { font-size: 5rem; }
+    .stat-num { font-size: 2.2rem; }
+    .hero-vertical { display: none; }
+  }
+
+  /* Container */
+  .container-x {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="container-x py-10 md:py-16">
+
+  <!-- HEADER -->
+  <header class="mb-12 md:mb-16 fade-in">
+    <div class="flex items-start justify-between gap-6 mb-8">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="seal text-xs">作战</span>
+          <span class="mono text-xs ink-faint tracking-widest">CANADA · POD · GROWTH PLAN</span>
+        </div>
+        <h1 class="hero-title text-4xl md:text-6xl leading-tight mb-3">
+          独立站<br/>
+          <span class="vermilion">引流执行</span>计划
+        </h1>
+        <p class="ink-soft text-sm md:text-base max-w-xl leading-relaxed">
+          四周冲刺 · 加拿大本地 POD 定制供应链 · 从定位到流量
+        </p>
+      </div>
+      <div class="hidden md:flex flex-col items-end gap-2 pt-2">
+        <div class="date-stamp" id="today-date">载入中</div>
+        <div class="mono text-xs ink-faint">第 <span id="day-num">—</span> 天</div>
+      </div>
+    </div>
+
+    <!-- Overall progress -->
+    <div class="bg-paper-deep border border-line p-5 md:p-6 relative">
+      <div class="flex items-end justify-between mb-3">
+        <div>
+          <div class="mono text-xs ink-faint tracking-widest mb-1">总进度 / OVERALL</div>
+          <div class="flex items-baseline gap-3">
+            <span class="stat-num ink" id="overall-pct">0%</span>
+            <span class="text-sm ink-soft mono"><span id="overall-done">0</span> / <span id="overall-total">0</span> 项</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="mono text-xs ink-faint tracking-widest mb-1">当前阶段</div>
+          <div class="serif font-bold text-lg" id="current-phase">第一周</div>
+        </div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="overall-bar" style="width: 0%"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CORE PRINCIPLE -->
+  <section class="mb-12 fade-in" style="animation-delay: 0.1s">
+    <div class="quote">
+      不要急着卖衣服，先卖供应链能力。<br/>
+      <span class="text-xs ink-faint mono not-italic">— CORE THESIS</span>
+    </div>
+  </section>
+
+  <!-- POSITIONING -->
+  <section class="mb-14 fade-in" style="animation-delay: 0.15s">
+    <div class="section-head">
+      <span class="num">00 / 战略</span>
+      <span class="label">定位</span>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="bg-paper-deep border border-line p-5">
+        <div class="mono text-xs ink-faint mb-2">优势</div>
+        <div class="serif font-bold text-base leading-relaxed">
+          加拿大本地生产<br/>
+          一件代发<br/>
+          3–5 天出货
+        </div>
+      </div>
+      <div class="bg-paper-deep border border-line p-5">
+        <div class="mono text-xs ink-faint mb-2">客户</div>
+        <div class="serif font-bold text-base leading-relaxed">
+          TikTok 卖家<br/>
+          Shopify 卖家<br/>
+          小红书博主 / 留学生
+        </div>
+      </div>
+      <div class="bg-moss border border-line p-5" style="color: var(--paper)">
+        <div class="mono text-xs mb-2" style="color: rgba(244,237,224,0.6)">一句话定位</div>
+        <div class="serif font-bold text-base leading-relaxed">
+          加拿大本地 POD 定制工厂<br/>
+          <span class="text-sm font-normal">3–5 天出货｜一件代发<br/>
+          Shopify / TikTok 卖家合作</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WEEK TABS -->
+  <section class="mb-8 fade-in" style="animation-delay: 0.2s">
+    <div class="section-head">
+      <span class="num">01 / 执行</span>
+      <span class="label">四周冲刺</span>
+    </div>
+    <div class="flex flex-wrap gap-2 mb-6">
+      <div class="week-tab current" data-week="all">全部</div>
+      <div class="week-tab" data-week="1">WEEK 01</div>
+      <div class="week-tab" data-week="2">WEEK 02</div>
+      <div class="week-tab" data-week="3">WEEK 03</div>
+      <div class="week-tab" data-week="4">WEEK 04</div>
+    </div>
+  </section>
+
+  <!-- WEEKS CONTAINER -->
+  <div id="weeks-container" class="space-y-6">
+    <!-- weeks rendered here -->
+  </div>
+
+  <!-- FOUNDATION (one-time tasks) -->
+  <section class="mt-16 fade-in" style="animation-delay: 0.3s">
+    <div class="section-head">
+      <span class="num">02 / 基础设施</span>
+      <span class="label">独立站转化结构（一次性）</span>
+    </div>
+    <div class="week-card p-6 md:p-8 relative">
+      <div class="week-num-bg">★</div>
+      <div id="foundation-container"></div>
+    </div>
+  </section>
+
+  <!-- FOOTER NOTE -->
+  <footer class="mt-16 pt-10 border-t border-line">
+    <div class="grid md:grid-cols-2 gap-8">
+      <div>
+        <div class="mono text-xs ink-faint tracking-widest mb-3">前期警示</div>
+        <p class="text-sm ink-soft leading-relaxed">
+          前期不要乱花广告费。先做内容，建立信任、品牌、自然流量。<br/>
+          <span class="vermilion">广告测试放在第 4 周。</span>
+        </p>
+      </div>
+      <div>
+        <div class="mono text-xs ink-faint tracking-widest mb-3">渠道优先级</div>
+        <div class="space-y-1.5 text-sm">
+          <div class="flex justify-between"><span>TikTok</span><span class="mono ink-faint">流量最便宜，最易爆</span></div>
+          <div class="flex justify-between"><span>小红书</span><span class="mono ink-faint">华人卖家精准</span></div>
+          <div class="flex justify-between"><span>Google SEO</span><span class="mono ink-faint">长期最高质</span></div>
+          <div class="flex justify-between"><span>Facebook 群</span><span class="mono ink-faint">短期最有效</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-10 text-center mono text-xs ink-faint">
+      最后更新 <span id="last-updated">—</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  // ============ DATA ============
+  const WEEKS = [
+    {
+      n: 1,
+      title: '打地基',
+      subtitle: 'FOUNDATION',
+      focus: '完成定位文案 · 优化首页 · 准备工厂视频素材',
+      tasks: [
+        { id: 'w1-1', text: '确定网站首页第一屏一句话定位文案（中英双语）' },
+        { id: 'w1-2', text: '完成网站首页核心区域优化（定位、工厂视频位、合作流程）' },
+        { id: 'w1-3', text: '拍摄工厂视频素材：印花过程' },
+        { id: 'w1-4', text: '拍摄工厂视频素材：绣花过程' },
+        { id: 'w1-5', text: '拍摄工厂视频素材：打包过程' },
+        { id: 'w1-6', text: '整理 3–5 个真实客户案例照片（用于首页和后续发布）' },
+        { id: 'w1-7', text: '在首页明显位置加上 WhatsApp / 微信入口' },
+      ],
+    },
+    {
+      n: 2,
+      title: '内容启动',
+      subtitle: 'CONTENT LAUNCH',
+      focus: 'TikTok 每天 2 条 · 小红书每天 1 条',
+      tasks: [
+        { id: 'w2-1', text: 'TikTok 账号每天发布 2 条视频（共 14 条）' },
+        { id: 'w2-2', text: '小红书账号每天发布 1 条内容（共 7 条）' },
+        { id: 'w2-3', text: 'TikTok 内容方向：解压类（印花瞬间、撕膜、绣花）至少 4 条' },
+        { id: 'w2-4', text: 'TikTok 内容方向：创业类（在加拿大做 POD 一天能赚多少）至少 4 条' },
+        { id: 'w2-5', text: 'TikTok 内容方向：客户案例（留学生品牌从 0 到月销 500 件）至少 3 条' },
+        { id: 'w2-6', text: '小红书：加拿大本地发货系列（多伦多服装定制、Shopify 卖家本地发货）至少 3 条' },
+        { id: 'w2-7', text: '小红书：创业分享系列（华人工厂、留学生创业）至少 2 条' },
+        { id: 'w2-8', text: '小红书：客户案例展示（印花效果、帽子刺绣、包装升级）至少 2 条' },
+      ],
+    },
+    {
+      n: 3,
+      title: '主动拓展',
+      subtitle: 'OUTREACH',
+      focus: 'Facebook 群组案例 · 主动联系 Shopify 卖家',
+      tasks: [
+        { id: 'w3-1', text: '加入 3 个 Shopify 卖家 Facebook 群组' },
+        { id: 'w3-2', text: '加入 3 个加拿大创业 / 华人电商 Facebook 群组' },
+        { id: 'w3-3', text: '继续 TikTok 每天 2 条 + 小红书每天 1 条（不要停）' },
+        { id: 'w3-4', text: 'Facebook 群组发布客户案例 5 次（不直接发广告，用真实订单故事）' },
+        { id: 'w3-5', text: '主动私信联系 20 个 Shopify / TikTok 卖家' },
+        { id: 'w3-6', text: '收集前两周内容数据，找出最高互动的 3 个选题，加大复制' },
+      ],
+    },
+    {
+      n: 4,
+      title: '小预算测试 + SEO',
+      subtitle: 'PAID TEST + SEO',
+      focus: '小预算广告 · 启动 Google SEO 长期内容',
+      tasks: [
+        { id: 'w4-1', text: '继续 TikTok 每天 2 条 + 小红书每天 1 条（不要停）' },
+        { id: 'w4-2', text: '小预算广告测试：TikTok 投放（建议 $20–50 / 天，先测 5 天）' },
+        { id: 'w4-3', text: '撰写并发布 SEO 文章 1：Best POD Supplier in Canada' },
+        { id: 'w4-4', text: '撰写并发布 SEO 文章 2：Shopify POD Canada' },
+        { id: 'w4-5', text: '撰写并发布 SEO 文章 3：Toronto POD Fulfillment' },
+        { id: 'w4-6', text: '复盘四周成果：哪些渠道有询盘、内容互动数据、广告 ROI' },
+      ],
+    },
+  ];
+
+  const FOUNDATION = {
+    title: '独立站转化结构（一次性任务，越早完成越好）',
+    tasks: [
+      { id: 'f-1', text: '首页第一屏：一句话定位 + 工厂视频' },
+      { id: 'f-2', text: '能力展示区：DTG / DTF / 刺绣 / POD fulfillment' },
+      { id: 'f-3', text: '合作流程区：上传设计 → 我们生产 → 发货给客户' },
+      { id: 'f-4', text: '客户案例区：真实照片（至少 5 个）' },
+      { id: 'f-5', text: 'WhatsApp / 微信入口：放在首页明显位置（建议右下角悬浮）' },
+    ],
+  };
+
+  // ============ COPY ICONS ============
+  const COPY_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>`;
+  const CHECK_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 15 4 10"/></svg>`;
+
+  // ============ STATE ============
+  let state = {};
+  let currentFilter = 'all';
+
+  // ============ STORAGE ============
+  async function loadState() {
+    try {
+      const result = await window.storage.get('tracker-state');
+      state = result ? JSON.parse(result.value) : {};
+    } catch (e) {
+      state = {};
+    }
+  }
+
+  async function saveState() {
+    try {
+      await window.storage.set('tracker-state', JSON.stringify(state));
+      updateLastUpdated();
+    } catch (e) {
+      console.error('保存失败', e);
+    }
+  }
+
+  // ============ RENDER ============
+  function allTasks() {
+    return [
+      ...WEEKS.flatMap(w => w.tasks.map(t => ({ ...t, week: w.n }))),
+      ...FOUNDATION.tasks.map(t => ({ ...t, week: 'F' })),
+    ];
+  }
+
+  function isDone(id) {
+    return state[id]?.done === true;
+  }
+
+  function computeWeekProgress(weekN) {
+    const tasks = WEEKS.find(w => w.n === weekN).tasks;
+    const done = tasks.filter(t => isDone(t.id)).length;
+    return { done, total: tasks.length, pct: tasks.length ? Math.round((done / tasks.length) * 100) : 0 };
+  }
+
+  function renderWeeks() {
+    const container = document.getElementById('weeks-container');
+    container.innerHTML = '';
+
+    WEEKS.forEach((week, idx) => {
+      if (currentFilter !== 'all' && String(week.n) !== currentFilter) return;
+
+      const { done, total, pct } = computeWeekProgress(week.n);
+      const isComplete = done === total && total > 0;
+      const isActive = !isComplete && (idx === 0 || computeWeekProgress(WEEKS[idx-1].n).pct === 100);
+
+      const card = document.createElement('div');
+      card.className = `week-card p-6 md:p-8 relative fade-in ${isActive ? 'active' : ''} ${isComplete ? 'complete' : ''}`;
+      card.style.animationDelay = `${0.05 * idx}s`;
+
+      const statusPill = isComplete
+        ? '<span class="pill pill-done">● 完成</span>'
+        : isActive
+          ? '<span class="pill pill-active">● 进行中</span>'
+          : '<span class="pill">○ 待启动</span>';
+
+      card.innerHTML = `
+        <div class="week-num-bg">0${week.n}</div>
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
+          <div class="flex items-start gap-5">
+            <div class="week-num">${week.n}</div>
+            <div class="pt-2">
+              <div class="mono text-xs ink-faint tracking-widest mb-1">WEEK 0${week.n} · ${week.subtitle}</div>
+              <div class="serif font-bold text-2xl mb-2">${week.title}</div>
+              <div class="text-sm ink-soft max-w-md leading-relaxed">${week.focus}</div>
+            </div>
+          </div>
+          <div class="flex flex-col items-start md:items-end gap-2">
+            ${statusPill}
+            <div class="mono text-xs ink-faint">${done} / ${total}</div>
+          </div>
+        </div>
+
+        <div class="progress-track mb-6">
+          <div class="progress-fill" style="width: ${pct}%"></div>
+        </div>
+
+        <div class="task-list">
+          ${week.tasks.map(t => `
+            <div class="task-row ${isDone(t.id) ? 'task-done' : ''}" data-task-id="${t.id}">
+              <div class="check ${isDone(t.id) ? 'done' : ''}"></div>
+              <div class="task-text">${t.text}</div>
+              <button class="copy-btn" title="复制">${COPY_ICON}</button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    // attach handlers
+    container.querySelectorAll('.task-row').forEach(row => {
+      row.addEventListener('click', () => toggleTask(row.dataset.taskId));
+    });
+    attachCopyHandlers(container);
+  }
+
+  function renderFoundation() {
+    const container = document.getElementById('foundation-container');
+    const total = FOUNDATION.tasks.length;
+    const done = FOUNDATION.tasks.filter(t => isDone(t.id)).length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+
+    container.innerHTML = `
+      <div class="flex items-end justify-between mb-4">
+        <div class="serif font-bold text-lg">${FOUNDATION.title}</div>
+        <div class="mono text-xs ink-faint">${done} / ${total}</div>
+      </div>
+      <div class="progress-track mb-5">
+        <div class="progress-fill" style="width: ${pct}%; background: var(--vermilion);"></div>
+      </div>
+      <div class="task-list">
+        ${FOUNDATION.tasks.map(t => `
+          <div class="task-row ${isDone(t.id) ? 'task-done' : ''}" data-task-id="${t.id}">
+            <div class="check ${isDone(t.id) ? 'done' : ''}"></div>
+            <div class="task-text">${t.text}</div>
+            <button class="copy-btn" title="复制">${COPY_ICON}</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    container.querySelectorAll('.task-row').forEach(row => {
+      row.addEventListener('click', () => toggleTask(row.dataset.taskId));
+    });
+    attachCopyHandlers(container);
+  }
+
+  function renderOverall() {
+    const tasks = allTasks();
+    const done = tasks.filter(t => isDone(t.id)).length;
+    const total = tasks.length;
+    const pct = total ? Math.round((done/total)*100) : 0;
+
+    document.getElementById('overall-pct').textContent = pct + '%';
+    document.getElementById('overall-done').textContent = done;
+    document.getElementById('overall-total').textContent = total;
+    document.getElementById('overall-bar').style.width = pct + '%';
+
+    // current phase
+    let phase = '第一周';
+    for (const w of WEEKS) {
+      const p = computeWeekProgress(w.n);
+      if (p.pct < 100) { phase = `第${['一','二','三','四'][w.n-1]}周 · ${w.title}`; break; }
+      phase = '已完成全部';
+    }
+    document.getElementById('current-phase').textContent = phase;
+  }
+
+  function updateLastUpdated() {
+    const now = new Date();
+    const fmt = now.toLocaleString('zh-CN', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    document.getElementById('last-updated').textContent = fmt;
+  }
+
+  function updateTodayHeader() {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    document.getElementById('today-date').textContent = dateStr.replace(/\//g, '.');
+
+    // day number — count from earliest task completion or default to 1
+    const completions = Object.values(state).filter(v => v.completedAt).map(v => new Date(v.completedAt));
+    if (completions.length > 0) {
+      const earliest = new Date(Math.min(...completions));
+      const days = Math.floor((now - earliest) / (1000*60*60*24)) + 1;
+      document.getElementById('day-num').textContent = days;
+    } else {
+      document.getElementById('day-num').textContent = '01';
+    }
+  }
+
+  // ============ COPY HANDLER ============
+  function attachCopyHandlers(container) {
+    container.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = btn.closest('.task-row').querySelector('.task-text').textContent.trim();
+        const doFeedback = () => {
+          btn.innerHTML = CHECK_ICON;
+          btn.classList.add('copied');
+          setTimeout(() => { btn.innerHTML = COPY_ICON; btn.classList.remove('copied'); }, 1500);
+        };
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text).then(doFeedback).catch(() => {
+            fallbackCopy(text); doFeedback();
+          });
+        } else {
+          fallbackCopy(text); doFeedback();
+        }
+      });
+    });
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+
+  // ============ INTERACTIONS ============
+  async function toggleTask(id) {
+    if (!state[id]) state[id] = {};
+    if (state[id].done) {
+      state[id].done = false;
+      state[id].completedAt = null;
+    } else {
+      state[id].done = true;
+      state[id].completedAt = new Date().toISOString();
+    }
+    await saveState();
+    renderAll();
+  }
+
+  function renderAll() {
+    renderOverall();
+    renderWeeks();
+    renderFoundation();
+    updateTodayHeader();
+  }
+
+  // tab switching
+  document.querySelectorAll('.week-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.week-tab').forEach(t => t.classList.remove('current'));
+      tab.classList.add('current');
+      currentFilter = tab.dataset.week;
+      renderWeeks();
+    });
+  });
+
+  // ============ INIT ============
+  (async () => {
+    await loadState();
+    renderAll();
+    updateLastUpdated();
+  })();
+</script>
+
+</body>
+</html>

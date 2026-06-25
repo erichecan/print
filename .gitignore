@@ -21,10 +21,12 @@ out/
 
 # Environment variables
 .env
-# .env.local
-# .env.development.local
-# .env.test.local
-# .env.production.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/.env.local
 
 # Logs
 logs
@@ -59,4 +61,23 @@ temp/
 
 # GCP local config (do not commit)
 .gcloud_config/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Large local asset directories (not for git)
+pic-printngo/
+shopify/.venv/
+shopify/data/
+shopify/diverse_models/
+shopify/graduation_2025/
+
+# Build info cache
+tsconfig.tsbuildinfo
+**/tsconfig.tsbuildinfo
 

@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PrintNGo 产品图生成工作流方案</title>
+  <style>
+    :root {
+      --ink: #1f2933;
+      --muted: #596775;
+      --line: #d8dee6;
+      --paper: #f7f8fa;
+      --panel: #ffffff;
+      --accent: #0f766e;
+      --accent-soft: #e2f3ef;
+      --warn: #a16207;
+      --warn-soft: #fff7d6;
+      --danger: #b42318;
+      --danger-soft: #fee4df;
+      --code: #eef2f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+
+    header {
+      background: #102027;
+      color: #ffffff;
+      padding: 52px 24px 44px;
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #a7f3d0;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 840px;
+      font-size: clamp(30px, 4vw, 52px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 820px;
+      margin: 18px 0 0;
+      color: #d5dee6;
+      font-size: 18px;
+    }
+
+    main {
+      padding: 30px 0 64px;
+    }
+
+    nav {
+      margin: -26px auto 28px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 10px 28px rgba(16, 32, 39, .08);
+      padding: 18px;
+    }
+
+    nav strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+
+    nav a {
+      display: inline-block;
+      margin: 4px 12px 4px 0;
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    section {
+      margin: 22px 0;
+      padding: 26px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 26px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    ul,
+    ol {
+      padding-left: 22px;
+      margin: 10px 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 14px;
+      background: #ffffff;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f6;
+      font-weight: 800;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: var(--code);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .92em;
+    }
+
+    pre {
+      overflow: auto;
+      margin: 14px 0;
+      padding: 16px;
+      background: #17212b;
+      color: #e8edf2;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .step {
+      min-height: 116px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+    }
+
+    .step span {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      margin-bottom: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 800;
+      line-height: 28px;
+      text-align: center;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      margin: 4px 6px 4px 0;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #07564f;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .note,
+    .warning,
+    .danger {
+      margin: 16px 0;
+      padding: 14px 16px;
+      border-radius: 8px;
+      border: 1px solid;
+    }
+
+    .note {
+      background: var(--accent-soft);
+      border-color: #a8d7cf;
+    }
+
+    .warning {
+      background: var(--warn-soft);
+      border-color: #efd381;
+    }
+
+    .danger {
+      background: var(--danger-soft);
+      border-color: #f3aaa2;
+    }
+
+    .review-mock {
+      display: grid;
+      grid-template-columns: 140px 1fr 1fr 210px;
+      gap: 12px;
+      align-items: stretch;
+      margin-top: 14px;
+    }
+
+    .mock-cell {
+      min-height: 150px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 12px;
+    }
+
+    .image-box {
+      display: grid;
+      min-height: 190px;
+      place-items: center;
+      border: 1px dashed #9aa6b2;
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .button {
+      padding: 8px 10px;
+      border: 1px solid #b8c2cc;
+      border-radius: 6px;
+      background: #ffffff;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px 0 0;
+    }
+
+    @media (max-width: 900px) {
+      .grid,
+      .steps,
+      .review-mock {
+        grid-template-columns: 1fr;
+      }
+
+      section {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">PrintNGo · 项目审核稿</p>
+      <h1>供应商产品页到原创电商服装图的本地工作流</h1>
+      <p class="subtitle">
+        第一版目标是先把流程、目录、数据、页面和执行阶段定清楚。确认后再开始写抓取、生成、审核和重生功能的代码。
+      </p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <nav>
+      <strong>目录</strong>
+      <a href="#goal">项目目标</a>
+      <a href="#workflow">核心流程</a>
+      <a href="#structure">目录结构</a>
+      <a href="#data">数据设计</a>
+      <a href="#modules">功能模块</a>
+      <a href="#prompts">图片生成原则</a>
+      <a href="#review">审核页面</a>
+      <a href="#phases">执行阶段</a>
+      <a href="#risks">合规与风险</a>
+      <a href="#acceptance">验收标准</a>
+    </nav>
+
+    <section id="goal">
+      <h2>1. 项目目标</h2>
+      <p>
+        PrintNGo 需要一个本地 Python 工具，把供应商产品页转成可审核、可重生、可导出的原创电商服装图片。
+        系统不直接复制供应商图片，而是从供应商页面和图片中提取商品属性，再生成新的图片表达。
+      </p>
+      <div class="note">
+        <strong>第一阶段只做最小可用链路：</strong>
+        输入一个供应商 URL，保存原图和产品信息，生成一张原创图，生成本地审核 HTML，并支持按产品 ID 重新生成。
+      </div>
+      <p>
+        项目默认运行在本机，不直接上传到生产网站。所有原图、生成图、审核状态先保存在本地文件夹和 SQLite 数据库中。
+      </p>
+    </section>
+
+    <section id="workflow">
+      <h2>2. 核心流程</h2>
+      <div class="steps">
+        <div class="step">
+          <span>1</span>
+          <strong>批量抓取</strong>
+          从一个 URL 或 <code>urls.txt</code> 读取供应商产品页。
+        </div>
+        <div class="step">
+          <span>2</span>
+          <strong>特征提取</strong>
+          提取产品名、品牌、款式、颜色、面料、版型和主图。
+        </div>
+        <div class="step">
+          <span>3</span>
+          <strong>原创生成</strong>
+          用商品特征生成新的电商服装图。
+        </div>
+        <div class="step">
+          <span>4</span>
+          <strong>人工审核</strong>
+          在本地 HTML 或网页中对比原图和生成图。
+        </div>
+        <div class="step">
+          <span>5</span>
+          <strong>单张重生</strong>
+          按产品 ID 带备注重新生成，不影响其他产品。
+        </div>
+      </div>
+      <pre><code>供应商 URL
+  -> scrape.py 抓取页面和图片
+  -> products.db 保存元数据
+  -> generate.py 生成原创图
+  -> make_review_html.py 生成审核页
+  -> regenerate.py 按 ID 重生
+  -> export_approved.py 导出通过图片和 CSV</code></pre>
+    </section>
+
+    <section id="structure">
+      <h2>3. 建议目录结构</h2>
+      <pre><code>printngo/
+  app/
+    db.py
+    scrape.py
+    generate.py
+    regenerate.py
+    make_review_html.py
+    export_approved.py
+    prompts.py
+    server.py
+  data/
+    originals/
+    generated/
+    approved/
+  docs/
+    printngo-workflow-plan.html
+  templates/
+    review.html
+  products.db
+  requirements.txt
+  .env.example
+  README.md</code></pre>
+      <p>
+        当前先创建 <code>docs/printngo-workflow-plan.html</code> 作为审核稿。代码文件会在你确认方案后再生成。
+      </p>
+    </section>
+
+    <section id="data">
+      <h2>4. 数据设计</h2>
+      <p>第一版只需要一张 <code>products</code> 表，后续如果要保留多次生成历史，可以增加 <code>generations</code> 表。</p>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>说明</th>
+            <th>示例</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>本地产品编号</td><td><code>12</code></td></tr>
+          <tr><td><code>supplier_url</code></td><td>供应商产品页</td><td><code>https://supplier.com/product/xxx</code></td></tr>
+          <tr><td><code>product_name</code></td><td>产品名称</td><td><code>Gildan 64000L Women's T-Shirt</code></td></tr>
+          <tr><td><code>brand</code></td><td>品牌</td><td><code>Gildan</code></td></tr>
+          <tr><td><code>style_number</code></td><td>款号</td><td><code>64000L</code></td></tr>
+          <tr><td><code>category</code></td><td>商品分类</td><td><code>women's t-shirt</code></td></tr>
+          <tr><td><code>color</code></td><td>颜色</td><td><code>royal blue</code></td></tr>
+          <tr><td><code>description</code></td><td>页面描述或规格</td><td><code>4.5 oz ring spun cotton</code></td></tr>
+          <tr><td><code>original_image_url</code></td><td>供应商主图 URL</td><td><code>https://...</code></td></tr>
+          <tr><td><code>original_image_path</code></td><td>本地原图路径</td><td><code>data/originals/000012.png</code></td></tr>
+          <tr><td><code>generated_image_path</code></td><td>本地生成图路径</td><td><code>data/generated/000012_v1.png</code></td></tr>
+          <tr><td><code>generation_prompt</code></td><td>最近一次生成提示词</td><td>保留商品属性，替换人物和构图</td></tr>
+          <tr><td><code>status</code></td><td>处理状态</td><td><code>generated</code></td></tr>
+          <tr><td><code>review_note</code></td><td>人工审核备注</td><td>袖子太长，领口不够圆</td></tr>
+          <tr><td><code>quality_score</code></td><td>后续可选质量评分</td><td><code>86</code></td></tr>
+          <tr><td><code>created_at</code></td><td>创建时间</td><td><code>2026-05-20 13:00:00</code></td></tr>
+          <tr><td><code>updated_at</code></td><td>更新时间</td><td><code>2026-05-20 13:10:00</code></td></tr>
+        </tbody>
+      </table>
+      <h3>状态枚举</h3>
+      <p>
+        <span class="badge">scraped</span>
+        <span class="badge">pending_generation</span>
+        <span class="badge">generated</span>
+        <span class="badge">approved</span>
+        <span class="badge">rejected</span>
+        <span class="badge">regenerating</span>
+        <span class="badge">failed</span>
+      </p>
+    </section>
+
+    <section id="modules">
+      <h2>5. 功能模块</h2>
+      <div class="grid">
+        <div>
+          <h3>URL 导入与抓取</h3>
+          <ul>
+            <li>支持命令行输入单个 URL。</li>
+            <li>后续支持 <code>urls.txt</code> 批量导入。</li>
+            <li>优先用 Playwright 处理 JS 动态页面。</li>
+            <li>抓取标题、主图、描述、颜色、品牌和款号。</li>
+            <li>把主图保存到 <code>data/originals/</code>。</li>
+          </ul>
+        </div>
+        <div>
+          <h3>图片特征提取</h3>
+          <ul>
+            <li>识别服装类型、领口、袖长、下摆、肩线和版型。</li>
+            <li>识别颜色、面料观感、褶皱和穿着效果。</li>
+            <li>把结果保存为结构化 JSON，供生成 prompt 使用。</li>
+          </ul>
+        </div>
+        <div>
+          <h3>原创图片生成</h3>
+          <ul>
+            <li>根据商品特征生成新的电商图。</li>
+            <li>保留商品属性，不保留原图摄影表达。</li>
+            <li>保存生成图到 <code>data/generated/</code>。</li>
+            <li>记录 prompt、时间、状态和错误信息。</li>
+          </ul>
+        </div>
+        <div>
+          <h3>审核与重生</h3>
+          <ul>
+            <li>审核页展示原图和生成图对比。</li>
+            <li>可通过、拒绝、备注和重新生成。</li>
+            <li>重生只处理指定产品 ID。</li>
+            <li>审核通过后导出到 <code>data/approved/</code>。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="prompts">
+      <h2>6. 图片生成原则</h2>
+      <p>生成图的核心原则是：保留商品，不保留供应商图片的版权表达。</p>
+      <h3>允许保留</h3>
+      <ul>
+        <li>衣服类型，例如短袖 T 恤、Polo、帽衫、背心。</li>
+        <li>领口形状、袖长、肩线、下摆、版型松紧。</li>
+        <li>颜色、面料质感、自然褶皱、穿着效果。</li>
+        <li>商品规格中的品牌、款号和材质信息，前提是商品本身允许销售和展示。</li>
+      </ul>
+      <h3>必须改变</h3>
+      <ul>
+        <li>模特身份、脸、发型和明显个人特征。</li>
+        <li>完全相同的姿势、构图、裁切、灯光和背景。</li>
+        <li>供应商水印、页面文字、摄影棚风格和图片后期效果。</li>
+      </ul>
+      <h3>基础 prompt 模板</h3>
+      <pre><code>Create an original high-resolution e-commerce apparel photo of [garment type]
+worn by a new model. Preserve the garment attributes: [fit], [neckline],
+[sleeve length], [hem], [color], [fabric texture], and realistic fabric folds.
+Use a different model, different pose, different lighting setup, and different
+composition from the supplier reference. Use a clean white or light gray studio
+background, realistic proportions, no text overlays, no watermarks, and no extra logos.
+Do not copy the exact model, face, pose, lighting, background, crop, or composition
+from the supplier image.</code></pre>
+      <h3>备注重生模板</h3>
+      <pre><code>Previous generation issue: [review note].
+Regenerate the product image while correcting that issue.
+Keep the same product color, garment type, fit, neckline, sleeve length,
+fabric texture, and e-commerce product-photo quality.</code></pre>
+    </section>
+
+    <section id="review">
+      <h2>7. 审核页面设计</h2>
+      <p>第一版可以生成静态 HTML。第二版再升级为 FastAPI 网页按钮。</p>
+      <div class="review-mock">
+        <div class="mock-cell">
+          <strong>#12</strong>
+          <p>Gildan 64000L Women's T-Shirt</p>
+          <p><code>generated</code></p>
+        </div>
+        <div class="mock-cell">
+          <strong>供应商原图</strong>
+          <div class="image-box">original image</div>
+        </div>
+        <div class="mock-cell">
+          <strong>生成图</strong>
+          <div class="image-box">generated image</div>
+        </div>
+        <div class="mock-cell">
+          <strong>审核操作</strong>
+          <p>备注：袖子太长，衣服要更贴身。</p>
+          <div class="button-row">
+            <span class="button">通过</span>
+            <span class="button">不通过</span>
+            <span class="button">重新生成</span>
+            <span class="button">查看大图</span>
+          </div>
+        </div>
+      </div>
+      <h3>后续 FastAPI 路由</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>路由</th>
+            <th>用途</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>GET /review</code></td><td>展示待审核产品列表。</td></tr>
+          <tr><td><code>POST /approve/{id}</code></td><td>标记通过，并准备导出。</td></tr>
+          <tr><td><code>POST /reject/{id}</code></td><td>标记不通过。</td></tr>
+          <tr><td><code>POST /regenerate/{id}</code></td><td>带备注重生指定图片。</td></tr>
+          <tr><td><code>GET /image/original/{id}</code></td><td>读取原图。</td></tr>
+          <tr><td><code>GET /image/generated/{id}</code></td><td>读取生成图。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="phases">
+      <h2>8. 执行阶段</h2>
+      <h3>阶段 1：本地最小可用版本</h3>
+      <ul>
+        <li>创建 Python 项目结构、依赖文件和数据库初始化。</li>
+        <li>实现单 URL 抓取和图片下载。</li>
+        <li>实现单 ID 图片生成。</li>
+        <li>生成本地审核 HTML。</li>
+        <li>实现单 ID 备注重生。</li>
+      </ul>
+      <pre><code>python app/scrape.py "https://supplier.com/product/xxx"
+python app/generate.py --id 1
+python app/make_review_html.py
+python app/regenerate.py --id 1 --note "领口不够圆，袖子太长"
+python app/export_approved.py</code></pre>
+
+      <h3>阶段 2：批量 URL</h3>
+      <ul>
+        <li>支持 <code>urls.txt</code> 每行一个产品页。</li>
+        <li>增加失败重试和错误记录。</li>
+        <li>支持只生成 <code>pending_generation</code> 状态的产品。</li>
+      </ul>
+
+      <h3>阶段 3：网页审核</h3>
+      <ul>
+        <li>用 FastAPI 和 Jinja2 做本地审核页面。</li>
+        <li>按钮直接调用通过、拒绝和重生接口。</li>
+        <li>支持备注输入和大图预览。</li>
+      </ul>
+
+      <h3>阶段 4：质量评分</h3>
+      <ul>
+        <li>自动检查颜色、领口、袖长、版型和多余 logo。</li>
+        <li>保存 <code>quality_score</code> 和质量备注。</li>
+        <li>低分图片自动进入待重生状态。</li>
+      </ul>
+
+      <h3>阶段 5：导出和对接</h3>
+      <ul>
+        <li>通过图片复制到 <code>data/approved/</code>。</li>
+        <li>导出 CSV：产品名、款号、颜色、图片路径。</li>
+        <li>后续可对接商品后台或电商平台。</li>
+      </ul>
+    </section>
+
+    <section id="risks">
+      <h2>9. 合规与风险</h2>
+      <div class="danger">
+        <strong>禁止目标：</strong>
+        这个工具不能用来一比一仿制供应商图片、复刻模特、复刻摄影构图，或移除水印后当作自有图片使用。
+      </div>
+      <ul>
+        <li>供应商网站条款需要单独确认，尤其是自动抓取、图片下载和内部参考使用。</li>
+        <li>原图只作为商品属性参考，不作为最终商业图片直接发布。</li>
+        <li>生成 prompt 默认加入“不复制原模特、姿势、灯光、背景、构图”的限制。</li>
+        <li>如果供应商图片带商标、印花或版权图案，需要人工确认是否有销售授权。</li>
+        <li>正式实现前，需要再次核对当前 OpenAI 图片生成、编辑和视觉理解 API 的最新参数、模型名称和限制。</li>
+      </ul>
+      <div class="warning">
+        <strong>建议保留审核记录：</strong>
+        保存原图路径、生成 prompt、生成时间、审核备注和通过人，方便后续追溯每张图的来源和修改原因。
+      </div>
+    </section>
+
+    <section id="acceptance">
+      <h2>10. 第一版验收标准</h2>
+      <ol>
+        <li>输入一个供应商 URL 后，系统能保存产品名、原图 URL、本地原图路径和基础描述。</li>
+        <li>系统能为指定产品 ID 生成一张原创电商服装图，并保存到 <code>data/generated/</code>。</li>
+        <li>审核 HTML 能展示产品编号、产品名、原图、生成图、状态、prompt 和备注。</li>
+        <li>系统能按产品 ID 带备注重新生成一张图片，不影响其他产品。</li>
+        <li>审核通过的图片可以导出到 <code>data/approved/</code>，并生成 CSV。</li>
+      </ol>
+      <p>
+        这份文档确认后，下一步会开始生成项目代码、依赖文件、数据库初始化脚本和第一组命令行工具。
+      </p>
+    </section>
+
+    <p class="footer">PrintNGo 项目文档审核稿 · 生成日期：2026-05-20</p>
+  </main>
+</body>
+</html>

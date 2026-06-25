@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PrintNGo · Supplier images & ChatGPT prompts</title>
+  <style>
+    :root {
+      --ink: #18212b;
+      --muted: #667380;
+      --line: #d7dee7;
+      --paper: #f5f7fa;
+      --panel: #ffffff;
+      --accent: #087f5b;
+      --accent-soft: #e6f6ef;
+      --danger: #b42318;
+      --danger-soft: #fee4df;
+      --code: #eef2f6;
+      --hover: #f3f6fa;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      padding: 26px 28px;
+      background: #102027;
+      color: #fff;
+    }
+
+    header h1 { margin: 0; font-size: 24px; }
+    header p { margin: 6px 0 0; color: #d6e2ea; font-size: 14px; }
+
+    main {
+      width: min(1440px, calc(100% - 32px));
+      margin: 22px auto 48px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+      margin: 0 0 18px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+    }
+
+    .image-link, .image-missing {
+      display: grid;
+      min-height: 360px;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .image-missing { color: var(--muted); font-weight: 700; padding: 20px; text-align: center; }
+
+    .image-link img {
+      display: block;
+      width: 100%;
+      max-height: 480px;
+      object-fit: contain;
+    }
+
+    .body { min-width: 0; }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .meta strong { color: var(--ink); font-weight: 700; }
+
+    .title {
+      margin: 0 0 2px;
+      font-size: 17px;
+      line-height: 1.3;
+    }
+
+    .subtitle {
+      margin: 0 0 6px;
+      font-size: 13px;
+      color: #888;
+      letter-spacing: 0.02em;
+    }
+
+    .seq-num {
+      color: #e02020;
+      font-weight: 700;
+      font-size: 15px;
+      margin-right: 4px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .pill.failed { background: var(--danger-soft); color: var(--danger); }
+
+    .ref-title {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 800;
+    }
+
+    .gen-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 14px 0 10px;
+    }
+
+    .gen-cell {
+      position: relative;
+      display: block;
+      aspect-ratio: 3 / 4;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .gen-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .gen-cell.empty {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .gen-cell .gen-label {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      padding: 3px 8px;
+      background: rgba(16, 32, 39, 0.78);
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    .gen-cell.empty .gen-label {
+      position: static;
+      background: transparent;
+      color: var(--muted);
+      padding: 0 0 6px;
+    }
+
+    .gen-cell .gen-empty {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .prompts-toggle {
+      margin-top: 8px;
+      border-top: 1px dashed var(--line);
+      padding-top: 10px;
+    }
+
+    .prompts-toggle > summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+
+    .prompts-toggle > summary:hover { color: var(--ink); }
+
+    .views {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .view-block {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fafbfc;
+      overflow: hidden;
+    }
+
+    .view-block > summary {
+      list-style: none;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: 22px 200px 1fr auto 60px;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      transition: background 100ms;
+    }
+
+    .view-block > summary::-webkit-details-marker { display: none; }
+    .view-block > summary:hover { background: var(--hover); }
+    .view-block[open] > summary { background: #eef2f6; border-bottom: 1px solid var(--line); }
+
+    .view-index {
+      width: 22px; height: 22px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .view-label {
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: .01em;
+    }
+
+    .view-summary {
+      color: var(--muted);
+      font-size: 12.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .view-copy {
+      padding: 6px 14px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .view-copy:active { transform: translateY(1px); }
+
+    .copied {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 120ms;
+      text-align: right;
+    }
+
+    .copied.show { opacity: 1; }
+
+    pre.prompt {
+      margin: 0;
+      max-height: 480px;
+      overflow: auto;
+      padding: 14px 16px;
+      background: #17212b;
+      color: #edf2f7;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .error {
+      margin: 10px 0;
+      padding: 10px 12px;
+      border-left: 3px solid var(--danger);
+      background: var(--danger-soft);
+      color: var(--danger);
+      font-size: 13px;
+      border-radius: 4px;
+    }
+
+    a { color: var(--accent); }
+
+    .empty {
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--muted);
+      font-weight: 700;
+      text-align: center;
+    }
+
+    /* ── Diverse models section ──────────────────────────────── */
+    .diverse-section {
+      margin: 0 0 28px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .diverse-section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: #102027;
+      color: #fff;
+    }
+
+    .diverse-section-header h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .diverse-section-header p {
+      margin: 0;
+      font-size: 13px;
+      color: #d6e2ea;
+    }
+
+    .diverse-grid {
+      display: grid;
+      grid-template-columns: 200px repeat(2, 1fr);
+      gap: 0;
+    }
+
+    .diverse-grid-head {
+      display: grid;
+      grid-template-columns: 200px repeat(2, 1fr);
+      background: #eef2f6;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .diverse-grid-head span {
+      padding: 8px 14px;
+    }
+
+    .diverse-row {
+      display: contents;
+    }
+
+    .diverse-row:not(:last-child) .diverse-cell {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .diverse-cell {
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .diverse-cell.product-name {
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .diverse-cell.product-name span {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 12px;
+    }
+
+    .diverse-thumb {
+      display: block;
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+    }
+
+    .diverse-thumb-link {
+      display: block;
+      text-decoration: none;
+    }
+
+    .diverse-thumb-caption {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 880px) {
+      .row { grid-template-columns: 1fr; }
+      .image-link, .image-missing { min-height: 280px; }
+      .view-block > summary {
+        grid-template-columns: 22px 1fr auto;
+      }
+      .view-summary { display: none; }
+      .copied { display: none; }
+      .diverse-grid,
+      .diverse-grid-head { grid-template-columns: 1fr 1fr; }
+      .diverse-cell.product-name { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PrintNGo · Supplier images & ChatGPT prompts</h1>
+    <p>{{ count }} products · {{ root }} · 6 prompts per row → 6 separate Shopify images. Open each view, click <strong>Copy</strong>, paste into ChatGPT with the supplier image attached.</p>
+  </header>
+  <main>
+    {{ diverse_section }}
+    {{ rows }}
+  </main>
+  <script>
+    document.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-copy]");
+      if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const targetId = button.getAttribute("data-copy");
+      const pre = document.getElementById(targetId);
+      if (!pre) return;
+
+      try {
+        await navigator.clipboard.writeText(pre.textContent);
+      } catch (err) {
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand("copy");
+        sel.removeAllRanges();
+      }
+
+      const summary = button.closest("summary");
+      const flag = summary && summary.querySelector(".copied");
+      if (flag) {
+        flag.classList.add("show");
+        setTimeout(() => flag.classList.remove("show"), 1400);
+      }
+    });
+  </script>
+</body>
+</html>

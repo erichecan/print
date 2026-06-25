@@ -1,0 +1,3196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrintNGO Plus 独立站增长全攻略</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg-deep: #060E1E;
+  --bg-card: #0D1B2E;
+  --bg-card2: #122035;
+  --blue-primary: #1E3A5F;
+  --blue-light: #3B82F6;
+  --blue-glow: #60A5FA;
+  --orange: #F97316;
+  --orange-light: #FB923C;
+  --orange-glow: #FDBA74;
+  --green: #22C55E;
+  --green-dark: #166534;
+  --red: #EF4444;
+  --yellow: #EAB308;
+  --text-white: #F1F5F9;
+  --text-muted: #94A3B8;
+  --text-dim: #64748B;
+  --border: rgba(59,130,246,0.2);
+  --border-orange: rgba(249,115,22,0.3);
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  background: var(--bg-deep);
+  color: var(--text-white);
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  line-height: 1.6;
+}
+
+/* ===== TOP NAV ===== */
+.topnav{
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(6,14,30,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 4px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.topnav a{
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 14px 12px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.topnav a:hover{ color: var(--orange); border-color: var(--orange); }
+
+/* ===== HERO ===== */
+.hero{
+  background: linear-gradient(135deg, #060E1E 0%, #0D1B2E 50%, #0A1628 100%);
+  padding: 80px 24px 60px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.hero::before{
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 20% 50%, rgba(59,130,246,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 30%, rgba(249,115,22,0.06) 0%, transparent 50%);
+}
+.hero-badge{
+  display: inline-block;
+  background: rgba(249,115,22,0.15);
+  border: 1px solid var(--border-orange);
+  color: var(--orange-light);
+  font-size: 12px; font-weight: 600;
+  padding: 4px 14px; border-radius: 20px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 20px;
+  position: relative;
+}
+.hero h1{
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 800; line-height: 1.1;
+  background: linear-gradient(135deg, #F1F5F9 0%, #60A5FA 50%, #F97316 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 16px; position: relative;
+}
+.hero .sub{
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--text-muted); max-width: 600px; margin: 0 auto 32px;
+  position: relative;
+}
+.hero-meta{
+  display: flex; gap: 32px; justify-content: center; flex-wrap: wrap;
+  position: relative;
+}
+.hero-meta span{
+  font-size: 13px; color: var(--text-muted);
+}
+.hero-meta strong{ color: var(--orange-light); }
+
+/* ===== LAYOUT ===== */
+.container{ max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+/* ===== SECTIONS ===== */
+.section{
+  padding: 64px 0;
+  border-bottom: 1px solid var(--border);
+}
+.section-label{
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(249,115,22,0.1);
+  border: 1px solid var(--border-orange);
+  color: var(--orange);
+  font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: 4px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.section-title{
+  font-size: clamp(22px, 4vw, 36px);
+  font-weight: 800; margin-bottom: 8px;
+  color: var(--text-white);
+}
+.section-desc{
+  font-size: 15px; color: var(--text-muted);
+  max-width: 680px; margin-bottom: 36px;
+}
+
+/* ===== CARDS ===== */
+.card{
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.card-grid{
+  display: grid; gap: 16px;
+}
+.card-grid-2{ grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.card-grid-3{ grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+/* ===== TRAFFIC MATRIX ===== */
+.matrix-svg-wrap{
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+/* ===== CHANNEL CARDS ===== */
+.channel-card{
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  border-left: 3px solid var(--blue-light);
+}
+.channel-card.orange{ border-left-color: var(--orange); }
+.channel-card.green{ border-left-color: var(--green); }
+.channel-card h3{
+  font-size: 16px; font-weight: 700;
+  margin-bottom: 8px; color: var(--text-white);
+}
+.channel-card p{ font-size: 14px; color: var(--text-muted); }
+
+/* ===== POLICY RESEARCH ===== */
+.policy-box{
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.policy-box.allowed{
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.3);
+}
+.policy-box.restricted{
+  background: rgba(234,179,8,0.08);
+  border: 1px solid rgba(234,179,8,0.3);
+}
+.policy-box.risky{
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.3);
+}
+.policy-box h3{
+  font-size: 15px; font-weight: 700; margin-bottom: 10px;
+}
+.policy-box.allowed h3{ color: var(--green); }
+.policy-box.restricted h3{ color: var(--yellow); }
+.policy-box.risky h3{ color: var(--red); }
+
+.screenshot-wrap{
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin: 20px 0;
+}
+.screenshot-wrap img{
+  width: 100%; display: block;
+}
+.screenshot-caption{
+  background: var(--bg-card2);
+  padding: 10px 14px;
+  font-size: 12px; color: var(--text-dim);
+  border-top: 1px solid var(--border);
+}
+
+/* ===== HOW-TO STEPS ===== */
+.steps{
+  display: flex; flex-direction: column; gap: 0;
+}
+.step{
+  display: flex; gap: 20px;
+  position: relative;
+}
+.step:not(:last-child)::after{
+  content: '';
+  position: absolute;
+  left: 19px; top: 44px;
+  width: 2px; height: calc(100% - 20px);
+  background: var(--border);
+}
+.step-num{
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  background: var(--orange);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800;
+  color: white; z-index: 1;
+}
+.step-body{
+  flex: 1; padding-bottom: 28px;
+}
+.step-body h4{
+  font-size: 16px; font-weight: 700;
+  margin-bottom: 8px; color: var(--text-white);
+  padding-top: 8px;
+}
+.step-body p, .step-body li{
+  font-size: 14px; color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.step-body ul{ padding-left: 16px; }
+.step-body .tip{
+  margin-top: 10px;
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 13px; color: var(--blue-glow);
+}
+
+/* ===== TIMELINE ===== */
+.timeline{
+  display: flex; flex-direction: column; gap: 0;
+}
+.timeline-item{
+  display: flex; gap: 20px;
+  position: relative;
+}
+.timeline-item:not(:last-child)::after{
+  content: '';
+  position: absolute;
+  left: 19px; top: 44px;
+  width: 2px; height: calc(100% - 20px);
+  background: linear-gradient(to bottom, var(--orange), var(--blue-light));
+}
+.timeline-dot{
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; z-index: 1;
+}
+.timeline-dot.phase1{ background: var(--orange); color: white; }
+.timeline-dot.phase2{ background: var(--blue-light); color: white; }
+.timeline-dot.phase3{ background: var(--green); color: white; }
+.timeline-body{ flex: 1; padding-bottom: 32px; }
+.timeline-body h3{
+  font-size: 18px; font-weight: 700;
+  margin-bottom: 4px; padding-top: 8px;
+}
+.timeline-body .period{
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.phase1-color{ color: var(--orange); }
+.phase2-color{ color: var(--blue-light); }
+.phase3-color{ color: var(--green); }
+
+/* ===== TABLE ===== */
+.data-table{
+  width: 100%; border-collapse: collapse;
+  font-size: 14px;
+}
+.data-table th{
+  background: var(--bg-card2);
+  color: var(--text-muted);
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 12px 16px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td{
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-white);
+}
+.data-table tr:last-child td{ border-bottom: none; }
+.data-table tr:hover td{ background: rgba(59,130,246,0.04); }
+.badge{
+  display: inline-block;
+  padding: 2px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-green{ background: rgba(34,197,94,0.15); color: var(--green); }
+.badge-yellow{ background: rgba(234,179,8,0.15); color: var(--yellow); }
+.badge-red{ background: rgba(239,68,68,0.15); color: var(--red); }
+.badge-blue{ background: rgba(59,130,246,0.15); color: var(--blue-glow); }
+
+/* ===== CHART ===== */
+.chart-container{
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+
+/* ===== CHECKLIST ===== */
+.checklist{ list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.checklist li{
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 14px; color: var(--text-muted);
+}
+.checklist li .ico{
+  flex-shrink: 0; margin-top: 2px;
+  font-size: 16px;
+}
+
+/* ===== ALERT BOX ===== */
+.alert{
+  border-radius: 8px; padding: 14px 18px;
+  font-size: 14px; margin: 16px 0;
+  display: flex; gap: 12px;
+}
+.alert-warn{
+  background: rgba(234,179,8,0.1);
+  border: 1px solid rgba(234,179,8,0.3);
+  color: #fde68a;
+}
+.alert-info{
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.2);
+  color: var(--blue-glow);
+}
+.alert .ico{ flex-shrink: 0; font-size: 18px; }
+
+
+/* ===== PRODUCT TOOLS ===== */
+.tool-card{
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.tool-card h4{
+  font-size: 15px; font-weight: 700;
+  margin-bottom: 6px; color: var(--text-white);
+}
+.tool-card .tag{
+  display: inline-block;
+  background: rgba(249,115,22,0.12);
+  border: 1px solid var(--border-orange);
+  color: var(--orange-light);
+  font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px;
+  letter-spacing: 0.06em; margin-bottom: 8px;
+}
+.tool-card p{ font-size: 13px; color: var(--text-muted); }
+
+/* ===== BUDGET ===== */
+.budget-plan{
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.budget-plan h3{
+  font-size: 16px; font-weight: 700;
+  margin-bottom: 4px;
+}
+.budget-total{
+  font-size: 28px; font-weight: 800;
+  margin: 8px 0 16px;
+}
+.budget-total.orange{ color: var(--orange); }
+.budget-total.blue{ color: var(--blue-light); }
+
+/* ===== FOOTER ===== */
+.footer{
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  padding: 32px 24px;
+  text-align: center;
+}
+.footer p{ font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+
+/* ===== RESPONSIVE ===== */
+@media(max-width: 640px){
+  .hero{ padding: 48px 16px 40px; }
+  .section{ padding: 40px 0; }
+  .container{ padding: 0 16px; }
+}
+  /* ===== ADS TABS ===== */
+  .ads-tabs { display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+  .ads-tab-btn { padding:10px 24px; border-radius:8px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-muted); cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s; }
+  .ads-tab-btn.active { background:var(--blue-primary); border-color:var(--blue-light); color:var(--text-white); }
+  .ads-tab-btn:hover:not(.active) { border-color:var(--blue-glow); color:var(--text-white); }
+  .ads-tab-panel { display:none; }
+  .ads-tab-panel.active { display:block; }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <a href="#matrix">流量矩阵</a>
+  <a href="#insert-card">平台引流</a>
+  <a href="#seo">SEO基础</a>
+  <a href="#seo-advanced">SEO进阶</a>
+  <a href="#ads">付费广告</a>
+  <a href="#social">社媒运营</a>
+  <a href="#email">邮件营销</a>
+  <a href="#content">内容联动</a>
+  <a href="#catalog">商品管理</a>
+  <a href="#forecast">增长预测</a>
+  <a href="#budget">费用预算</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">独立站增长全攻略</div>
+  <h1>PrintNGO Plus<br>流量矩阵战略报告</h1>
+  <p class="sub">让独立站 + Temu + Amazon 形成黄金三角，把平台流量沉淀到你自己的品牌</p>
+  <div class="hero-meta">
+    <span>网站：<strong>printngoplus.com</strong></span>
+    <span>市场：<strong>加拿大（多伦多）</strong></span>
+    <span>报告日期：<strong>2026年6月</strong></span>
+  </div>
+</div>
+
+<!-- ===== SECTION 1: TRAFFIC MATRIX ===== -->
+<section class="section" id="matrix">
+<div class="container">
+  <div class="section-label">核心战略</div>
+  <h2 class="section-title">流量矩阵是什么？</h2>
+  <p class="section-desc">你现在有 Temu、Amazon 和独立站三个阵地，但它们各自独立运作。流量矩阵的目标，是让三个阵地的买家都认识你的品牌，最终回到独立站下单——因为独立站的客户是你的，平台的客户是平台的。</p>
+
+  <!-- SVG Diagram -->
+  <div class="matrix-svg-wrap">
+    <svg viewBox="0 0 700 420" width="100%" style="max-width:700px">
+      <defs>
+        <marker id="arrowB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#3B82F6"/>
+        </marker>
+        <marker id="arrowO" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#F97316"/>
+        </marker>
+        <marker id="arrowG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#22C55E"/>
+        </marker>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+      </defs>
+
+      <!-- Center hub -->
+      <ellipse cx="350" cy="210" rx="90" ry="55" fill="#1E3A5F" stroke="#3B82F6" stroke-width="2"/>
+      <text x="350" y="202" text-anchor="middle" fill="#F1F5F9" font-size="13" font-weight="bold">PrintNGO Plus</text>
+      <text x="350" y="220" text-anchor="middle" fill="#F97316" font-size="11" font-weight="600">独立站总部</text>
+      <text x="350" y="236" text-anchor="middle" fill="#94A3B8" font-size="10">你的品牌资产</text>
+
+      <!-- Temu node -->
+      <rect x="48" y="60" width="120" height="64" rx="10" fill="#0D1B2E" stroke="#F97316" stroke-width="1.5"/>
+      <text x="108" y="86" text-anchor="middle" fill="#FDBA74" font-size="13" font-weight="bold">Temu</text>
+      <text x="108" y="104" text-anchor="middle" fill="#94A3B8" font-size="10">20+ 账号店群</text>
+      <line x1="168" y1="92" x2="258" y2="175" stroke="#F97316" stroke-width="1.5" marker-end="url(#arrowO)" stroke-dasharray="5,3"/>
+      <text x="195" y="148" fill="#F97316" font-size="9" transform="rotate(-35 195 148)">包裹卡片引流</text>
+
+      <!-- Amazon node -->
+      <rect x="532" y="60" width="120" height="64" rx="10" fill="#0D1B2E" stroke="#FDBA74" stroke-width="1.5"/>
+      <text x="592" y="86" text-anchor="middle" fill="#FDBA74" font-size="13" font-weight="bold">Amazon</text>
+      <text x="592" y="104" text-anchor="middle" fill="#94A3B8" font-size="10">20+ 账号店群</text>
+      <line x1="532" y1="95" x2="442" y2="177" stroke="#F97316" stroke-width="1.5" marker-end="url(#arrowO)" stroke-dasharray="5,3"/>
+      <text x="476" y="148" fill="#F97316" font-size="9" transform="rotate(35 476 148)">品牌主页引流</text>
+
+      <!-- Google SEO node -->
+      <rect x="48" y="298" width="120" height="64" rx="10" fill="#0D1B2E" stroke="#22C55E" stroke-width="1.5"/>
+      <text x="108" y="324" text-anchor="middle" fill="#86EFAC" font-size="12" font-weight="bold">Google 搜索</text>
+      <text x="108" y="340" text-anchor="middle" fill="#94A3B8" font-size="10">SEO 自然流量</text>
+      <text x="108" y="354" text-anchor="middle" fill="#94A3B8" font-size="9">本地客户主动找你</text>
+      <line x1="168" y1="328" x2="260" y2="248" stroke="#22C55E" stroke-width="1.5" marker-end="url(#arrowG)"/>
+
+      <!-- Social Media node -->
+      <rect x="532" y="298" width="120" height="64" rx="10" fill="#0D1B2E" stroke="#60A5FA" stroke-width="1.5"/>
+      <text x="592" y="324" text-anchor="middle" fill="#93C5FD" font-size="12" font-weight="bold">社交媒体</text>
+      <text x="592" y="340" text-anchor="middle" fill="#94A3B8" font-size="10">Instagram / TikTok</text>
+      <text x="592" y="354" text-anchor="middle" fill="#94A3B8" font-size="9">内容引发兴趣</text>
+      <line x1="532" y1="328" x2="440" y2="250" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+      <!-- Paid Ads node -->
+      <rect x="290" y="345" width="120" height="55" rx="10" fill="#0D1B2E" stroke="#A78BFA" stroke-width="1.5"/>
+      <text x="350" y="370" text-anchor="middle" fill="#C4B5FD" font-size="12" font-weight="bold">Google/Facebook</text>
+      <text x="350" y="386" text-anchor="middle" fill="#94A3B8" font-size="10">付费广告精准投放</text>
+      <line x1="350" y1="345" x2="350" y2="265" stroke="#A78BFA" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+      <!-- Labels -->
+      <text x="350" y="28" text-anchor="middle" fill="#64748B" font-size="11">★ 所有渠道最终引导客户到独立站 ★</text>
+      <text x="350" y="412" text-anchor="middle" fill="#64748B" font-size="10">独立站客户数据归你所有，不怕平台封号</text>
+    </svg>
+  </div>
+
+  <!-- Three pillars -->
+  <div class="card-grid card-grid-3">
+    <div class="channel-card">
+      <h3>🏪 平台店群（现有资产）</h3>
+      <p>Temu + Amazon 共 20+ 账号是你的流量入口。每天有大量买家经过，现在需要把他们引导认识你的品牌。</p>
+    </div>
+    <div class="channel-card orange">
+      <h3>🌐 独立站（核心阵地）</h3>
+      <p>printngoplus.com 是你真正的品牌总部。客户数据、订单记录、复购关系，全部在你手里，不受平台控制。</p>
+    </div>
+    <div class="channel-card green">
+      <h3>🔍 主动流量（长期红利）</h3>
+      <p>SEO + 社媒 + 广告让新客户主动找到你。随着时间积累，不依赖平台也能获得稳定订单。</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== SECTION 2: INSERT CARDS (RESEARCH) ===== -->
+<section class="section" id="insert-card">
+<div class="container">
+  <div class="section-label">深度调研</div>
+  <h2 class="section-title">从 Temu / Amazon 引流到独立站——全部方式汇总</h2>
+  <p class="section-desc">平台明确限制"主动引导外站下单"，但不代表没有合规空间。以下从包裹卡、产品本身、到店铺主页，全面梳理可操作的引流方式和各自的风险边界。</p>
+
+  <!-- Amazon -->
+  <h3 style="font-size:18px; font-weight:700; margin-bottom:16px; color:var(--orange-light)">Amazon 的情况</h3>
+
+  <div class="policy-box restricted">
+    <h3>⚠️ Amazon：允许放卡片，但有明确限制</h3>
+    <p style="font-size:14px; color:#fde68a; margin-bottom:12px">根据 Jungle Scout 2024年最新指南及卖家社区经验，Amazon 对包裹卡片的规定如下：</p>
+    <div class="card-grid card-grid-2" style="gap:12px">
+      <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); border-radius:8px; padding:14px">
+        <p style="font-size:13px; color:#86efac; font-weight:600; margin-bottom:8px">✅ 可以放的内容</p>
+        <ul style="list-style:none; font-size:13px; color:var(--text-muted)">
+          <li>• 感谢信息和品牌名称</li>
+          <li>• 产品使用说明</li>
+          <li>• 质保/售后联系方式</li>
+          <li>• 中性的"请留评价"（不得附带奖励）</li>
+          <li>• 品牌社交媒体账号（供参考）</li>
+          <li>• 品牌网站 URL（被动展示，非主动引导）</li>
+        </ul>
+      </div>
+      <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:8px; padding:14px">
+        <p style="font-size:13px; color:#fca5a5; font-weight:600; margin-bottom:8px">❌ 明确禁止的内容</p>
+        <ul style="list-style:none; font-size:13px; color:var(--text-muted)">
+          <li>• 明确引导去官网下单（"下次来官网买"）</li>
+          <li>• 写明在官网购买可以享受折扣</li>
+          <li>• 用奖励换评价（赠品/返现/折扣）</li>
+          <li>• 只向好评买家发送"评价提醒"卡片</li>
+          <li>• 任何让买家觉得"你在绕开 Amazon"的语言</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-warn">
+    <span class="ico">💡</span>
+    <div><strong>实操建议：</strong>卡片上可以印你的品牌名 PrintNGo Plus 和网站地址，但不要写"去官网省钱"之类的话。让客户自然地记住品牌，他们下次有团体需求时会主动来找你。</div>
+  </div>
+
+  <!-- Temu -->
+  <h3 style="font-size:18px; font-weight:700; margin:32px 0 16px; color:var(--orange-light)">Temu 的情况</h3>
+
+  <div class="policy-box risky">
+    <h3>🚫 Temu：官方未明确表态，但风险较高</h3>
+    <p style="font-size:14px; color:#fca5a5; margin-bottom:12px">我们调研了 Temu 卖家中心、合作伙伴协议文件及中文卖家社区，发现 Temu 没有针对包裹卡片发布专门的官方规定，但根据已知情况判断风险较高：</p>
+    <ul style="list-style:none; font-size:14px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px">
+      <li>• <strong style="color:var(--text-white)">平台管控极严：</strong>Temu 对引流到外部网站的行为有"流量截留"相关处罚机制，轻则下架商品，重则封号</li>
+      <li>• <strong style="color:var(--text-white)">政策未明不代表允许：</strong>Temu 的合作协议明确要求卖家不得做任何损害平台利益的行为，引导客户到竞争网站通常被视为违规</li>
+      <li>• <strong style="color:var(--text-white)">举报机制活跃：</strong>买家如发现引流卡片，有概率截图举报</li>
+    </ul>
+  </div>
+
+  <!-- Summary table -->
+  <h3 style="font-size:16px; font-weight:700; margin:24px 0 12px">政策对比总结</h3>
+  <div class="card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>平台</th>
+          <th>官方政策</th>
+          <th>可以做</th>
+          <th>不能做</th>
+          <th>风险等级</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Amazon</strong></td>
+          <td>有明确条款</td>
+          <td>感谢信、品牌名、网站URL（被动展示）</td>
+          <td>明确引导外站下单、折扣引导</td>
+          <td><span class="badge badge-yellow">中等</span></td>
+        </tr>
+        <tr>
+          <td><strong>Temu</strong></td>
+          <td>无专项条款</td>
+          <td>感谢信（仅品牌名）</td>
+          <td>任何外部引流均有风险</td>
+          <td><span class="badge badge-red">较高</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-info" style="margin-top:16px">
+    <span class="ico">🎯</span>
+    <div><strong>结论：</strong>Temu 包裹里放品牌感谢卡（只印 Logo + 联系方式）基本不会有问题；主动写"来官网下单"性质的内容风险较大，建议在 Amazon 渠道优先落地这个策略，Temu 谨慎操作。</div>
+  </div>
+
+  <!-- 更多引流方式 -->
+  <h3 style="font-size:18px; font-weight:700; margin:32px 0 16px; color:var(--orange-light)">包裹卡之外——还有哪些引流方式？</h3>
+  <p style="font-size:15px; color:var(--text-muted); margin-bottom:20px">平台无法干预"产品本身"的信息，这是绕开引流限制的合规空间。以下三种方法属于产品组成部分，不在平台引流条款管控范围内。</p>
+
+  <div class="card-grid card-grid-3">
+    <!-- 卖家主页 -->
+    <div class="card" style="border-top:3px solid var(--blue-light)">
+      <div style="font-size:28px; margin-bottom:12px">🏪</div>
+      <h4 style="font-size:15px; font-weight:700; color:var(--text-white); margin-bottom:8px">卖家主页 / 店铺介绍</h4>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">Amazon 和 Temu 均允许填写卖家简介。把"PrintNGo Plus"品牌名、主营业务写进去，有团体需求的买家自己会去 Google 搜品牌名找到你。</p>
+      <div style="background:rgba(59,130,246,0.1); border-radius:6px; padding:10px">
+        <p style="font-size:12px; color:#93c5fd"><strong>写法建议：</strong>我们是 PrintNGo Plus，专注加拿大企业定制服装，团体 / 企业订单可搜索官网获取专属报价。</p>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+        <span class="badge badge-green">零成本</span>
+        <span class="badge badge-blue">立即生效</span>
+      </div>
+    </div>
+
+    <!-- 吊牌 -->
+    <div class="card" style="border-top:3px solid var(--orange)">
+      <div style="font-size:28px; margin-bottom:12px">🏷️</div>
+      <h4 style="font-size:15px; font-weight:700; color:var(--text-white); margin-bottom:8px">商品实体标签 / 吊牌</h4>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">缝在衣物上的洗水标、挂在产品上的商标吊牌，可以印品牌名和网站地址。这是产品的组成部分，平台无法干预，不受引流条款限制。</p>
+      <div style="background:rgba(249,115,22,0.1); border-radius:6px; padding:10px">
+        <p style="font-size:12px; color:#fdba74"><strong>与包裹卡的区别：</strong>包裹卡是"夹进去的促销物料"，吊牌是"产品本身"，性质完全不同，风险极低。</p>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+        <span class="badge badge-green">合规</span>
+        <span class="badge" style="background:rgba(249,115,22,0.15); color:var(--orange-light); border:1px solid rgba(249,115,22,0.3)">随产品永久展示</span>
+      </div>
+    </div>
+
+    <!-- 外包装 -->
+    <div class="card" style="border-top:3px solid var(--green)">
+      <div style="font-size:28px; margin-bottom:12px">📦</div>
+      <h4 style="font-size:15px; font-weight:700; color:var(--text-white); margin-bottom:8px">外包装 / 胶带 / 装箱纸</h4>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">运输外箱、填充纸、品牌胶带印上 Logo 和网站。企业团体买家收到货时看到专业品牌包装，信任感大幅提升，更容易进行二次采购。</p>
+      <div style="background:rgba(34,197,94,0.1); border-radius:6px; padding:10px">
+        <p style="font-size:12px; color:#86efac"><strong>适合场景：</strong>企业团体大批量发货时效果最好——收货仓库的多个人都会看到你的品牌，口碑自然传播。</p>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+        <span class="badge badge-green">合规</span>
+        <span class="badge badge-blue">提升专业感</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 不能做的 -->
+  <div class="alert" style="margin-top:24px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:12px; padding:20px; display:flex; gap:16px; align-items:flex-start">
+    <span style="font-size:24px; flex-shrink:0">🚫</span>
+    <div>
+      <p style="font-size:15px; font-weight:700; color:#fca5a5; margin-bottom:10px">以下行为明确违规，不要做</p>
+      <div class="card-grid card-grid-2" style="gap:10px">
+        <ul style="list-style:none; font-size:13px; color:var(--text-muted); display:flex; flex-direction:column; gap:6px">
+          <li>❌ 在平台消息 / 邮件里直接发网站链接</li>
+          <li>❌ 卡片上写"扫码来官网下单可享折扣"（主动引导离开平台）</li>
+          <li>❌ 用赠品、返现、折扣换评价</li>
+        </ul>
+        <ul style="list-style:none; font-size:13px; color:var(--text-muted); display:flex; flex-direction:column; gap:6px">
+          <li>❌ 只向好评买家单独发"感谢卡"（选择性接触）</li>
+          <li>❌ 在商品描述中放网站 URL 并写"去官网更便宜"</li>
+          <li>❌ 任何让平台认为"你在绕开我们"的文字</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ===== SECTION 3: SEO ===== -->
+<section class="section" id="seo">
+<div class="container">
+  <div class="section-label">长期流量</div>
+  <h2 class="section-title">SEO — 让客户主动在 Google 找到你</h2>
+  <p class="section-desc">SEO 的意思是：当有人在 Google 搜索"多伦多定制T恤"或"公司团体服定制"，让你的网站排在前面。这是最值钱的流量，因为是客户主动来找你，不需要每次都花广告费。</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>注册 Google 我的商家（完全免费，效果最快）</h4>
+        <p>打开 business.google.com，填写公司信息（公司名、地址、电话、网站），上传 5-10 张产品照片。完成后，多伦多本地人搜索时，你会出现在地图搜索结果里。</p>
+        <ul>
+          <li>公司分类选：Custom Clothing Manufacturer（定制服装生产商）</li>
+          <li>服务范围选多伦多市及大多伦多地区（GTA）</li>
+          <li>每周更新一条"Google 帖子"（比如促销活动、客户案例）</li>
+          <li>每次收到好评，立即回复（有助于排名提升）</li>
+        </ul>
+        <div class="tip">⏱ 操作时间：约 1 小时完成注册，4-8 周后开始出现在地图搜索结果</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>针对核心关键词优化网站页面</h4>
+        <p>你的潜在客户会搜索以下词语，网站内容要自然地包含这些词：</p>
+        <ul>
+          <li><strong>Custom t-shirts Toronto</strong>（多伦多定制T恤）</li>
+          <li><strong>Corporate uniforms Toronto</strong>（多伦多公司工服）</li>
+          <li><strong>Custom hoodies Canada</strong>（加拿大定制卫衣）</li>
+          <li><strong>Team uniforms Toronto no minimum</strong>（无最低起订量）</li>
+          <li><strong>Custom merch for events Toronto</strong>（活动定制周边）</li>
+        </ul>
+        <p>每个产品页面的标题都应包含关键词，例如：「Custom T-Shirts Toronto | No Minimum Order | PrintNGo Plus」</p>
+        <div class="tip">💡 把这些词语出现在每个产品页面的第一段说明文字里，这是最简单直接的 SEO 方法</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>创建"案例展示"博客或页面（每月 1-2 篇）</h4>
+        <p>写简短的客户案例故事，例如：「Toronto Soccer Club Custom Jersey Case Study」或「How a Local Charity Ordered 200 Custom T-Shirts」。这类内容对 SEO 很有帮助，因为它包含自然出现的关键词，并且展示你真实做过的项目。</p>
+        <ul>
+          <li>每篇 300-500 个英文单词即可，不需要很长</li>
+          <li>附上真实照片（客户允许的前提下），效果翻倍</li>
+          <li>结尾加上联系方式和"Get a Free Quote"按钮</li>
+        </ul>
+        <div class="tip">📈 见效时间：3-6 个月后开始排名，长期持续带来免费流量</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>获取本地引用（Local Citations）</h4>
+        <p>把你的公司信息（名称/地址/电话）登记到以下免费平台，有助于 Google 确认你是多伦多本地真实商家：</p>
+        <ul>
+          <li><strong>Yelp Canada</strong>（yelp.ca）</li>
+          <li><strong>Yellow Pages Canada</strong>（yellowpages.ca）</li>
+          <li><strong>Toronto Business Directory</strong></li>
+          <li><strong>Canada 411</strong></li>
+          <li><strong>Better Business Bureau（BBB）</strong></li>
+        </ul>
+        <div class="tip">⚠️ 重要：所有平台上的公司名称、地址、电话必须完全一致</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>设置 Google Search Console — 免费的流量数据仪表盘</h4>
+        <p>Google Search Console（搜索控制台）是 Google 官方提供的<strong>完全免费</strong>工具，是 SEO 的"数据眼睛"。不装它，你不知道哪些关键词在带流量、哪些页面有问题、哪些机会还没抓到。每个认真做 SEO 的网站都必须装这个。</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;">
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--blue-glow);margin-bottom:8px;text-transform:uppercase;">它能告诉你什么</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:1.9;padding-left:16px;">
+              <li>哪些搜索词让人看到了你的网站（曝光量）</li>
+              <li>每个页面被点击了多少次</li>
+              <li>你在 Google 上每个词排第几名</li>
+              <li>哪些页面 Google 找不到或爬取出错</li>
+            </ul>
+          </div>
+          <div style="background:var(--bg-card2);border:1px solid rgba(249,115,22,0.3);border-radius:8px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:8px;text-transform:uppercase;">设置步骤（约 1 小时）</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:1.9;padding-left:16px;">
+              <li>访问 search.google.com/search-console</li>
+              <li>点"添加资源"，输入你的网站域名</li>
+              <li>选 HTML 标签验证，将代码交给网站开发者添加</li>
+              <li>验证通过后提交 sitemap（通常是 /sitemap.xml）</li>
+            </ul>
+          </div>
+        </div>
+        <p>设置好后，<strong>每月花 30 分钟</strong>看一次数据：重点找「排在第 5–15 名但曝光量高」的关键词，这些是最有潜力的机会——只要优化一下那个页面的标题和正文内容，排名就会上升。这是投入产出比最高的 SEO 动作。</p>
+        <div class="tip">⏱ 设置：1 小时 · 维护：每月 30 分钟 · 费用：完全免费 · 数据来自 Google 官方，最准确</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>技术 SEO 自查清单（一次排查，长期稳定得分）</h4>
+        <p>技术 SEO 不需要每天维护，但如果以下问题存在，Google 会悄悄扣分——而且不会通知你。建议让网站开发者按以下清单排查一次，修好之后就不需要再动了。</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0;">
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px;text-transform:uppercase;">✅ 必须检查（影响排名最大）</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:2.1;list-style:none;padding:0;margin:0;">
+              <li>☐ 网站有 HTTPS（浏览器地址栏显示锁形图标）</li>
+              <li>☐ 手机打开网站布局正常，文字不溢出屏幕</li>
+              <li>☐ 首页加载时间 &lt;3 秒（PageSpeed Insights 测试）</li>
+              <li>☐ 每个页面的 &lt;title&gt; 标签包含目标关键词</li>
+              <li>☐ 每张产品图片都有 alt 文字（如"custom t-shirt Toronto"）</li>
+            </ul>
+          </div>
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:10px;text-transform:uppercase;">⚠️ 建议检查（加分项）</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:2.1;list-style:none;padding:0;margin:0;">
+              <li>☐ 每个页面有独特的 meta description（160 字以内）</li>
+              <li>☐ sitemap.xml 已提交给 Google Search Console</li>
+              <li>☐ robots.txt 存在且没有误封重要页面</li>
+              <li>☐ 博客/案例文章内有链接指向相关产品页面</li>
+              <li>☐ URL 简洁可读（/custom-tshirts-toronto 而非 /p?id=123）</li>
+            </ul>
+          </div>
+        </div>
+        <div class="alert-info">
+          <strong>免费检测工具：</strong>Google PageSpeed Insights（pagespeed.web.dev）· Google Mobile-Friendly Test · Google Search Console（以上大部分检查项均可在此发现）
+        </div>
+        <div class="tip">⏱ 一次性排查约 2-4 小时 · 修复后长期得分 · 交给开发者即可，自己无需动代码</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ===== SECTION SEO ADVANCED ===== -->
+<section class="section" id="seo-advanced">
+<div class="container">
+  <div class="section-label">长期自动化</div>
+  <h2 class="section-title">SEO 进阶 — 自动积累的流量体系</h2>
+  <p class="section-desc">基础 SEO 建好之后，有几套策略可以让流量"自己长"——一次搭建，长期受益，不需要每天操心。这是真正意义上的"睡后流量"。</p>
+
+  <div class="steps">
+
+    <!-- Strategy 1: Programmatic Landing Pages -->
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>程序化落地页 — 一个模板，批量覆盖上百个关键词</h4>
+        <p>你的客户来自不同行业、不同城市、不同场景。他们在 Google 上搜索的词也各不相同。与其只有一个"Custom T-Shirts"页面，不如做一批针对细分场景的专属页面：</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;">
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:12px;">
+            <div style="color:var(--orange);font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:8px;">按行业</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+              <li>Custom jerseys for hockey teams Toronto</li>
+              <li>Soccer team uniforms Toronto no minimum</li>
+              <li>Corporate uniform printing Toronto B2B</li>
+              <li>Custom hoodies for university clubs</li>
+            </ul>
+          </div>
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:12px;">
+            <div style="color:var(--orange);font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:8px;">按场景</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+              <li>Custom shirts for charity runs Canada</li>
+              <li>Company event merchandise Toronto</li>
+              <li>School spirit wear printing Ontario</li>
+              <li>Trade show promotional apparel Canada</li>
+            </ul>
+          </div>
+        </div>
+        <p>每个页面用同一个模板，换关键词和配图即可。PrintNGO Plus 有 200+ 款产品、6 大客户群，理论上可以做出 <strong style="color:var(--orange);">100–200 个</strong> 这样的页面，每个页面捕捉一个长尾关键词。</p>
+        <div style="background:rgba(249,115,22,0.08);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:12px 14px;margin-top:12px;">
+          <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:4px;">怎么做</div>
+          <p style="font-size:13px;color:var(--text-muted);margin:0;">让网站开发者创建一个"目标行业"落地页模板，把关键词、配图、客户案例换一换，30 分钟出一个页面。或者写一个自动生成脚本，批量生成页面，效率更高。</p>
+        </div>
+        <div class="tip">📊 见效时间：3-6 个月开始排名 · 初始投入：2-4 小时 · 后期维护：极低</div>
+      </div>
+    </div>
+
+    <!-- Strategy 2: FAQ Content -->
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>FAQ 内容页 — 回答客户的真实问题，捕捉"问题型"搜索</h4>
+        <p>大量客户在 Google 搜的不是产品名，而是问题。每个问题做一个短页面，Google 会把这些内容推到"搜索摘要框"（People Also Ask），曝光量极大。</p>
+        <div style="margin:14px 0;">
+          <div style="font-size:12px;font-weight:700;color:var(--blue-glow);margin-bottom:10px;text-transform:uppercase;">高价值问题示例（每个都是一篇文章）</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text-muted);">❓ What's the minimum order for custom t-shirts in Canada?</div>
+            <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text-muted);">❓ How long does custom shirt printing take in Toronto?</div>
+            <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text-muted);">❓ Is screen printing or embroidery better for team jerseys?</div>
+            <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text-muted);">❓ How much does it cost to make 50 custom hoodies Canada?</div>
+            <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text-muted);">❓ What file format do I need for custom printing?</div>
+            <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--text-muted);">❓ Can I rush order custom shirts in 3 days Toronto?</div>
+          </div>
+        </div>
+        <p>每篇 400–600 个英文单词，口语化回答，结尾加"获取免费报价"入口。可以一次性批量写 20 篇，之后每季度补充几篇即可。</p>
+        <div class="tip">⚡ 1-3 个月开始出现在搜索结果 · 这些问题都是有真实购买意向的客户在搜索</div>
+      </div>
+    </div>
+
+    <!-- Strategy 3: Schema Markup -->
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Schema 结构化标记 — 一次部署，永久加分</h4>
+        <p>Schema 是一种加在网站代码里的"标签"，告诉 Google 你的网站是什么。设置好之后完全不需要维护，但能显著改善搜索展示效果：</p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0;">
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:24px;margin-bottom:8px;">📍</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text-white);margin-bottom:6px;">LocalBusiness</div>
+            <div style="font-size:12px;color:var(--text-muted);">搜索结果直接显示地址、电话、营业时间</div>
+          </div>
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:24px;margin-bottom:8px;">⭐</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text-white);margin-bottom:6px;">Review</div>
+            <div style="font-size:12px;color:var(--text-muted);">搜索结果出现黄色星级评分，点击率提升 30%</div>
+          </div>
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:24px;margin-bottom:8px;">❓</div>
+            <div style="font-size:13px;font-weight:700;color:var(--text-white);margin-bottom:6px;">FAQPage</div>
+            <div style="font-size:12px;color:var(--text-muted);">FAQ 页面在搜索结果中展开显示，占据更大版面</div>
+          </div>
+        </div>
+        <div style="background:rgba(249,115,22,0.08);border-left:3px solid var(--orange);border-radius:0 6px 6px 0;padding:12px 14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:4px;">怎么做</div>
+          <p style="font-size:13px;color:var(--text-muted);margin:0;">联系网站开发者，在首页和产品页加入 JSON-LD 格式的 Schema 代码。操作时间约 2-4 小时，之后无需维护。用 Google 的 Rich Results Test 工具验证是否配置成功。</p>
+        </div>
+        <div class="tip">⏱ 一次配置，永久生效 · 搜索结果点击率平均提升 20-30%</div>
+      </div>
+    </div>
+
+    <!-- Strategy 4: Content Flywheel -->
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>内容复用飞轮 — 一次拍照，同时喂给四个渠道</h4>
+        <p>每完成一个值得记录的订单（哪怕只是一个学校的 30 件卫衣），按以下流程处理，一次内容制作，四个渠道同步受益：</p>
+        <div style="margin:16px 0;position:relative;">
+          <div style="display:flex;flex-direction:column;gap:0;">
+            <div style="display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px 8px 0 0;border-bottom:none;">
+              <div style="min-width:32px;height:32px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;">①</div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:var(--text-white);margin-bottom:4px;">拍 3-5 张成品照</div>
+                <div style="font-size:13px;color:var(--text-muted);">手机拍即可，注重光线清晰。这是所有后续内容的原材料。</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--bg-card2);border:1px solid var(--border);border-radius:0;border-bottom:none;">
+              <div style="min-width:32px;height:32px;background:rgba(249,115,22,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;">②</div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:var(--text-white);margin-bottom:4px;">写 3 句话的订单背景</div>
+                <div style="font-size:13px;color:var(--text-muted);">客户是谁（行业即可，不用真名）、订了什么、数量多少。例："多伦多一所小学为毕业典礼定制了 120 件印有校徽的蓝色卫衣。"</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:var(--border);">
+              <div style="background:var(--bg-card2);padding:12px;text-align:center;">
+                <div style="font-size:18px;margin-bottom:6px;">📸</div>
+                <div style="font-size:12px;font-weight:700;color:var(--blue-glow);margin-bottom:4px;">Instagram</div>
+                <div style="font-size:11px;color:var(--text-muted);">发布照片 + 简短说明 + 行业标签</div>
+              </div>
+              <div style="background:var(--bg-card2);padding:12px;text-align:center;">
+                <div style="font-size:18px;margin-bottom:6px;">✍️</div>
+                <div style="font-size:12px;font-weight:700;color:var(--blue-glow);margin-bottom:4px;">网站博客</div>
+                <div style="font-size:11px;color:var(--text-muted);">照片+背景扩写成 400 字案例页面</div>
+              </div>
+              <div style="background:var(--bg-card2);padding:12px;text-align:center;">
+                <div style="font-size:18px;margin-bottom:6px;">📍</div>
+                <div style="font-size:12px;font-weight:700;color:var(--blue-glow);margin-bottom:4px;">Google 商家</div>
+                <div style="font-size:11px;color:var(--text-muted);">发"Google 帖子"：一张照片 + 一句话</div>
+              </div>
+              <div style="background:var(--bg-card2);padding:12px;text-align:center;border-radius:0 0 8px 0;">
+                <div style="font-size:18px;margin-bottom:6px;">🏠</div>
+                <div style="font-size:12px;font-weight:700;color:var(--blue-glow);margin-bottom:4px;">网站首页</div>
+                <div style="font-size:11px;color:var(--text-muted);">添加到"客户案例"或"我们做过的项目"</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p>建立固定习惯后，每个订单的内容制作只需 <strong style="color:var(--orange);">20-30 分钟</strong>，但四个渠道同时获得更新，SEO 权重和社媒账号同步积累。</p>
+        <div class="tip">🔄 每月完成 4-6 个订单内容，一年后形成强大的内容库，自然排名持续上升</div>
+      </div>
+    </div>
+
+    <!-- Strategy 5: Local Citation Automation -->
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>本地引用自动化维护 — 花小钱省大力气</h4>
+        <p>之前提到要在 Yelp、Yellow Pages 等平台登记公司信息。但手动维护 20-30 个平台很累，而且容易出现信息不一致的问题（比如地址格式不同），反而影响排名。</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0;">
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-white);margin-bottom:8px;">推荐工具：BrightLocal</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:1.9;">
+              <li>自动同步到 50+ 个目录平台</li>
+              <li>监测引用一致性，自动修正</li>
+              <li>追踪本地排名变化</li>
+              <li>价格：约 <strong style="color:var(--orange-light);">CA$35/月</strong></li>
+            </ul>
+          </div>
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-white);margin-bottom:8px;">推荐工具：Yext</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:1.9;">
+              <li>覆盖 200+ 平台，包括 Apple Maps</li>
+              <li>一处修改，全平台同步</li>
+              <li>含品牌监测功能</li>
+              <li>价格：约 <strong style="color:var(--orange-light);">CA$50/月</strong></li>
+            </ul>
+          </div>
+        </div>
+        <p>初期预算有限时，可以先手动完成前 5 个最重要的平台（Yelp、Yellow Pages、Google、BBB、Canada 411），之后预算充裕再接入工具。</p>
+        <div class="tip">💡 重点：所有平台的公司名称、地址、电话必须<strong>一字不差</strong>，Google 靠这个判断你是否是真实可信的本地商家</div>
+      </div>
+    </div>
+
+    <!-- Strategy 6: Local Link Building -->
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>本地外链建设 — 最被忽视、最值钱的排名信号</h4>
+        <p>外链（Backlink）是别的网站主动链接到你的网站。Google 把每一条外链看作一次"投票"——别人越多愿意引用你，你在 Google 眼里就越权威。这是 Google 排名算法中<strong style="color:var(--orange);">权重最高的单一信号</strong>，却是大多数小企业完全忽视的环节。</p>
+        <div class="card-grid card-grid-2" style="margin:14px 0;">
+          <div style="background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px;text-transform:uppercase;">免费外链来源（本地优先）</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:2;padding-left:16px;">
+              <li><strong style="color:var(--text-white);">赞助本地运动队</strong> — 给曲棍球队/足球队赞助球衣，要求对方官网加你的链接</li>
+              <li><strong style="color:var(--text-white);">学校/大学合作</strong> — 为学生活动提供折扣，换取校园网站上的合作方介绍</li>
+              <li><strong style="color:var(--text-white);">加入商业协会</strong> — 多伦多商会（TorontoMBCC）、华人商会等，会员页面自带外链</li>
+              <li><strong style="color:var(--text-white);">接受本地媒体采访</strong> — 当地报纸/博客"本地商家故事"栏目，主动联系投稿</li>
+            </ul>
+          </div>
+          <div style="background:var(--bg-card2);border:1px solid rgba(249,115,22,0.3);border-radius:8px;padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:10px;text-transform:uppercase;">低成本策略（可执行）</div>
+            <ul style="font-size:13px;color:var(--text-muted);line-height:2;padding-left:16px;">
+              <li><strong style="color:var(--text-white);">客户案例置换</strong> — 为满意的团体客户写案例页，请对方网站转载并注明来源</li>
+              <li><strong style="color:var(--text-white);">B2B 目录投稿</strong> — 在 Clutch、BizBuySell 等平台建立免费商家档案</li>
+              <li><strong style="color:var(--text-white);">本地博主合作</strong> — 联系多伦多 lifestyle 博主，送一件定制产品换一篇体验文章</li>
+              <li><strong style="color:var(--text-white);">参展/活动曝光</strong> — 赞助本地展会换官方网站的赞助商展示页</li>
+            </ul>
+          </div>
+        </div>
+        <div class="alert-info">
+          <strong>查竞争对手的外链（免费工具）：</strong>访问 ahrefs.com/backlink-checker，输入竞争对手域名，可免费查看他们的前 100 条外链来源——这些都是你也可以去争取的同类外链。
+        </div>
+        <div class="tip">📈 每条高质量本地外链平均带来 2-5 名排名提升 · 每月新增 2-3 条持续积累，6 个月后效果显著</div>
+      </div>
+    </div>
+
+  </div><!-- /.steps -->
+
+  <!-- Summary Table -->
+  <div style="margin-top:40px;">
+    <h3 style="font-size:16px;font-weight:700;color:var(--text-white);margin-bottom:16px;">六大策略一览</h3>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead>
+          <tr style="background:var(--blue-primary);">
+            <th style="padding:12px 14px;text-align:left;color:var(--text-white);border-radius:8px 0 0 0;">策略</th>
+            <th style="padding:12px 14px;text-align:center;color:var(--text-white);">初始投入</th>
+            <th style="padding:12px 14px;text-align:center;color:var(--text-white);">后期维护</th>
+            <th style="padding:12px 14px;text-align:center;color:var(--text-white);">见效周期</th>
+            <th style="padding:12px 14px;text-align:left;color:var(--text-white);border-radius:0 8px 0 0;">核心价值</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px 14px;color:var(--text-white);font-weight:600;">程序化落地页</td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(234,179,8,0.15);color:var(--yellow);padding:2px 10px;border-radius:20px;font-size:12px;">中</span></td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(34,197,94,0.15);color:var(--green);padding:2px 10px;border-radius:20px;font-size:12px;">极低</span></td>
+            <td style="padding:12px 14px;text-align:center;color:var(--text-muted);">3–6 个月</td>
+            <td style="padding:12px 14px;color:var(--text-muted);">批量覆盖长尾关键词</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);background:rgba(13,27,46,0.4);">
+            <td style="padding:12px 14px;color:var(--text-white);font-weight:600;">FAQ 内容页</td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(34,197,94,0.15);color:var(--green);padding:2px 10px;border-radius:20px;font-size:12px;">低</span></td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(34,197,94,0.15);color:var(--green);padding:2px 10px;border-radius:20px;font-size:12px;">极低</span></td>
+            <td style="padding:12px 14px;text-align:center;color:var(--text-muted);">1–3 个月</td>
+            <td style="padding:12px 14px;color:var(--text-muted);">捕捉高意向问题搜索</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px 14px;color:var(--text-white);font-weight:600;">Schema 标记</td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(34,197,94,0.15);color:var(--green);padding:2px 10px;border-radius:20px;font-size:12px;">低</span></td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(34,197,94,0.15);color:var(--green);padding:2px 10px;border-radius:20px;font-size:12px;">零</span></td>
+            <td style="padding:12px 14px;text-align:center;color:var(--text-muted);">立即生效</td>
+            <td style="padding:12px 14px;color:var(--text-muted);">提升点击率 20–30%</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);background:rgba(13,27,46,0.4);">
+            <td style="padding:12px 14px;color:var(--text-white);font-weight:600;">内容复用飞轮</td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(34,197,94,0.15);color:var(--green);padding:2px 10px;border-radius:20px;font-size:12px;">低</span></td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(234,179,8,0.15);color:var(--yellow);padding:2px 10px;border-radius:20px;font-size:12px;">融入日常</span></td>
+            <td style="padding:12px 14px;text-align:center;color:var(--text-muted);">持续积累</td>
+            <td style="padding:12px 14px;color:var(--text-muted);">一次制作，四渠道受益</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 14px;color:var(--text-white);font-weight:600;">本地引用工具</td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(34,197,94,0.15);color:var(--green);padding:2px 10px;border-radius:20px;font-size:12px;">低</span></td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(34,197,94,0.15);color:var(--green);padding:2px 10px;border-radius:20px;font-size:12px;">零</span></td>
+            <td style="padding:12px 14px;text-align:center;color:var(--text-muted);">2–3 个月</td>
+            <td style="padding:12px 14px;color:var(--text-muted);">强化本地排名信号</td>
+          </tr>
+          <tr style="border-top:1px solid var(--border);background:rgba(13,27,46,0.4);">
+            <td style="padding:12px 14px;color:var(--text-white);font-weight:600;">本地外链建设</td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(234,179,8,0.15);color:var(--yellow);padding:2px 10px;border-radius:20px;font-size:12px;">中</span></td>
+            <td style="padding:12px 14px;text-align:center;"><span style="background:rgba(234,179,8,0.15);color:var(--yellow);padding:2px 10px;border-radius:20px;font-size:12px;">低</span></td>
+            <td style="padding:12px 14px;text-align:center;color:var(--text-muted);">3–6 个月</td>
+            <td style="padding:12px 14px;color:var(--text-muted);">Google 排名最核心信号</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="background:rgba(59,130,246,0.08);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-top:16px;display:flex;align-items:flex-start;gap:14px;">
+      <div style="font-size:24px;flex-shrink:0;">🎯</div>
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--blue-glow);margin-bottom:4px;">建议执行顺序</div>
+        <p style="font-size:13px;color:var(--text-muted);margin:0;">先做 Schema 标记（立即见效，零成本维护）→ 批量写 20 篇 FAQ（1 个月搞定）→ 建立内容复用习惯（融入日常）→ 搭第一批程序化落地页（按行业，先做 20 个高优先级场景）→ 预算允许时接入 BrightLocal 自动化 → 同步启动外链建设（每月 2-3 条，优先本地运动队赞助/商会加入）。整套体系搭好后，每个月只需花 2-3 小时维护，流量持续增长。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ===== SECTION 4: PAID ADS ===== -->
+<section class="section" id="ads">
+<div class="container">
+  <div class="section-label">快速获客</div>
+  <h2 class="section-title">付费广告深度指南 — 跨境卖家实战经验</h2>
+  <p class="section-desc">本节内容来自雨果网、蓝海亿观网、紫鸟浏览器等跨境电商平台的一线实战总结，专门针对定制印刷品的 B2B 团体订单场景。</p>
+
+  <!-- B2B vs B2C 核心差异 -->
+  <div class="card" style="border-color:var(--border-orange); margin-bottom:32px; background:linear-gradient(135deg,rgba(249,115,22,0.08),transparent)">
+    <h3 style="font-size:16px; font-weight:700; margin-bottom:16px; color:var(--orange)">⚠️ 先看这个：B2B 广告和 B2C 广告完全不一样</h3>
+    <div class="card-grid card-grid-2" style="gap:16px">
+      <div>
+        <p style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:10px">B2C 散单广告（Temu/Amazon 逻辑）</p>
+        <ul class="checklist">
+          <li><span class="ico">🛒</span>看到广告 → 几分钟内冲动下单</li>
+          <li><span class="ico">💵</span>客单价低（$20-50），靠量取胜</li>
+          <li><span class="ico">👤</span>决策人就一个，买了就是买了</li>
+          <li><span class="ico">📊</span>核心指标：ROAS（广告投入产出比）</li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:10px">B2B 团体广告（你需要的逻辑）</p>
+        <ul class="checklist">
+          <li><span class="ico">📋</span>看到广告 → 留表单 → 沟通报价 → 1-2周决策</li>
+          <li><span class="ico">💰</span>单笔$500-5000，一单顶100个散单</li>
+          <li><span class="ico">👥</span>决策链：HR/采购/管理层，需要建立信任</li>
+          <li><span class="ico">📊</span>核心指标：CPL（获客成本）、询价数量</li>
+        </ul>
+      </div>
+    </div>
+    <div class="alert-info" style="margin-top:16px">
+      <strong>核心结论：</strong>B2B 广告不追求"立即购买"，追求的是"提交询价表单"。你的广告目标要设为<strong>「潜在客户」转化，而非「购买」转化</strong>。
+    </div>
+  </div>
+
+  <!-- ROI & 投入时间线 -->
+  <div class="card" style="margin-bottom:28px; border-color:var(--border-orange)">
+    <h4 style="font-size:16px; font-weight:700; color:var(--orange-light); margin-bottom:16px">💰 广告投入到看见效果要多久？花多少钱？</h4>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px">很多人投了1-2周广告没效果就放弃了——这几乎是所有广告新手的通病。广告效果有学习曲线，下面是真实的时间预期：</p>
+    <div class="card-grid card-grid-3" style="gap:16px; margin-bottom:20px">
+      <div style="background:rgba(30,58,95,0.4); border:1px solid var(--border); border-radius:8px; padding:16px; text-align:center">
+        <div style="font-size:22px; font-weight:800; color:var(--orange); margin-bottom:6px">第 1–4 周</div>
+        <div style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:8px">学习期</div>
+        <p style="font-size:12px; color:var(--text-muted)">Google/Meta 算法正在学习"谁会点击、谁会询价"。数据不准确，CPL 很高，<strong style="color:var(--orange-light)">不要这时候下判断</strong>。建议预算：<strong style="color:var(--orange-light)">$1,000–1,500/月（日预算 $30–50）</strong>。多伦多本地 B2B 竞争词 CPC 约 $2–5，低于 $30/天每天仅能获得 2–5 次点击，算法根本无法启动学习期。</p>
+      </div>
+      <div style="background:rgba(30,58,95,0.4); border:1px solid var(--border); border-radius:8px; padding:16px; text-align:center">
+        <div style="font-size:22px; font-weight:800; color:var(--yellow); margin-bottom:6px">第 1–3 月</div>
+        <div style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:8px">数据积累期</div>
+        <p style="font-size:12px; color:var(--text-muted)">开始出现稳定询价，可以优化关键词和受众。CPL 逐步下降。每月广告支出约 <strong style="color:var(--yellow)">$1,000–1,500</strong>，累计投入 $3,000–4,500。</p>
+      </div>
+      <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:16px; text-align:center">
+        <div style="font-size:22px; font-weight:800; color:var(--green); margin-bottom:6px">第 3–6 月</div>
+        <div style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:8px">正向 ROI 窗口</div>
+        <p style="font-size:12px; color:var(--text-muted)">广告已经找到最佳受众，询价转化稳定，ROI 开始转正。<strong style="color:var(--green)">这时才是加大预算的时机</strong>。</p>
+      </div>
+    </div>
+    <div class="alert-info" style="margin-bottom:0">
+      <strong>从零到正向 ROI 的总投入预估：</strong>前 3 个月约 $3,000–4,500 加币（学习+测试费用），第 3–6 月开始回本。如果执行到位，第 6 个月广告 ROAS（回报率）可达 3–5 倍。<br>
+      <span style="font-size:12px; color:var(--text-muted)">注：以上基于 PrintNGO Plus 的 B2B 定制服装场景估算；B2C 广告回报期略短（1–2 个月即可看到销售转化），但客单价更低。</span>
+    </div>
+  </div>
+
+  <!-- STEP 0: 安装追踪代码 -->
+  <h3 style="font-size:17px; font-weight:700; margin-bottom:16px; color:var(--blue-glow)">第零步：先装追踪代码（这是所有广告的地基）</h3>
+  <div class="alert-warning" style="margin-bottom:20px">
+    不装追踪代码就投广告，等于蒙着眼睛开车。这一步必须在花第一分钱广告费之前完成。
+  </div>
+  <div class="steps" style="margin-bottom:32px">
+    <div class="step">
+      <div class="step-num">A</div>
+      <div class="step-body">
+        <h4>Google 转化追踪 + GA4</h4>
+        <p>进入 Google Ads 后台 → 工具 → 转化 → 新建转化。选「网站」，填入你的"获取报价"表单提交页面 URL（感谢页）作为转化目标。再去 analytics.google.com 创建 GA4 媒体资源，把 GA4 代码和 Google Ads 关联。</p>
+        <div class="tip">💡 设置后每次有人提交询价表单，Google Ads 就会记录一次转化，后期自动出价依赖这个数据。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">B</div>
+      <div class="step-body">
+        <h4>Facebook Pixel / Meta Pixel</h4>
+        <p>进入 Meta 广告后台（business.facebook.com）→ 事件管理工具 → 创建 Pixel。把 Pixel 代码放进网站所有页面的 &lt;head&gt; 区域。然后在"感谢页"（表单提交后跳转的页面）额外触发"Lead"事件。</p>
+        <div class="tip">💡 Pixel 积累 50 个以上转化数据后，Facebook 才能开始智能出价（tCPA）。这需要时间，所以越早装越好。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 广告平台 Tab -->
+  <div class="ads-tabs">
+    <button class="ads-tab-btn active" onclick="switchAdsTab(event,'google')">🔍 Google 搜索广告</button>
+    <button class="ads-tab-btn" onclick="switchAdsTab(event,'meta')">📘 Meta / Facebook 广告</button>
+  </div>
+
+  <div id="tab-google" class="ads-tab-panel active">
+  <!-- Google Ads 深度指南 -->
+  <h3 style="font-size:17px; font-weight:700; margin-bottom:16px; color:var(--blue-glow)">Google 搜索广告 — 跨境卖家实战打法</h3>
+
+  <!-- 账户三层结构 -->
+  <div class="card" style="margin-bottom:20px">
+    <h4 style="font-size:14px; font-weight:700; color:var(--orange-light); margin-bottom:12px">账户三层结构（必须按这个来，否则数据乱）</h4>
+    <div style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap">
+      <div style="flex:1; min-width:200px; background:rgba(30,58,95,0.5); border:1px solid var(--border); border-radius:8px; padding:14px">
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">第一层</div>
+        <div style="font-size:14px; font-weight:700; color:var(--blue-glow); margin-bottom:8px">广告系列（Campaign）</div>
+        <div style="font-size:12px; color:var(--text-muted)">按产品大类分组<br>例：T恤系列 / 卫衣系列 / 企业定制系列</div>
+      </div>
+      <div style="flex:0; color:var(--text-muted); font-size:18px; padding-top:20px">→</div>
+      <div style="flex:1; min-width:200px; background:rgba(30,58,95,0.5); border:1px solid var(--border); border-radius:8px; padding:14px">
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">第二层</div>
+        <div style="font-size:14px; font-weight:700; color:var(--blue-glow); margin-bottom:8px">广告组（Ad Group）</div>
+        <div style="font-size:12px; color:var(--text-muted)">按搜索意图分组<br>例：品牌词组 / 品类词组 / 竞品词组</div>
+      </div>
+      <div style="flex:0; color:var(--text-muted); font-size:18px; padding-top:20px">→</div>
+      <div style="flex:1; min-width:200px; background:rgba(30,58,95,0.5); border:1px solid var(--border); border-radius:8px; padding:14px">
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px">第三层</div>
+        <div style="font-size:14px; font-weight:700; color:var(--blue-glow); margin-bottom:8px">关键词 + 广告（Keywords）</div>
+        <div style="font-size:12px; color:var(--text-muted)">精准匹配词 + 短语匹配词<br>每组 10-20 个词，3-5 条广告</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 关键词策略 -->
+  <div class="card" style="margin-bottom:20px">
+    <h4 style="font-size:14px; font-weight:700; color:var(--orange-light); margin-bottom:12px">B2B 关键词策略：三类词，缺一不可</h4>
+    <div class="card-grid card-grid-3" style="gap:12px; margin-bottom:16px">
+      <div style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--green); margin-bottom:8px">✅ 高意向词（主投）</p>
+        <ul style="font-size:12px; color:var(--text-muted); padding-left:16px; line-height:1.8">
+          <li>custom t-shirts toronto bulk</li>
+          <li>corporate uniforms toronto</li>
+          <li>custom team jerseys wholesale</li>
+          <li>branded promotional products canada</li>
+          <li>custom hoodies bulk order</li>
+        </ul>
+      </div>
+      <div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--blue-glow); margin-bottom:8px">🎯 B2B 场景词（重点加）</p>
+        <ul style="font-size:12px; color:var(--text-muted); padding-left:16px; line-height:1.8">
+          <li>company uniform printing toronto</li>
+          <li>event t-shirt printing group</li>
+          <li>school team apparel custom</li>
+          <li>non profit fundraising shirts</li>
+          <li>OEM custom apparel manufacturer</li>
+        </ul>
+      </div>
+      <div style="background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.2); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--yellow); margin-bottom:8px">⭐ B2B 魔法后缀（加在任何词后面）</p>
+        <ul style="font-size:12px; color:var(--text-muted); padding-left:16px; line-height:1.8">
+          <li>…bulk / wholesale / OEM</li>
+          <li>…corporate / company</li>
+          <li>…group order / team order</li>
+          <li>…minimum order / no minimum</li>
+          <li>…quote / supplier / vendor</li>
+        </ul>
+      </div>
+    </div>
+    <h4 style="font-size:13px; font-weight:700; color:var(--orange-light); margin-bottom:8px">匹配类型三阶段进化（新手常犯错误：一开始就用广泛匹配）</h4>
+    <div style="display:flex; gap:8px; flex-wrap:wrap">
+      <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:6px; padding:10px 14px; flex:1; min-width:140px">
+        <div style="font-size:11px; color:var(--green); font-weight:700; margin-bottom:4px">第1-4周：精准匹配</div>
+        <div style="font-size:12px; color:var(--text-muted)">[exact match]<br>最省钱，先摸清哪些词有转化</div>
+      </div>
+      <div style="font-size:18px; color:var(--text-dim); padding-top:12px">→</div>
+      <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); border-radius:6px; padding:10px 14px; flex:1; min-width:140px">
+        <div style="font-size:11px; color:var(--blue-glow); font-weight:700; margin-bottom:4px">第1-3月：短语匹配</div>
+        <div style="font-size:12px; color:var(--text-muted)">"phrase match"<br>扩大覆盖，保持相关性</div>
+      </div>
+      <div style="font-size:18px; color:var(--text-dim); padding-top:12px">→</div>
+      <div style="background:rgba(234,179,8,0.1); border:1px solid rgba(234,179,8,0.3); border-radius:6px; padding:10px 14px; flex:1; min-width:140px">
+        <div style="font-size:11px; color:var(--yellow); font-weight:700; margin-bottom:4px">3个月后：+BMM修饰</div>
+        <div style="font-size:12px; color:var(--text-muted)">+custom +t-shirts +toronto<br>灵活覆盖更多长尾词</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 出价策略进化 -->
+  <div class="card" style="margin-bottom:20px">
+    <h4 style="font-size:14px; font-weight:700; color:var(--orange-light); margin-bottom:12px">出价策略四阶段（跟着数据走，不要急）</h4>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>手动出价（Manual CPC）— 前1个月</h4>
+          <p>对所有关键词手动设定每次点击出价（$2–5/次，多伦多 B2B 竞争词实际范围）。这阶段的目的是积累数据，不是追求转化。设定日预算 $30–50，跑够 2 周以上再看数据。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>增强型 CPC（eCPC）— 第1-3个月</h4>
+          <p>Google 根据转化可能性自动调整出价上下浮动，你仍有一定控制权。前提是已有少量转化数据（至少10个）。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>目标每次获客成本（tCPA）— 3个月后</h4>
+          <p>告诉 Google 你愿意为一个询价表单付多少钱（比如$50），Google 自动优化出价。前提：累计转化超过50次，数据才足够稳定。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>目标 ROAS — 成熟期</h4>
+          <p>如果你的网站可以直接成交（而非只收询价），可以切到目标 ROAS 策略。B2B 询价模式通常停留在 tCPA 就够了。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 广告文案公式 -->
+  <div class="card" style="margin-bottom:20px">
+    <h4 style="font-size:14px; font-weight:700; color:var(--orange-light); margin-bottom:12px">B2B 高转化广告文案公式</h4>
+    <div style="background:rgba(13,27,46,0.8); border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:12px; font-family:monospace">
+      <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px">标题1（30字符）</div>
+      <div style="font-size:14px; color:var(--text-white); margin-bottom:12px">Custom T-Shirts Toronto | Bulk</div>
+      <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px">标题2（30字符）</div>
+      <div style="font-size:14px; color:var(--text-white); margin-bottom:12px">50+ Units? Get 20% Off — Quote Now</div>
+      <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px">标题3（30字符）</div>
+      <div style="font-size:14px; color:var(--text-white); margin-bottom:12px">Free Design | Ships in 3 Days</div>
+      <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px">描述（90字符）</div>
+      <div style="font-size:13px; color:var(--blue-glow)">Corporate groups, sports teams & schools. No minimums. 100% satisfaction guarantee. Get your FREE group quote today!</div>
+    </div>
+    <div class="alert-info">
+      <strong>文案公式：</strong>地点关键词 + B2B数量暗示（Bulk/50+ Units）+ 核心优势（Free/Fast）+ 行动指令（Get Quote/Quote Now）。<strong>不要写"Buy Now"——B2B客户不会冲动购买，但会填报价表单。</strong>
+    </div>
+  </div>
+
+  <!-- 三种广告类型 -->
+  <div class="card" style="margin-bottom:20px">
+    <h4 style="font-size:14px; font-weight:700; color:var(--orange-light); margin-bottom:12px">三种 Google 广告类型，按顺序开启</h4>
+    <div class="card-grid card-grid-3" style="gap:12px">
+      <div style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--green); margin-bottom:6px">1. 搜索广告（优先）</p>
+        <p style="font-size:12px; color:var(--text-muted)">出现在 Google 搜索结果页。用户主动搜索，意图最强，转化率最高。先只投这个，跑满一个月。</p>
+        <div class="tag tag-green" style="margin-top:8px">意向最强</div>
+      </div>
+      <div style="background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--blue-glow); margin-bottom:6px">2. 展示广告（再营销）</p>
+        <p style="font-size:12px; color:var(--text-muted)">出现在 YouTube、新闻网站等。专门用来追踪访问过你网站但没询价的人（再营销/Retargeting）。单独建系列，不要和搜索混在一起。</p>
+        <div class="tag" style="margin-top:8px">提醒跟单</div>
+      </div>
+      <div style="background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.2); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--yellow); margin-bottom:6px">3. Performance Max（进阶）</p>
+        <p style="font-size:12px; color:var(--text-muted)">Google 全渠道自动投放，需要至少50个转化数据才能稳定。初期不建议，积累数据后再开。</p>
+        <div class="tag tag-orange" style="margin-top:8px">积累后再开</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7大避坑 -->
+  <div class="card" style="margin-bottom:32px; border-color:rgba(239,68,68,0.3)">
+    <h4 style="font-size:14px; font-weight:700; color:#F87171; margin-bottom:12px">⚠️ 7个 Google Ads 致命错误（来自实战踩坑）</h4>
+    <div class="card-grid card-grid-2" style="gap:8px">
+      <div class="checklist">
+        <li><span class="ico">❌</span><strong>用广泛匹配</strong>：钱会烧到完全不相关的搜索词上，白白浪费</li>
+        <li><span class="ico">❌</span><strong>搜索+展示混投</strong>：两种广告混在一个系列，数据互相干扰</li>
+        <li><span class="ico">❌</span><strong>落地页是首页</strong>：一定要跳转到专门的"团体报价"页面</li>
+        <li><span class="ico">❌</span><strong>不加否定词</strong>：加上「-free」「-diy」「-how to」，排除无购买意图的搜索</li>
+      </div>
+      <div class="checklist">
+        <li><span class="ico">❌</span><strong>一开始就 tCPA 出价</strong>：没数据就让 Google 自动出价，会浪费大量预算</li>
+        <li><span class="ico">❌</span><strong>频繁修改广告</strong>：每次改动都会重置学习期，至少稳定跑2周再调</li>
+        <li><span class="ico">❌</span><strong>转化目标设为"购买"</strong>：B2B很少直接网上结账，要设为"表单提交"</li>
+      </div>
+    </div>
+    <div class="tip" style="margin-top:12px">💡 B2B 广告最佳投放时间：工作日早上 8-10 点（EST 时间），这时企业采购决策者刚到办公室，点击率最高。周末减少50%预算或暂停。</div>
+  </div>
+
+  <!-- B2C Google 广告：直接购买场景 -->
+  <div class="card" style="margin-bottom:20px; border-color:rgba(249,115,22,0.25)">
+    <h4 style="font-size:15px; font-weight:700; color:var(--orange-light); margin-bottom:12px">🛍️ B2C 场景补充：个人客户的 Google 广告打法</h4>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">PrintNGO Plus 主打 B2B，但网站也接受无起订量的个人订单（送礼、个人T恤等）。B2C 广告目标不是"询价"，而是<strong style="color:var(--text-white)">直接购买</strong>，打法不同：</p>
+    <div class="card-grid card-grid-2" style="gap:12px">
+      <div style="background:rgba(30,58,95,0.4); border:1px solid var(--border); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--orange-light); margin-bottom:6px">B2C 关键词策略</p>
+        <ul class="checklist" style="font-size:12px">
+          <li><span class="ico">🎯</span>「custom t-shirt online」「personalized hoodie Canada」</li>
+          <li><span class="ico">🎯</span>「print my own shirt」「custom gift ideas toronto」</li>
+          <li><span class="ico">🎯</span>节日季关键词：「custom christmas gift」「graduation gift custom」</li>
+        </ul>
+      </div>
+      <div style="background:rgba(30,58,95,0.4); border:1px solid var(--border); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--orange-light); margin-bottom:6px">B2C 广告核心差异</p>
+        <ul class="checklist" style="font-size:12px">
+          <li><span class="ico">✅</span>转化目标设为「购买」，而非「询价」</li>
+          <li><span class="ico">✅</span>落地页直接进入 Design Lab，减少点击步骤</li>
+          <li><span class="ico">✅</span>突出「无起订量」「3天发货」「100%满意保证」</li>
+          <li><span class="ico">✅</span>出价方式：tROAS（目标广告支出回报）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tip" style="margin-top:12px">💡 建议把 B2C 和 B2B 放在<strong>独立的广告系列</strong>，预算分开管理，数据互不干扰。初期 B2C 可从 $5–10/天起投测试。</div>
+  </div>
+
+  </div><!-- /#tab-google -->
+
+  <div id="tab-meta" class="ads-tab-panel">
+  <!-- Facebook 广告深度指南 -->
+  <h3 style="font-size:17px; font-weight:700; margin-bottom:16px; color:var(--blue-glow)">Facebook / Instagram 广告 — 三阶段打法</h3>
+  <p style="font-size:14px; color:var(--text-muted); margin-bottom:20px">Facebook 不是"搜索需求"，而是"激发需求"。企业主、HR、活动策划师刷 Feed 时看到你，记住了品牌，等真正需要定制服装时第一个想到你。</p>
+
+  <!-- ABO vs CBO -->
+  <div class="card" style="margin-bottom:20px">
+    <h4 style="font-size:14px; font-weight:700; color:var(--orange-light); margin-bottom:12px">ABO vs CBO：先搞懂这对概念</h4>
+    <div class="card-grid card-grid-2" style="gap:16px">
+      <div style="background:rgba(30,58,95,0.4); border:1px solid var(--border); border-radius:8px; padding:12px">
+        <p style="font-size:13px; font-weight:700; color:var(--blue-glow); margin-bottom:6px">ABO（广告组预算优化）</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px">你手动给每个广告组分配预算。适合测试阶段，你可以控制每个受众组花多少钱。</p>
+        <div class="tag">测试期用</div>
+      </div>
+      <div style="background:rgba(30,58,95,0.4); border:1px solid var(--border); border-radius:8px; padding:12px">
+        <p style="font-size:13px; font-weight:700; color:var(--orange-light); margin-bottom:6px">CBO（广告系列预算优化）</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px">你设总预算，Facebook 自动把钱分给效果最好的广告组。适合有数据支撑后的放量阶段。</p>
+        <div class="tag tag-orange">放量期用</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 三阶段系统 -->
+  <div class="steps" style="margin-bottom:24px">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>测试阶段（第1-2周）— ABO 多组测试</h4>
+        <p>用 ABO 模式，同时跑 3-5 个广告组，每组 $15-20/天，测试不同受众。受众可以是：企业主兴趣 / HR职位 / 活动策划师 / 体育俱乐部管理者。</p>
+        <p style="margin-top:8px"><strong style="color:var(--orange-light)">判断标准：</strong>跑 7 天后，哪个广告组 CPL（每询价成本）最低，就是赢家。关掉输的，保留赢的继续跑。</p>
+        <div class="tip">💡 每个广告组用相同的广告创意，唯一变量是受众——这样测出来的结果才有意义。</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>拓展阶段（第2-4周）— 类似受众 + PPE 互动帖</h4>
+        <p><strong style="color:var(--blue-glow)">类似受众（Lookalike Audience）：</strong>把你现有的 100-200 个客户联系方式上传给 Facebook，Facebook 会找出与他们"长得最像"的用户。测试用 1-2% 相似度（更精准），放量用 2-5% 相似度（更多量）。加拿大市场建议种子人群规模 200-500 万。</p>
+        <p style="margin-top:8px"><strong style="color:var(--blue-glow)">PPE 互动帖（社交证明神器）：</strong>先发一条有真实客户团体照片的帖子，投"互动"目标（而非转化），积累点赞评论。等帖子有了100+互动后，再投转化广告，新用户看到会更信任。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>放量阶段（1个月后）— CBO 集中火力</h4>
+        <p>把测试中表现最好的受众组合，统一放进一个 CBO 系列，设定总预算（比如$500/月）。Facebook 会自动把钱集中给转化率最高的受众。再配合再营销广告（追访问过网站但没填表的人），形成完整漏斗。</p>
+        <p style="margin-top:8px"><strong style="color:var(--orange-light)">再营销受众设置：</strong>过去 30 天访问过网站、看过报价页但没提交的人 → 展示"限时团体优惠"广告 → 促成转化。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 账号安全 -->
+  <div class="card" style="margin-bottom:20px; border-color:rgba(239,68,68,0.3)">
+    <h4 style="font-size:14px; font-weight:700; color:#F87171; margin-bottom:12px">🔒 Facebook 账号安全：多店铺跨境卖家必看</h4>
+    <div class="card-grid card-grid-2" style="gap:12px">
+      <div>
+        <p style="font-size:12px; font-weight:700; color:var(--text-white); margin-bottom:8px">容易被封的行为</p>
+        <ul class="checklist">
+          <li><span class="ico">⛔</span>同一 IP 登录多个广告账户（Temu/Amazon 的店群习惯要改）</li>
+          <li><span class="ico">⛔</span>账号主页评分低于 2.0（新开主页要养号）</li>
+          <li><span class="ico">⛔</span>广告文案包含"赚钱"、"限时"等敏感词</li>
+          <li><span class="ico">⛔</span>广告落地页和广告内容不符</li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-size:12px; font-weight:700; color:var(--text-white); margin-bottom:8px">正确的安全措施</p>
+        <ul class="checklist">
+          <li><span class="ico">✅</span>独立站广告用固定家庭宽带 IP，不要和店群 IP 混用</li>
+          <li><span class="ico">✅</span>开广告前先让 Facebook 主页运营3个月（发内容、积累粉丝）</li>
+          <li><span class="ico">✅</span>开启双重验证（2FA），绑定真实手机号</li>
+          <li><span class="ico">✅</span>每次广告先审核再发，不要随意改动已通过的广告</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- B2C Meta 广告：社交购买场景 -->
+  <div class="card" style="margin-bottom:20px; border-color:rgba(249,115,22,0.25)">
+    <h4 style="font-size:15px; font-weight:700; color:var(--orange-light); margin-bottom:12px">🛍️ B2C 场景补充：个人客户的 Meta 广告打法</h4>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">Meta 广告视觉驱动，个人买家（送礼、自用T恤）在 Instagram/Facebook 刷到好看的设计很容易冲动下单。这正是 B2C 的主场：</p>
+    <div class="card-grid card-grid-2" style="gap:12px">
+      <div style="background:rgba(30,58,95,0.4); border:1px solid var(--border); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--orange-light); margin-bottom:6px">B2C 创意方向</p>
+        <ul class="checklist" style="font-size:12px">
+          <li><span class="ico">📸</span>真人穿着效果图（比产品图 CTR 高 2–3 倍）</li>
+          <li><span class="ico">🎥</span>短视频：「从设计到收货全过程」15秒版本</li>
+          <li><span class="ico">🎁</span>节日礼物场景：「送男友 / 闺蜜 / 宝宝定制款」</li>
+        </ul>
+      </div>
+      <div style="background:rgba(30,58,95,0.4); border:1px solid var(--border); border-radius:8px; padding:12px">
+        <p style="font-size:12px; font-weight:700; color:var(--orange-light); margin-bottom:6px">B2C 受众 &amp; 出价</p>
+        <ul class="checklist" style="font-size:12px">
+          <li><span class="ico">🎯</span>受众：25–45 岁女性、加拿大、兴趣「礼品」「个性化」</li>
+          <li><span class="ico">🎯</span>节日冲刺（圣诞/情人节）提前 3 周开始投放</li>
+          <li><span class="ico">✅</span>转化目标设为「购买」，配合 Pixel 购买事件</li>
+          <li><span class="ico">✅</span>再营销：加购未付款用户 → 展示「限时免运费」</li>
+        </ul>
+      </div>
+    </div>
+    <div class="tip" style="margin-top:12px">💡 B2C 广告 CPM 更低，但客单价也低（约 $25–50/单）。节假日旺季（10–12月）是重点投放窗口，平时维持小预算保持曝光即可。</div>
+  </div>
+
+  </div><!-- /#tab-meta -->
+
+  <!-- 预算分配表 -->
+  <h3 style="font-size:17px; font-weight:700; margin-bottom:16px; color:var(--blue-glow)">预算分配方案（按月投入金额）</h3>
+  <div style="overflow-x:auto; margin-bottom:28px">
+    <table style="width:100%; border-collapse:collapse; font-size:13px">
+      <thead>
+        <tr style="background:rgba(30,58,95,0.6)">
+          <th style="padding:10px 14px; text-align:left; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border)">渠道</th>
+          <th style="padding:10px 14px; text-align:center; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border)">方案A<br><span style="color:var(--green); font-size:11px">$1,000/月（起步门槛）</span></th>
+          <th style="padding:10px 14px; text-align:center; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border)">方案B<br><span style="color:var(--blue-glow); font-size:11px">$1,000/月（稳定增长）</span></th>
+          <th style="padding:10px 14px; text-align:center; color:var(--text-muted); font-weight:600; border-bottom:1px solid var(--border)">方案C<br><span style="color:var(--orange); font-size:11px">$2,000/月（规模化）</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+          <td style="padding:10px 14px; color:var(--text-white)">Google 搜索广告</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--green)">$700</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--blue-glow)">$550</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--orange)">$1,100</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+          <td style="padding:10px 14px; color:var(--text-white)">Facebook/Instagram</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--green)">$250</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--blue-glow)">$350</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--orange)">$700</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+          <td style="padding:10px 14px; color:var(--text-white)">Google 展示/再营销</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--text-muted)">—</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--blue-glow)">$100</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--orange)">$200</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px; color:var(--text-white)">预期月询价量</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--green); font-weight:700">8-15 条</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--blue-glow); font-weight:700">20-35 条</td>
+          <td style="padding:10px 14px; text-align:center; color:var(--orange); font-weight:700">50-80 条</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 关键指标 -->
+  <div class="card" style="margin-bottom:28px">
+    <h4 style="font-size:14px; font-weight:700; color:var(--orange-light); margin-bottom:12px">关键数据指标参考（判断广告是否健康）</h4>
+    <div class="card-grid card-grid-3" style="gap:10px">
+      <div style="background:rgba(13,27,46,0.6); border:1px solid var(--border); border-radius:8px; padding:12px; text-align:center">
+        <div style="font-size:20px; font-weight:800; color:var(--green); margin-bottom:4px">2-5%</div>
+        <div style="font-size:12px; color:var(--text-white); font-weight:600">Google 搜索 CTR</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px">低于1%说明文案或匹配有问题</div>
+      </div>
+      <div style="background:rgba(13,27,46,0.6); border:1px solid var(--border); border-radius:8px; padding:12px; text-align:center">
+        <div style="font-size:20px; font-weight:800; color:var(--blue-glow); margin-bottom:4px">$2-5</div>
+        <div style="font-size:12px; color:var(--text-white); font-weight:600">Google 搜索 CPC</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px">多伦多 B2B 竞争词实际范围</div>
+      </div>
+      <div style="background:rgba(13,27,46,0.6); border:1px solid var(--border); border-radius:8px; padding:12px; text-align:center">
+        <div style="font-size:20px; font-weight:800; color:var(--orange); margin-bottom:4px">$30-80</div>
+        <div style="font-size:12px; color:var(--text-white); font-weight:600">CPL（询价获客成本）</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px">B2B 单笔均值$500+，低于$80都赚</div>
+      </div>
+      <div style="background:rgba(13,27,46,0.6); border:1px solid var(--border); border-radius:8px; padding:12px; text-align:center">
+        <div style="font-size:20px; font-weight:800; color:var(--green); margin-bottom:4px">≥7</div>
+        <div style="font-size:12px; color:var(--text-white); font-weight:600">Google 质量得分</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px">低于5需优化落地页或文案</div>
+      </div>
+      <div style="background:rgba(13,27,46,0.6); border:1px solid var(--border); border-radius:8px; padding:12px; text-align:center">
+        <div style="font-size:20px; font-weight:800; color:var(--blue-glow); margin-bottom:4px">&lt;3次</div>
+        <div style="font-size:12px; color:var(--text-white); font-weight:600">Facebook 展示频率</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px">超过3次需要更换广告素材</div>
+      </div>
+      <div style="background:rgba(13,27,46,0.6); border:1px solid var(--border); border-radius:8px; padding:12px; text-align:center">
+        <div style="font-size:20px; font-weight:800; color:var(--orange); margin-bottom:4px">1-2%</div>
+        <div style="font-size:12px; color:var(--text-white); font-weight:600">Facebook CTR</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px">低于0.5%说明创意没吸引力</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 行动清单 -->
+  <h3 style="font-size:17px; font-weight:700; margin-bottom:16px; color:var(--blue-glow)">行动清单（按顺序执行，不要跳步）</h3>
+  <div class="card" style="background:linear-gradient(135deg,rgba(30,58,95,0.3),transparent)">
+    <div class="card-grid card-grid-2" style="gap:12px">
+      <div>
+        <p style="font-size:13px; font-weight:700; color:var(--orange-light); margin-bottom:10px">第一周（必须完成）</p>
+        <ul class="checklist">
+          <li><span class="ico">☐</span>安装 Google Conversion Tracking（设置表单提交为转化目标）</li>
+          <li><span class="ico">☐</span>安装 GA4，关联到 Google Ads 账户</li>
+          <li><span class="ico">☐</span>安装 Facebook Pixel，测试事件是否正常触发</li>
+          <li><span class="ico">☐</span>创建"团体报价"专属落地页（不要用首页）</li>
+          <li><span class="ico">☐</span>Google Ads 开启第一个搜索广告系列（手动 CPC）</li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-size:13px; font-weight:700; color:var(--blue-glow); margin-bottom:10px">第一个月（稳步推进）</p>
+        <ul class="checklist">
+          <li><span class="ico">☐</span>Facebook 开启 ABO 测试（3组不同受众，$15/天各组）</li>
+          <li><span class="ico">☐</span>第2周：分析 Google 搜索词报告，加否定关键词</li>
+          <li><span class="ico">☐</span>第3周：关闭 CTR 低于1%的广告组，复制好的</li>
+          <li><span class="ico">☐</span>上传现有客户邮件列表到 Facebook，建立类似受众</li>
+          <li><span class="ico">☐</span>发1条有真实团体照片的 PPE 互动帖，积累社交证明</li>
+          <li><span class="ico">☐</span>第4周：整理本月询价数量和来源，决定加不加预算</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+<!-- ===== SECTION 5: SOCIAL MEDIA ===== -->
+<section class="section" id="social">
+<div class="container">
+  <div class="section-label">品牌曝光</div>
+  <h2 class="section-title">社媒运营 — 让品牌被更多人看见</h2>
+  <p class="section-desc">社媒的核心作用：客户在找你之前，先在社媒上认识你，等真正有需求时第一个想起你。定制印刷天然适合做内容——成品好看、过程有趣、B2B 客户决策前会先翻你的账号判断专业度。以下是三个平台的完整落地打法。</p>
+
+  <!-- Platform Tabs -->
+  <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;">
+    <button class="ads-tab-btn active" onclick="switchSocialTab(event,'instagram')">📸 Instagram</button>
+    <button class="ads-tab-btn" onclick="switchSocialTab(event,'tiktok')">🎵 TikTok</button>
+    <button class="ads-tab-btn" onclick="switchSocialTab(event,'facebook')">👥 Facebook</button>
+  </div>
+
+  <!-- ===== Instagram Tab ===== -->
+  <div class="ads-tab-panel active" id="stab-instagram">
+
+    <div class="card-grid card-grid-2" style="margin-bottom:24px">
+      <div class="card">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:12px; color:var(--orange)">📍 账号定位 &amp; Bio 写法</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">目标受众：多伦多企业主、HR、活动策划师、运动队教练、学校老师</p>
+        <div style="background:var(--bg-deep); border:1px solid var(--border); border-radius:8px; padding:12px; font-size:12px; color:var(--text-white); line-height:1.9;">
+          <strong style="color:var(--orange)">✏️ Bio 模板：</strong><br>
+          🎽 Toronto's Custom Print Pros<br>
+          No minimums · 3-day rush available<br>
+          Teams, Corps &amp; Events welcome<br>
+          🔗 Get Free Quote 👇<br>
+          [Linktree 链接]
+        </div>
+        <div class="tip" style="margin-top:10px; font-size:12px">💡 Linktree 里放4个入口：获取报价 / 查看产品 / 查看案例 / 联系我们</div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:12px; color:var(--orange)">🕐 每周发帖节奏</h3>
+        <ul class="checklist">
+          <li><span class="ico">📹</span><strong>Reels（短视频）×2–3条</strong> — 最高曝光率，算法优先推送，新账号也能冷启动</li>
+          <li><span class="ico">📸</span><strong>Feed 图文帖 ×1–2条</strong> — 成品展示/客户案例，留在主页供客户翻看</li>
+          <li><span class="ico">⭕</span><strong>Stories ×5–7条/天</strong> — 低门槛，随手拍车间/打包/客户取货，保持存在感</li>
+          <li><span class="ico">⏰</span><strong>最佳时间：</strong>周二至周四，早 10–11am 或晚 7–8pm（多伦多 EST）</li>
+          <li><span class="ico">📅</span><strong>最低保证：</strong>每周 3 条 Reels + 1 条 Feed，Stories 每天更新</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 5 Content Pillars -->
+    <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--text-white)">🏛️ 5大内容支柱（按比例分配）</h3>
+    <div class="card-grid card-grid-3" style="margin-bottom:24px">
+      <div class="card" style="border-color:var(--border-orange)">
+        <div style="font-size:22px; margin-bottom:6px">🎁</div>
+        <strong style="color:var(--orange); font-size:13px">成品展示 30%</strong>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:6px">完成的订单、整齐叠放的T恤、卫衣平铺展示。光线好、构图干净，每张图水印放左下角。</p>
+      </div>
+      <div class="card">
+        <div style="font-size:22px; margin-bottom:6px">🎬</div>
+        <strong style="color:var(--blue-glow); font-size:13px">幕后制作 25%</strong>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:6px">打印机运行、裁切过程、设计到成品对比、装箱发货——真实可信的内容最能建立信任。</p>
+      </div>
+      <div class="card">
+        <div style="font-size:22px; margin-bottom:6px">🤝</div>
+        <strong style="color:var(--green); font-size:13px">客户故事 25%</strong>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:6px">客户穿着照/团体合照（获许可后发布）、收货开箱、客户反馈截图。真实的社会认证。</p>
+      </div>
+      <div class="card">
+        <div style="font-size:22px; margin-bottom:6px">💡</div>
+        <strong style="color:var(--yellow); font-size:13px">知识科普 10%</strong>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:6px">"印刷 vs 刺绣哪个耐用？"、"如何选择合适面料？"——吸引正在研究阶段的潜在客户。</p>
+      </div>
+      <div class="card">
+        <div style="font-size:22px; margin-bottom:6px">🏷️</div>
+        <strong style="color:var(--red); font-size:13px">促销活动 10%</strong>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:6px">限时折扣、节日促销、团购优惠。不要发太多，保持内容质量，避免账号变成广告号。</p>
+      </div>
+    </div>
+
+    <!-- UGC Strategy -->
+    <div class="card" style="margin-bottom:24px">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--orange)">♻️ UGC 用户自生内容——让客户替你说话</h3>
+      <div class="steps">
+        <div class="step" style="padding:12px 0">
+          <div class="step-num" style="width:28px;height:28px;font-size:13px">1</div>
+          <div class="step-body" style="padding:0">
+            <h4 style="font-size:14px">包裹卡片引导拍照</h4>
+            <p style="font-size:13px">每个包裹放入卡片："穿上拍张照，标记 @PrintNGOPlus 或 #PrintNGOPlus，截图发给我们，下次订单享 $10 折扣。" 成本极低，效果持续。</p>
+          </div>
+        </div>
+        <div class="step" style="padding:12px 0">
+          <div class="step-num" style="width:28px;height:28px;font-size:13px">2</div>
+          <div class="step-body" style="padding:0">
+            <h4 style="font-size:14px">订单交付后 DM 跟进</h4>
+            <p style="font-size:13px">客户收货后 2 天，发 DM："希望你们的定制衫很受欢迎！如果有机会拍张穿着照，我们可以在 Instagram 上转发，帮你们的团体/活动曝光。" 礼轻情意重。</p>
+          </div>
+        </div>
+        <div class="step" style="padding:12px 0; border-bottom:none">
+          <div class="step-num" style="width:28px;height:28px;font-size:13px">3</div>
+          <div class="step-body" style="padding:0">
+            <h4 style="font-size:14px">获得授权后转发 + 标记</h4>
+            <p style="font-size:13px">转发客户照片时，标记客户账号，写上他们的组织名称，让他们也获得曝光。下次有需求，一定还找你；他们的粉丝也认识你了。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hashtag System -->
+    <div class="card" style="margin-bottom:24px">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--orange)">🏷️ 标签系统（3组搭配使用，每帖 15–20个）</h3>
+      <div class="card-grid card-grid-3">
+        <div style="background:var(--bg-deep); border-radius:8px; padding:12px;">
+          <strong style="font-size:12px; color:var(--blue-glow)">本地标签（必用）</strong>
+          <p style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:2.2">#Toronto #TorontoSmallBusiness<br>#TorontoBusiness<br>#TorontoPrint<br>#MadeinToronto<br>#CanadaPrint</p>
+        </div>
+        <div style="background:var(--bg-deep); border-radius:8px; padding:12px;">
+          <strong style="font-size:12px; color:var(--orange)">行业标签（必用）</strong>
+          <p style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:2.2">#CustomTshirts<br>#CustomPrinting<br>#ScreenPrinting<br>#CorporateApparel<br>#TeamWear</p>
+        </div>
+        <div style="background:var(--bg-deep); border-radius:8px; padding:12px;">
+          <strong style="font-size:12px; color:var(--green)">场景标签（按内容选）</strong>
+          <p style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:2.2">#TeamGear #SportsWear<br>#SchoolSpirit<br>#EventMerch<br>#CorporateGifts<br>#NonProfit</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="ico">📌</span>
+      <div><strong>Instagram 3个月冷启动目标：</strong>第1个月发满12条Reels + 建立规律Stories → 第2个月开始跑UGC + 第一批DM询价 → 第3个月进入算法推荐池，月增50+粉丝。不要太在意粉丝数——<strong style="color:var(--orange)">1条主动来DM询价的帖子，比1000个赞有价值。</strong></div>
+    </div>
+
+  </div><!-- /stab-instagram -->
+
+  <!-- ===== TikTok Tab ===== -->
+  <div class="ads-tab-panel" id="stab-tiktok">
+
+    <div class="card" style="margin-bottom:24px">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:12px; color:var(--orange)">🔥 为什么TikTok对定制印刷特别有效？</h3>
+      <div class="card-grid card-grid-3">
+        <div style="background:var(--bg-deep); border-radius:8px; padding:14px; text-align:center;">
+          <div style="font-size:20px; margin-bottom:8px">🆕</div>
+          <strong style="font-size:13px; color:var(--text-white)">新账号也有机会</strong>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:6px">TikTok算法对新账号友好，1条好视频可以突破粉丝数直接推给大量陌生人</p>
+        </div>
+        <div style="background:var(--bg-deep); border-radius:8px; padding:14px; text-align:center;">
+          <div style="font-size:20px; margin-bottom:8px">👁️</div>
+          <strong style="font-size:13px; color:var(--text-white)">过程即内容</strong>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:6px">印刷、裁切、装箱——这些日常工序本身就是观众喜欢的"工厂探秘"类内容</p>
+        </div>
+        <div style="background:var(--bg-deep); border-radius:8px; padding:14px; text-align:center;">
+          <div style="font-size:20px; margin-bottom:8px">🛒</div>
+          <strong style="font-size:13px; color:var(--text-white)">强转化意图</strong>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:6px">评论区询价是TikTok常见现象，观众看到成品就会问"怎么定制"</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Viral Topics -->
+    <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--text-white)">🎬 10个爆款选题（按传播力排序）</h3>
+    <div style="margin-bottom:24px; overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:500px;">
+        <thead>
+          <tr style="background:var(--bg-deep); color:var(--text-muted);">
+            <th style="padding:10px 12px; text-align:left; border-bottom:1px solid var(--border);">选题方向</th>
+            <th style="padding:10px 12px; text-align:left; border-bottom:1px solid var(--border);">示例标题</th>
+            <th style="padding:10px 12px; text-align:center; border-bottom:1px solid var(--border);">传播力</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">批量订单揭秘</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「我们用48小时完成了200件球衣订单」</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--orange)">⭐⭐⭐⭐⭐</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">设计变现实</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「客户发来设计图，3天后变成这样」（Before/After）</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--orange)">⭐⭐⭐⭐⭐</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">客户取货反应</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「企业客户来取50件工服，他们的反应……」</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--orange)">⭐⭐⭐⭐⭐</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">急单故事</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「周五接到急单，100件T恤，周一交货……」</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--orange)">⭐⭐⭐⭐⭐</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">价格透明</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「定制100件T恤到底要多少钱？」（用数字吸引点击）</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--yellow)">⭐⭐⭐⭐</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">工艺比较</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「印刷 vs 刺绣，10年后哪个更好看？」</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--yellow)">⭐⭐⭐⭐</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">延时制作</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「一件T恤的诞生（延时摄影版）」</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--yellow)">⭐⭐⭐⭐</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">多伦多本地故事</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「我们帮这支多伦多球队做了全套主客场球衣」</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--green)">⭐⭐⭐</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:10px 12px; color:var(--text-white)">一日工厂</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「PrintNGO Plus 一天的订单数量是……」</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--green)">⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 12px; color:var(--text-white)">避坑指南</td>
+            <td style="padding:10px 12px; color:var(--text-muted)">「选定制T恤供应商前，必须问这5个问题」</td>
+            <td style="padding:10px 12px; text-align:center; color:var(--green)">⭐⭐⭐</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Formula -->
+    <div class="card" style="margin-bottom:24px; border-color:var(--border-orange)">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--orange)">📐 每条视频的黄金公式：HOOK + BODY + CTA</h3>
+      <div class="card-grid card-grid-3">
+        <div style="background:var(--bg-deep); border-radius:8px; padding:14px;">
+          <strong style="color:var(--red); font-size:13px">⚡ HOOK（前3秒，决定生死）</strong>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.9">「我们用48小时完成了这个……」<br>「这是我们接到过最难的订单」<br>「客户看到成品后哭了」<br>「你猜这100件卫衣花了多少钱？」</p>
+          <div class="tip" style="margin-top:8px; font-size:11px">必须是疑问、反转或夸张，让人停下来看</div>
+        </div>
+        <div style="background:var(--bg-deep); border-radius:8px; padding:14px;">
+          <strong style="color:var(--blue-glow); font-size:13px">📦 BODY（15–40秒，讲完故事）</strong>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.9">展示过程、结果、客户反应<br><br>用字幕（中英双语效果更好）<br>节奏快，不要废话<br>边说边展示产品</p>
+          <div class="tip" style="margin-top:8px; font-size:11px">多伦多华人多，双语字幕可扩大覆盖面</div>
+        </div>
+        <div style="background:var(--bg-deep); border-radius:8px; padding:14px;">
+          <strong style="color:var(--green); font-size:13px">🎯 CTA（最后3秒，引导行动）</strong>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:8px; line-height:1.9">「需要定制？评论区留下你的需求」<br>「主页链接可以直接获取报价」<br>「关注我们，了解更多定制技巧」</p>
+          <div class="tip" style="margin-top:8px; font-size:11px">评论区引导询价，比让人去网站转化率更高</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Posting Schedule -->
+    <div class="card" style="margin-bottom:16px">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:12px; color:var(--orange)">📅 发帖节奏 &amp; 时间安排</h3>
+      <ul class="checklist">
+        <li><span class="ico">📹</span><strong>频率：每周 3–5 条</strong>（算法奖励稳定更新，比爆发一周然后断更更有效）</li>
+        <li><span class="ico">⏰</span><strong>最佳时间：</strong>午间 12–2pm 或晚间 7–9pm（多伦多 EST）</li>
+        <li><span class="ico">📝</span><strong>文案字数：</strong>简介 1-2 句 + 3个#标签，不需要长文案</li>
+        <li><span class="ico">🔁</span><strong>同步发 Instagram Reels</strong> — 一次拍摄，两个平台覆盖，效率翻倍</li>
+        <li><span class="ico">📱</span><strong>拍摄工具：</strong>iPhone 即可，竖屏 9:16，不需要专业设备</li>
+      </ul>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="ico">🎯</span>
+      <div><strong>TikTok 核心指标：</strong>不要看粉丝数，看<strong style="color:var(--orange)">评论区询价数量</strong>和<strong style="color:var(--orange)">主页链接点击数</strong>。一条500播放量但引来3个询价的视频，比10万播放量但没人询价的视频价值高10倍。</div>
+    </div>
+
+  </div><!-- /stab-tiktok -->
+
+  <!-- ===== Facebook Tab ===== -->
+  <div class="ads-tab-panel" id="stab-facebook">
+
+    <div class="card" style="margin-bottom:24px">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:12px; color:var(--orange)">📌 为什么Facebook适合B2B定制印刷？</h3>
+      <p style="font-size:14px; color:var(--text-muted)">Facebook上活跃着大量多伦多本地小企业主、HR、活动组织者——他们是你的核心B2B客户。最重要的不是发内容，而是<strong style="color:var(--text-white)">进入他们活跃的群组</strong>，然后成为他们信赖的供应商。</p>
+    </div>
+
+    <!-- B2B Group Strategy -->
+    <div class="card" style="margin-bottom:24px; border-color:var(--border-orange)">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--orange)">👥 B2B 群组策略（最低成本获客）</h3>
+      <div class="steps">
+        <div class="step" style="padding:12px 0">
+          <div class="step-num" style="width:28px;height:28px;font-size:13px">1</div>
+          <div class="step-body" style="padding:0">
+            <h4 style="font-size:14px">加入这些多伦多本地群组</h4>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px">
+              <span style="background:var(--bg-deep); border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12px; color:var(--text-white)">Toronto Small Business Network</span>
+              <span style="background:var(--bg-deep); border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12px; color:var(--text-white)">Toronto Entrepreneurs</span>
+              <span style="background:var(--bg-deep); border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12px; color:var(--text-white)">Toronto Sports Teams &amp; Leagues</span>
+              <span style="background:var(--bg-deep); border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12px; color:var(--text-white)">GTA HR Professionals</span>
+              <span style="background:var(--bg-deep); border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12px; color:var(--text-white)">Toronto Event Planners</span>
+              <span style="background:var(--bg-deep); border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12px; color:var(--text-white)">Canada Chinese Business Network</span>
+            </div>
+          </div>
+        </div>
+        <div class="step" style="padding:12px 0">
+          <div class="step-num" style="width:28px;height:28px;font-size:13px">2</div>
+          <div class="step-body" style="padding:0">
+            <h4 style="font-size:14px">先参与，再推广（3:1法则）</h4>
+            <p style="font-size:13px; margin-top:6px">每推广1次，先用心回答3条他人问题。当有人问"哪里可以做团体T恤"、"求推荐定制供应商"时，这就是你的最佳出场机会——先帮忙，再提及自己。</p>
+          </div>
+        </div>
+        <div class="step" style="padding:12px 0; border-bottom:none">
+          <div class="step-num" style="width:28px;height:28px;font-size:13px">3</div>
+          <div class="step-body" style="padding:0">
+            <h4 style="font-size:14px">每月1-2次发布客户案例</h4>
+            <p style="font-size:13px; margin-top:6px">格式：[成果] + [过程] + [邀请询价]。例如："上周帮多伦多一家科技公司完成了80件周年纪念T恤定制，从设计到交货48小时。如果你们公司也有类似需求，欢迎私信报价。"</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page Optimization -->
+    <div class="card-grid card-grid-2" style="margin-bottom:24px">
+      <div class="card">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:12px; color:var(--orange)">🏪 商家主页优化清单</h3>
+        <ul class="checklist">
+          <li><span class="ico">✅</span>主页分类：选 "Clothing Store" + "Print Shop"</li>
+          <li><span class="ico">✅</span>封面图：最好看的团体成品图，尺寸 820×312px</li>
+          <li><span class="ico">✅</span>主页简介：服务内容、最低起订量（无）、交货时间、网站链接</li>
+          <li><span class="ico">✅</span>服务项目：逐一列出印刷类型和产品品类</li>
+          <li><span class="ico">✅</span>添加 "Get Quote" 按钮，链接到独立站报价页</li>
+          <li><span class="ico">✅</span>邀请历史客户在主页留5星评价（主动发消息请求）</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:12px; color:var(--orange)">💬 Messenger 自动回复（必设置）</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px">客户发 Messenger 询价，如果30分钟没回复，80%会转移到竞争对手。设置自动回复：</p>
+        <div style="background:var(--bg-deep); border-radius:8px; padding:12px; font-size:11px; color:var(--text-white); line-height:1.9; border-left:3px solid var(--orange)">
+          Hi! Thanks for reaching out to PrintNGO Plus! 👋<br><br>
+          We reply within 2 hours (Mon–Fri 9am–6pm EST).<br><br>
+          For a quick quote: printngoplus.com/quote<br><br>
+          Please include in your message:<br>
+          ✓ Product type &amp; quantity<br>
+          ✓ Design file (if ready)<br>
+          ✓ Delivery date needed
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Plan -->
+    <div class="card" style="margin-bottom:16px">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--orange)">📅 Facebook 月度内容计划</h3>
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:var(--bg-deep); color:var(--text-muted);">
+            <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">每月频次</th>
+            <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">内容类型</th>
+            <th style="padding:8px 12px; text-align:left; border-bottom:1px solid var(--border);">目标</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:8px 12px; color:var(--text-white)">2–3 次</td>
+            <td style="padding:8px 12px; color:var(--text-muted)">客户成品展示（图 + 简介 + 报价入口）</td>
+            <td style="padding:8px 12px; color:var(--green)">获取询价</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:8px 12px; color:var(--text-white)">1–2 次</td>
+            <td style="padding:8px 12px; color:var(--text-muted)">季节性促销（开学/黑五/节庆）</td>
+            <td style="padding:8px 12px; color:var(--orange)">促进转化</td>
+          </tr>
+          <tr style="border-bottom:1px solid rgba(59,130,246,0.1)">
+            <td style="padding:8px 12px; color:var(--text-white)">2 次</td>
+            <td style="padding:8px 12px; color:var(--text-muted)">在群组内回答问题 / 分享行业知识</td>
+            <td style="padding:8px 12px; color:var(--blue-glow)">建立信任</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px; color:var(--text-white)">1 次</td>
+            <td style="padding:8px 12px; color:var(--text-muted)">同步 Instagram Reels 视频（内容复用）</td>
+            <td style="padding:8px 12px; color:var(--yellow)">扩大曝光</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="ico">📌</span>
+      <div><strong>Facebook 最快见效的两件事：</strong>① 立即设置 Messenger 自动回复（10分钟完成）② 邀请5个老客户在主页留评价（今天就做）。这两件事零预算，ROI 最高。</div>
+    </div>
+
+  </div><!-- /stab-facebook -->
+
+  <!-- KPI Summary (always visible below tabs) -->
+  <div style="margin-top:28px; background:linear-gradient(135deg, rgba(249,115,22,0.08), rgba(30,58,95,0.25)); border:1px solid var(--border-orange); border-radius:12px; padding:20px;">
+    <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--orange)">📊 社媒运营成效评估（每月对标）</h3>
+    <div class="card-grid card-grid-3" style="margin-bottom:0">
+      <div style="text-align:center">
+        <div style="font-size:26px; font-weight:800; color:var(--orange)">≥3–5%</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:4px">Instagram 互动率<br>（赞+评论+保存÷曝光）</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:26px; font-weight:800; color:var(--blue-glow)">5+ 条</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:4px">每月社媒带来的DM询价<br>（不含广告）</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:26px; font-weight:800; color:var(--green)">+50</div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:4px">Instagram 月自然新增粉丝<br>（3个月后稳定达成）</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+
+<!-- ===== SECTION 7: EMAIL MARKETING ===== -->
+<section class="section" id="email">
+<div class="container">
+  <div class="section-label">自动化营销</div>
+  <h2 class="section-title">邮件营销全体系 — 从第一封欢迎邮件到年度复购</h2>
+  <p class="section-desc">邮件营销的平均 ROI 高达 <strong>42:1</strong>——投入 $1，回报 $42。对于 PrintNGO Plus 这类 B2B 定制品牌，邮件是建立长期客户关系、拉动团体复购的最重要武器。以下是经过验证的完整邮件体系。</p>
+
+  <!-- 工具选择 -->
+  <h3 style="color:var(--orange);margin-bottom:16px;font-size:18px;">① 工具选择：从 Mailchimp 起步，随业务升级</h3>
+  <div class="card-grid card-grid-2" style="margin-bottom:40px;">
+    <div class="card" style="border-color:var(--green);border-width:2px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="background:var(--green);color:#000;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">现阶段用这个</div>
+        <h4 style="color:var(--text-white);">Mailchimp 免费版</h4>
+      </div>
+      <ul class="checklist" style="margin-bottom:0;">
+        <li>免费支持 500 个联系人</li>
+        <li>每月 1,000 封邮件</li>
+        <li>基础自动化（欢迎邮件、生日邮件）</li>
+        <li>拖拽式邮件编辑器，不需要会代码</li>
+        <li>有效果模板库，直接套用</li>
+      </ul>
+      <div class="tip" style="margin-top:12px;">适合阶段：联系人 &lt;500，月销售额 &lt;$10,000</div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="background:var(--blue-light);color:#000;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">规模化后升级</div>
+        <h4 style="color:var(--text-white);">Klaviyo</h4>
+      </div>
+      <ul class="checklist" style="margin-bottom:0;">
+        <li>强大的行为触发自动化（浏览未购 / 加购未付等）</li>
+        <li>电商平台深度集成（Shopify / WooCommerce）</li>
+        <li>A/B 测试 + 细粒度数据分析</li>
+        <li>客户分群精准到"买过 T 恤但没买卫衣"</li>
+        <li>免费版支持 250 联系人；付费版按联系人数量计费</li>
+      </ul>
+      <div class="tip" style="margin-top:12px;">升级时机：联系人 &gt;500，或月销售额突破 $10,000</div>
+    </div>
+  </div>
+
+  <!-- 5封欢迎序列 -->
+  <h3 style="color:var(--orange);margin-bottom:8px;font-size:18px;">② 5 封欢迎序列 — 把新订阅者变成忠实买家</h3>
+  <p style="color:var(--text-muted);margin-bottom:20px;font-size:14px;">新用户订阅后 14 天内自动发出，无需手动操作。这是业界验证最有效的"冷启动"序列。</p>
+
+  <div style="overflow-x:auto;margin-bottom:40px;">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead>
+        <tr style="background:var(--blue-primary);">
+          <th style="padding:12px 16px;text-align:left;color:var(--orange);white-space:nowrap;">发送时间</th>
+          <th style="padding:12px 16px;text-align:left;color:var(--text-white);">邮件主题（英文）</th>
+          <th style="padding:12px 16px;text-align:left;color:var(--text-white);">核心内容</th>
+          <th style="padding:12px 16px;text-align:left;color:var(--text-white);">行动号召（CTA）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;white-space:nowrap;">第 1 天</td>
+          <td style="padding:12px 16px;color:var(--text-white);">Welcome to PrintNGO Plus — Your 10% Off Code Is Inside 🎉</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">欢迎 + 立即发放 10% 折扣码，简介品牌和核心卖点（无最低订量、免费设计审查）</td>
+          <td style="padding:12px 16px;"><span style="background:var(--orange);color:#000;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;">立即领取折扣</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;white-space:nowrap;">第 3 天</td>
+          <td style="padding:12px 16px;color:var(--text-white);">How We've Helped 2,500+ Toronto Teams Look Amazing</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">品牌故事 + 3个真实客户案例（企业工服 / 运动队 / 学校活动），建立信任感</td>
+          <td style="padding:12px 16px;"><span style="background:var(--blue-light);color:#000;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;">查看客户案例</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;white-space:nowrap;">第 5 天</td>
+          <td style="padding:12px 16px;color:var(--text-white);">DTG vs Screen Print vs Embroidery — Which Is Right for You?</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">印刷工艺科普（帮客户选合适方案），体现专业度，排除购买顾虑</td>
+          <td style="padding:12px 16px;"><span style="background:var(--blue-light);color:#000;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;">免费咨询工艺</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;white-space:nowrap;">第 8 天</td>
+          <td style="padding:12px 16px;color:var(--text-white);">Ordering for a Team or Company? Here's What You Need to Know</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">专攻 B2B：团体报价流程、批量折扣说明、"快速报价"功能介绍，针对 HR/活动策划人群</td>
+          <td style="padding:12px 16px;"><span style="background:var(--orange);color:#000;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;">获取团体报价</span></td>
+        </tr>
+        <tr>
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;white-space:nowrap;">第 14 天</td>
+          <td style="padding:12px 16px;color:var(--text-white);">Your 10% Off Expires Soon — Plus, See Our Latest Work ⏰</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">第 1 天折扣码即将到期（制造紧迫感）+ 展示最新作品 + 邀请关注 Instagram</td>
+          <td style="padding:12px 16px;"><span style="background:var(--orange);color:#000;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;">立即使用折扣</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 下单后自动化流程 -->
+  <h3 style="color:var(--orange);margin-bottom:8px;font-size:18px;">③ 购买后自动化 — 6 封邮件维护客户关系</h3>
+  <p style="color:var(--text-muted);margin-bottom:20px;font-size:14px;">客户下单后自动触发，全程无需手动干预。重点目标：提升满意度 + 拿到 Google 评价 + 促成复购。</p>
+
+  <div style="overflow-x:auto;margin-bottom:40px;">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead>
+        <tr style="background:var(--blue-primary);">
+          <th style="padding:12px 16px;text-align:left;color:var(--orange);">触发时间</th>
+          <th style="padding:12px 16px;text-align:left;color:var(--text-white);">邮件目的</th>
+          <th style="padding:12px 16px;text-align:left;color:var(--text-white);">核心内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--text-white);font-weight:700;">下单后即时</td>
+          <td style="padding:12px 16px;color:var(--green);">订单确认</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">确认订单信息 + 预计交货时间 + 设计文件确认流程说明</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <td style="padding:12px 16px;color:var(--text-white);font-weight:700;">生产第 3 天</td>
+          <td style="padding:12px 16px;color:var(--blue-glow);">生产进度更新</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">告知订单进入生产阶段 + 附上设计稿确认图，减少客户焦虑</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--text-white);font-weight:700;">发货当天</td>
+          <td style="padding:12px 16px;color:var(--blue-glow);">发货通知</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">物流单号 + 预计到达日期 + 再次强调 100% 满意保证</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <td style="padding:12px 16px;color:var(--text-white);font-weight:700;">收货后第 3 天</td>
+          <td style="padding:12px 16px;color:var(--orange);">收集好评 ⭐</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">询问体验 + 提供问题解决渠道 + <strong style="color:var(--orange);">直接附上 Google 评价链接</strong>（满意客户 1 步留评）</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--text-white);font-weight:700;">第 30 天</td>
+          <td style="padding:12px 16px;color:var(--orange);">复购引导</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">「新赛季 / 新活动要来了？提前预定享早鸟价」+ 10件以上批量折扣提示</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 16px;color:var(--text-white);font-weight:700;">第 90 天</td>
+          <td style="padding:12px 16px;color:var(--yellow);">唤醒沉默客户</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">「好久不见！这是你的专属优惠：下次订单立减 15%」— 挽回流失客户</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 客户分群 -->
+  <h3 style="color:var(--orange);margin-bottom:8px;font-size:18px;">④ 客户分群发邮件 — 说对话，才有效果</h3>
+  <p style="color:var(--text-muted);margin-bottom:20px;font-size:14px;">群发给所有人的邮件打开率最低。把客户分成小组，发"最贴近他们需求"的内容，打开率能提升 2–3 倍。</p>
+
+  <div class="card-grid card-grid-2" style="margin-bottom:40px;">
+    <div class="card">
+      <h4 style="color:var(--blue-glow);margin-bottom:16px;">按客户类型分群</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:start;gap:12px;">
+          <span style="background:var(--orange);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:2px;">企业客户</span>
+          <span style="color:var(--text-muted);font-size:13px;">发"公司工服定制 / 企业礼品 / 批量采购"内容；强调发票、企业账期</span>
+        </div>
+        <div style="display:flex;align-items:start;gap:12px;">
+          <span style="background:var(--blue-light);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:2px;">体育团队</span>
+          <span style="color:var(--text-muted);font-size:13px;">发"新赛季球衣 / 运动队服 / 训练服"；按赛季节点触发</span>
+        </div>
+        <div style="display:flex;align-items:start;gap:12px;">
+          <span style="background:var(--green);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:2px;">学校/大学</span>
+          <span style="color:var(--text-muted);font-size:13px;">发"开学季 / 毕业活动 / 学生会定制"；8–9 月和 4–5 月重点推</span>
+        </div>
+        <div style="display:flex;align-items:start;gap:12px;">
+          <span style="background:var(--yellow);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:2px;">活动策划</span>
+          <span style="color:var(--text-muted);font-size:13px;">发"节庆活动 / 慈善跑 / 展会"；强调快速交货（3天急速）</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--blue-glow);margin-bottom:16px;">按购买行为分群</h4>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:start;gap:12px;">
+          <span style="background:var(--orange);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:2px;">VIP 客户</span>
+          <span style="color:var(--text-muted);font-size:13px;">买过 3 次以上或单次 $500+；优先通知新品、给专属折扣</span>
+        </div>
+        <div style="display:flex;align-items:start;gap:12px;">
+          <span style="background:var(--blue-light);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:2px;">活跃客户</span>
+          <span style="color:var(--text-muted);font-size:13px;">90 天内有购买；季节性推送即可，不要过度打扰</span>
+        </div>
+        <div style="display:flex;align-items:start;gap:12px;">
+          <span style="background:var(--yellow);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:2px;">沉默客户</span>
+          <span style="color:var(--text-muted);font-size:13px;">90 天无购买；发唤醒邮件 + 15% 折扣；无反应则移出主列表</span>
+        </div>
+        <div style="display:flex;align-items:start;gap:12px;">
+          <span style="background:var(--green);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;margin-top:2px;">新订阅者</span>
+          <span style="color:var(--text-muted);font-size:13px;">触发 5 封欢迎序列（见上方），14 天内完成教育和首购引导</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 加拿大季节日历 -->
+  <h3 style="color:var(--orange);margin-bottom:8px;font-size:18px;">⑤ 加拿大营销日历 — 每月该发什么</h3>
+  <p style="color:var(--text-muted);margin-bottom:20px;font-size:14px;">对 B2B 定制品牌来说，踩准节奏比内容更重要。提前 2–3 周发邮件，让客户有时间下单和交货。</p>
+
+  <div style="overflow-x:auto;margin-bottom:40px;">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <thead>
+        <tr style="background:var(--blue-primary);">
+          <th style="padding:12px 16px;text-align:left;color:var(--orange);">月份</th>
+          <th style="padding:12px 16px;text-align:left;color:var(--text-white);">营销重点</th>
+          <th style="padding:12px 16px;text-align:left;color:var(--text-white);">目标客群</th>
+          <th style="padding:12px 16px;text-align:left;color:var(--text-white);">邮件主题方向</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;">8 月</td>
+          <td style="padding:12px 16px;color:var(--text-white);">返校季 / Back to School</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">学校、大学、体育协会</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">新学年球队服装，提前锁定交货日期</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;">9 月</td>
+          <td style="padding:12px 16px;color:var(--text-white);">秋季联赛开幕</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">体育团队、公益组织</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">新赛季队服，批量优惠早订早享</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;">10 月</td>
+          <td style="padding:12px 16px;color:var(--text-white);">Halloween + 节前预热</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">活动策划、零售企业</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">节日活动服装，提前 3 周下单保证到货</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;">11 月</td>
+          <td style="padding:12px 16px;color:var(--text-white);">Black Friday + 年末采购</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">全客群（重点：企业年终礼品）</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">全年最低价，年终礼品批量定制</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;">1 月</td>
+          <td style="padding:12px 16px;color:var(--text-white);">新年企业开年</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">企业、公司</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">新一年品牌工服、团队 T 恤，展示新形象</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;">3 月</td>
+          <td style="padding:12px 16px;color:var(--text-white);">春季活动启动</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">活动策划、公益组织</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">春季社区活动、慈善跑服装定制</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;">5 月</td>
+          <td style="padding:12px 16px;color:var(--text-white);">Victoria Day + 毕业季</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">大学、毕业班、活动组织</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">毕业纪念衫、班服，最后机会下单</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 16px;color:var(--orange);font-weight:700;">6 月</td>
+          <td style="padding:12px 16px;color:var(--text-white);">夏令营 + Pride 月</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">夏令营、社区组织、多元群体</td>
+          <td style="padding:12px 16px;color:var(--text-muted);">夏令营统一服装、Pride 活动定制</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 主题行公式 -->
+  <h3 style="color:var(--orange);margin-bottom:8px;font-size:18px;">⑥ 主题行公式库 — 让人忍不住点开</h3>
+  <p style="color:var(--text-muted);margin-bottom:20px;font-size:14px;">邮件主题行决定打开率。不同场景用不同公式，收藏备用。</p>
+
+  <div class="card-grid card-grid-2" style="margin-bottom:40px;">
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div style="color:var(--orange);font-size:12px;font-weight:700;margin-bottom:4px;">紧迫型</div>
+          <div style="color:var(--text-white);font-size:14px;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;">「⏰ 24 小时内下单，保证下周五交货」</div>
+        </div>
+        <div>
+          <div style="color:var(--orange);font-size:12px;font-weight:700;margin-bottom:4px;">利益型</div>
+          <div style="color:var(--text-white);font-size:14px;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;">「10 件 T 恤以上，立省 $47」</div>
+        </div>
+        <div>
+          <div style="color:var(--orange);font-size:12px;font-weight:700;margin-bottom:4px;">好奇型</div>
+          <div style="color:var(--text-white);font-size:14px;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;">「这家多伦多企业用这种方法，让员工爱上穿工服」</div>
+        </div>
+        <div>
+          <div style="color:var(--orange);font-size:12px;font-weight:700;margin-bottom:4px;">社交证明型</div>
+          <div style="color:var(--text-white);font-size:14px;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;">「2,500+ 多伦多团队都在用，你的队服来了吗？」</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div style="color:var(--orange);font-size:12px;font-weight:700;margin-bottom:4px;">免费型</div>
+          <div style="color:var(--text-white);font-size:14px;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;">「免费设计审查 + 免费快递，今天截止」</div>
+        </div>
+        <div>
+          <div style="color:var(--orange);font-size:12px;font-weight:700;margin-bottom:4px;">个性化型</div>
+          <div style="color:var(--text-white);font-size:14px;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;">「[名字]，你上次的队服——要补货了吗？」</div>
+        </div>
+        <div>
+          <div style="color:var(--orange);font-size:12px;font-weight:700;margin-bottom:4px;">数字型</div>
+          <div style="color:var(--text-white);font-size:14px;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;">「5 步完成团体定制，最快 3 天到手」</div>
+        </div>
+        <div>
+          <div style="color:var(--orange);font-size:12px;font-weight:700;margin-bottom:4px;">复购唤醒型</div>
+          <div style="color:var(--text-white);font-size:14px;background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;">「距上次合作已 3 个月 — 专属回归优惠在这里」</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 关键指标 + 快速起步 -->
+  <div class="card-grid card-grid-2">
+    <div class="card">
+      <h4 style="color:var(--blue-glow);margin-bottom:16px;">📊 健康的邮件营销数据基准</h4>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text-muted);">邮件打开率（Open Rate）</span>
+          <span style="color:var(--green);font-weight:700;">≥ 20%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text-muted);">点击率（Click Rate）</span>
+          <span style="color:var(--green);font-weight:700;">≥ 3%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--text-muted);">退订率（Unsubscribe）</span>
+          <span style="color:var(--green);font-weight:700;">≤ 0.5%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+          <span style="color:var(--text-muted);">每月新增联系人目标</span>
+          <span style="color:var(--orange);font-weight:700;">+30–50 人</span>
+        </div>
+      </div>
+      <div class="tip" style="margin-top:12px;">退订率超过 0.5%，说明邮件频率过高或内容不相关，需要立即检查分群策略</div>
+    </div>
+    <div class="card" style="border-color:var(--orange);border-width:2px;">
+      <h4 style="color:var(--orange);margin-bottom:16px;">🚀 快速起步：今天就能做</h4>
+      <ul class="checklist" style="margin-bottom:16px;">
+        <li>注册 Mailchimp 免费账户（mailchimp.com）</li>
+        <li>把独立站历史订单邮件导入 Mailchimp</li>
+        <li>复制上方"5封欢迎序列"，修改品牌名设置好自动化</li>
+        <li>在独立站底部添加订阅框："订阅享首单 10% 折扣"</li>
+        <li>设置 6 封购买后自动化流程</li>
+        <li>根据加拿大日历，安排未来 3 个月群发计划</li>
+      </ul>
+      <div class="alert alert-info">💡 预计 4–6 小时完成初始配置，之后基本不需要手动操作，系统自动跑</div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ===== SECTION 8: CONTENT ===== -->
+<section class="section" id="content">
+<div class="container">
+  <div class="section-label">内容飞轮</div>
+  <h2 class="section-title">内容创作全系统：一次生产，覆盖全渠道</h2>
+  <p class="section-desc">内容不是负担，是最低成本的持续获客引擎。一次拍摄、一个客户故事，经过系统化拆解后可以同时出现在 Google 搜索、Instagram、TikTok、邮件和独立站五个渠道，带来持续流量。</p>
+
+  <!-- 飞轮核心图 -->
+  <div class="card" style="margin-bottom:24px; background:linear-gradient(135deg,rgba(30,58,95,0.5),rgba(18,32,53,0.8))">
+    <h3 style="font-size:15px; font-weight:700; margin-bottom:20px; text-align:center; color:var(--text-white)">🔄 内容飞轮全景：1次输入 → 8件产出</h3>
+    <!-- 中心 -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:16px">
+      <div style="background:var(--orange); border-radius:50%; width:100px; height:100px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; box-shadow:0 0 24px rgba(249,115,22,0.5)">
+        <div style="font-size:22px">📦</div>
+        <div style="font-size:11px; font-weight:800; color:#fff; line-height:1.2; margin-top:4px">完成一个<br>客户订单</div>
+      </div>
+      <div style="font-size:22px; color:var(--orange)">↓</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; width:100%">
+        <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:20px; margin-bottom:4px">🌐</div>
+          <div style="font-size:12px; font-weight:700; color:var(--blue-glow); margin-bottom:2px">独立站案例页</div>
+          <div style="font-size:11px; color:var(--text-muted)">SEO长尾词收录</div>
+        </div>
+        <div style="background:rgba(249,115,22,0.1); border:1px solid rgba(249,115,22,0.25); border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:20px; margin-bottom:4px">📸</div>
+          <div style="font-size:12px; font-weight:700; color:var(--orange-light); margin-bottom:2px">Instagram 帖子</div>
+          <div style="font-size:11px; color:var(--text-muted)">Feed + Stories + Reel</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:20px; margin-bottom:4px">🎵</div>
+          <div style="font-size:12px; font-weight:700; color:#fca5a5; margin-bottom:2px">TikTok 短视频</div>
+          <div style="font-size:11px; color:var(--text-muted)">制作过程 + 揭秘</div>
+        </div>
+        <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2); border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:20px; margin-bottom:4px">📧</div>
+          <div style="font-size:12px; font-weight:700; color:var(--blue-glow); margin-bottom:2px">邮件案例展示</div>
+          <div style="font-size:11px; color:var(--text-muted)">触达已有客户</div>
+        </div>
+        <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:20px; margin-bottom:4px">📘</div>
+          <div style="font-size:12px; font-weight:700; color:#86efac; margin-bottom:2px">Facebook 帖子</div>
+          <div style="font-size:11px; color:var(--text-muted)">B2B社群传播</div>
+        </div>
+        <div style="background:rgba(234,179,8,0.1); border:1px solid rgba(234,179,8,0.25); border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:20px; margin-bottom:4px">⭐</div>
+          <div style="font-size:12px; font-weight:700; color:#fde047; margin-bottom:2px">Google 评价</div>
+          <div style="font-size:11px; color:var(--text-muted)">提升本地信任度</div>
+        </div>
+        <div style="background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.25); border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:20px; margin-bottom:4px">🏷️</div>
+          <div style="font-size:12px; font-weight:700; color:#c4b5fd; margin-bottom:2px">包裹引流卡片</div>
+          <div style="font-size:11px; color:var(--text-muted)">二次购买转化</div>
+        </div>
+        <div style="background:rgba(20,184,166,0.1); border:1px solid rgba(20,184,166,0.25); border-radius:8px; padding:12px; text-align:center">
+          <div style="font-size:20px; margin-bottom:4px">📞</div>
+          <div style="font-size:12px; font-weight:700; color:#5eead4; margin-bottom:2px">客户口碑转介</div>
+          <div style="font-size:11px; color:var(--text-muted)">请客户帮你推荐</div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:12px; color:var(--text-dim); text-align:center; margin-top:16px">✅ 每完成一个团体订单，系统性地执行以上 8 步——平均每步只需 10 分钟</p>
+  </div>
+
+  <!-- 三 Tab：内容制作 / SEO策略 / 内容日历 -->
+  <div style="display:flex; gap:8px; margin-bottom:0; flex-wrap:wrap">
+    <button class="ads-tab-btn active" onclick="switchContentTab(event,'produce')">🎬 内容制作指南</button>
+    <button class="ads-tab-btn" onclick="switchContentTab(event,'seo')">🔍 SEO 内容策略</button>
+    <button class="ads-tab-btn" onclick="switchContentTab(event,'calendar')">📅 内容日历</button>
+  </div>
+
+  <!-- Tab 1: 内容制作指南 -->
+  <div class="ads-tab-panel active" id="ctab-produce" style="margin-top:0">
+    <div class="card-grid card-grid-2" style="margin-bottom:16px">
+      <div>
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--orange-light)">📱 拍什么？怎么拍？</h3>
+        <ul class="checklist">
+          <li><span class="ico">1️⃣</span><div><strong style="color:var(--text-white)">交货前拍"成品平铺图"</strong>：把完成的定制T恤/卫衣平整铺在桌上，用手机拍俯视图。保证光线充足（靠近窗口的自然光最好），一张照片即可。</div></li>
+          <li><span class="ico">2️⃣</span><div><strong style="color:var(--text-white)">拍"穿着效果"</strong>：请客户或员工穿上成品拍一张，真人穿着比样品图转化率高 3 倍。客户愿意的话让他们在自己地点拍，发给你。</div></li>
+          <li><span class="ico">3️⃣</span><div><strong style="color:var(--text-white)">拍"印花特写"</strong>：靠近拍印花细节，展示工艺质量，这类图在 Instagram 上点赞率特别高。</div></li>
+          <li><span class="ico">4️⃣</span><div><strong style="color:var(--text-white)">录"制作过程"视频（15–30秒）</strong>：生产时顺手录：印花机运作、热压成型、包装装箱。不需要剪辑，原始视频就够，CapCut 加速到 2 倍就是很好的 TikTok 内容。</div></li>
+          <li><span class="ico">5️⃣</span><div><strong style="color:var(--text-white)">索取"使用场景照"</strong>：订单完成 3–5 天后，发消息给客户："您好，方便的话帮我们分享一张团队穿着照片吗？我们想展示在官网上。" 大部分客户都愿意。</div></li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--blue-glow)">♻️ 1 张照片 → 8 件内容</h3>
+        <table class="data-table">
+          <thead><tr><th>内容形式</th><th>平台</th><th>操作时间</th></tr></thead>
+          <tbody>
+            <tr><td>案例故事文章（200字）</td><td>独立站</td><td>15 分钟</td></tr>
+            <tr><td>竖版带文字图（AI 自动生成）</td><td>Instagram Feed</td><td>5 分钟</td></tr>
+            <tr><td>故事贴（原图+地点标签）</td><td>Instagram Stories</td><td>2 分钟</td></tr>
+            <tr><td>制作过程加速视频</td><td>TikTok / Reels</td><td>10 分钟</td></tr>
+            <tr><td>客户晒单帖子</td><td>Facebook 页面</td><td>3 分钟</td></tr>
+            <tr><td>邮件案例展示</td><td>Mailchimp</td><td>10 分钟</td></tr>
+            <tr><td>Google 商家相册</td><td>Google My Business</td><td>2 分钟</td></tr>
+            <tr><td>包裹引流卡片更新</td><td>下次发货</td><td>0 分钟</td></tr>
+          </tbody>
+        </table>
+        <div class="alert alert-info" style="margin-top:12px">
+          <span class="ico">⏱️</span>
+          <div>单次完整执行全部 8 步，总耗时约 <strong style="color:var(--orange)">47 分钟</strong>。每周做 1–2 次，长期累积效果远超付费广告。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--bg-card2)">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px">🎬 TikTok / Reels 视频制作公式（不需要专业设备）</h3>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px">
+        <div style="border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:14px">
+          <div style="font-size:13px; font-weight:700; color:#fca5a5; margin-bottom:8px">① 开场 HOOK（前3秒）</div>
+          <p style="font-size:12px; color:var(--text-muted)">直接展示最惊艳的结果——完成品，不要先介绍自己。例："100件定制卫衣，3天交货" 配成品特写。</p>
+        </div>
+        <div style="border:1px solid rgba(249,115,22,0.3); border-radius:8px; padding:14px">
+          <div style="font-size:13px; font-weight:700; color:var(--orange-light); margin-bottom:8px">② 过程展示（10–20秒）</div>
+          <p style="font-size:12px; color:var(--text-muted)">空白 T恤 → 印花上色 → 热压 → 折叠装袋。加速播放，配流行背景音乐，无需旁白。</p>
+        </div>
+        <div style="border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:14px">
+          <div style="font-size:13px; font-weight:700; color:var(--blue-glow); margin-bottom:8px">③ 结果 + CTA（最后5秒）</div>
+          <p style="font-size:12px; color:var(--text-muted)">展示装箱好的成品照，加字幕："多伦多定制T恤，免费设计审查，Link in bio"。</p>
+        </div>
+        <div style="border:1px solid rgba(34,197,94,0.3); border-radius:8px; padding:14px">
+          <div style="font-size:13px; font-weight:700; color:#86efac; margin-bottom:8px">④ 加速工具：CapCut</div>
+          <p style="font-size:12px; color:var(--text-muted)">免费，手机装即用。把录好的视频导入，选"变速 2×"，加字幕，添加音乐，导出。全程 10 分钟。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: SEO 内容策略 -->
+  <div class="ads-tab-panel" id="ctab-seo" style="margin-top:0">
+    <div class="card-grid card-grid-2" style="margin-bottom:16px">
+      <div>
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--orange-light)">🎯 高价值目标关键词（多伦多本地）</h3>
+        <table class="data-table">
+          <thead><tr><th>关键词</th><th>搜索意图</th><th>竞争难度</th></tr></thead>
+          <tbody>
+            <tr><td>custom t-shirts Toronto</td><td>购买</td><td style="color:var(--red)">高</td></tr>
+            <tr><td>team uniforms Toronto</td><td>购买</td><td style="color:var(--yellow)">中</td></tr>
+            <tr><td>custom hoodies Canada no minimum</td><td>购买</td><td style="color:var(--green)">低</td></tr>
+            <tr><td>corporate merchandise Toronto</td><td>询价</td><td style="color:var(--yellow)">中</td></tr>
+            <tr><td>screen printing Toronto</td><td>购买</td><td style="color:var(--red)">高</td></tr>
+            <tr><td>custom hats embroidery Toronto</td><td>购买</td><td style="color:var(--green)">低</td></tr>
+            <tr><td>promotional products Toronto</td><td>购买</td><td style="color:var(--yellow)">中</td></tr>
+            <tr><td>rush order custom shirts Canada</td><td>紧急购买</td><td style="color:var(--green)">低</td></tr>
+            <tr><td>how to order custom jerseys Toronto</td><td>了解</td><td style="color:var(--green)">低</td></tr>
+            <tr><td>DTG printing vs screen printing</td><td>了解</td><td style="color:var(--green)">低</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:11px; color:var(--text-dim); margin-top:8px">✅ 优先攻打"低竞争"关键词——写 1 篇 500 字文章即可出现在第一页</p>
+      </div>
+      <div>
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px; color:var(--blue-glow)">✍️ 博客文章选题（12个月计划）</h3>
+        <ul class="checklist" style="gap:8px">
+          <li><span class="ico">📝</span><div><strong style="color:var(--text-white)">DTG vs 丝网印刷 vs 刺绣——哪种适合你？</strong><br><span style="font-size:11px; color:var(--text-dim)">对比文章，教育性强，SEO 自然排名快</span></div></li>
+          <li><span class="ico">📝</span><div><strong style="color:var(--text-white)">多伦多公司活动 T 恤定制完整指南</strong><br><span style="font-size:11px; color:var(--text-dim)">目标：corporate event t-shirts Toronto</span></div></li>
+          <li><span class="ico">📝</span><div><strong style="color:var(--text-white)">棒球队/冰球队如何定制队服？</strong><br><span style="font-size:11px; color:var(--text-dim)">体育团队这类内容分享率极高</span></div></li>
+          <li><span class="ico">📝</span><div><strong style="color:var(--text-white)">100 件 T 恤起订 vs 无最低起订量的区别</strong><br><span style="font-size:11px; color:var(--text-dim)">突出 PrintNGO Plus 的核心优势</span></div></li>
+          <li><span class="ico">📝</span><div><strong style="color:var(--text-white)">小批量定制 T 恤：5 件也能做，这是完整流程</strong><br><span style="font-size:11px; color:var(--text-dim)">目标：no minimum custom shirts Canada</span></div></li>
+          <li><span class="ico">📝</span><div><strong style="color:var(--text-white)">加拿大定制服装采购完整流程（含价格参考）</strong><br><span style="font-size:11px; color:var(--text-dim)">B2B 采购人员最爱搜的内容</span></div></li>
+          <li><span class="ico">📝</span><div><strong style="color:var(--text-white)">3 天急速交货是怎么实现的？</strong><br><span style="font-size:11px; color:var(--text-dim)">展示能力，建立信任，目标：rush custom shirts</span></div></li>
+          <li><span class="ico">📝</span><div><strong style="color:var(--text-white)">[客户案例] 我们如何帮多伦多大学社团定制 200 件</strong><br><span style="font-size:11px; color:var(--text-dim)">真实案例，最强 SEO 信号</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--bg-card2)">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px">📋 B2B 案例故事标准模板（复制即用）</h3>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px">
+        <div style="border-left:3px solid var(--orange); padding-left:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--orange); margin-bottom:6px">① 客户背景（1句话）</div>
+          <p style="font-size:12px; color:var(--text-muted); font-style:italic">"[客户名] 是多伦多一家有 50 名员工的科技公司，需要在年度峰会前准备统一工服。"</p>
+        </div>
+        <div style="border-left:3px solid var(--yellow); padding-left:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--yellow); margin-bottom:6px">② 挑战（1-2句）</div>
+          <p style="font-size:12px; color:var(--text-muted); font-style:italic">"他们只有 5 天交货时间，需要 50 件带公司 logo 的深色卫衣，之前联系的供应商最少起订 100 件。"</p>
+        </div>
+        <div style="border-left:3px solid var(--blue-light); padding-left:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--blue-light); margin-bottom:6px">③ 解决方案（2-3句）</div>
+          <p style="font-size:12px; color:var(--text-muted); font-style:italic">"我们使用 DTG 数码印花工艺，无需最低起订量，3 天完成生产，使用快递服务确保准时到达会场。"</p>
+        </div>
+        <div style="border-left:3px solid var(--green); padding-left:12px">
+          <div style="font-size:12px; font-weight:700; color:var(--green); margin-bottom:6px">④ 结果 + 客户反馈</div>
+          <p style="font-size:12px; color:var(--text-muted); font-style:italic">"50 件卫衣如期送达，客户发来团队合影并留下 5 星好评：'质量远超预期，下次还会再来。'"</p>
+        </div>
+        <div style="border-left:3px solid var(--orange-glow); padding-left:12px; grid-column:span 1">
+          <div style="font-size:12px; font-weight:700; color:var(--orange-glow); margin-bottom:6px">⑤ 行动号召（CTA）</div>
+          <p style="font-size:12px; color:var(--text-muted); font-style:italic">"您也有类似的团队定制需求？<a href='#' style='color:var(--orange)'>立即获取免费报价</a>，我们 2 小时内回复。"</p>
+        </div>
+      </div>
+      <div class="alert alert-info" style="margin-top:14px">
+        <span class="ico">💡</span>
+        <div>每个案例故事页面单独创建 URL（如 <code style="color:var(--blue-glow)">printngoplus.com/portfolio/toronto-tech-company-custom-hoodies</code>），URL 里包含关键词，Google 会把每个案例都当成独立的 SEO 资产来收录。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: 内容日历 -->
+  <div class="ads-tab-panel" id="ctab-calendar" style="margin-top:0">
+    <div class="card" style="margin-bottom:16px">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px">📆 每周内容节奏（最低执行版，每周约 3–4 小时）</h3>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px">
+        <div style="background:rgba(249,115,22,0.1); border-radius:8px; padding:14px; text-align:center">
+          <div style="font-size:13px; font-weight:800; color:var(--orange); margin-bottom:8px">周一</div>
+          <div style="font-size:12px; color:var(--text-white); font-weight:600; margin-bottom:4px">📸 Instagram 帖子</div>
+          <div style="font-size:11px; color:var(--text-muted)">上周完成的订单成品图 + 客户简介</div>
+        </div>
+        <div style="background:rgba(239,68,68,0.1); border-radius:8px; padding:14px; text-align:center">
+          <div style="font-size:13px; font-weight:800; color:#fca5a5; margin-bottom:8px">周三</div>
+          <div style="font-size:12px; color:var(--text-white); font-weight:600; margin-bottom:4px">🎵 TikTok 视频</div>
+          <div style="font-size:11px; color:var(--text-muted)">制作过程加速视频 或 产品对比</div>
+        </div>
+        <div style="background:rgba(59,130,246,0.1); border-radius:8px; padding:14px; text-align:center">
+          <div style="font-size:13px; font-weight:800; color:var(--blue-glow); margin-bottom:8px">周五</div>
+          <div style="font-size:12px; color:var(--text-white); font-weight:600; margin-bottom:4px">🌐 独立站内容</div>
+          <div style="font-size:11px; color:var(--text-muted)">发布案例故事 或 博客文章（可隔周）</div>
+        </div>
+        <div style="background:rgba(34,197,94,0.1); border-radius:8px; padding:14px; text-align:center">
+          <div style="font-size:13px; font-weight:800; color:#86efac; margin-bottom:8px">随时</div>
+          <div style="font-size:12px; color:var(--text-white); font-weight:600; margin-bottom:4px">📱 Stories / 互动</div>
+          <div style="font-size:11px; color:var(--text-muted)">回复评论、发布生产现场临时内容</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid card-grid-2" style="margin-bottom:16px">
+      <div>
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px">🗓️ 加拿大全年内容主题日历</h3>
+        <table class="data-table">
+          <thead><tr><th>月份</th><th>内容主题</th><th>目标客群</th></tr></thead>
+          <tbody>
+            <tr><td>1月</td><td>新年企业目标 / 公司工服焕新</td><td>企业 HR</td></tr>
+            <tr><td>2月</td><td>情人节礼品定制 / 冬季运动队</td><td>活动策划</td></tr>
+            <tr><td>3月</td><td>春季开赛 / 曲棍球赛季冲刺</td><td>体育团队</td></tr>
+            <tr><td>4月</td><td>春季学期活动 / 毕业照工服</td><td>学校</td></tr>
+            <tr><td>5月</td><td>Victoria Day 活动 / 毕业季定制</td><td>学校 + 活动</td></tr>
+            <tr><td>6月</td><td>Pride 彩虹定制 / 夏令营工服</td><td>公益 + 活动</td></tr>
+            <tr><td>7-8月</td><td>户外活动 / 夏令营 / 家庭聚会</td><td>活动策划</td></tr>
+            <tr><td>9月</td><td>开学季 / 新学期社团定制</td><td>学校</td></tr>
+            <tr><td>10月</td><td>Halloween 主题 / 节前企业礼品</td><td>企业 + 活动</td></tr>
+            <tr><td>11月</td><td>Black Friday / 圣诞礼品早鸟</td><td>全渠道</td></tr>
+            <tr><td>12月</td><td>公司年会礼品 / 节日限定款</td><td>企业 HR</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px">🚀 前 90 天内容冲刺计划</h3>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>第1-2周：建立内容素材库</strong>
+              <p>翻出历史订单中最好的 10–20 张照片，写好对应的客户故事（每条 3–5 句），存成模板备用。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>第3-4周：发布首批内容</strong>
+              <p>每平台各发 5 条内容预热，让账号有基础活跃度，Reel/TikTok 各发 2 条制作过程视频。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>第5-8周：形成节奏</strong>
+              <p>按照每周节奏固定产出（周一图、周三视频、双周博客），建立发布习惯，不追求完美。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>第9-12周：分析 + 加倍投入</strong>
+              <p>查看哪类内容互动最高，把 80% 的时间集中在效果最好的 1–2 种内容形式上，精简节奏。</p>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-info" style="margin-top:12px">
+          <span class="ico">📏</span>
+          <div><strong>黄金法则：</strong>内容质量 > 发布数量。与其每天发一条平庸内容，不如每周发 2–3 条真实展示订单质量的好内容。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--bg-card2)">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px">📊 内容效果追踪指标</h3>
+      <table class="data-table">
+        <thead><tr><th>指标</th><th>如何获取</th><th>健康目标</th><th>频率</th></tr></thead>
+        <tbody>
+          <tr><td>自然搜索流量</td><td>Google Analytics → 来源</td><td>每月增长 10%+</td><td>每月</td></tr>
+          <tr><td>关键词排名</td><td>Google Search Console（免费）</td><td>目标词进入前 10</td><td>每月</td></tr>
+          <tr><td>Instagram 触达人数</td><td>Instagram 专业帐号洞察</td><td>非粉丝触达 > 50%</td><td>每周</td></tr>
+          <tr><td>TikTok 完播率</td><td>TikTok 数据中心</td><td>≥ 40%</td><td>每条发布后</td></tr>
+          <tr><td>内容带来的询价</td><td>客户询价时问"从哪知道我们的"</td><td>每月 5+ 条</td><td>每月</td></tr>
+          <tr><td>案例页访问量</td><td>Google Analytics → 页面</td><td>每篇每月 50+ UV</td><td>每月</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ===== SECTION 9: CATALOG MANAGEMENT ===== -->
+<section class="section" id="catalog">
+<div class="container">
+  <div class="section-label">商品管理</div>
+  <h2 class="section-title">商品目录 — 独立站真正的核心资产</h2>
+  <p class="section-desc">流量再多、内容再好，访客到了店里找不到想要的商品，一样流失。独立站的竞争力，长期来看就是<strong style="color:var(--orange)">商品宽度 × 图片质量 × 价格竞争力</strong>这三件事的乘积。内容和广告是引人进门，商品才是让人掏钱的核心。</p>
+
+  <!-- 为什么要不断更新商品 -->
+  <div style="margin-bottom:32px">
+    <h3 style="font-size:16px; font-weight:700; color:var(--text-white); margin-bottom:4px">📌 为什么独立站必须持续更新商品？</h3>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px">很多店主上线 50 款产品后就停下来了——这是最常见的增长停滞陷阱。</p>
+    <div class="card-grid card-grid-2" style="gap:14px; margin-bottom:16px">
+      <div style="background:var(--bg-card2); border:1px solid var(--border-orange); border-radius:12px; padding:18px">
+        <div style="font-size:13px; font-weight:700; color:var(--orange); margin-bottom:10px">🔍 SEO 排名的核心逻辑</div>
+        <div style="font-size:13px; color:var(--text-muted); line-height:1.7">Google 会持续抓取网站，<strong style="color:var(--text-white)">更新越频繁，被重新索引的机会越多</strong>。每上架一款新产品，就多了一个页面可以被搜到——"定制帽子"和"定制马克杯"是完全不同的搜索词，每款商品都是一个独立的流量入口。</div>
+      </div>
+      <div style="background:var(--bg-card2); border:1px solid var(--border-orange); border-radius:12px; padding:18px">
+        <div style="font-size:13px; font-weight:700; color:var(--orange); margin-bottom:10px">🛒 访客复购和停留时间</div>
+        <div style="font-size:13px; color:var(--text-muted); line-height:1.7">老客户回访时，如果每次看到的都是同款，购买欲望快速下降。<strong style="color:var(--text-white)">新品是唤醒沉睡客户最低成本的方式</strong>——一封"新款上架"邮件的打开率，远高于普通促销邮件。</div>
+      </div>
+      <div style="background:var(--bg-card2); border:1px solid var(--border-orange); border-radius:12px; padding:18px">
+        <div style="font-size:13px; font-weight:700; color:var(--orange); margin-bottom:10px">📅 季节性需求不等人</div>
+        <div style="font-size:13px; color:var(--text-muted); line-height:1.7">加拿大市场有明显的季节节点：返校季、圣诞活动、曲棍球赛季……<strong style="color:var(--text-white)">提前 4-6 周上架对应款式</strong>，才能搭上自然流量的节奏，错过就只能靠付费广告硬推。</div>
+      </div>
+      <div style="background:var(--bg-card2); border:1px solid var(--border-orange); border-radius:12px; padding:18px">
+        <div style="font-size:13px; font-weight:700; color:var(--orange); margin-bottom:10px">⚔️ 竞争壁垒来自商品深度</div>
+        <div style="font-size:13px; color:var(--text-muted); line-height:1.7">同样做定制 T 恤，如果你有 200 款而竞品只有 50 款，客户搜到你的概率高 4 倍，成交的可能性也更大。<strong style="color:var(--text-white)">商品库的宽度，是最难被短期复制的护城河。</strong></div>
+      </div>
+    </div>
+    <div class="tip">持续更新商品不只是"多上几款"，本质是在<strong>扩大你的搜索覆盖面、加深客户粘性、提前卡占季节流量</strong>。这三件事叠加起来，才是独立站长期赢过平台卖家的核心原因。</div>
+  </div>
+
+  <!-- 已建好的能力 -->
+  <div style="margin-bottom:32px">
+    <h3 style="font-size:16px; font-weight:700; color:var(--text-white); margin-bottom:4px">✅ 你已经建好的商品管理能力</h3>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px">以下功能已在后台就位，不需要重复建设，直接用起来。</p>
+    <div class="card-grid card-grid-2" style="gap:14px">
+      <div style="background:var(--bg-card2); border:1px solid rgba(34,197,94,0.25); border-radius:12px; padding:18px; display:flex; gap:14px; align-items:flex-start">
+        <div style="width:38px; height:38px; background:rgba(34,197,94,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:18px">🗂️</div>
+        <div>
+          <div style="font-size:14px; font-weight:700; color:var(--green); margin-bottom:4px">后台商品管理 ✓</div>
+          <div style="font-size:13px; color:var(--text-muted)">可直接在管理后台添加、编辑、下架商品，支持批量操作，无需开发者介入即可日常维护。</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-card2); border:1px solid rgba(34,197,94,0.25); border-radius:12px; padding:18px; display:flex; gap:14px; align-items:flex-start">
+        <div style="width:38px; height:38px; background:rgba(34,197,94,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:18px">📥</div>
+        <div>
+          <div style="font-size:14px; font-weight:700; color:var(--green); margin-bottom:4px">CSV 批量导入 ✓</div>
+          <div style="font-size:13px; color:var(--text-muted)">新款季度上架时，可用 Excel/Google Sheets 准备好产品信息后一键批量导入，适合一次上架 20 款以上的场景。</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-card2); border:1px solid rgba(34,197,94,0.25); border-radius:12px; padding:18px; display:flex; gap:14px; align-items:flex-start">
+        <div style="width:38px; height:38px; background:rgba(34,197,94,0.15); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:18px">📦</div>
+        <div>
+          <div style="font-size:14px; font-weight:700; color:var(--green); margin-bottom:4px">库存管理 ✓</div>
+          <div style="font-size:13px; color:var(--text-muted)">后台开启库存追踪后，系统会在库存低于阈值时自动提醒，避免超卖。建议设置库存 &lt;10 件时触发邮件提醒。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 竞品追踪 — 缺口 -->
+  <div style="margin-bottom:32px">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px">
+      <h3 style="font-size:16px; font-weight:700; color:var(--text-white)">⚠️ 目前缺失：系统化竞品追踪</h3>
+      <span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--red); font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px">待建立</span>
+    </div>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px">不了解竞品，就等于在黑暗里定价。多伦多定制印刷市场有明确的价格区间和产品趋势，你需要每季度做一次系统性扫描。</p>
+
+    <div class="card" style="background:var(--bg-card2); margin-bottom:16px">
+      <h4 style="font-size:14px; font-weight:700; color:var(--orange); margin-bottom:14px">📋 竞品追踪清单 — 每季度执行一次（约 2 小时）</h4>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px">
+        <div>
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px">重点竞品（加拿大本地）</div>
+          <div class="checklist" style="margin:0">
+            <ul>
+              <li>RushOrderTees Canada — 价格 / 交货时间</li>
+              <li>CustomInk Canada — 产品宽度 / 团体定价</li>
+              <li>Vistaprint Canada — 促销品品类</li>
+              <li>Threadbird — 印刷工艺</li>
+              <li>本地多伦多竞品（Yelp / Google Map 搜索）</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px">每次扫描记录以下信息</div>
+          <div class="checklist" style="margin:0">
+            <ul>
+              <li>T 恤 / 卫衣 / 帽子的起步单价</li>
+              <li>团体订单（50件+）的折扣力度</li>
+              <li>最快交货时间和加急费</li>
+              <li>他们主推的新产品品类</li>
+              <li>网站最近上架了什么新款</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid card-grid-3" style="gap:14px">
+      <div class="tool-card" style="padding:16px">
+        <span class="tag">免费工具</span>
+        <h4 style="font-size:13px">Google 快讯（Google Alerts）</h4>
+        <p style="font-size:12px">设置关键词「custom t-shirts Toronto」「promotional products Canada」，竞品每次更新网站或发新闻，你会收到邮件提醒。完全免费，设置一次长期有效。</p>
+        <div style="margin-top:8px; font-size:12px; color:var(--blue-glow)">→ alerts.google.com</div>
+      </div>
+      <div class="tool-card" style="padding:16px">
+        <span class="tag">流量洞察</span>
+        <h4 style="font-size:13px">SimilarWeb（免费版）</h4>
+        <p style="font-size:12px">输入竞品网址，可以看到他们的月流量、流量来源（搜索/社媒/直接访问）、受众地区分布。每个网站每月可免费查 5 次，够用了。</p>
+        <div style="margin-top:8px; font-size:12px; color:var(--blue-glow)">→ similarweb.com</div>
+      </div>
+      <div class="tool-card" style="padding:16px">
+        <span class="tag">定价追踪</span>
+        <h4 style="font-size:13px">建立竞品价格表</h4>
+        <p style="font-size:12px">用 Google Sheets 建一张表：行 = 产品类型，列 = 各竞品。每季度更新一次，历史价格留档，可以看出竞品的涨/降价趋势，帮助你预判市场走向。</p>
+        <div style="margin-top:8px; font-size:12px; color:var(--blue-glow)">→ 用 Google Sheets 即可</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI 产品图生产流程 -->
+  <div style="margin-bottom:32px">
+    <h3 style="font-size:16px; font-weight:700; color:var(--text-white); margin-bottom:4px">🤖 AI 产品图快速生产流程</h3>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:16px">不需要摄影棚、不需要请模特——利用 AI 工具，一个设计文件 10 分钟内生成全套专业产品图，包括白底图、模特穿着图、场景氛围图和颜色变体，直接上架。</p>
+
+    <!-- 流程图 -->
+    <div class="card" style="background:var(--bg-card2); margin-bottom:16px; padding:24px">
+      <div style="display:flex; align-items:stretch; gap:0; overflow-x:auto; padding-bottom:4px">
+
+        <!-- Step 1 -->
+        <div style="flex:1; min-width:140px; text-align:center; padding:0 8px; position:relative">
+          <div style="background:linear-gradient(135deg,rgba(249,115,22,0.2),rgba(249,115,22,0.08)); border:1px solid var(--border-orange); border-radius:12px; padding:16px 12px; height:100%">
+            <div style="width:36px; height:36px; background:var(--orange); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; margin:0 auto 10px; font-weight:800; color:#fff">1</div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:6px">抓取竞品与潮流设计</div>
+            <div style="font-size:11px; color:var(--text-muted); line-height:1.5">自动抓取竞品在售款式<br>监控 Pinterest / Etsy<br>潮流设计趋势<br>锁定高需求选品方向</div>
+          </div>
+          <div style="position:absolute; right:-16px; top:50%; transform:translateY(-50%); font-size:20px; color:var(--orange); z-index:1">→</div>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="flex:1; min-width:140px; text-align:center; padding:0 8px; position:relative">
+          <div style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(59,130,246,0.05)); border:1px solid var(--border); border-radius:12px; padding:16px 12px; height:100%">
+            <div style="width:36px; height:36px; background:var(--blue-light); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; margin:0 auto 10px; font-weight:800; color:#fff">2</div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:6px">AI 生成产品展示图</div>
+            <div style="font-size:11px; color:var(--text-muted); line-height:1.5">自动套版白底图<br>+ 模特穿着效果图<br>一步同时输出<br>两种展示形式</div>
+          </div>
+          <div style="position:absolute; right:-16px; top:50%; transform:translateY(-50%); font-size:20px; color:var(--orange); z-index:1">→</div>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="flex:1; min-width:140px; text-align:center; padding:0 8px; position:relative">
+          <div style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(59,130,246,0.05)); border:1px solid var(--border); border-radius:12px; padding:16px 12px; height:100%">
+            <div style="width:36px; height:36px; background:var(--blue-light); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; margin:0 auto 10px; font-weight:800; color:#fff">3</div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:6px">AI 批量生成颜色变体</div>
+            <div style="font-size:11px; color:var(--text-muted); line-height:1.5">同一设计自动替换<br>全部颜色选项<br>一键批量输出<br>无需逐色重复操作</div>
+          </div>
+          <div style="position:absolute; right:-16px; top:50%; transform:translateY(-50%); font-size:20px; color:var(--orange); z-index:1">→</div>
+        </div>
+
+        <!-- Step 4 -->
+        <div style="flex:1; min-width:140px; text-align:center; padding:0 8px">
+          <div style="background:linear-gradient(135deg,rgba(34,197,94,0.15),rgba(34,197,94,0.05)); border:1px solid rgba(34,197,94,0.25); border-radius:12px; padding:16px 12px; height:100%">
+            <div style="width:36px; height:36px; background:var(--green); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; margin:0 auto 10px; font-weight:800; color:#fff">4</div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:6px">导出上传商品页</div>
+            <div style="font-size:11px; color:var(--text-muted); line-height:1.5">导出 JPG 2:3 比例<br>（推荐 800×1200px）<br>上传到后台对应<br>SKU 的图片位</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 细节说明 -->
+    <div class="card" style="padding:16px">
+      <div style="font-size:13px; font-weight:700; color:var(--blue-glow); margin-bottom:10px">💡 用 AI 出图的核心优势</div>
+      <div class="checklist" style="margin:0">
+        <ul>
+          <li>不需要摄影棚和模特，大幅节省拍摄成本</li>
+          <li>新款上架出图时间从 2 小时缩短到 10 分钟</li>
+          <li>同一设计一次性生成 10+ 颜色变体，自动批量</li>
+          <li>AI 模特图可选不同人种/场景，精准匹配目标客群</li>
+          <li>图片质量稳定，全店视觉风格统一</li>
+        </ul>
+      </div>
+      <div class="tip" style="margin-top:10px; padding:10px">
+        <strong>自研优势：</strong>AI 出图能力完全自主掌控，从素材获取到套版生成全流程内化，不依赖第三方平台限制，可根据业务需求持续迭代优化。
+      </div>
+    </div>
+  </div>
+
+  <!-- 商品更新节奏 -->
+  <div>
+    <h3 style="font-size:16px; font-weight:700; color:var(--text-white); margin-bottom:16px">📅 商品更新节奏 — 全年计划</h3>
+    <div class="card" style="background:var(--bg-card2)">
+      <table class="data-table">
+        <thead>
+          <tr><th>更新类型</th><th>触发时机</th><th>执行工具</th><th>优先级</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>跟随供应商新品上架</strong><br><span style="font-size:11px; color:var(--text-muted)">Gildan / Bella+Canvas 每季新款</span></td>
+            <td>每季度（3月/6月/9月/12月）</td>
+            <td>图片流程 Step 1-5 → CSV 批量导入</td>
+            <td><span style="color:var(--orange); font-weight:700">最高</span></td>
+          </tr>
+          <tr>
+            <td><strong>节日限定款上架</strong><br><span style="font-size:11px; color:var(--text-muted)">圣诞、Canada Day、返校季等</span></td>
+            <td>节日前 6-8 周</td>
+            <td>AI 自动出图 → 后台定时上架</td>
+            <td><span style="color:var(--orange); font-weight:700">高</span></td>
+          </tr>
+          <tr>
+            <td><strong>竞品调价后跟进定价</strong><br><span style="font-size:11px; color:var(--text-muted)">季度竞品扫描后决策</span></td>
+            <td>每季度竞品扫描后</td>
+            <td>Google Sheets 对比表 → 后台批量改价</td>
+            <td><span style="color:var(--blue-glow); font-weight:700">高</span></td>
+          </tr>
+          <tr>
+            <td><strong>下架断货 / 停产款</strong></td>
+            <td>供应商通知 / 库存归零</td>
+            <td>后台直接隐藏（保留历史订单数据）</td>
+            <td><span style="color:var(--yellow); font-weight:700">中</span></td>
+          </tr>
+          <tr>
+            <td><strong>主图更新</strong><br><span style="font-size:11px; color:var(--text-muted)">收到客户真实团体照后替换</span></td>
+            <td>有新客户案例照时</td>
+            <td>图片流程 Step 2-5 → 后台替换主图</td>
+            <td><span style="color:var(--yellow); font-weight:700">中</span></td>
+          </tr>
+          <tr>
+            <td><strong>产品描述 / SEO 优化</strong><br><span style="font-size:11px; color:var(--text-muted)">根据搜索关键词数据调整</span></td>
+            <td>每半年一次（结合 Google Search Console 数据）</td>
+            <td>后台编辑器直接修改</td>
+            <td><span style="color:var(--text-muted); font-weight:700">常规</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ===== SECTION 10: FORECAST ===== -->
+<section class="section" id="forecast">
+<div class="container">
+  <div class="section-label">增长预测</div>
+  <h2 class="section-title">增长预测 — 从零起步的现实节奏</h2>
+  <p class="section-desc">独立站目前交易量为零，所有增长策略尚未实施。以下预测基于<strong style="color:var(--orange)">从零起步、策略逐步落地</strong>的现实节奏，不假设任何已有流量基础。</p>
+
+  <div class="alert alert-warn" style="margin-bottom:24px">
+    <span class="ico">⚠️</span>
+    <div><strong>重要说明：</strong>前 1-2 个月几乎看不到订单，这是正常的。独立站冷启动需要时间积累信任和曝光，不要在这个阶段因为数字难看而放弃——真正的增长拐点通常出现在第 3-6 个月。</div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-container" style="margin-bottom:24px">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">
+      <h3 style="font-size:15px; font-weight:700">月营业额 vs 月访客预测趋势</h3>
+      <div style="display:flex; gap:16px; font-size:12px">
+        <span style="color:var(--orange)">— 月营业额 (CAD)</span>
+        <span style="color:var(--blue-light)">— 月访客</span>
+      </div>
+    </div>
+    <div style="height:280px">
+      <canvas id="forecastChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>时间节点</th>
+          <th>月访客</th>
+          <th>独立站月订单</th>
+          <th>月营业额（CAD）</th>
+          <th>团体订单占比</th>
+          <th>主要驱动因素</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>当前基准</strong></td>
+          <td>0</td>
+          <td>0 单</td>
+          <td>$0</td>
+          <td>—</td>
+          <td>独立站刚起步，策略未实施</td>
+        </tr>
+        <tr>
+          <td><strong>第3个月</strong></td>
+          <td>200-400</td>
+          <td>3-8 单</td>
+          <td>$800-2,500</td>
+          <td>&lt;10%</td>
+          <td>包裹卡片引流 + GMB 注册 + 社媒开号</td>
+        </tr>
+        <tr>
+          <td><strong>第6个月</strong></td>
+          <td>600-1,200</td>
+          <td>15-35 单</td>
+          <td>$3,500-7,000</td>
+          <td>15-25%</td>
+          <td>广告投放起步 + SEO 初步收录</td>
+        </tr>
+        <tr>
+          <td><strong>第12个月</strong></td>
+          <td>1,500-3,000</td>
+          <td>40-100 单</td>
+          <td>$8,000-15,000</td>
+          <td>25-35%</td>
+          <td>SEO 开始见效 + 老客复购 + 口碑转介绍</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="font-size:12px; color:var(--text-dim); margin-top:12px">
+    * 基于独立站从零起步、策略逐步落地的保守估算，非保证值。单价参考：T恤小单客单价约 $20-25，团体批量约 $15-20/件，团体订单每笔平均金额约 $500-1,500。前 1-2 个月零收入属正常冷启动期。
+  </p>
+</div>
+</section>
+
+<!-- ===== SECTION 11: BUDGET ===== -->
+<section class="section" id="budget">
+<div class="container">
+  <div class="section-label">费用预算</div>
+  <h2 class="section-title">费用预算 — 按阶段投入，不打无准备之仗</h2>
+  <p class="section-desc">从零起步，不建议一上来就大规模投广告。正确节奏是：<strong style="color:var(--orange)">先把免费渠道跑通，看到第一批真实订单后，再逐步加大付费投入</strong>。烧钱换不来信任，执行到位才能换来复购。</p>
+
+  <!-- Phase 1 -->
+  <div style="margin-bottom:24px">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px">
+      <div style="width:28px; height:28px; background:var(--green); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; flex-shrink:0">1</div>
+      <h3 style="font-size:15px; font-weight:700; color:var(--text-white)">第1-2个月：打基础，近乎零成本</h3>
+      <span style="background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--green); font-size:11px; font-weight:700; padding:2px 10px; border-radius:20px">月支出 ≈ $37-67</span>
+    </div>
+    <div class="card" style="padding:0">
+      <table class="data-table">
+        <thead><tr><th>项目</th><th>费用</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Google My Business 注册</strong></td><td style="color:var(--green)">免费</td><td>本地搜索曝光最重要的一步，必须优先完成</td></tr>
+          <tr><td><strong>社媒账号开设</strong></td><td style="color:var(--green)">免费</td><td>Instagram、TikTok、Facebook 页面同步开设，占据品牌名</td></tr>
+          <tr><td><strong>引流卡片印刷</strong></td><td>$50/季 ≈ $17/月</td><td>放入 Temu / Amazon 包裹，把已有买家引导到独立站</td></tr>
+          <tr><td><strong>网站 SEO 基础优化</strong></td><td style="color:var(--green)">免费（时间投入）</td><td>标题、描述、页面结构整理，不需要付费工具</td></tr>
+          <tr><td><strong>邮件营销工具（免费版）</strong></td><td style="color:var(--green)">免费</td><td>Mailchimp 免费版支持 500 联系人，初期完全够用</td></tr>
+          <tr><td><strong>AI 工具 API 调用费</strong></td><td>$20-50/月</td><td>自研 AI 出图 + 竞品抓取等工具的底层 API 成本（按调用量计费）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip" style="margin-top:10px">这个阶段的目标不是拿订单，是<strong>把所有免费渠道都开通到位</strong>。地基不打好，后期广告费烧了也是浪费。</div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div style="margin-bottom:24px">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px">
+      <div style="width:28px; height:28px; background:var(--orange); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; flex-shrink:0">2</div>
+      <h3 style="font-size:15px; font-weight:700; color:var(--text-white)">第3-6个月：小额验证，找到有效渠道</h3>
+      <span style="background:rgba(249,115,22,0.15); border:1px solid rgba(249,115,22,0.3); color:var(--orange); font-size:11px; font-weight:700; padding:2px 10px; border-radius:20px">月支出 $400-600</span>
+    </div>
+    <div class="card" style="padding:0">
+      <table class="data-table">
+        <thead><tr><th>项目</th><th>费用</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Google 搜索广告</strong></td><td>$1,000–1,500/月</td><td>先跑"custom t-shirt Toronto"等核心词，日预算 $30–50；低于此在多伦多 B2B 市场（CPC $2–5）无法获得有效曝光</td></tr>
+          <tr><td><strong>Facebook / Instagram 广告</strong></td><td>$100-150/月</td><td>针对本地企业主、HR、活动策划师做小范围测投</td></tr>
+          <tr><td><strong>引流卡片</strong></td><td>$17/月</td><td>持续放入包裹，积累独立站首批真实用户</td></tr>
+          <tr><td><strong>邮件工具</strong></td><td>免费版</td><td>联系人不足 500 前无需升级</td></tr>
+          <tr><td><strong>AI 工具 API 调用费</strong></td><td>$50-100/月</td><td>商品上新 + 出图频次提升，API 调用量随之增加</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip" style="margin-top:10px">这个阶段的目标是<strong>拿到前 10-20 个真实订单，找出哪个广告渠道 ROI 最高</strong>，然后把预算集中在有效渠道，砍掉无效投放。</div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div style="margin-bottom:24px">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px">
+      <div style="width:28px; height:28px; background:var(--blue-light); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; flex-shrink:0">3</div>
+      <h3 style="font-size:15px; font-weight:700; color:var(--text-white)">第6-12个月：扩大有效渠道，降低单次获客成本</h3>
+      <span style="background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3); color:var(--blue-glow); font-size:11px; font-weight:700; padding:2px 10px; border-radius:20px">月支出 $650-1,100</span>
+    </div>
+    <div class="card" style="padding:0">
+      <table class="data-table">
+        <thead><tr><th>项目</th><th>费用</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Google 搜索广告</strong></td><td>$300-500/月</td><td>基于第二阶段数据，加大在高转化关键词上的预算</td></tr>
+          <tr><td><strong>Facebook / Instagram 广告</strong></td><td>$200-300/月</td><td>开启再营销广告，覆盖访问过网站但未下单的用户</td></tr>
+          <tr><td><strong>引流卡片</strong></td><td>$17-50/月</td><td>随平台订单量增长同步提升印刷量</td></tr>
+          <tr><td><strong>邮件工具升级</strong></td><td>$20-30/月</td><td>联系人超 500 后升级，开启自动化复购邮件序列</td></tr>
+          <tr><td><strong>AI 工具 API 调用费</strong></td><td>$100-200/月</td><td>批量出图、竞品监控、自动化流程规模化，调用量显著上升</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip" style="margin-top:10px">到这个阶段，SEO 自然流量开始贡献订单，<strong>广告的作用从"冷启动"变成"加速"</strong>，整体获客成本会随时间下降。</div>
+  </div>
+
+  <!-- ROI note -->
+  <div class="alert alert-info">
+    <span class="ico">📊</span>
+    <div><strong>关于 ROI 的现实预期：</strong>前2个月广告几乎不会有明显回报，这是冷启动期的正常现象，不要用这段时间的数据来判断广告是否值得投。真正可以看 ROI 的时间节点是第3-6个月积累了足够数据之后——一个成交的团体订单（$500-1,500）就能覆盖当月一半的广告成本。</div>
+  </div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>PrintNGO Plus 独立站增长全攻略</p>
+  <p>报告生成日期：2026年6月 | 网站：printngoplus.com | 目标市场：加拿大（多伦多）</p>
+  <p>数据预测基于行业平均水平及保守估算，实际效果因执行力度、市场变化等因素而异</p>
+</div>
+
+<script>
+// Forecast chart
+const ctx = document.getElementById('forecastChart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: ['当前', '第1月', '第2月', '第3月', '第4月', '第5月', '第6月', '第9月', '第12月'],
+    datasets: [
+      {
+        label: '月营业额 (CAD)',
+        data: [0, 0, 300, 1000, 2000, 3000, 4500, 7000, 10000],
+        borderColor: '#F97316',
+        backgroundColor: 'rgba(249,115,22,0.1)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#F97316',
+        yAxisID: 'y'
+      },
+      {
+        label: '月访客',
+        data: [0, 60, 150, 300, 450, 650, 900, 1500, 2500],
+        borderColor: '#3B82F6',
+        backgroundColor: 'rgba(59,130,246,0.05)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.4,
+        pointBackgroundColor: '#3B82F6',
+        yAxisID: 'y1',
+        borderDash: [5, 3]
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(13,27,46,0.95)',
+        borderColor: 'rgba(59,130,246,0.3)',
+        borderWidth: 1,
+        titleColor: '#F1F5F9',
+        bodyColor: '#94A3B8',
+        padding: 12
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { color: '#64748B', font: { size: 11 } }
+      },
+      y: {
+        type: 'linear', position: 'left',
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: {
+          color: '#F97316', font: { size: 11 },
+          callback: v => '$' + v.toLocaleString()
+        },
+        title: { display: true, text: '月营业额 (CAD)', color: '#F97316', font: { size: 11 } }
+      },
+      y1: {
+        type: 'linear', position: 'right',
+        grid: { drawOnChartArea: false },
+        ticks: {
+          color: '#3B82F6', font: { size: 11 },
+          callback: v => v.toLocaleString()
+        },
+        title: { display: true, text: '月访客', color: '#3B82F6', font: { size: 11 } }
+      }
+    }
+  }
+});
+
+function switchAdsTab(e, tab) {
+  var section = document.getElementById('ads');
+  section.querySelectorAll('.ads-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  section.querySelectorAll('.ads-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tab-' + tab).classList.add('active');
+  e.currentTarget.classList.add('active');
+}
+
+function switchSocialTab(e, tab) {
+  var section = document.getElementById('social');
+  section.querySelectorAll('.ads-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  section.querySelectorAll('.ads-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('stab-' + tab).classList.add('active');
+  e.currentTarget.classList.add('active');
+}
+
+function switchContentTab(e, tab) {
+  var section = document.getElementById('content');
+  section.querySelectorAll('.ads-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  section.querySelectorAll('.ads-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('ctab-' + tab).classList.add('active');
+  e.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>

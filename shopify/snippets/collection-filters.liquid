@@ -1,0 +1,246 @@
+{%- comment -%}
+  collection-filters.liquid — tag-based sidebar filter with JS URL toggle
+
+  Usage: {% render 'collection-filters' %}
+  Place inside a two-column layout wrapper; this snippet renders the left sidebar only.
+
+  URL format: /collections/{handle}/{tag1}+{tag2}+{tag3}?filter.v.availability=1
+  Tags are Shopify-handleized in the URL (lowercase, spaces→hyphens).
+
+  Filter groups:
+    1. 服装类型  — T-Shirt, Hoodie, Crewneck Sweatshirt, Long-Sleeve T-Shirt, Polo Shirt, V-Neck T-Shirt
+    2. 适用人群  — Adult, Women's, Youth, Unisex
+    3. 领型/款式 — Crew Neck, V-Neck, Hooded, Polo
+    4. 材质      — Cotton, Poly-Cotton
+    5. 版型      — Classic Fit, Fitted
+    6. 库存      — Shopify Storefront availability filter
+{%- endcomment -%}
+
+{%- liquid
+  assign type_tags     = "T-Shirt,Hoodie,Crewneck Sweatshirt,Long-Sleeve T-Shirt,Polo Shirt,V-Neck T-Shirt" | split: ","
+  assign audience_tags = "Adult,Women's,Youth,Unisex" | split: ","
+  assign neck_tags     = "Crew Neck,V-Neck,Hooded,Polo" | split: ","
+  assign material_tags = "Cotton,Poly-Cotton" | split: ","
+  assign fit_tags      = "Classic Fit,Fitted" | split: ","
+
+  assign all_tags     = collection.all_tags
+  assign current_tags = collection.current_tags
+  assign base_url     = "/collections/" | append: collection.handle
+
+  assign avail_param  = request.parameters["filter.v.availability"]
+  assign avail_active = false
+  if avail_param == "1"
+    assign avail_active = true
+  endif
+
+  assign has_active = false
+  if current_tags.size > 0 or avail_active
+    assign has_active = true
+  endif
+-%}
+
+{%- comment -%} Build comma-separated list of active tag handles for JS {%- endcomment -%}
+{%- assign active_handles = "" -%}
+{%- for t in current_tags -%}
+  {%- assign active_handles = active_handles | append: t | handleize | append: "," -%}
+{%- endfor -%}
+
+<aside
+  class="cf"
+  data-base-url="{{ base_url }}"
+  data-active="{{ active_handles | split: ',' | join: ',' }}"
+  data-avail="{{ avail_active }}"
+  aria-label="Product filters"
+>
+  <div class="cf__head">
+    <span class="cf__title">筛选</span>
+    {%- if has_active -%}
+      <a href="{{ base_url }}" class="cf__clear">清除全部</a>
+    {%- endif -%}
+  </div>
+
+  {%- comment -%} ── Macro: render one filter group ── {%- endcomment -%}
+  {%- for pass in (1..5) -%}
+    {%- case pass -%}
+      {%- when 1 -%}{%- assign group_label = "服装类型" -%}{%- assign group_tags = type_tags -%}
+      {%- when 2 -%}{%- assign group_label = "适用人群" -%}{%- assign group_tags = audience_tags -%}
+      {%- when 3 -%}{%- assign group_label = "领型 / 款式" -%}{%- assign group_tags = neck_tags -%}
+      {%- when 4 -%}{%- assign group_label = "材质" -%}{%- assign group_tags = material_tags -%}
+      {%- when 5 -%}{%- assign group_label = "版型" -%}{%- assign group_tags = fit_tags -%}
+    {%- endcase -%}
+
+    {%- assign visible = 0 -%}
+    {%- assign group_has_active = false -%}
+    {%- for tag in group_tags -%}
+      {%- if all_tags contains tag -%}
+        {%- assign visible = visible | plus: 1 -%}
+        {%- if current_tags contains tag -%}{%- assign group_has_active = true -%}{%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+
+    {%- if visible > 0 -%}
+      <details class="cf__group" {% if group_has_active %}open{% endif %}>
+        <summary class="cf__summary">
+          <span>{{ group_label }}</span>
+          <svg class="cf__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </summary>
+        <ul class="cf__list">
+          {%- for tag in group_tags -%}
+            {%- if all_tags contains tag -%}
+              {%- assign is_active = false -%}
+              {%- if current_tags contains tag -%}{%- assign is_active = true -%}{%- endif -%}
+              <li>
+                <button
+                  type="button"
+                  class="cf__tag{% if is_active %} cf__tag--on{% endif %}"
+                  data-tag="{{ tag | handleize }}"
+                  aria-pressed="{{ is_active }}"
+                >
+                  <span class="cf__check" aria-hidden="true">{% if is_active %}✓{% endif %}</span>
+                  {{ tag }}
+                </button>
+              </li>
+            {%- endif -%}
+          {%- endfor -%}
+        </ul>
+      </details>
+    {%- endif -%}
+  {%- endfor -%}
+
+  {%- comment -%} ── 库存 ── {%- endcomment -%}
+  <details class="cf__group" {% if avail_active %}open{% endif %}>
+    <summary class="cf__summary">
+      <span>库存</span>
+      <svg class="cf__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </summary>
+    <ul class="cf__list">
+      <li>
+        <button
+          type="button"
+          class="cf__tag{% if avail_active %} cf__tag--on{% endif %}"
+          data-avail-toggle="1"
+          aria-pressed="{{ avail_active }}"
+        >
+          <span class="cf__check" aria-hidden="true">{% if avail_active %}✓{% endif %}</span>
+          仅显示有货商品
+        </button>
+      </li>
+    </ul>
+  </details>
+
+  {%- comment -%} ── 已选标签汇总条 ── {%- endcomment -%}
+  {%- if current_tags.size > 0 or avail_active -%}
+    <div class="cf__chips" aria-label="已选筛选条件">
+      {%- for tag in current_tags -%}
+        <button type="button" class="cf__chip" data-tag="{{ tag | handleize }}" aria-label="移除 {{ tag }}">
+          {{ tag }} ×
+        </button>
+      {%- endfor -%}
+      {%- if avail_active -%}
+        <button type="button" class="cf__chip" data-avail-toggle="1" aria-label="移除库存筛选">
+          有货 ×
+        </button>
+      {%- endif -%}
+    </div>
+  {%- endif -%}
+</aside>
+
+<script>
+(function () {
+  var sidebar = document.querySelector('.cf');
+  if (!sidebar) return;
+
+  var baseUrl    = sidebar.dataset.baseUrl;
+  var availOn    = sidebar.dataset.avail === 'true';
+
+  // Active tags are stored as handleized strings matching Shopify's URL encoding.
+  var activeTags = (sidebar.dataset.active || '')
+    .split(',')
+    .map(function (s) { return s.trim(); })
+    .filter(Boolean);
+
+  function buildUrl(tags, avail) {
+    var path = baseUrl;
+    if (tags.length > 0) path += '/' + tags.join('+');
+    return avail ? path + '?filter.v.availability=1' : path;
+  }
+
+  function navigate(tags, avail) {
+    window.location.href = buildUrl(tags, avail);
+  }
+
+  sidebar.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-tag], [data-avail-toggle]');
+    if (!btn) return;
+
+    if (btn.dataset.availToggle) {
+      navigate(activeTags, !availOn);
+      return;
+    }
+
+    var tag = btn.dataset.tag;
+    var idx = activeTags.indexOf(tag);
+    var next = activeTags.slice();
+    if (idx === -1) {
+      next.push(tag);
+    } else {
+      next.splice(idx, 1);
+    }
+    navigate(next, availOn);
+  });
+})();
+</script>
+
+<style>
+  .cf { width: 210px; flex-shrink: 0; font-size: .875rem; }
+
+  .cf__head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-bottom: .75rem; margin-bottom: .25rem;
+    border-bottom: 2px solid #111;
+  }
+  .cf__title { font-weight: 700; font-size: .9375rem; }
+  .cf__clear { font-size: .75rem; color: #888; text-decoration: underline; }
+
+  .cf__group { border-top: 1px solid #e5e5e5; }
+  .cf__summary {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .65rem 0; cursor: pointer; font-weight: 600;
+    list-style: none; user-select: none;
+  }
+  .cf__summary::-webkit-details-marker { display: none; }
+  details[open] .cf__chevron { transform: rotate(180deg); }
+  .cf__chevron { transition: transform .2s; color: #888; flex-shrink: 0; }
+
+  .cf__list { list-style: none; margin: 0 0 .75rem; padding: 0; display: flex; flex-direction: column; gap: .3rem; }
+
+  .cf__tag {
+    display: flex; align-items: center; gap: .45rem;
+    width: 100%; padding: .3rem .5rem;
+    background: none; border: 1px solid transparent;
+    border-radius: 6px; cursor: pointer;
+    font-size: .8125rem; color: #333; text-align: left;
+    transition: background .12s, border-color .12s;
+  }
+  .cf__tag:hover { background: #f5f5f5; border-color: #ddd; }
+  .cf__tag--on { background: #111; color: #fff; border-color: #111; }
+  .cf__tag--on:hover { background: #333; border-color: #333; }
+
+  .cf__check {
+    width: 14px; flex-shrink: 0; text-align: center;
+    font-size: .75rem;
+  }
+
+  .cf__chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .75rem; }
+  .cf__chip {
+    display: inline-flex; align-items: center; gap: .2rem;
+    padding: .2rem .55rem;
+    background: #eee; border: none; border-radius: 999px;
+    font-size: .75rem; color: #333; cursor: pointer;
+  }
+  .cf__chip:hover { background: #ddd; }
+</style>
