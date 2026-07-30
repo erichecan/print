@@ -2,6 +2,7 @@
 // Enhanced with unified error handling
 const path = require('path');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const {
@@ -39,6 +40,43 @@ const safeJsonParse = (value) => {
   } catch (error) {
     return null;
   }
+};
+
+/**
+ * [2026-07-29] 把印刷位置设计图上传后的 asset id/url 回写进 configuration JSON 里对应的位置。
+ * mapEntry 来自前端 positionAssetMap：{ productItemId, colorGroupId, positionId, positionKey }。
+ * positionId 优先匹配（web 端每个位置都有稳定 uuid）；没有 positionId 时按 positionKey 匹配
+ * （mobile 端同一颜色组内 positionKey 唯一，可以安全地作为兜底匹配键）。
+ */
+const applyDesignAssetToConfig = (configData, mapEntry, assetId, url) => {
+  if (!configData || !mapEntry) return;
+  const groups = configData?.colorGroupsByProduct?.[mapEntry.productItemId];
+  if (!Array.isArray(groups)) return;
+  const group = groups.find((g) => g.id === mapEntry.colorGroupId);
+  if (!group || !Array.isArray(group.positions)) return;
+  const position = mapEntry.positionId
+    ? group.positions.find((p) => p.id === mapEntry.positionId)
+    : group.positions.find((p) => p.positionKey === mapEntry.positionKey);
+  if (!position) return;
+  position.designAssetId = assetId;
+  position.designAssetUrl = url;
+};
+
+/**
+ * [2026-07-29] 上传印刷位置设计图并把结果关联回 configData 里对应的位置。
+ * 复用 processAssetUpload 的存储逻辑，但预先生成 asset id（而不是让 Prisma 自动生成），
+ * 这样才能在同一次事务写入订单前，把 id 提前写进 configuration JSON。
+ */
+const processPositionAssetUploads = async (positionFiles, positionAssetMap, configData) => {
+  if (!positionFiles.length) return [];
+  return Promise.all(
+    positionFiles.map(async (file, index) => {
+      const uploaded = await processAssetUpload(file);
+      const assetId = uuidv4();
+      applyDesignAssetToConfig(configData, positionAssetMap[index], assetId, uploaded.url);
+      return { ...uploaded, id: assetId };
+    })
+  );
 };
 
 /**
@@ -631,24 +669,34 @@ exports.createOfflineOrder = async (req, res) => {
       createdAt: startDate ? parseDate(startDate) : undefined, // Override created_at if startDate is provided
     };
 
-    const files = Array.isArray(req.files) ? req.files : [];
+    // upload.fields([{name:'assets'},{name:'positionAssets'}]) 下 req.files 是按字段名分组的对象；
+    // 兼容旧的 upload.array('assets') 场景（req.files 是扁平数组）
+    const filesByField = Array.isArray(req.files) ? { assets: req.files } : (req.files || {});
+    const files = filesByField.assets || [];
+    const positionFiles = filesByField.positionAssets || [];
+    const positionAssetMap = safeJsonParse(req.body.positionAssetMap) || [];
 
     let assetPayloads = [];
-    if (files.length > 0) {
-      try {
+    let positionAssetPayloads = [];
+    try {
+      if (files.length > 0) {
         assetPayloads = await Promise.all(files.map(processAssetUpload));
-      } catch (uploadErr) {
-        logger.error('[offlineOrderController] Asset upload failed:', uploadErr);
-        const msg = uploadErr.code === 'P2002' || uploadErr.code === 'P2003'
-          ? uploadErr.message
-          : (process.env.GCP_IMAGE_BUCKET ? 'File upload failed. Please try again or contact support.' : 'File storage is not configured (GCP_IMAGE_BUCKET). Contact administrator.');
-        return res.status(400).json({
-          error: 'Upload Error',
-          message: msg,
-          details: process.env.NODE_ENV !== 'production' ? uploadErr.message : undefined
-        });
       }
+      if (positionFiles.length > 0) {
+        positionAssetPayloads = await processPositionAssetUploads(positionFiles, positionAssetMap, configData);
+      }
+    } catch (uploadErr) {
+      logger.error('[offlineOrderController] Asset upload failed:', uploadErr);
+      const msg = uploadErr.code === 'P2002' || uploadErr.code === 'P2003'
+        ? uploadErr.message
+        : (process.env.GCP_IMAGE_BUCKET ? 'File upload failed. Please try again or contact support.' : 'File storage is not configured (GCP_IMAGE_BUCKET). Contact administrator.');
+      return res.status(400).json({
+        error: 'Upload Error',
+        message: msg,
+        details: process.env.NODE_ENV !== 'production' ? uploadErr.message : undefined
+      });
     }
+    const allAssetPayloads = [...assetPayloads, ...positionAssetPayloads];
 
     const orderDate = startDate ? parseDate(startDate) : new Date();
 
@@ -679,9 +727,10 @@ exports.createOfflineOrder = async (req, res) => {
           ...orderPayload,
           orderCode: uniqueCode,
           projectName: finalProjectName, // 使用处理后的projectName
-          assets: assetPayloads.length
+          assets: allAssetPayloads.length
             ? {
-              create: assetPayloads.map((asset) => ({
+              create: allAssetPayloads.map((asset) => ({
+                ...(asset.id ? { id: asset.id } : {}),
                 fileName: asset.fileName,
                 fileSize: asset.fileSize,
                 contentType: asset.contentType,
@@ -1834,9 +1883,11 @@ exports.updateOfflineOrder = async (req, res) => {
       }
     }
     if (phone !== undefined) data.phone = phone?.trim() || null;
+    // [2026-07-29] 提到 if 块外部：印刷位置设计图上传后需要回写 designAssetId/designAssetUrl 到这个对象里
+    let configData = null;
     if (configuration !== undefined) {
       // [2026-03-13 05:15:30] 编辑订单时若更新配置，同步重算成本快照 pricing.costTotal
-      const configData = safeJsonParse(configuration) || configuration || null;
+      configData = safeJsonParse(configuration) || configuration || null;
       if (configData && typeof configData === 'object') {
         const costTotal = await computeCostTotalFromConfig(configData);
         if (!configData.pricing) {
@@ -1907,21 +1958,36 @@ exports.updateOfflineOrder = async (req, res) => {
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Admin';
 
-    const files = Array.isArray(req.files) ? req.files : [];
+    const filesByField = Array.isArray(req.files) ? { assets: req.files } : (req.files || {});
+    const files = filesByField.assets || [];
+    const positionFiles = filesByField.positionAssets || [];
+    const positionAssetMap = safeJsonParse(req.body.positionAssetMap) || [];
+
     let newAssetPayloads = [];
-    if (files.length > 0) {
-      try {
+    let positionAssetPayloads = [];
+    try {
+      if (files.length > 0) {
         newAssetPayloads = await Promise.all(files.map(processAssetUpload));
-      } catch (uploadErr) {
-        logger.error('[updateOfflineOrder] Asset upload failed:', uploadErr);
-        // 2025-02-20: 400 响应增加 details 便于非生产环境排查
-        const msg = process.env.GCP_IMAGE_BUCKET ? 'File upload failed.' : 'File storage is not configured (GCP_IMAGE_BUCKET).';
-        return res.status(400).json({
-          error: 'Upload Error',
-          message: msg,
-          details: process.env.NODE_ENV !== 'production' ? uploadErr?.message : undefined
-        });
       }
+      if (positionFiles.length > 0) {
+        positionAssetPayloads = await processPositionAssetUploads(positionFiles, positionAssetMap, configData);
+      }
+    } catch (uploadErr) {
+      logger.error('[updateOfflineOrder] Asset upload failed:', uploadErr);
+      // 2025-02-20: 400 响应增加 details 便于非生产环境排查
+      const msg = process.env.GCP_IMAGE_BUCKET ? 'File upload failed.' : 'File storage is not configured (GCP_IMAGE_BUCKET).';
+      return res.status(400).json({
+        error: 'Upload Error',
+        message: msg,
+        details: process.env.NODE_ENV !== 'production' ? uploadErr?.message : undefined
+      });
+    }
+    newAssetPayloads = [...newAssetPayloads, ...positionAssetPayloads];
+
+    // positionAssetPayloads 已经把 designAssetId/designAssetUrl 写回 configData（引用类型，同一对象）；
+    // 若本次请求带了新的位置设计图但没有一并提交 configuration，需要把回写结果补进 data.configuration
+    if (positionAssetPayloads.length > 0 && configData && data.configuration === undefined) {
+      data.configuration = configData;
     }
 
     let capturedUpdateAuditEntries = [];
@@ -2076,6 +2142,7 @@ exports.updateOfflineOrder = async (req, res) => {
             ? {
               assets: {
                 create: newAssetPayloads.map((asset) => ({
+                  ...(asset.id ? { id: asset.id } : {}),
                   fileName: asset.fileName,
                   fileSize: asset.fileSize,
                   contentType: asset.contentType,

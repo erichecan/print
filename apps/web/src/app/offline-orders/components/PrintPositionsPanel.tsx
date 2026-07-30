@@ -6,7 +6,7 @@
 
 import { useCallback, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { PositionConfig, PositionKey } from '@/types/order';
+import { PositionConfig, PositionKey, POSITION_KEYS } from '@/types/order';
 import { PositionEditorModal } from './PositionEditorModal';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 
@@ -16,15 +16,6 @@ interface PrintPositionsPanelProps {
   onCopyToOthers?: () => void;
   locale?: OfflineOrdersLocale;
 }
-
-const POSITION_KEYS: PositionKey[] = [
-  'front_left_chest', 'front_middle', 'front',
-  'back_middle', 'back',
-  'left_sleeve', 'right_sleeve',
-  'pocket',
-  'tag_inside', 'tag_outside',
-  'custom'
-];
 
 export function PrintPositionsPanel({ positions, onChange, onCopyToOthers, locale = 'en' }: PrintPositionsPanelProps) {
   // Use ID to track which position is being edited (supporting multiple same-type positions)
@@ -242,8 +233,15 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers, local
                     {pos.widthMm && pos.heightMm && (
                       <div>{t('dimensionsLabel')} {pos.widthMm}×{pos.heightMm}mm</div>
                     )}
-                    {pos.designAssetId && (
-                      <div className="text-green-600">{t('fileUploaded')}</div>
+                    {pos.designAssetUrl && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <img
+                          src={pos.designAssetUrl}
+                          alt={t('designImageLabel')}
+                          className="w-10 h-10 object-cover rounded border border-gray-300"
+                        />
+                        <span className="text-green-600">{t('fileUploaded')}</span>
+                      </div>
                     )}
                   </div>
                 )}

@@ -21,11 +21,14 @@ const fileFilter = (_req, file, cb) => {
   cb(null, true);
 };
 
+const maxFilesPerField = parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10);
+
 const upload = multer({
   storage,
   limits: {
     fileSize: parseInt(process.env.OFFLINE_ORDER_MAX_FILE_MB || '50', 10) * 1024 * 1024,
-    files: parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)
+    // limits.files 是所有字段合计的上限，assets（订单级附件）+ positionAssets（印刷位置设计图）各自最多 maxFilesPerField
+    files: maxFilesPerField * 2
   },
   fileFilter
 });
@@ -36,7 +39,10 @@ router.get('/config', offlineOrderController.getOrderConfig);
 router.post(
   '/',
   authenticateOptional,
-  upload.array('assets', parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)),
+  upload.fields([
+    { name: 'assets', maxCount: maxFilesPerField },
+    { name: 'positionAssets', maxCount: maxFilesPerField }
+  ]),
   offlineOrderController.createOfflineOrder
 );
 

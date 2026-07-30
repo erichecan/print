@@ -9,10 +9,90 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { authApi, salesOrdersApi, SalesOfflineOrderDetail, OfflineOrderConfiguration, authenticatedFetch, offlineOrderProductApi, OfflineOrderConfig } from '@/lib/api';
 import { BillingDetails } from '@/app/offline-orders/components/BillingDetails';
-import { OrderItemColorGroup } from '@/types/order';
+import { OrderItemColorGroup, PositionKey, POSITION_DIAGRAM_MAP } from '@/types/order';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 import { useCallback } from 'react';
 import { downloadFile } from '@/utils/download';
+
+type PrintSizeFee = { size?: string; sizeType?: string; displayOrder?: number };
+
+const STANDARD_ADULT_SIZE_ORDER: Record<string, number> = { XS: 0, S: 1, M: 2, L: 3, XL: 4 };
+
+// 打印页尺码分组：0 = 成人常规尺码（S/M/L/XL），1 = 加大码（2XL/3XL...），2 = 小孩尺码，3 = 其他
+function classifySizeForPrint(size: string, sizeFees?: PrintSizeFee[]): { group: 0 | 1 | 2 | 3; order: number } {
+  const normalized = (size || '').trim();
+  const upper = normalized.toUpperCase();
+  const plusMatch = upper.match(/^(\d+)XL$/);
+  const match = sizeFees?.find((sf) => sf.size?.toLowerCase() === normalized.toLowerCase());
+
+  if (match) {
+    if (match.sizeType === 'Youth') {
+      return { group: 2, order: match.displayOrder ?? 0 };
+    }
+    if (upper in STANDARD_ADULT_SIZE_ORDER) {
+      return { group: 0, order: match.displayOrder ?? STANDARD_ADULT_SIZE_ORDER[upper] };
+    }
+    return { group: 1, order: match.displayOrder ?? (plusMatch ? Number(plusMatch[1]) : 99) };
+  }
+
+  // sizeFees 字典里没有匹配到时的兜底规则（历史订单/自定义尺码字符串）
+  if (upper.startsWith('Y') && upper.slice(1) in STANDARD_ADULT_SIZE_ORDER) {
+    return { group: 2, order: STANDARD_ADULT_SIZE_ORDER[upper.slice(1)] };
+  }
+  if (upper in STANDARD_ADULT_SIZE_ORDER) {
+    return { group: 0, order: STANDARD_ADULT_SIZE_ORDER[upper] };
+  }
+  if (plusMatch) {
+    return { group: 1, order: Number(plusMatch[1]) };
+  }
+  return { group: 3, order: 0 };
+}
+
+// 从 colorGroupsByProduct 里按 colorGroupId + index 反查该印刷位置实际上传的设计图 URL
+// （config.printPositions 是聚合后的扁平数组，图片字段落在 colorGroupsByProduct 里，避免重复/过期数据）
+function resolvePositionDesignUrl(
+  config: OfflineOrderConfiguration | null,
+  productItemId: string | undefined,
+  colorGroupId: string | undefined,
+  index: number | undefined,
+): string | null {
+  if (!config?.colorGroupsByProduct || !productItemId || !colorGroupId || index === undefined) return null;
+  const groups = (config.colorGroupsByProduct as any)[productItemId];
+  const group = Array.isArray(groups) ? groups.find((g: any) => g.id === colorGroupId) : null;
+  const position = group?.positions?.[index];
+  return position?.designAssetUrl || null;
+}
+
+// 渲染某个印刷位置的「已上传设计图缩略图 + 悬停位置示意图」单元格
+function renderPositionDesignCell(config: OfflineOrderConfiguration | null, pos: any) {
+  const designUrl = resolvePositionDesignUrl(config, pos.productItemId, pos.colorGroupId, pos.index);
+  const diagramUrl = POSITION_DIAGRAM_MAP[(pos.position || pos.positionKey) as PositionKey];
+  if (!designUrl && !diagramUrl) return '—';
+  return (
+    <span className="pos-thumb-wrap">
+      {designUrl ? (
+        <img src={designUrl} alt="design" className="pos-thumb" />
+      ) : (
+        <span className="pos-thumb pos-thumb-empty">—</span>
+      )}
+      {diagramUrl && (
+        <span className="pos-diagram-tooltip">
+          <img src={diagramUrl} alt="position diagram" />
+        </span>
+      )}
+    </span>
+  );
+}
+
+function sortSizeEntriesForPrint<T extends [string, unknown]>(entries: T[], sizeFees?: PrintSizeFee[]): T[] {
+  return [...entries].sort(([sizeA], [sizeB]) => {
+    const a = classifySizeForPrint(sizeA, sizeFees);
+    const b = classifySizeForPrint(sizeB, sizeFees);
+    if (a.group !== b.group) return a.group - b.group;
+    if (a.order !== b.order) return a.order - b.order;
+    return sizeA.localeCompare(sizeB);
+  });
+}
 
 export default function SalesOrderDetailPage() {
   const router = useRouter();
@@ -251,68 +331,6 @@ export default function SalesOrderDetailPage() {
     return totals;
   }, [config?.productItems, config?.colorGroupsByProduct]);
 
-  // [2026-03-12 03:40:00] 生成紧凑版对账/报价单用的产品行数据
-  const compactBillingLines = useMemo(() => {
-    if (!config?.productItems) return [];
-    const lines: Array<{
-      productName: string;
-      colorName: string;
-      size: string;
-      quantity: number;
-      unitPrice: number;
-      subtotal: number;
-    }> = [];
-
-    if (config.colorGroupsByProduct) {
-      Object.entries(config.colorGroupsByProduct).forEach(([productId, groups]) => {
-        const product = config.productItems.find((p) => p.id === productId);
-        const productName = product?.productName || product?.productId || 'Product';
-
-        (groups as any[]).forEach((group) => {
-          const colorName = group.colorName || group.colorCode || 'Color';
-          const unitPrice = Number(group.unitPrice || 0);
-          Object.entries(group.quantities || {}).forEach(([size, qtyStr]) => {
-            const quantity = Number(qtyStr) || 0;
-            if (!quantity) return;
-            const sizeFees = config.sizeFees || globalConfig?.sizeFees;
-            const sizeFee =
-              sizeFees?.find(
-                (sf: any) => sf.size?.toLowerCase() === (size as string).toLowerCase(),
-              )?.additionalFee || 0;
-            const pricePerUnit = unitPrice + Number(sizeFee || 0);
-            lines.push({
-              productName,
-              colorName,
-              size: size as string,
-              quantity,
-              unitPrice: pricePerUnit,
-              subtotal: quantity * pricePerUnit,
-            });
-          });
-        });
-      });
-      return lines;
-    }
-
-    // 旧数据结构回退：按 variants 生成
-    config.productItems.forEach((item) => {
-      (item.variants || []).forEach((variant: any) => {
-        const quantity = Number(variant.quantity || 0);
-        if (!quantity) return;
-        const unitPrice = Number(variant.unitPrice || 0);
-        lines.push({
-          productName: item.productName || item.productId || 'Product',
-          colorName: variant.color || 'Color',
-          size: variant.size || 'Size',
-          quantity,
-          unitPrice,
-          subtotal: quantity * unitPrice,
-        });
-      });
-    });
-    return lines;
-  }, [config, globalConfig]);
-
   // Transform data for BillingDetails component
   const billingData = useMemo(() => {
     if (!config?.productItems) return null;
@@ -426,6 +444,8 @@ export default function SalesOrderDetailPage() {
     const rushFee = Number(config.pricing?.rushFee || 0);
     const taxAmount = Number(config.pricing?.taxAmount || 0);
     const total = Number(config.pricing?.total || subtotal + dstFee + rushFee + taxAmount);
+    const depositAmount = Number(meta.payment?.depositAmount || 0);
+    const balanceDue = Math.max(0, total - depositAmount);
 
     return (
       <>
@@ -519,6 +539,22 @@ export default function SalesOrderDetailPage() {
         .method-badge {
           display: inline-block; background: #fff; border: 1px solid #fde68a;
           border-radius: 2px; padding: 0 3px; font-size: 6pt; color: #92400e;
+        }
+        .pos-thumb-wrap { position: relative; display: inline-flex; }
+        .pos-thumb { width: 26px; height: 26px; object-fit: cover; border: 1px solid #ccc; border-radius: 2px; }
+        .pos-thumb-empty {
+          width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+          border: 1px dashed #ccc; border-radius: 2px; color: #aaa; font-size: 7pt;
+        }
+        .pos-diagram-tooltip {
+          display: none; position: absolute; z-index: 100; left: 100%; top: 50%;
+          transform: translateY(-50%); margin-left: 6px; background: #fff; border: 1px solid #ccc;
+          border-radius: 4px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+        }
+        .pos-diagram-tooltip img { width: 90px; height: auto; display: block; }
+        .pos-thumb-wrap:hover .pos-diagram-tooltip { display: block; }
+        @media print {
+          .pos-diagram-tooltip { display: none !important; }
         }
         .color-block { margin-top: 2px; }
         .color-line {
@@ -675,9 +711,10 @@ export default function SalesOrderDetailPage() {
                     <table className="pos-table">
                       <thead>
                         <tr>
-                          <th style={{ width: '18%' }}>Position</th>
-                          <th style={{ width: '18%' }}>Method</th>
-                          <th style={{ width: '28%' }}>Logo Size</th>
+                          <th style={{ width: '14%' }}>Position</th>
+                          <th style={{ width: '10%' }}>Design</th>
+                          <th style={{ width: '16%' }}>Method</th>
+                          <th style={{ width: '24%' }}>Logo Size</th>
                           <th>Notes</th>
                         </tr>
                       </thead>
@@ -702,6 +739,7 @@ export default function SalesOrderDetailPage() {
                           return (
                             <tr key={idx}>
                               <td><strong>{posName}</strong></td>
+                              <td>{renderPositionDesignCell(config, pos)}</td>
                               <td>{method !== '—' ? <span className="method-badge">{method}</span> : '—'}</td>
                               <td>{logoSize ? <span className="logo-size-cell">{logoSize}</span> : '—'}</td>
                               <td>{pos.notes || '—'}</td>
@@ -741,9 +779,10 @@ export default function SalesOrderDetailPage() {
                       <table className="pos-table">
                         <thead>
                           <tr>
-                            <th style={{ width: '18%' }}>Position</th>
-                            <th style={{ width: '18%' }}>Method</th>
-                            <th style={{ width: '28%' }}>Logo Size</th>
+                            <th style={{ width: '14%' }}>Position</th>
+                            <th style={{ width: '10%' }}>Design</th>
+                            <th style={{ width: '16%' }}>Method</th>
+                            <th style={{ width: '24%' }}>Logo Size</th>
                             <th>Notes</th>
                           </tr>
                         </thead>
@@ -768,6 +807,7 @@ export default function SalesOrderDetailPage() {
                             return (
                               <tr key={idx}>
                                 <td><strong>{posName}</strong></td>
+                                <td>{renderPositionDesignCell(config, pos)}</td>
                                 <td>{method !== '—' ? <span className="method-badge">{method}</span> : '—'}</td>
                                 <td>{logoSize ? <span className="logo-size-cell">{logoSize}</span> : '—'}</td>
                                 <td>{pos.notes || '—'}</td>
@@ -811,27 +851,40 @@ export default function SalesOrderDetailPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {Object.entries(group.quantities || {}).map(([size, qtyStr]) => {
-                                const quantity = Number(qtyStr) || 0;
-                                if (!quantity) return null;
+                              {(() => {
                                 const sizeFees = config.sizeFees || globalConfig?.sizeFees;
-                                const sizeFee =
-                                  sizeFees?.find(
-                                    (sf: any) =>
-                                      sf.size?.toLowerCase() ===
-                                      (size as string).toLowerCase(),
-                                  )?.additionalFee || 0;
-                                const unitPrice = Number(group.unitPrice || 0) + Number(sizeFee || 0);
-                                const subtotalRow = quantity * unitPrice;
-                                return (
-                                  <tr key={size}>
-                                    <td>{size}</td>
-                                    <td>{quantity}</td>
-                                    <td>${unitPrice.toFixed(2)}</td>
-                                    <td className="num">${subtotalRow.toFixed(2)}</td>
-                                  </tr>
+                                const sortedEntries = sortSizeEntriesForPrint(
+                                  Object.entries(group.quantities || {}).filter(
+                                    ([, qtyStr]) => (Number(qtyStr) || 0) > 0,
+                                  ),
+                                  sizeFees,
                                 );
-                              })}
+                                return sortedEntries.map(([size, qtyStr], entryIdx) => {
+                                  const quantity = Number(qtyStr) || 0;
+                                  const sizeFee =
+                                    sizeFees?.find(
+                                      (sf: any) => sf.size?.toLowerCase() === size.toLowerCase(),
+                                    )?.additionalFee || 0;
+                                  const unitPrice = Number(group.unitPrice || 0) + Number(sizeFee || 0);
+                                  const subtotalRow = quantity * unitPrice;
+                                  const currentGroup = classifySizeForPrint(size, sizeFees).group;
+                                  const prevGroup =
+                                    entryIdx > 0
+                                      ? classifySizeForPrint(sortedEntries[entryIdx - 1][0], sizeFees).group
+                                      : currentGroup;
+                                  return (
+                                    <tr
+                                      key={size}
+                                      style={entryIdx > 0 && currentGroup !== prevGroup ? { borderTop: '2px solid #999' } : undefined}
+                                    >
+                                      <td>{size}</td>
+                                      <td>{quantity}</td>
+                                      <td>${unitPrice.toFixed(2)}</td>
+                                      <td className="num">${subtotalRow.toFixed(2)}</td>
+                                    </tr>
+                                  );
+                                });
+                              })()}
                             </tbody>
                           </table>
                         </div>
@@ -900,43 +953,24 @@ export default function SalesOrderDetailPage() {
                   <span>${taxAmount.toFixed(2)} CAD</span>
                 </div>
               )}
+              {depositAmount > 0 && (
+                <div className="row">
+                  <span>{t('deposit')}:</span>
+                  <span>-${depositAmount.toFixed(2)} CAD</span>
+                </div>
+              )}
               <div className="row total">
                 <span>Total (incl. tax):</span>
                 <span>${total.toFixed(2)} CAD</span>
               </div>
+              {depositAmount > 0 && (
+                <div className="row">
+                  <span>{t('remainingBalance')}:</span>
+                  <span>${balanceDue.toFixed(2)} CAD</span>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* 计费明细（按产品/颜色/尺码平铺的小票式明细） */}
-          {compactBillingLines.length > 0 && (
-            <div className="sec billing-table">
-              <h2 className="sec-title">Billing Details / 计费明细</h2>
-              <table className="compact-table">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Color</th>
-                    <th>Size</th>
-                    <th>Qty</th>
-                    <th>Unit</th>
-                    <th className="num">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {compactBillingLines.map((line, idx) => (
-                    <tr key={idx}>
-                      <td>{line.productName}</td>
-                      <td>{line.colorName}</td>
-                      <td>{line.size}</td>
-                      <td>{line.quantity}</td>
-                      <td>${line.unitPrice.toFixed(2)}</td>
-                      <td className="num">${line.subtotal.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       </>
     );

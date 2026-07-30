@@ -1527,6 +1527,47 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           });
         });
 
+        // 收集各印刷位置上传的设计图（本地暂存的 File），随订单一起提交；
+        // 同时构建 positionAssetMap，供后端把上传后的 asset 关联回对应位置（按 append 顺序与 map 数组顺序一一对应）
+        const positionAssetMap: Array<{
+          productItemId: string;
+          colorGroupId: string;
+          positionId: string | null;
+          positionKey: string;
+        }> = [];
+        formState.productItems.forEach((item) => {
+          const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+          colorGroups.forEach((group) => {
+            group.positions.forEach((pos) => {
+              if (pos._pendingDesignFile) {
+                payload.append('positionAssets', pos._pendingDesignFile, pos._pendingDesignFile.name);
+                positionAssetMap.push({
+                  productItemId: item.id,
+                  colorGroupId: group.id,
+                  positionId: pos.id || null,
+                  positionKey: pos.positionKey,
+                });
+              }
+            });
+          });
+        });
+
+        // 剥离仅前端本地态的图片字段（File 对象无法被 JSON.stringify，blob: 预览地址在提交后即失效），
+        // 真实 URL 由后端处理完 positionAssets 上传后回写
+        const sanitizedColorGroupsByProduct: typeof formState.colorGroupsByProduct = {};
+        Object.entries(formState.colorGroupsByProduct).forEach(([productId, groups]) => {
+          sanitizedColorGroupsByProduct[productId] = groups.map((group) => ({
+            ...group,
+            positions: group.positions.map((pos) => {
+              const { _pendingDesignFile, designAssetUrl, ...rest } = pos;
+              return {
+                ...rest,
+                designAssetUrl: designAssetUrl && designAssetUrl.startsWith('blob:') ? null : designAssetUrl,
+              };
+            }),
+          }));
+        });
+
         // PRD v2.0: 构建配置数据（使用新数据结构）
         payload.append(
           'configuration',
@@ -1538,7 +1579,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             productItems: formState.productItems, // 新数据结构
             globalPrintPositions: [], // 已废弃，保留字段用于向后兼容
             printPositions: allPrintPositions, // 从colorGroupsByProduct聚合的印刷位置（用于向后兼容）
-            colorGroupsByProduct: formState.colorGroupsByProduct, // 按颜色分组的印刷位配置（主要数据源）
+            colorGroupsByProduct: sanitizedColorGroupsByProduct, // 按颜色分组的印刷位配置（主要数据源）
             requiresInvoice: formState.requiresInvoice,
             invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null,
             paymentMethod: formState.paymentMethod || (formState.requiresInvoice ? formState.invoiceInfo?.paymentMethod : null),
@@ -1600,6 +1641,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
         // PRD v2.0: 添加文件到 payload（使用 files state，不是 formState.files）
         files.forEach((file) => payload.append('assets', file, file.name));
+
+        if (positionAssetMap.length > 0) {
+          payload.append('positionAssetMap', JSON.stringify(positionAssetMap));
+        }
 
         // 使用统一的 adminOfflineOrdersApi 进行提交，它会自动处理 Token 和 credentials
         let data;

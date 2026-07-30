@@ -37,12 +37,15 @@ const fileFilter = (_req, file, cb) => {
   cb(null, true);
 };
 
+const adminMaxFilesPerField = parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10);
+
 // 使用 memoryStorage 以便上传到 GCS（与 POST /api/offline-orders 一致）
 const adminUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: parseInt(process.env.OFFLINE_ORDER_MAX_FILE_MB || '50', 10) * 1024 * 1024,
-    files: parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)
+    // limits.files 是所有字段合计的上限，assets（订单级附件）+ positionAssets（印刷位置设计图）各自最多 adminMaxFilesPerField
+    files: adminMaxFilesPerField * 2
   },
   fileFilter
 });
@@ -78,8 +81,16 @@ router.get('/:id', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderContro
 router.patch('/:id/stage', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.updateOfflineOrderStage);
 
 // 修复：PATCH /:id 需要支持 FormData（用于更新订单时上传文件）
-// 使用 multer 中间件处理可能的文件上传
-router.patch('/:id', authorizeRoles(...ORDER_MANAGEMENT_ROLES), adminUpload.array('assets', parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)), offlineOrderController.updateOfflineOrder);
+// 使用 multer 中间件处理可能的文件上传（assets = 订单级附件，positionAssets = 印刷位置设计图）
+router.patch(
+  '/:id',
+  authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  adminUpload.fields([
+    { name: 'assets', maxCount: adminMaxFilesPerField },
+    { name: 'positionAssets', maxCount: adminMaxFilesPerField }
+  ]),
+  offlineOrderController.updateOfflineOrder
+);
 
 router.post('/:id/notes', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.addOfflineOrderNote);
 

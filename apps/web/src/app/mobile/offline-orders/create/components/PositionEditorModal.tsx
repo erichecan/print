@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, ChangeEvent } from 'react';
 import { PositionConfig, PositionKey } from '@/types/order';
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 
@@ -60,7 +60,10 @@ export function PositionEditorModal({
   }, [locale]);
 
   const POSITION_LABELS: Record<PositionKey, string> = {
+    front_left_chest: t('positionFrontLeftChest'),
+    front_middle: t('positionFrontMiddle'),
     front: t('positionFront'),
+    back_middle: t('positionBackMiddle'),
     back: t('positionBack'),
     left_sleeve: t('positionLeftSleeve'),
     right_sleeve: t('positionRightSleeve'),
@@ -96,12 +99,53 @@ export function PositionEditorModal({
     initialConfig?.dstFileFee?.toString() || defaultConfig?.dstFileFee?.toString() || ''
   );
 
+  // 设计图上传（本地态：真正的上传发生在整单提交时，这里只暂存文件 + 本地预览）
+  const [designAssetId, setDesignAssetId] = useState<string | null>(
+    initialConfig?.designAssetId || defaultConfig?.designAssetId || null
+  );
+  const [pendingDesignFile, setPendingDesignFile] = useState<File | null>(
+    initialConfig?._pendingDesignFile || null
+  );
+  const [designPreviewUrl, setDesignPreviewUrl] = useState<string | null>(
+    initialConfig?.designAssetUrl || defaultConfig?.designAssetUrl || null
+  );
+
+  useEffect(() => {
+    return () => {
+      if (designPreviewUrl && designPreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(designPreviewUrl);
+      }
+    };
+  }, [designPreviewUrl]);
+
+  const handleDesignFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (designPreviewUrl && designPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(designPreviewUrl);
+    }
+    setPendingDesignFile(file);
+    setDesignAssetId(null);
+    setDesignPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleRemoveDesignImage = () => {
+    if (designPreviewUrl && designPreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(designPreviewUrl);
+    }
+    setPendingDesignFile(null);
+    setDesignAssetId(null);
+    setDesignPreviewUrl(null);
+  };
+
   // 计算显示用的 mm 值（从 inch 转换）
   const widthMmDisplay = widthInch ? inchToMm(widthInch) : undefined;
   const heightMmDisplay = heightInch ? inchToMm(heightInch) : undefined;
 
   const handleSave = () => {
     const config: PositionConfig = {
+      id: initialConfig?.id, // Preserve ID
       positionKey,
       enabled,
       method,
@@ -111,7 +155,9 @@ export function PositionEditorModal({
       inkOrFilm: inkOrFilm || undefined,
       notes: notes || undefined,
       dstFileFee: dstFileFee ? parseFloat(dstFileFee) : undefined,
-      designAssetId: initialConfig?.designAssetId || defaultConfig?.designAssetId || null
+      designAssetId,
+      designAssetUrl: designPreviewUrl,
+      _pendingDesignFile: pendingDesignFile
     };
 
     if (!config.widthMm && !config.heightMm) {
@@ -316,8 +362,37 @@ export function PositionEditorModal({
               />
             </div>
 
-            <div className="text-sm text-gray-500">
-              <p>{t('fileUploadComingSoon')}</p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('designImageLabel')}
+              </label>
+              {designPreviewUrl ? (
+                <div className="flex items-center gap-3">
+                  <img
+                    src={designPreviewUrl}
+                    alt={t('designImageLabel')}
+                    className="w-16 h-16 object-cover rounded border border-gray-300"
+                  />
+                  <div className="flex flex-col items-start gap-1">
+                    <label className="text-xs text-blue-600 cursor-pointer hover:underline">
+                      {t('replaceImage')}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleDesignFileChange} />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleRemoveDesignImage}
+                      className="text-xs text-red-600 hover:underline"
+                    >
+                      {t('removeImage')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="inline-flex items-center gap-2 px-3 py-2 text-sm border border-dashed border-gray-300 rounded-lg cursor-pointer text-gray-600 hover:border-blue-400 hover:text-blue-600">
+                  📎 {t('uploadDesignImage')}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleDesignFileChange} />
+                </label>
+              )}
             </div>
           </div>
 
