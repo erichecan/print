@@ -540,6 +540,7 @@ export default function SalesOrderDetailPage() {
           display: inline-block; background: #fff; border: 1px solid #fde68a;
           border-radius: 2px; padding: 0 3px; font-size: 6pt; color: #92400e;
         }
+        .pos-design-cell { position: relative; padding: 4px !important; cursor: help; }
         .pos-thumb-wrap { position: relative; display: inline-flex; }
         .pos-thumb { width: 26px; height: 26px; object-fit: cover; border: 1px solid #ccc; border-radius: 2px; }
         .pos-thumb-empty {
@@ -547,12 +548,13 @@ export default function SalesOrderDetailPage() {
           border: 1px dashed #ccc; border-radius: 2px; color: #aaa; font-size: 7pt;
         }
         .pos-diagram-tooltip {
-          display: none; position: absolute; z-index: 100; left: 100%; top: 50%;
-          transform: translateY(-50%); margin-left: 6px; background: #fff; border: 1px solid #ccc;
+          display: none; position: absolute; z-index: 100; left: 0; top: 100%;
+          margin-top: 4px; background: #fff; border: 1px solid #ccc;
           border-radius: 4px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
         }
-        .pos-diagram-tooltip img { width: 90px; height: auto; display: block; }
-        .pos-thumb-wrap:hover .pos-diagram-tooltip { display: block; }
+        .pos-diagram-tooltip img { width: 110px; height: auto; display: block; }
+        /* 整个单元格（而不是仅 26px 的缩略图本身）都是悬停触发区域，避免鼠标很难精准停在小图上 */
+        .pos-design-cell:hover .pos-diagram-tooltip { display: block; }
         @media print {
           .pos-diagram-tooltip { display: none !important; }
         }
@@ -739,7 +741,7 @@ export default function SalesOrderDetailPage() {
                           return (
                             <tr key={idx}>
                               <td><strong>{posName}</strong></td>
-                              <td>{renderPositionDesignCell(config, pos)}</td>
+                              <td className="pos-design-cell">{renderPositionDesignCell(config, pos)}</td>
                               <td>{method !== '—' ? <span className="method-badge">{method}</span> : '—'}</td>
                               <td>{logoSize ? <span className="logo-size-cell">{logoSize}</span> : '—'}</td>
                               <td>{pos.notes || '—'}</td>
@@ -807,7 +809,7 @@ export default function SalesOrderDetailPage() {
                             return (
                               <tr key={idx}>
                                 <td><strong>{posName}</strong></td>
-                                <td>{renderPositionDesignCell(config, pos)}</td>
+                                <td className="pos-design-cell">{renderPositionDesignCell(config, pos)}</td>
                                 <td>{method !== '—' ? <span className="method-badge">{method}</span> : '—'}</td>
                                 <td>{logoSize ? <span className="logo-size-cell">{logoSize}</span> : '—'}</td>
                                 <td>{pos.notes || '—'}</td>
