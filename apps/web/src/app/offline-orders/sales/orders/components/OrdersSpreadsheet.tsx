@@ -872,6 +872,7 @@ export default function OrdersSpreadsheet() {
   const [newDraft, setNewDraft] = useState<{
     contactName: string;
     company: string;
+    startDate: string;
     dueDate: string;
     quantity: string;
     totalAmount: string;
@@ -883,6 +884,7 @@ export default function OrdersSpreadsheet() {
   }>({
     contactName: '',
     company: '',
+    startDate: '',
     dueDate: '',
     quantity: '',
     totalAmount: '',
@@ -1041,6 +1043,8 @@ export default function OrdersSpreadsheet() {
         depositAmount: newDraft.depositAmount ? Number(newDraft.depositAmount) : null,
         description: newDraft.description.trim() || null,
         dueDate: newDraft.dueDate || undefined,
+        // 补录历史订单时可指定订单日期，覆盖默认的"保存时刻"，让统计口径（按 created_at）能落进正确的月份
+        startDate: newDraft.startDate || undefined,
       };
       console.log('[handleCreateInline] creating with payload:', createPayload, 'activeFilters:', filterStatuses);
       const createResult = await offlineOrdersInlineApi.create(createPayload);
@@ -1048,6 +1052,7 @@ export default function OrdersSpreadsheet() {
       setNewDraft({
         contactName: '',
         company: '',
+        startDate: '',
         dueDate: '',
         quantity: '',
         totalAmount: '',
@@ -1312,8 +1317,16 @@ export default function OrdersSpreadsheet() {
             <tr className="bg-yellow-50 border-b border-yellow-200">
               {/* 编号 */}
               <td className="px-2 py-1 text-gray-400 text-xs sticky left-0 z-[1] bg-yellow-50">自动</td>
-              {/* 开始时间 */}
-              <td className="px-2 py-1 text-gray-400 text-xs sticky left-[5rem] z-[1] bg-yellow-50">保存后</td>
+              {/* 开始时间：可选，补录历史订单时填写实际日期，留空则用保存时刻 */}
+              <td className="px-2 py-1 sticky left-[5rem] z-[1] bg-yellow-50">
+                <input
+                  type="date"
+                  title="补录历史订单时填写实际订单日期；留空则用保存时刻"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                  value={newDraft.startDate}
+                  onChange={(e) => setNewDraft({ ...newDraft, startDate: e.target.value })}
+                />
+              </td>
               {/* 客户名 */}
               <td className="px-2 py-1 sticky left-[14rem] z-[1] bg-yellow-50">
                 <input
