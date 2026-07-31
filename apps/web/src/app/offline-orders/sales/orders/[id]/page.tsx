@@ -50,6 +50,24 @@ function classifySizeForPrint(size: string, sizeFees?: PrintSizeFee[]): { group:
 
 // 从 colorGroupsByProduct 里按 colorGroupId + index 反查该印刷位置实际上传的设计图 URL
 // （config.printPositions 是聚合后的扁平数组，图片字段落在 colorGroupsByProduct 里，避免重复/过期数据）
+// 每个印刷位置示意图（public/assets/position-diagrams/*.svg，viewBox 固定 200x260）里，
+// 蓝色高亮框标出的实际印刷区域坐标 —— 用于把设计图精确叠加到衣服效果图对应的位置上
+const POSITION_PRINT_ZONES: Partial<Record<PositionKey, { x: number; y: number; w: number; h: number }>> = {
+  front: { x: 55, y: 80, w: 90, h: 140 },
+  back: { x: 55, y: 80, w: 90, h: 140 },
+  front_middle: { x: 75, y: 90, w: 50, h: 60 },
+  back_middle: { x: 75, y: 90, w: 50, h: 60 },
+  front_left_chest: { x: 60, y: 75, w: 28, h: 28 },
+  pocket: { x: 55, y: 130, w: 25, h: 22 },
+  left_sleeve: { x: 16, y: 66, w: 32, h: 32 },
+  right_sleeve: { x: 152, y: 66, w: 32, h: 32 },
+  tag_outside: { x: 85, y: 36, w: 30, h: 18 },
+  tag_inside: { x: 85, y: 36, w: 30, h: 18 },
+};
+const DIAGRAM_VB_W = 200;
+const DIAGRAM_VB_H = 260;
+const MOCKUP_CANVAS = 300; // 悬停预览的正方形画布尺寸（px）
+
 function resolvePositionDesignUrl(
   config: OfflineOrderConfiguration | null,
   productItemId: string | undefined,
@@ -66,8 +84,19 @@ function resolvePositionDesignUrl(
 // 渲染某个印刷位置的「已上传设计图缩略图 + 悬停位置示意图」单元格
 function renderPositionDesignCell(config: OfflineOrderConfiguration | null, pos: any) {
   const designUrl = resolvePositionDesignUrl(config, pos.productItemId, pos.colorGroupId, pos.index);
-  const diagramUrl = POSITION_DIAGRAM_MAP[(pos.position || pos.positionKey) as PositionKey];
+  const positionKey = (pos.position || pos.positionKey) as PositionKey;
+  const diagramUrl = POSITION_DIAGRAM_MAP[positionKey];
   if (!designUrl && !diagramUrl) return '—';
+
+  // 把示意图（固定 200x260 viewBox）等比缩放进 300x300 正方形画布，再按同一比例把
+  // 设计图叠加到蓝色印刷区域坐标上，这样设计图才是"贴"在衣服效果图上，而不是并排两张小图
+  const zone = POSITION_PRINT_ZONES[positionKey];
+  const scale = Math.min(MOCKUP_CANVAS / DIAGRAM_VB_W, MOCKUP_CANVAS / DIAGRAM_VB_H);
+  const renderedW = DIAGRAM_VB_W * scale;
+  const renderedH = DIAGRAM_VB_H * scale;
+  const offsetX = (MOCKUP_CANVAS - renderedW) / 2;
+  const offsetY = (MOCKUP_CANVAS - renderedH) / 2;
+
   return (
     <span className="pos-thumb-wrap">
       {designUrl ? (
@@ -77,18 +106,44 @@ function renderPositionDesignCell(config: OfflineOrderConfiguration | null, pos:
       )}
       {(designUrl || diagramUrl) && (
         <span className="pos-diagram-tooltip">
-          <span className="pos-tooltip-content">
-            {designUrl && (
-              <span className="pos-tooltip-block">
-                <span className="pos-tooltip-label">设计图</span>
-                <img src={designUrl} alt="design large" className="pos-tooltip-design-img" />
-              </span>
-            )}
+          <span
+            className="pos-mockup-canvas"
+            style={{ width: MOCKUP_CANVAS, height: MOCKUP_CANVAS, position: 'relative' }}
+          >
             {diagramUrl && (
-              <span className="pos-tooltip-block">
-                <span className="pos-tooltip-label">印刷位置</span>
-                <img src={diagramUrl} alt="position diagram" className="pos-tooltip-diagram-img" />
-              </span>
+              <img
+                src={diagramUrl}
+                alt="position diagram"
+                style={{
+                  position: 'absolute',
+                  left: offsetX,
+                  top: offsetY,
+                  width: renderedW,
+                  height: renderedH,
+                }}
+              />
+            )}
+            {designUrl && zone && (
+              <img
+                src={designUrl}
+                alt="design on garment"
+                style={{
+                  position: 'absolute',
+                  left: offsetX + zone.x * scale,
+                  top: offsetY + zone.y * scale,
+                  width: zone.w * scale,
+                  height: zone.h * scale,
+                  objectFit: 'contain',
+                }}
+              />
+            )}
+            {designUrl && !zone && (
+              // 没有对应示意图坐标（理论上不会发生，POSITION_DIAGRAM_MAP 和 POSITION_PRINT_ZONES 一一对应）
+              <img
+                src={designUrl}
+                alt="design"
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }}
+              />
             )}
           </span>
         </span>
@@ -565,14 +620,7 @@ export default function SalesOrderDetailPage() {
           margin-top: 4px; background: #fff; border: 1px solid #ccc;
           border-radius: 6px; padding: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.2);
         }
-        .pos-tooltip-content { display: flex; gap: 10px; align-items: flex-start; }
-        .pos-tooltip-block { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .pos-tooltip-label { font-size: 7pt; color: #666; white-space: nowrap; }
-        .pos-tooltip-design-img {
-          width: 180px; height: 180px; object-fit: contain; display: block;
-          border: 1px solid #ddd; border-radius: 4px; background: #fafafa;
-        }
-        .pos-tooltip-diagram-img { width: 180px; height: auto; display: block; }
+        .pos-mockup-canvas { display: block; background: #fafafa; border-radius: 4px; overflow: hidden; }
         /* 整个单元格（而不是仅 26px 的缩略图本身）都是悬停触发区域，避免鼠标很难精准停在小图上 */
         .pos-design-cell:hover .pos-diagram-tooltip { display: block; }
         @media print {
