@@ -75,9 +75,22 @@ function renderPositionDesignCell(config: OfflineOrderConfiguration | null, pos:
       ) : (
         <span className="pos-thumb pos-thumb-empty">—</span>
       )}
-      {diagramUrl && (
+      {(designUrl || diagramUrl) && (
         <span className="pos-diagram-tooltip">
-          <img src={diagramUrl} alt="position diagram" />
+          <span className="pos-tooltip-content">
+            {designUrl && (
+              <span className="pos-tooltip-block">
+                <span className="pos-tooltip-label">设计图</span>
+                <img src={designUrl} alt="design large" className="pos-tooltip-design-img" />
+              </span>
+            )}
+            {diagramUrl && (
+              <span className="pos-tooltip-block">
+                <span className="pos-tooltip-label">印刷位置</span>
+                <img src={diagramUrl} alt="position diagram" className="pos-tooltip-diagram-img" />
+              </span>
+            )}
+          </span>
         </span>
       )}
     </span>
@@ -550,9 +563,16 @@ export default function SalesOrderDetailPage() {
         .pos-diagram-tooltip {
           display: none; position: absolute; z-index: 100; left: 0; top: 100%;
           margin-top: 4px; background: #fff; border: 1px solid #ccc;
-          border-radius: 4px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+          border-radius: 6px; padding: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.2);
         }
-        .pos-diagram-tooltip img { width: 110px; height: auto; display: block; }
+        .pos-tooltip-content { display: flex; gap: 10px; align-items: flex-start; }
+        .pos-tooltip-block { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .pos-tooltip-label { font-size: 7pt; color: #666; white-space: nowrap; }
+        .pos-tooltip-design-img {
+          width: 180px; height: 180px; object-fit: contain; display: block;
+          border: 1px solid #ddd; border-radius: 4px; background: #fafafa;
+        }
+        .pos-tooltip-diagram-img { width: 180px; height: auto; display: block; }
         /* 整个单元格（而不是仅 26px 的缩略图本身）都是悬停触发区域，避免鼠标很难精准停在小图上 */
         .pos-design-cell:hover .pos-diagram-tooltip { display: block; }
         @media print {
