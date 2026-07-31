@@ -122,6 +122,8 @@ type FormState = {
   rushFee: number;
   startDate: string; // New
   status: string; // New
+  // [2026-07-31] 订单类别：烫印服装 / DTF打印film（客户仅来打印转印膜，不烫印上衣）
+  orderCategory: string;
   currentStep: number;
 };
 
@@ -175,6 +177,7 @@ const initialFormState: FormState = {
   rushFee: 0,
   startDate: '', // New
   status: '待客户确认',
+  orderCategory: '烫印服装',
   currentStep: 1,
 };
 
@@ -1403,6 +1406,9 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         if (formState.status) {
           payload.append('status', formState.status);
         }
+        if (formState.orderCategory) {
+          payload.append('orderCategory', formState.orderCategory);
+        }
         if (formState.dueDate) {
           payload.append('dueDate', formState.dueDate);
         }
@@ -2010,6 +2016,27 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                订单类别 <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  required
+                  value={formState.orderCategory}
+                  onChange={(e) => setField('orderCategory', e.target.value)}
+                  className="w-full appearance-none pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                >
+                  <option value="烫印服装">烫印服装</option>
+                  <option value="DTF打印film">DTF打印film</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">区分是烫印到衣服上，还是客户只来打印 DTF 转印膜</p>
             </div>
           </div>
         </section>

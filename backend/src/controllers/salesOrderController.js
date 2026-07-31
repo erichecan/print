@@ -16,6 +16,8 @@ const mapSalesOfflineOrder = (order, includeDetails = false) => {
     quantity: order.quantity,
     deliveryDate: order.deliveryDate,
     status: order.status,
+    // [2026-07-31] 订单类别：烫印服装 / DTF打印film
+    orderCategory: order.orderCategory ?? null,
     rushOrder: order.rushOrder,
     stage: {
       key: order.stageKey,

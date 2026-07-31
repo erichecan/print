@@ -52,6 +52,13 @@ const TYPE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'Others', label: 'Others' },
 ];
 
+// [2026-07-31] 订单类别：烫印服装 / DTF打印film（客户仅来打印转印膜，不烫印上衣）
+const ORDER_CATEGORY_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: '', label: '— 未分类 —' },
+  { value: '烫印服装', label: '烫印服装' },
+  { value: 'DTF打印film', label: 'DTF打印film' },
+];
+
 const INVOICE_OPTIONS: Array<{ value: 'No' | 'Require' | 'Sent'; label: string }> = [
   { value: 'No', label: 'No' },
   { value: 'Require', label: 'Require' },
@@ -881,6 +888,8 @@ export default function OrdersSpreadsheet() {
     status: string;
     invoiceStatus: 'No' | 'Require' | 'Sent';
     description: string;
+    // [2026-07-31] 订单类别：烫印服装 / DTF打印film，保存前必选
+    orderCategory: string;
   }>({
     contactName: '',
     company: '',
@@ -893,6 +902,7 @@ export default function OrdersSpreadsheet() {
     status: '待客户确认',
     invoiceStatus: 'No',
     description: '',
+    orderCategory: '',
   });
   const [savingNew, setSavingNew] = useState(false);
   const router = useRouter();
@@ -1030,12 +1040,18 @@ export default function OrdersSpreadsheet() {
       alert('至少填写「客户名 / 公司」一项再保存');
       return;
     }
+    if (!newDraft.orderCategory) {
+      // eslint-disable-next-line no-alert
+      alert('请先选择「订单类型」：烫印服装 / DTF打印film');
+      return;
+    }
     setSavingNew(true);
     try {
       const createPayload = {
         contactName: newDraft.contactName.trim() || null,
         company: newDraft.company.trim() || null,
         type: newDraft.type || null,
+        orderCategory: newDraft.orderCategory,
         status: newDraft.status || '待确认订单',
         invoiceStatus: newDraft.invoiceStatus,
         quantity: newDraft.quantity ? Number(newDraft.quantity) : null,
@@ -1061,6 +1077,7 @@ export default function OrdersSpreadsheet() {
         status: '待客户确认',
         invoiceStatus: 'No',
         description: '',
+        orderCategory: '',
       });
       setCurrentPage(1);
       await refreshOrders();
@@ -1284,6 +1301,7 @@ export default function OrdersSpreadsheet() {
             <col className="w-[6rem]" />{/* 预付款 */}
             <col className="w-[5rem]" />{/* 余款（只读） */}
             <col className="w-[7rem]" />{/* Type */}
+            <col className="w-[8rem]" />{/* 订单类型 */}
             <col className="w-[8rem]" />{/* 备货情况 */}
             <col className="w-[7rem]" />{/* 订货情况 */}
             <col className="w-[10rem]" />{/* Status */}
@@ -1304,6 +1322,7 @@ export default function OrdersSpreadsheet() {
               <th className="px-2 py-2 text-right">预付款</th>
               <th className="px-2 py-2 text-right">余款</th>
               <th className="px-2 py-2 text-left">Type</th>
+              <th className="px-2 py-2 text-left">订单类型</th>
               <th className="px-2 py-2 text-left">备货情况</th>
               <th className="px-2 py-2 text-left">订货情况</th>
               <th className="px-2 py-2 text-left">Status</th>
@@ -1395,6 +1414,23 @@ export default function OrdersSpreadsheet() {
                       {o.label}
                     </option>
                   ))}
+                </select>
+              </td>
+              {/* 订单类型：必选，区分烫印服装 / DTF打印film */}
+              <td className="px-2 py-1">
+                <select
+                  required
+                  className={`w-full px-2 py-1 text-sm border rounded bg-white ${
+                    newDraft.orderCategory ? 'border-gray-300' : 'border-red-400'
+                  }`}
+                  value={newDraft.orderCategory}
+                  onChange={(e) => setNewDraft({ ...newDraft, orderCategory: e.target.value })}
+                >
+                  <option value="" disabled>
+                    请选择 *
+                  </option>
+                  <option value="烫印服装">烫印服装</option>
+                  <option value="DTF打印film">DTF打印film</option>
                 </select>
               </td>
               {/* 备货情况 */}
@@ -1651,6 +1687,24 @@ export default function OrdersSpreadsheet() {
                     {!order.type && displayType && (
                       <div className="text-[10px] text-gray-500 mt-0.5">自动: {displayType}</div>
                     )}
+                  </td>
+                  {/* 9b. 订单类型：烫印服装 / DTF打印film */}
+                  <td className="px-2 py-1">
+                    <select
+                      value={order.orderCategory ?? ''}
+                      onChange={(e) =>
+                        patchOrder(order.id, { orderCategory: e.target.value || null })
+                      }
+                      className={`w-full px-1 py-1 text-sm bg-transparent border rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white ${
+                        order.orderCategory ? 'border-transparent' : 'border-red-300'
+                      }`}
+                    >
+                      {ORDER_CATEGORY_OPTIONS.map((o) => (
+                        <option key={o.value || 'empty'} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   {/* 10. 备货情况 */}
                   <td className="px-2 py-1">

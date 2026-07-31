@@ -26,6 +26,9 @@ const parseBoolean = (value) => {
   return false;
 };
 
+// [2026-07-31] 订单类别：烫印服装（正常产品/服装订单）vs DTF打印film（客户仅来打印转印膜，不烫印上衣）
+const ORDER_CATEGORY_VALUES = ['烫印服装', 'DTF打印film'];
+
 const parseDate = (value) => {
   if (!value) return null;
   const date = new Date(value);
@@ -387,6 +390,7 @@ const AUDITABLE_FIELDS = {
   phone: '电话',
   status: '订单状态',
   type: '印花类型',
+  orderCategory: '订单类别',
   invoiceStatus: '发票状态',
   totalAmount: '订单金额',
   payment_method: '付款方式',
@@ -446,6 +450,8 @@ const mapOrder = (order) => ({
   status: order.status,
   // 2026-04-20: 列表改造新增三列（Prisma JS 字段：type / invoiceStatus / totalAmount）
   type: order.type ?? null,
+  // [2026-07-31] 订单类别：烫印服装 / DTF打印film
+  orderCategory: order.orderCategory ?? null,
   invoiceStatus: order.invoiceStatus || 'No',
   totalAmount: order.totalAmount != null ? parseFloat(order.totalAmount) : null,
   // 2026-04-24: 备货/订货情况
@@ -550,7 +556,9 @@ exports.createOfflineOrder = async (req, res) => {
       // 2026-04-20: 列表改造新增三列 + inline 新增行支持
       type,
       invoiceStatus,
-      totalAmount
+      totalAmount,
+      // [2026-07-31] 订单类别：烫印服装 / DTF打印film
+      orderCategory
     } = req.body;
 
     logger.info('[offlineOrderController] Creating order with payload:', { startDate, status, dueDate, deliveryDate });
@@ -638,6 +646,10 @@ exports.createOfflineOrder = async (req, res) => {
       })(),
       // 2026-04-20: 列表改造新三列
       type: type?.toString().trim() || null,
+      // [2026-07-31] 订单类别：前端下拉必选，后端兜底默认"烫印服装"（老流程/异常提交时不至于留空）
+      orderCategory: ORDER_CATEGORY_VALUES.includes(orderCategory?.toString().trim())
+        ? orderCategory.toString().trim()
+        : '烫印服装',
       invoiceStatus: (() => {
         const v = invoiceStatus?.toString().trim();
         return v && ['No', 'Require', 'Sent'].includes(v) ? v : 'No';
@@ -1842,6 +1854,8 @@ exports.updateOfflineOrder = async (req, res) => {
       type,
       invoiceStatus,
       totalAmount,
+      // [2026-07-31] 订单类别：烫印服装 / DTF打印film
+      orderCategory,
       // 2026-04-21: 列表 inline 编辑开始/交期 - 同步到 ProductionWorkOrder
       startDate,
       dueDate,
@@ -1938,6 +1952,18 @@ exports.updateOfflineOrder = async (req, res) => {
     if (type !== undefined) {
       const t = type?.toString().trim();
       data.type = t || null;
+    }
+    // [2026-07-31] 订单类别：烫印服装 / DTF打印film
+    if (orderCategory !== undefined) {
+      const oc = orderCategory?.toString().trim();
+      if (oc && !ORDER_CATEGORY_VALUES.includes(oc)) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: `orderCategory must be one of: ${ORDER_CATEGORY_VALUES.join(' / ')}`,
+          field: 'orderCategory',
+        });
+      }
+      data.orderCategory = oc || null;
     }
     if (invoiceStatus !== undefined) {
       const v = invoiceStatus?.toString().trim();

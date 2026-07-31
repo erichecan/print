@@ -155,6 +155,8 @@ type FormState = {
   startDate: string; // Order "Start Date" (overrides createdAt) — 仅新建时生效
   // [2026-07-31] 订单日期：编辑已有订单时用，修正 created_at（销售统计按此字段筛选月份归属）
   orderDate: string;
+  // [2026-07-31] 订单类别：烫印服装 / DTF打印film（客户仅来打印转印膜，不烫印上衣）
+  orderCategory: string;
   status: string; // Order Status (e.g., ACTIVE, COMPLETED)
 
   // 流程控制
@@ -219,6 +221,7 @@ const initialFormState: FormState = {
   total: 0,
   startDate: '',
   orderDate: '',
+  orderCategory: '烫印服装',
   status: '待客户确认',
   currentStep: 1,
 };
@@ -534,6 +537,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             rushFee: order.rushFee || config.pricing?.rushFee || 0,
             // [2026-07-31] 订单日期：回显当前 created_at，方便销售直接看到、按需修正
             orderDate: order.createdAt ? order.createdAt.slice(0, 10) : '',
+            orderCategory: order.orderCategory || '烫印服装',
           }));
         }
       } catch (err: any) {
@@ -1633,6 +1637,9 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         if (formState.status) {
           payload.append('status', formState.status);
         }
+        if (formState.orderCategory) {
+          payload.append('orderCategory', formState.orderCategory);
+        }
         if (formState.dueDate) {
           // Also append explicit dueDate if needed by backend, though backend usually reads deliveryDate
           payload.append('dueDate', formState.dueDate);
@@ -2282,6 +2289,22 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                 <option value="ACTIVE">Active (In Production)</option>
                 <option value="COMPLETED">Completed (Historical)</option>
                 <option value="DRAFT">Draft</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">
+                订单类别 <span className="text-red-500">*</span>
+                <span className="text-gray-400 text-xs font-normal ml-2">（区分是烫印到衣服上，还是客户只来打印 DTF 转印膜）</span>
+              </span>
+              <select
+                required
+                value={formState.orderCategory}
+                onChange={(e) => setField('orderCategory', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              >
+                <option value="烫印服装">烫印服装</option>
+                <option value="DTF打印film">DTF打印film</option>
               </select>
             </label>
 

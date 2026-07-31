@@ -1056,6 +1056,8 @@ export interface SalesOfflineOrderSummary {
   reference_number?: string | null; // PRD v2.0
   // 2026-04-20: 列表改造新增字段
   type?: string | null;
+  // [2026-07-31] 订单类别：烫印服装 / DTF打印film
+  orderCategory?: string | null;
   invoiceStatus?: 'No' | 'Require' | 'Sent' | string;
   totalAmount?: number | null;
   // 2026-04-24: 备货/订货情况
