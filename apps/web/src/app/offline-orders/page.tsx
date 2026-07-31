@@ -152,7 +152,9 @@ type FormState = {
   total: number; // 总计（含税）
 
   // PRD v2.1: Backdating support
-  startDate: string; // Order "Start Date" (overrides createdAt)
+  startDate: string; // Order "Start Date" (overrides createdAt) — 仅新建时生效
+  // [2026-07-31] 订单日期：编辑已有订单时用，修正 created_at（销售统计按此字段筛选月份归属）
+  orderDate: string;
   status: string; // Order Status (e.g., ACTIVE, COMPLETED)
 
   // 流程控制
@@ -216,6 +218,7 @@ const initialFormState: FormState = {
   referenceNumber: '',
   total: 0,
   startDate: '',
+  orderDate: '',
   status: '待客户确认',
   currentStep: 1,
 };
@@ -529,6 +532,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             total: config.pricing?.total || 0,
             rushOrder: order.rushOrder || false,
             rushFee: order.rushFee || config.pricing?.rushFee || 0,
+            // [2026-07-31] 订单日期：回显当前 created_at，方便销售直接看到、按需修正
+            orderDate: order.createdAt ? order.createdAt.slice(0, 10) : '',
           }));
         }
       } catch (err: any) {
@@ -1622,6 +1627,9 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         if (formState.startDate) {
           payload.append('startDate', formState.startDate);
         }
+        if (isEditMode && formState.orderDate) {
+          payload.append('orderDate', formState.orderDate);
+        }
         if (formState.status) {
           payload.append('status', formState.status);
         }
@@ -2232,19 +2240,37 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               />
             </label>
 
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date
-                <span className="text-gray-400 text-xs font-normal ml-2">(Backdate Override)</span>
-              </span>
-              <input
-                type="date"
-                name="startDate"
-                value={formState.startDate}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              />
-            </label>
+            {!isEditMode && (
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">
+                  Start Date
+                  <span className="text-gray-400 text-xs font-normal ml-2">(Backdate Override)</span>
+                </span>
+                <input
+                  type="date"
+                  name="startDate"
+                  value={formState.startDate}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </label>
+            )}
+
+            {isEditMode && (
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">
+                  订单日期
+                  <span className="text-gray-400 text-xs font-normal ml-2">（修正统计月份归属，不会改变订单编号里的日期段）</span>
+                </span>
+                <input
+                  type="date"
+                  name="orderDate"
+                  value={formState.orderDate}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </label>
+            )}
 
             <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">Order Status</span>

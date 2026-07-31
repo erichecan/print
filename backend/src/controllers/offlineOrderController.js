@@ -371,6 +371,7 @@ const mapProductionWorkOrder = (workOrder) => {
 };
 
 const AUDITABLE_FIELDS = {
+  createdAt: '订单日期',
   projectName: '项目名称',
   primaryProduct: '主产品',
   quantity: '数量',
@@ -1847,6 +1848,9 @@ exports.updateOfflineOrder = async (req, res) => {
       // 2026-04-24: 备货/订货情况
       stockingStatus,
       purchaseStatus,
+      // [2026-07-31] 订单日期：修正已有订单的 created_at，用于修正销售统计的月份归属；
+      // 故意用独立字段名，不复用 startDate（那个改的是 ProductionWorkOrder.startDate，语义完全不同）
+      orderDate,
     } = req.body;
 
     const data = {};
@@ -1854,6 +1858,20 @@ exports.updateOfflineOrder = async (req, res) => {
     if (primaryProduct !== undefined) data.primaryProduct = primaryProduct?.trim() || null;
     if (quantity !== undefined) data.quantity = quantity ? parseInt(quantity, 10) || null : null;
     if (deliveryDate !== undefined) data.deliveryDate = parseDate(deliveryDate);
+    // [2026-07-31] 订单日期：补录/修正历史订单时用，直接覆盖 created_at（销售统计按此字段筛选月份）
+    if (orderDate !== undefined) {
+      const parsedOrderDate = orderDate ? parseDate(orderDate) : null;
+      if (orderDate && !parsedOrderDate) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'Invalid orderDate',
+          field: 'orderDate',
+        });
+      }
+      if (parsedOrderDate) {
+        data.createdAt = parsedOrderDate;
+      }
+    }
     if (description !== undefined) data.description = description?.trim() || null;
     if (requiresMockups !== undefined) data.requiresMockups = parseBoolean(requiresMockups);
     if (requiresProof !== undefined) data.requiresProof = parseBoolean(requiresProof);
@@ -2000,6 +2018,7 @@ exports.updateOfflineOrder = async (req, res) => {
           id: true,
           stageKey: true,
           status: true,
+          createdAt: true,
           projectName: true,
           primaryProduct: true,
           quantity: true,
