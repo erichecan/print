@@ -1434,10 +1434,22 @@ export default function OrdersSpreadsheet() {
                   onChange={(e) => setNewDraft({ ...newDraft, dueDate: e.target.value })}
                 />
               </td>
-              {/* 件数：改为产品明细驱动，自动汇总，不再直接手填 */}
+              {/* 件数：未选产品时保留手填（与 Task 5 之前行为一致）；选了产品后改为自动汇总只读 */}
               <td className="px-2 py-1 text-right sticky left-[33rem] z-[1] bg-yellow-50 min-w-[140px]">
                 <div className="flex flex-col gap-1">
-                  <div className="text-right text-sm font-medium">{quickEntryTotalQuantity || (newDraft.quantity || 0)}</div>
+                  {quickEntryLines.length === 0 ? (
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-right"
+                      placeholder="0"
+                      value={newDraft.quantity}
+                      onChange={(e) => setNewDraft({ ...newDraft, quantity: e.target.value })}
+                    />
+                  ) : (
+                    <div className="text-right text-sm font-medium">{quickEntryTotalQuantity}</div>
+                  )}
                   {quickEntryLines.map((line, idx) => (
                     <div key={idx} className="flex items-center justify-between gap-1 text-xs bg-white border border-gray-200 rounded px-1.5 py-0.5">
                       <span className="truncate">{line.productName} ×{line.quantity}</span>
