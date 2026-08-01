@@ -34,6 +34,8 @@ import {
   SalesOfflineOrderSummary,
   statusOptionsApi,
   OfflineOrderStatusOption,
+  offlineOrderProductApi,
+  OfflineOrderProduct,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { downloadFile } from '@/utils/download';
@@ -809,6 +811,46 @@ function TrashIcon({ className = 'w-4 h-4' }: { className?: string }) {
   );
 }
 
+// [2026-07-31] 快速录单 / 批量回填的产品明细行本地类型：故意不用 lib/api.ts 的 OfflineOrderProductItem
+// （那个类型是 variants[] 扁平结构，与 computeCostTotalFromConfig 实际解析的 colors[].sizes[] 嵌套结构不匹配）
+type QuickEntryProductLine = {
+  productId: string;
+  productName: string;
+  quantity: number;
+};
+
+// [2026-07-31] 把产品明细行组装成后端 computeCostTotalFromConfig 期望的 colors[].sizes[] 嵌套结构。
+// 快速录单（handleCreateInline）与批量回填（submitBackfill）共用，避免两处各写一份同样的对象字面量。
+function buildProductItemsFromLines(lines: QuickEntryProductLine[]) {
+  return lines.map((line, idx) => ({
+    id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+    productId: line.productId,
+    productName: line.productName,
+    isCustomerOwned: false,
+    colors: [
+      {
+        groupId: `${Date.now()}-${idx}-color-${Math.random().toString(36).substr(2, 5)}`,
+        colorId: 'default',
+        colorName: '',
+        availableSizes: [],
+        sizes: [
+          {
+            size: 'NA',
+            quantity: line.quantity,
+            unitPrice: 0,
+            additionalFee: 0,
+            subtotal: 0,
+          },
+        ],
+        totalQuantity: line.quantity,
+        totalPrice: 0,
+      },
+    ],
+    totalQuantity: line.quantity,
+    totalPrice: 0,
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // 主组件
 // ---------------------------------------------------------------------------
@@ -832,6 +874,8 @@ export default function OrdersSpreadsheet() {
   const [filterTotalMax, setFilterTotalMax] = useState('');
   const [filterDepositMin, setFilterDepositMin] = useState('');
   const [filterDepositMax, setFilterDepositMax] = useState('');
+  // [2026-07-31] "成本缺失"筛选：configuration.pricing.costTotal 为空/0 或 productItems 为空的历史订单
+  const [filterCostMissing, setFilterCostMissing] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
 
   // 服务端分页状态
@@ -860,8 +904,9 @@ export default function OrdersSpreadsheet() {
     filterDueFrom !== '' || filterDueTo !== '' ||
     filterQtyMin !== '' || filterQtyMax !== '' ||
     filterTotalMin !== '' || filterTotalMax !== '' ||
-    filterDepositMin !== '' || filterDepositMax !== ''
-  ), [searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
+    filterDepositMin !== '' || filterDepositMax !== '' ||
+    filterCostMissing
+  ), [searchQuery, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax, filterCostMissing]);
 
   const clearAllFilters = useCallback(() => {
     setSearchQuery('');
@@ -871,8 +916,52 @@ export default function OrdersSpreadsheet() {
     setFilterQtyMin(''); setFilterQtyMax('');
     setFilterTotalMin(''); setFilterTotalMax('');
     setFilterDepositMin(''); setFilterDepositMax('');
+    setFilterCostMissing(false);
     setCurrentPage(1);
   }, []);
+
+  const [productCatalog, setProductCatalog] = useState<OfflineOrderProduct[]>([]);
+  const [quickEntryLines, setQuickEntryLines] = useState<QuickEntryProductLine[]>([]);
+  const [quickEntryPickerProductId, setQuickEntryPickerProductId] = useState('');
+  const [quickEntryPickerQty, setQuickEntryPickerQty] = useState('');
+
+  useEffect(() => {
+    offlineOrderProductApi
+      .getOrderConfig()
+      .then((res) => setProductCatalog(res.data.products || []))
+      .catch((err) => console.error('[OrdersSpreadsheet] load product catalog failed', err));
+  }, []);
+
+  const quickEntryTotalQuantity = quickEntryLines.reduce((sum, l) => sum + l.quantity, 0);
+
+  const addQuickEntryLine = useCallback(() => {
+    const qty = Number(quickEntryPickerQty);
+    if (!quickEntryPickerProductId || !qty || qty <= 0) return;
+    const product = productCatalog.find((p) => p.id === quickEntryPickerProductId);
+    if (!product) return;
+    setQuickEntryLines((prev) => [...prev, { productId: product.id, productName: product.name, quantity: qty }]);
+    setQuickEntryPickerProductId('');
+    setQuickEntryPickerQty('');
+  }, [quickEntryPickerProductId, quickEntryPickerQty, productCatalog]);
+
+  const removeQuickEntryLine = useCallback((index: number) => {
+    setQuickEntryLines((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  // [2026-07-31] 批量选择 + 批量补充成本弹窗状态
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+
+  const toggleOrderSelected = useCallback((id: string) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const [backfillModalOpen, setBackfillModalOpen] = useState(false);
+  const [backfillProgress, setBackfillProgress] = useState<Record<string, 'pending' | 'saving' | 'done' | 'error'>>({});
+  const [backfillLines, setBackfillLines] = useState<Record<string, QuickEntryProductLine[]>>({});
 
   // inline 新增行的草稿
   // 2026-04-21: 列序调整 — 编号 / 开始时间 / 客户名 / Due / 件数 / 总金额 / 预付款 / Type / Status / 发票 / 备注
@@ -929,7 +1018,7 @@ export default function OrdersSpreadsheet() {
   // 筛选条件变化时重置到第 1 页（使用 debouncedSearch 避免每次击键都重置）
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax]);
+  }, [debouncedSearch, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax, filterCostMissing]);
 
   // 主拉取：服务端分页
   useEffect(() => {
@@ -941,6 +1030,7 @@ export default function OrdersSpreadsheet() {
         const params = new URLSearchParams();
         params.set('page', String(currentPage));
         params.set('limit', String(PAGE_SIZE));
+        if (filterCostMissing) params.set('costMissing', 'true');
         if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim());
         if (filterStatuses.length > 0) params.set('statuses', filterStatuses.join(','));
         if (filterStartFrom) params.set('startFrom', filterStartFrom);
@@ -968,7 +1058,7 @@ export default function OrdersSpreadsheet() {
     };
     fetchOrders();
     return () => controller.abort();
-  }, [currentPage, debouncedSearch, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax, refetchKey]);
+  }, [currentPage, debouncedSearch, filterStatuses, filterStartFrom, filterStartTo, filterDueFrom, filterDueTo, filterQtyMin, filterQtyMax, filterTotalMin, filterTotalMax, filterDepositMin, filterDepositMax, filterCostMissing, refetchKey]);
 
   // 状态选项单独加载
   useEffect(() => {
@@ -1012,6 +1102,73 @@ export default function OrdersSpreadsheet() {
     [orders, refreshOrders]
   );
 
+  // [2026-07-31] 批量补充成本：每单一个待添加产品明细行列表
+  const addBackfillLine = useCallback((orderId: string, productId: string, qty: number) => {
+    const product = productCatalog.find((p) => p.id === productId);
+    if (!product || !qty || qty <= 0) return;
+    setBackfillLines((prev) => ({
+      ...prev,
+      [orderId]: [...(prev[orderId] || []), { productId: product.id, productName: product.name, quantity: qty }],
+    }));
+  }, [productCatalog]);
+
+  const removeBackfillLine = useCallback((orderId: string, index: number) => {
+    setBackfillLines((prev) => ({
+      ...prev,
+      [orderId]: (prev[orderId] || []).filter((_, i) => i !== index),
+    }));
+  }, []);
+
+  const submitBackfill = useCallback(async () => {
+    const ids = Array.from(selectedOrderIds);
+    for (const id of ids) {
+      const lines = backfillLines[id] || [];
+      if (lines.length === 0) continue;
+
+      // [2026-07-31] 关键守卫：selectedOrderIds 不会在翻页/改筛选/搜索时自动清空，因此可能残留
+      // 当前 orders 数组里已经不存在的订单 id。下面的合并逻辑依赖 order.configuration 作为合并基底，
+      // 若 order 缺失就会退化成"空对象 + 新产品行"，PATCH 出去等于把该订单真实的 configuration
+      // （pricing.total / colorGroupsByProduct / 备注等）整体冲掉。这里必须无条件跳过，不做任何降级兜底。
+      const order = orders.find((o) => o.id === id);
+      if (!order) {
+        console.error('[submitBackfill] order not in loaded list, skipped to avoid wiping its configuration:', id);
+        setBackfillProgress((prev) => ({ ...prev, [id]: 'error' }));
+        continue;
+      }
+
+      setBackfillProgress((prev) => ({ ...prev, [id]: 'saving' }));
+      const newItems = buildProductItemsFromLines(lines);
+      try {
+        // [2026-07-31] 与现有 configuration 合并而非整体替换：后端 PATCH 处理对 configuration
+        // 字段是整体覆盖（data.configuration = configData），不是逐字段合并。历史订单的 configuration
+        // 里常见已有 colorGroupsByProduct / orderNotes / artworkNotes / source，甚至已有 productItems
+        // （如"自带服装"订单，costTotal=0 是因为客供服装本身无采购成本，并非缺产品行）。
+        // 若直接 PATCH { configuration: { productItems } }，会把这些既有数据全部冲掉。
+        // 这里保留原 configuration 的其它字段，并在原有 productItems 基础上追加，而非替换。
+        const existingConfig = (order.configuration && typeof order.configuration === 'object')
+          ? (order.configuration as Record<string, unknown>)
+          : {};
+        const existingItems = Array.isArray((existingConfig as any).productItems)
+          ? (existingConfig as any).productItems
+          : [];
+        const productItems = [...existingItems, ...newItems];
+        await offlineOrdersInlineApi.patch(id, {
+          configuration: { ...existingConfig, productItems },
+        });
+        setBackfillProgress((prev) => ({ ...prev, [id]: 'done' }));
+        // [2026-07-31] 修复：提交成功后清空该订单已提交的明细行，避免"补充 A → 提交 → 再补充 B → 再次提交"
+        // 这种正常操作流程下，A 的产品行被 orders 状态里已持久化的 existingItems 与本地仍残留的
+        // backfillLines[A] 同时叠加，导致重复追加、costTotal 被重复计算。
+        // 清空后，若用户再次点击"提交回填"，该订单 lines.length === 0 会被上面的 skip 检查跳过。
+        setBackfillLines((prev) => ({ ...prev, [id]: [] }));
+      } catch (err) {
+        console.error('[submitBackfill] failed for order', id, err);
+        setBackfillProgress((prev) => ({ ...prev, [id]: 'error' }));
+      }
+    }
+    await refreshOrders();
+  }, [selectedOrderIds, backfillLines, orders, refreshOrders]);
+
   const addStatusOption = useCallback(
     async (value: string) => {
       try {
@@ -1047,6 +1204,10 @@ export default function OrdersSpreadsheet() {
     }
     setSavingNew(true);
     try {
+      // [2026-07-31] 把快速录单选的产品明细行组装成后端 computeCostTotalFromConfig 期望的
+      // colors[].sizes[] 嵌套结构（与批量回填共用 buildProductItemsFromLines）
+      const productItems = buildProductItemsFromLines(quickEntryLines);
+
       const createPayload = {
         contactName: newDraft.contactName.trim() || null,
         company: newDraft.company.trim() || null,
@@ -1054,13 +1215,14 @@ export default function OrdersSpreadsheet() {
         orderCategory: newDraft.orderCategory,
         status: newDraft.status || '待确认订单',
         invoiceStatus: newDraft.invoiceStatus,
-        quantity: newDraft.quantity ? Number(newDraft.quantity) : null,
+        quantity: quickEntryTotalQuantity > 0 ? quickEntryTotalQuantity : (newDraft.quantity ? Number(newDraft.quantity) : null),
         totalAmount: newDraft.totalAmount ? Number(newDraft.totalAmount) : null,
         depositAmount: newDraft.depositAmount ? Number(newDraft.depositAmount) : null,
         description: newDraft.description.trim() || null,
         dueDate: newDraft.dueDate || undefined,
         // 补录历史订单时可指定订单日期，覆盖默认的"保存时刻"，让统计口径（按 created_at）能落进正确的月份
         startDate: newDraft.startDate || undefined,
+        ...(productItems.length > 0 ? { configuration: { productItems } } : {}),
       };
       console.log('[handleCreateInline] creating with payload:', createPayload, 'activeFilters:', filterStatuses);
       const createResult = await offlineOrdersInlineApi.create(createPayload);
@@ -1079,6 +1241,7 @@ export default function OrdersSpreadsheet() {
         description: '',
         orderCategory: '',
       });
+      setQuickEntryLines([]);
       setCurrentPage(1);
       await refreshOrders();
     } catch (err) {
@@ -1088,7 +1251,7 @@ export default function OrdersSpreadsheet() {
     } finally {
       setSavingNew(false);
     }
-  }, [newDraft, refreshOrders, savingNew]);
+  }, [newDraft, quickEntryLines, quickEntryTotalQuantity, refreshOrders, savingNew]);
 
   const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
 
@@ -1160,6 +1323,15 @@ export default function OrdersSpreadsheet() {
             筛选结果 {serverTotal} 条
           </span>
         )}
+        {/* [2026-07-31] 批量补充成本：勾选历史订单后可批量为其补充产品明细，重算 costTotal */}
+        <button
+          type="button"
+          disabled={selectedOrderIds.size === 0}
+          className="px-3 py-1.5 text-xs text-white bg-blue-600 rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+          onClick={() => setBackfillModalOpen(true)}
+        >
+          批量补充成本（已选 {selectedOrderIds.size}）
+        </button>
         <button
           type="button"
           onClick={() => exportFile('xlsx')}
@@ -1231,6 +1403,15 @@ export default function OrdersSpreadsheet() {
           >
             已完成订单
           </button>
+          {/* [2026-07-31] 成本缺失筛选：costTotal 为空/0 或 productItems 为空的历史订单 */}
+          <label className="flex items-center gap-1 text-xs px-2 py-1 border border-gray-300 rounded bg-white cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filterCostMissing}
+              onChange={(e) => setFilterCostMissing(e.target.checked)}
+            />
+            成本缺失
+          </label>
           {filterStatuses.length > 0 && !(filterStatuses.length === 1 && filterStatuses[0] === '完成') && (
             <div className="flex flex-wrap gap-1">
               {filterStatuses.map((s) => (
@@ -1288,10 +1469,11 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-420px)] min-h-[300px]">
-      <div className="border border-gray-200 rounded min-w-[1760px]">
+      <div className="border border-gray-200 rounded min-w-[2016px]">
         <table className="w-full text-sm table-fixed">
-          {/* 列宽 — 总计约 110rem ≈ 1760px */}
+          {/* 列宽 — 总计 126rem ≈ 2016px（18 列：Task 6 加了「报表」列、Task 7 加了批量选择 checkbox 列） */}
           <colgroup>
+            <col className="w-[3rem]" />{/* [2026-07-31] 批量选择 checkbox */}
             <col className="w-[5rem]" />{/* 编号 */}
             <col className="w-[9rem]" />{/* 开始时间 */}
             <col className="w-[10rem]" />{/* 客户名（含缩略图） */}
@@ -1302,6 +1484,7 @@ export default function OrdersSpreadsheet() {
             <col className="w-[5rem]" />{/* 余款（只读） */}
             <col className="w-[7rem]" />{/* Type */}
             <col className="w-[8rem]" />{/* 订单类型 */}
+            <col className="w-[4rem]" />{/* 报表 */}
             <col className="w-[8rem]" />{/* 备货情况 */}
             <col className="w-[7rem]" />{/* 订货情况 */}
             <col className="w-[10rem]" />{/* Status */}
@@ -1311,18 +1494,33 @@ export default function OrdersSpreadsheet() {
           </colgroup>
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>
-              {/* 冻结列 1-6：sticky left，z-20 确保覆盖可滚动的 body td */}
-              <th className="px-2 py-2 text-left sticky left-0 z-20 bg-gray-50">编号</th>
-              <th className="px-2 py-2 text-left sticky left-[5rem] z-20 bg-gray-50">开始时间</th>
-              <th className="px-2 py-2 text-left sticky left-[14rem] z-20 bg-gray-50">客户名</th>
-              <th className="px-2 py-2 text-left sticky left-[24rem] z-20 bg-gray-50">Due Date</th>
-              <th className="px-2 py-2 text-right sticky left-[33rem] z-20 bg-gray-50">件数</th>
-              <th className="px-2 py-2 text-right sticky left-[37rem] z-20 bg-gray-50 border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">总金额</th>
+              {/* [2026-07-31] 批量选择列 — 也冻结在最前面，后面 6 个冻结列的 left 偏移量整体右移 3rem */}
+              <th className="px-2 py-2 text-center sticky left-0 z-20 bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={orders.length > 0 && orders.every((o) => selectedOrderIds.has(o.id))}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedOrderIds(new Set(orders.map((o) => o.id)));
+                    } else {
+                      setSelectedOrderIds(new Set());
+                    }
+                  }}
+                />
+              </th>
+              {/* 冻结列 2-7（编号→总金额）：sticky left，z-20 确保覆盖可滚动的 body td */}
+              <th className="px-2 py-2 text-left sticky left-[3rem] z-20 bg-gray-50">编号</th>
+              <th className="px-2 py-2 text-left sticky left-[8rem] z-20 bg-gray-50">开始时间</th>
+              <th className="px-2 py-2 text-left sticky left-[17rem] z-20 bg-gray-50">客户名</th>
+              <th className="px-2 py-2 text-left sticky left-[27rem] z-20 bg-gray-50">Due Date</th>
+              <th className="px-2 py-2 text-right sticky left-[36rem] z-20 bg-gray-50">件数</th>
+              <th className="px-2 py-2 text-right sticky left-[40rem] z-20 bg-gray-50 border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">总金额</th>
               {/* 可滚动列 */}
               <th className="px-2 py-2 text-right">预付款</th>
               <th className="px-2 py-2 text-right">余款</th>
               <th className="px-2 py-2 text-left">Type</th>
               <th className="px-2 py-2 text-left">订单类型</th>
+              <th className="px-2 py-2 text-center">报表</th>
               <th className="px-2 py-2 text-left">备货情况</th>
               <th className="px-2 py-2 text-left">订货情况</th>
               <th className="px-2 py-2 text-left">Status</th>
@@ -1334,10 +1532,12 @@ export default function OrdersSpreadsheet() {
           <tbody>
             {/* Inline 新增行（2026-04-21：列序 = 编号/开始/客户/Due/件数/总额/预付/Type/Status/发票/备注+保存） */}
             <tr className="bg-yellow-50 border-b border-yellow-200">
+              {/* [2026-07-31] 批量选择列占位：新增行未保存暂无 id，不可勾选，仅用于保持列对齐 */}
+              <td className="px-2 py-1 sticky left-0 z-[1] bg-yellow-50" />
               {/* 编号 */}
-              <td className="px-2 py-1 text-gray-400 text-xs sticky left-0 z-[1] bg-yellow-50">自动</td>
+              <td className="px-2 py-1 text-gray-400 text-xs sticky left-[3rem] z-[1] bg-yellow-50">自动</td>
               {/* 开始时间：可选，补录历史订单时填写实际日期，留空则用保存时刻 */}
-              <td className="px-2 py-1 sticky left-[5rem] z-[1] bg-yellow-50">
+              <td className="px-2 py-1 sticky left-[8rem] z-[1] bg-yellow-50">
                 <input
                   type="date"
                   title="补录历史订单时填写实际订单日期；留空则用保存时刻"
@@ -1347,7 +1547,7 @@ export default function OrdersSpreadsheet() {
                 />
               </td>
               {/* 客户名 */}
-              <td className="px-2 py-1 sticky left-[14rem] z-[1] bg-yellow-50">
+              <td className="px-2 py-1 sticky left-[17rem] z-[1] bg-yellow-50">
                 <input
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
                   placeholder="客户名 / 公司"
@@ -1356,7 +1556,7 @@ export default function OrdersSpreadsheet() {
                 />
               </td>
               {/* Due Date */}
-              <td className="px-2 py-1 sticky left-[24rem] z-[1] bg-yellow-50">
+              <td className="px-2 py-1 sticky left-[27rem] z-[1] bg-yellow-50">
                 <input
                   type="date"
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
@@ -1364,20 +1564,66 @@ export default function OrdersSpreadsheet() {
                   onChange={(e) => setNewDraft({ ...newDraft, dueDate: e.target.value })}
                 />
               </td>
-              {/* 件数 */}
-              <td className="px-2 py-1 text-right sticky left-[33rem] z-[1] bg-yellow-50">
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-right"
-                  placeholder="0"
-                  value={newDraft.quantity}
-                  onChange={(e) => setNewDraft({ ...newDraft, quantity: e.target.value })}
-                />
+              {/* 件数：未选产品时保留手填（与 Task 5 之前行为一致）；选了产品后改为自动汇总只读 */}
+              <td className="px-2 py-1 text-right sticky left-[36rem] z-[1] bg-yellow-50 min-w-[140px]">
+                <div className="flex flex-col gap-1">
+                  {quickEntryLines.length === 0 ? (
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-right"
+                      placeholder="0"
+                      value={newDraft.quantity}
+                      onChange={(e) => setNewDraft({ ...newDraft, quantity: e.target.value })}
+                    />
+                  ) : (
+                    <div className="text-right text-sm font-medium">{quickEntryTotalQuantity}</div>
+                  )}
+                  {quickEntryLines.map((line, idx) => (
+                    <div key={idx} className="flex items-center justify-between gap-1 text-xs bg-white border border-gray-200 rounded px-1.5 py-0.5">
+                      <span className="truncate">{line.productName} ×{line.quantity}</span>
+                      <button
+                        type="button"
+                        className="text-gray-400 hover:text-red-500"
+                        onClick={() => removeQuickEntryLine(idx)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-1">
+                    <select
+                      className="flex-1 min-w-0 text-xs border border-gray-300 rounded px-1 py-0.5"
+                      value={quickEntryPickerProductId}
+                      onChange={(e) => setQuickEntryPickerProductId(e.target.value)}
+                    >
+                      <option value="">+ 产品</option>
+                      {productCatalog.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      className="w-12 text-xs border border-gray-300 rounded px-1 py-0.5"
+                      placeholder="数量"
+                      value={quickEntryPickerQty}
+                      onChange={(e) => setQuickEntryPickerQty(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="text-xs px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded"
+                      onClick={addQuickEntryLine}
+                    >
+                      加
+                    </button>
+                  </div>
+                </div>
               </td>
               {/* 总金额 */}
-              <td className="px-2 py-1 text-right sticky left-[37rem] z-[1] bg-yellow-50 border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">
+              <td className="px-2 py-1 text-right sticky left-[40rem] z-[1] bg-yellow-50 border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">
                 <input
                   type="number"
                   step="0.01"
@@ -1433,6 +1679,8 @@ export default function OrdersSpreadsheet() {
                   <option value="DTF打印film">DTF打印film</option>
                 </select>
               </td>
+              {/* [2026-07-31] 报表：新增行保存后才可切换排除，此处占位保持列对齐 */}
+              <td className="px-2 py-1 text-gray-400 text-xs text-center">—</td>
               {/* 备货情况 */}
               <td className="px-2 py-1 text-gray-400 text-xs">—</td>
               {/* 订货情况 */}
@@ -1495,14 +1743,14 @@ export default function OrdersSpreadsheet() {
             {/* 数据行 */}
             {loading && (
               <tr>
-                <td colSpan={15} className="px-3 py-6 text-center text-gray-500">
+                <td colSpan={18} className="px-3 py-6 text-center text-gray-500">
                   加载中…
                 </td>
               </tr>
             )}
             {!loading && orders.length === 0 && (
               <tr>
-                <td colSpan={15} className="px-3 py-6 text-center text-gray-500">
+                <td colSpan={18} className="px-3 py-6 text-center text-gray-500">
                   暂无订单
                 </td>
               </tr>
@@ -1523,9 +1771,17 @@ export default function OrdersSpreadsheet() {
                   }}
                   className={`border-b border-gray-100 ${rowBgClass(order)} hover:brightness-95 cursor-pointer`}
                 >
+                  {/* [2026-07-31] 0. 批量选择列 — 也冻结在最前面 */}
+                  <td className={`px-2 py-1 text-center sticky left-0 z-[1] ${rowBgClass(order)}`}>
+                    <input
+                      type="checkbox"
+                      checked={selectedOrderIds.has(order.id)}
+                      onChange={() => toggleOrderSelected(order.id)}
+                    />
+                  </td>
                   {/* 1. 编号 — 冻结列 */}
                   <td
-                    className={`px-2 py-1 text-xs text-blue-700 font-mono sticky left-0 z-[1] ${rowBgClass(order)}`}
+                    className={`px-2 py-1 text-xs text-blue-700 font-mono sticky left-[3rem] z-[1] ${rowBgClass(order)}`}
                     title={`${order.orderCode}\n项目: ${order.projectName || '-'}\n联系人: ${
                       order.contact?.name || '-'
                     }\n公司: ${order.contact?.company || '-'}\n创建于: ${formatDate(
@@ -1537,7 +1793,7 @@ export default function OrdersSpreadsheet() {
                     </span>
                   </td>
                   {/* 2. 开始时间 — 冻结列 */}
-                  <td className={`px-2 py-1 text-xs sticky left-[5rem] z-[1] ${rowBgClass(order)}`}>
+                  <td className={`px-2 py-1 text-xs sticky left-[8rem] z-[1] ${rowBgClass(order)}`}>
                     <input
                       key={`startDate-${order.id}-${order.productionWorkOrder?.startDate ?? 'none'}`}
                       type="date"
@@ -1559,7 +1815,7 @@ export default function OrdersSpreadsheet() {
                     />
                   </td>
                   {/* 3. 客户名（含缩略图）— 冻结列 */}
-                  <td className={`px-2 py-1 sticky left-[14rem] z-[1] ${rowBgClass(order)}`}>
+                  <td className={`px-2 py-1 sticky left-[17rem] z-[1] ${rowBgClass(order)}`}>
                     <div className="flex items-center gap-2 min-w-0">
                       <ThumbnailCell assets={order.assets} />
                       <input
@@ -1585,7 +1841,7 @@ export default function OrdersSpreadsheet() {
                     </div>
                   </td>
                   {/* 4. Due Date — 冻结列 */}
-                  <td className={`px-2 py-1 text-xs sticky left-[24rem] z-[1] ${rowBgClass(order)}`}>
+                  <td className={`px-2 py-1 text-xs sticky left-[27rem] z-[1] ${rowBgClass(order)}`}>
                     <input
                       type="date"
                       defaultValue={
@@ -1608,7 +1864,7 @@ export default function OrdersSpreadsheet() {
                     />
                   </td>
                   {/* 5. 件数 — 冻结列 */}
-                  <td className={`px-2 py-1 text-right sticky left-[33rem] z-[1] ${rowBgClass(order)}`}>
+                  <td className={`px-2 py-1 text-right sticky left-[36rem] z-[1] ${rowBgClass(order)}`}>
                     <input
                       type="number"
                       step="1"
@@ -1625,7 +1881,7 @@ export default function OrdersSpreadsheet() {
                     />
                   </td>
                   {/* 6. 总金额 — 冻结列（最后一个冻结列，加右侧分隔线） */}
-                  <td className={`px-2 py-1 text-right sticky left-[37rem] z-[1] ${rowBgClass(order)} border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]`}>
+                  <td className={`px-2 py-1 text-right sticky left-[40rem] z-[1] ${rowBgClass(order)} border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]`}>
                     <input
                       type="number"
                       step="0.01"
@@ -1705,6 +1961,33 @@ export default function OrdersSpreadsheet() {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  {/* [2026-07-31] 从报表排除开关 + DTF 类目视觉标记 */}
+                  <td className="px-2 py-1 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      {order.orderCategory === 'DTF打印film' && (
+                        <span
+                          className="text-[10px] px-1 py-0.5 bg-purple-100 text-purple-700 rounded"
+                          title="DTF打印film订单：不计入 sales dashboard 统计"
+                        >
+                          DTF
+                        </span>
+                      )}
+                      <label
+                        className="flex items-center gap-1 text-[10px] cursor-pointer"
+                        title="开启后该订单不计入 sales dashboard 统计"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(order.excludeFromReports)}
+                          onChange={(e) => patchOrder(order.id, { excludeFromReports: e.target.checked })}
+                        />
+                        排除
+                      </label>
+                      {order.excludeFromReports && (
+                        <span className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded">已排除</span>
+                      )}
+                    </div>
                   </td>
                   {/* 10. 备货情况 */}
                   <td className="px-2 py-1">
@@ -1890,6 +2173,93 @@ export default function OrdersSpreadsheet() {
             : `共 ${serverTotal} 条，第 ${currentPage}/${totalPages} 页`}
         </span>
       </div>
+
+      {/* [2026-07-31] 批量补充成本弹窗 */}
+      {backfillModalOpen && createPortal(
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-4">
+            <h3 className="text-sm font-semibold mb-3">批量补充成本（{selectedOrderIds.size} 条订单）</h3>
+            {Array.from(selectedOrderIds).map((id) => {
+              const order = orders.find((o) => o.id === id);
+              if (!order) return null;
+              const lines = backfillLines[id] || [];
+              const status = backfillProgress[id];
+              return (
+                <div key={id} className="border border-gray-200 rounded p-2 mb-2">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="font-medium">{order.orderCode} — {order.contact.name || order.contact.company}</span>
+                    <span>
+                      {status === 'saving' && '保存中…'}
+                      {status === 'done' && <span className="text-green-600">✓ 已完成</span>}
+                      {status === 'error' && <span className="text-red-600">✗ 失败，可重试</span>}
+                    </span>
+                  </div>
+                  {lines.map((line, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs bg-gray-50 rounded px-1.5 py-0.5 mb-1">
+                      <span>{line.productName} ×{line.quantity}</span>
+                      <button type="button" onClick={() => removeBackfillLine(id, idx)}>✕</button>
+                    </div>
+                  ))}
+                  {/* [2026-07-31] 修复：该订单本轮已成功提交（backfillLines 已清空），不再展示选品输入，
+                      避免用户误以为还能继续给它叠加产品行而重复提交 */}
+                  {status === 'done' ? (
+                    <div className="text-[11px] text-gray-400">本轮已提交，如需继续补充请关闭弹窗后重新勾选该订单</div>
+                  ) : (
+                    <BackfillLinePicker productCatalog={productCatalog} onAdd={(pid, qty) => addBackfillLine(id, pid, qty)} />
+                  )}
+                </div>
+              );
+            })}
+            <div className="flex justify-end gap-2 mt-3">
+              <button type="button" className="text-xs px-3 py-1.5 border rounded" onClick={() => setBackfillModalOpen(false)}>关闭</button>
+              <button
+                type="button"
+                disabled={Object.values(backfillProgress).some((s) => s === 'saving')}
+                className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
+                onClick={submitBackfill}
+              >
+                {Object.values(backfillProgress).some((s) => s === 'saving') ? '提交中…' : '提交回填'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+function BackfillLinePicker({
+  productCatalog,
+  onAdd,
+}: {
+  productCatalog: OfflineOrderProduct[];
+  onAdd: (productId: string, qty: number) => void;
+}) {
+  const [productId, setProductId] = useState('');
+  const [qty, setQty] = useState('');
+  return (
+    <div className="flex items-center gap-1">
+      <select className="flex-1 text-xs border border-gray-300 rounded px-1 py-0.5" value={productId} onChange={(e) => setProductId(e.target.value)}>
+        <option value="">+ 产品</option>
+        {productCatalog.map((p) => (
+          <option key={p.id} value={p.id}>{p.name}</option>
+        ))}
+      </select>
+      <input type="number" min="1" step="1" className="w-12 text-xs border border-gray-300 rounded px-1 py-0.5" placeholder="数量" value={qty} onChange={(e) => setQty(e.target.value)} />
+      <button
+        type="button"
+        className="text-xs px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded"
+        onClick={() => {
+          const q = Number(qty);
+          if (!productId || !q || q <= 0) return;
+          onAdd(productId, q);
+          setProductId('');
+          setQty('');
+        }}
+      >
+        加
+      </button>
     </div>
   );
 }

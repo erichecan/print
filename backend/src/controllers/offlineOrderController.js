@@ -457,6 +457,8 @@ const mapOrder = (order) => ({
   // 2026-04-24: 备货/订货情况
   stockingStatus: order.stockingStatus ?? null,
   purchaseStatus: order.purchaseStatus ?? null,
+  // [2026-07-31] 手动"从报表排除"开关
+  excludeFromReports: order.excludeFromReports ?? false,
   contact: {
     name: order.contactName,
     company: order.company,
@@ -558,7 +560,9 @@ exports.createOfflineOrder = async (req, res) => {
       invoiceStatus,
       totalAmount,
       // [2026-07-31] 订单类别：烫印服装 / DTF打印film
-      orderCategory
+      orderCategory,
+      // [2026-07-31] 手动"从报表排除"开关，创建时默认 false（未传即为 false）
+      excludeFromReports
     } = req.body;
 
     logger.info('[offlineOrderController] Creating order with payload:', { startDate, status, dueDate, deliveryDate });
@@ -628,6 +632,7 @@ exports.createOfflineOrder = async (req, res) => {
       requiresMockups: parseBoolean(requiresMockups),
       requiresProof: parseBoolean(requiresProof),
       rushOrder: parseBoolean(rushOrder),
+      excludeFromReports: parseBoolean(excludeFromReports),
       stageKey: initialStage.key,
       stageLabel: initialStage.label,
       stagePosition: initialStage.position ?? 0,
@@ -923,6 +928,8 @@ exports.listOfflineOrders = async (req, res, next) => {
     const depositMin = req.query.depositMin != null && req.query.depositMin !== '' ? parseFloat(req.query.depositMin) : null;
     const depositMax = req.query.depositMax != null && req.query.depositMax !== '' ? parseFloat(req.query.depositMax) : null;
 
+    const costMissing = req.query.costMissing === 'true';
+
     const where = {
       AND: []
     };
@@ -985,6 +992,21 @@ exports.listOfflineOrders = async (req, res, next) => {
           { phone: { contains: search, mode: 'insensitive' } },
         ]
       });
+    }
+
+    // [2026-07-31] "成本缺失"筛选：configuration.pricing.costTotal 为空/0，或没有 productItems
+    // JSONB 条件无法直接用 Prisma 结构化 where 表达，先用原始 SQL 查出符合条件的订单 id，再用 id in 过滤
+    if (costMissing) {
+      const missingRows = await prisma.$queryRawUnsafe(`
+        SELECT id FROM offline_orders
+        WHERE (configuration->'pricing'->>'costTotal') IS NULL
+           OR (configuration->'pricing'->>'costTotal') !~ '^-?[0-9]+\\.?[0-9]*$'
+           OR (configuration->'pricing'->>'costTotal')::numeric = 0
+           OR configuration->'productItems' IS NULL
+           OR jsonb_array_length(COALESCE(configuration->'productItems', '[]'::jsonb)) = 0
+      `);
+      const missingIds = missingRows.map((r) => r.id);
+      where.AND.push({ id: { in: missingIds.length > 0 ? missingIds : ['__none__'] } });
     }
 
     // productionWorkOrder 日期范围
@@ -1108,6 +1130,15 @@ function buildMetricsWhere(req) {
   if (primaryProduct) {
     where.primaryProduct = { contains: primaryProduct, mode: 'insensitive' };
   }
+  // [2026-07-31] Dashboard 统计口径排除规则：已取消订单 / DTF打印film订单 / 手动标记排除的订单
+  where.status = { notIn: ['已取消', 'CANCELLED'] };
+  // [2026-08-01] 修复：orderCategory 是可空字段，Prisma 的 { not: X } 在该列为 NULL 时
+  // 生成 SQL `column != X`，NULL 参与比较结果恒为 NULL（falsy），会把 orderCategory 为空的订单
+  // 误排除出 count() 之外，与下面 buildRawWhereConditions 的 `IS DISTINCT FROM`（NULL 视为不等于，正确纳入）口径不一致。
+  // 用顶层 OR 表达"不等于 'DTF打印film'，或者为 NULL"，与本函数其余顶层字段隐式 AND。
+  // 已通过实际插入一条 orderCategory=NULL 的订单验证：旧写法漏计 1 条，此写法与 raw SQL IS DISTINCT FROM 结果一致。
+  where.OR = [{ orderCategory: { not: 'DTF打印film' } }, { orderCategory: null }];
+  where.excludeFromReports = false;
   return where;
 }
 
@@ -1135,6 +1166,12 @@ function buildRawWhereConditions(baseWhere, req, dateOverride = null) {
     conditions.push(`primary_product ILIKE $${params.length + 1}`);
     params.push(`%${primaryProduct}%`);
   }
+  // [2026-07-31] Dashboard 统计口径排除规则，与 buildMetricsWhere 保持一致
+  // status 用中文/旧英文双值匹配；orderCategory 用 IS DISTINCT FROM 处理 NULL
+  // （NULL != 'DTF打印film' 在 SQL 里恒为 NULL/false，会导致 orderCategory 为空的订单被误排除）
+  conditions.push(`status NOT IN ('已取消', 'CANCELLED')`);
+  conditions.push(`order_category IS DISTINCT FROM 'DTF打印film'`);
+  conditions.push(`exclude_from_reports = false`);
   return { conditions, params };
 }
 
@@ -1856,6 +1893,8 @@ exports.updateOfflineOrder = async (req, res) => {
       totalAmount,
       // [2026-07-31] 订单类别：烫印服装 / DTF打印film
       orderCategory,
+      // [2026-07-31] 手动"从报表排除"开关
+      excludeFromReports,
       // 2026-04-21: 列表 inline 编辑开始/交期 - 同步到 ProductionWorkOrder
       startDate,
       dueDate,
@@ -1890,6 +1929,7 @@ exports.updateOfflineOrder = async (req, res) => {
     if (requiresMockups !== undefined) data.requiresMockups = parseBoolean(requiresMockups);
     if (requiresProof !== undefined) data.requiresProof = parseBoolean(requiresProof);
     if (rushOrder !== undefined) data.rushOrder = parseBoolean(rushOrder);
+    if (excludeFromReports !== undefined) data.excludeFromReports = parseBoolean(excludeFromReports);
     if (req.body.rushFee !== undefined) data.rush_fee = req.body.rushFee ? parseFloat(req.body.rushFee) : null;
     // 修复：contactName 和 email 改为可选字段，允许为空或null
     if (contactName !== undefined) {
