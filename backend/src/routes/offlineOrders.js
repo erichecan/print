@@ -1,7 +1,7 @@
 // Offline order intake routes
 const express = require('express');
 const multer = require('multer');
-const { authenticateOptional } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const offlineOrderController = require('../controllers/offlineOrderController');
 const { ensureOfflineUploadRoot, getAllowedExtensions, isExtensionAllowed } = require('../utils/offlineUpload');
 
@@ -38,7 +38,7 @@ router.get('/config', offlineOrderController.getOrderConfig);
 
 router.post(
   '/',
-  authenticateOptional,
+  authenticate,
   upload.fields([
     { name: 'assets', maxCount: maxFilesPerField },
     { name: 'positionAssets', maxCount: maxFilesPerField }
