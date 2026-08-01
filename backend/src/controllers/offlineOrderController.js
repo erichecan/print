@@ -928,6 +928,8 @@ exports.listOfflineOrders = async (req, res, next) => {
     const depositMin = req.query.depositMin != null && req.query.depositMin !== '' ? parseFloat(req.query.depositMin) : null;
     const depositMax = req.query.depositMax != null && req.query.depositMax !== '' ? parseFloat(req.query.depositMax) : null;
 
+    const costMissing = req.query.costMissing === 'true';
+
     const where = {
       AND: []
     };
@@ -990,6 +992,21 @@ exports.listOfflineOrders = async (req, res, next) => {
           { phone: { contains: search, mode: 'insensitive' } },
         ]
       });
+    }
+
+    // [2026-07-31] "成本缺失"筛选：configuration.pricing.costTotal 为空/0，或没有 productItems
+    // JSONB 条件无法直接用 Prisma 结构化 where 表达，先用原始 SQL 查出符合条件的订单 id，再用 id in 过滤
+    if (costMissing) {
+      const missingRows = await prisma.$queryRawUnsafe(`
+        SELECT id FROM offline_orders
+        WHERE (configuration->'pricing'->>'costTotal') IS NULL
+           OR (configuration->'pricing'->>'costTotal') !~ '^-?[0-9]+\\.?[0-9]*$'
+           OR (configuration->'pricing'->>'costTotal')::numeric = 0
+           OR configuration->'productItems' IS NULL
+           OR jsonb_array_length(COALESCE(configuration->'productItems', '[]'::jsonb)) = 0
+      `);
+      const missingIds = missingRows.map((r) => r.id);
+      where.AND.push({ id: { in: missingIds.length > 0 ? missingIds : ['__none__'] } });
     }
 
     // productionWorkOrder 日期范围
