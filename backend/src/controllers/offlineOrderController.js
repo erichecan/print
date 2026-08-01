@@ -1113,6 +1113,10 @@ function buildMetricsWhere(req) {
   if (primaryProduct) {
     where.primaryProduct = { contains: primaryProduct, mode: 'insensitive' };
   }
+  // [2026-07-31] Dashboard 统计口径排除规则：已取消订单 / DTF打印film订单 / 手动标记排除的订单
+  where.status = { notIn: ['已取消', 'CANCELLED'] };
+  where.orderCategory = { not: 'DTF打印film' };
+  where.excludeFromReports = false;
   return where;
 }
 
@@ -1140,6 +1144,12 @@ function buildRawWhereConditions(baseWhere, req, dateOverride = null) {
     conditions.push(`primary_product ILIKE $${params.length + 1}`);
     params.push(`%${primaryProduct}%`);
   }
+  // [2026-07-31] Dashboard 统计口径排除规则，与 buildMetricsWhere 保持一致
+  // status 用中文/旧英文双值匹配；orderCategory 用 IS DISTINCT FROM 处理 NULL
+  // （NULL != 'DTF打印film' 在 SQL 里恒为 NULL/false，会导致 orderCategory 为空的订单被误排除）
+  conditions.push(`status NOT IN ('已取消', 'CANCELLED')`);
+  conditions.push(`order_category IS DISTINCT FROM 'DTF打印film'`);
+  conditions.push(`exclude_from_reports = false`);
   return { conditions, params };
 }
 
