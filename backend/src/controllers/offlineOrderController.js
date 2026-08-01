@@ -1699,6 +1699,157 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
   }
 };
 
+// [2026-08-01] 订单类别（导出用）：在"烫印服装"内部，按 productItems[].isCustomerOwned 再细分
+// 与 mia/thea 5-7月线下订单 Excel 报表（20260801-mia-thea-offline-orders-may-jul.xlsx）保持同一套口径
+const EXPORT_CATEGORY_VALUES = ['DTF打印film', '店内服装', '自带服装', '混合(店内+自带)', '无产品明细'];
+
+function classifyExportCategory(order) {
+  if (order.orderCategory === 'DTF打印film') return 'DTF打印film';
+  const items = Array.isArray(order.configuration?.productItems) ? order.configuration.productItems : [];
+  if (items.length === 0) return '无产品明细';
+  const hasOwned = items.some((i) => i?.isCustomerOwned === true);
+  const hasShop = items.some((i) => i?.isCustomerOwned !== true);
+  if (hasOwned && hasShop) return '混合(店内+自带)';
+  return hasOwned ? '自带服装' : '店内服装';
+}
+
+function escapeCsvValue(value) {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+/**
+ * GET /api/admin/offline-orders/export
+ * Query: startDate, endDate, scope=all|mine, creatorId, category(见 EXPORT_CATEGORY_VALUES，或 'all')
+ * 逐单导出（不按产品行拆分），金额/成本口径与 Excel 报表一致：
+ *   订单金额(当前) = total_amount，缺失则退回 configuration.pricing.total（下单快照）
+ *   成本 = configuration.pricing.costTotal
+ * 一行一单，不存在同一订单在多行重复计金额的问题，SUM 可以直接在 Excel 里对这份 CSV 做，不会重复计算。
+ */
+exports.exportOfflineOrdersCsv = async (req, res) => {
+  try {
+    const { startDate, endDate, scope, creatorId, category } = req.query || {};
+
+    const where = {};
+    const start = parseDate(startDate);
+    const end = parseDate(endDate);
+    if (start || end) {
+      where.createdAt = {};
+      if (start) where.createdAt.gte = start;
+      if (end) {
+        const endOfDay = new Date(end);
+        endOfDay.setHours(23, 59, 59, 999);
+        where.createdAt.lte = endOfDay;
+      }
+    }
+    const trimmedCreatorId = creatorId?.trim() || null;
+    if (trimmedCreatorId) {
+      where.metadata = { path: ['submittedByUserId'], equals: trimmedCreatorId };
+    } else if ((scope || 'all').toLowerCase() === 'mine' && req.user?.id) {
+      where.metadata = { path: ['submittedByUserId'], equals: req.user.id };
+    }
+
+    const orders = await prisma.offlineOrder.findMany({
+      where,
+      select: {
+        orderCode: true,
+        createdAt: true,
+        contactName: true,
+        company: true,
+        primaryProduct: true,
+        quantity: true,
+        type: true,
+        status: true,
+        invoiceStatus: true,
+        totalAmount: true,
+        deposit_amount: true,
+        rush_fee: true,
+        dst_file_fee: true,
+        orderCategory: true,
+        configuration: true,
+        metadata: true,
+        order_notes: true
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    const creatorIds = [...new Set(orders.map((o) => o.metadata?.submittedByUserId).filter(Boolean))];
+    const creatorMap = {};
+    if (creatorIds.length > 0) {
+      const users = await prisma.user.findMany({
+        where: { id: { in: creatorIds } },
+        select: { id: true, firstName: true, lastName: true, email: true }
+      });
+      users.forEach((u) => {
+        creatorMap[u.id] = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email;
+      });
+    }
+
+    const requestedCategory = category?.trim() || 'all';
+    const rows = [];
+    for (const order of orders) {
+      const cat = classifyExportCategory(order);
+      if (requestedCategory !== 'all' && requestedCategory !== cat) continue;
+      const pricing = order.configuration?.pricing || {};
+      const currentAmount = order.totalAmount != null ? Number(order.totalAmount) : null;
+      const snapshotAmount = pricing.total != null ? Number(pricing.total) : null;
+      const displayAmount = currentAmount != null ? currentAmount : snapshotAmount;
+      const cost = pricing.costTotal != null ? Number(pricing.costTotal) : null;
+      rows.push([
+        order.orderCode,
+        creatorMap[order.metadata?.submittedByUserId] || '',
+        order.createdAt.toISOString().slice(0, 10),
+        order.contactName || '',
+        order.company || '',
+        cat,
+        order.quantity ?? '',
+        order.type || '',
+        order.status || '',
+        order.invoiceStatus || '',
+        currentAmount != null ? currentAmount.toFixed(2) : '',
+        snapshotAmount != null ? snapshotAmount.toFixed(2) : '',
+        displayAmount != null ? displayAmount.toFixed(2) : '',
+        order.deposit_amount != null ? Number(order.deposit_amount).toFixed(2) : '',
+        order.rush_fee != null ? Number(order.rush_fee).toFixed(2) : '',
+        order.dst_file_fee != null ? Number(order.dst_file_fee).toFixed(2) : '',
+        cost != null ? cost.toFixed(2) : '',
+        order.order_notes || ''
+      ]);
+    }
+
+    const csvHeaders = [
+      '订单号', '录入员工', '下单日期', '客户联系人', '客户公司', '订单类别', '数量',
+      '印花方式', '状态', '发票状态',
+      '订单金额(当前，含改单调整)', '订单金额(下单时快照，不随改单更新)', '订单金额(用于合计，当前缺失则用下单快照)',
+      '定金', '加急费', 'DST文件费', '订单成本(pricing.costTotal)', '备注'
+    ];
+
+    const csvContent = [
+      csvHeaders.map(escapeCsvValue).join(','),
+      ...rows.map((row) => row.map(escapeCsvValue).join(','))
+    ].join('\n');
+
+    const filename = `offline-orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.write('﻿'); // BOM，保证 Excel 打开中文不乱码
+    res.end(csvContent);
+
+    logger.info('Offline orders exported', {
+      count: rows.length,
+      filters: { startDate, endDate, scope, creatorId: trimmedCreatorId, category: requestedCategory },
+      actorId: req.user?.id
+    });
+  } catch (error) {
+    logger.error('Failed to export offline orders', error);
+    res.status(500).json({ error: 'Server Error', message: 'Failed to export offline orders' });
+  }
+};
+
 /**
  * GET /api/admin/offline-orders/:id
  */

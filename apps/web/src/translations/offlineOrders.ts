@@ -99,6 +99,11 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     filterByProduct: 'Product',
     filterByCreator: 'Creator',
     allCreators: 'All Creators',
+    orderCategoryFilter: 'Order Category',
+    allOrderCategories: 'All Categories',
+    exportCsv: 'Export CSV',
+    exporting: 'Exporting...',
+    exportFailed: 'Export failed',
 
     // Table Headers
     thProjectName: 'Project Name',
@@ -572,6 +577,11 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     filterByProduct: '产品',
     filterByCreator: '创建人',
     allCreators: '全部创建人',
+    orderCategoryFilter: '订单类别',
+    allOrderCategories: '全部类别',
+    exportCsv: '导出 CSV',
+    exporting: '导出中...',
+    exportFailed: '导出失败',
 
     // Table Headers
     thOrderCode: '订单编号',

@@ -13,6 +13,9 @@ import { OFFLINE_ORDERS_TRANSLATIONS } from '@/translations/offlineOrders';
 
 type TimeRangeKey = 'today' | 'week' | 'month' | 'all' | 'custom';
 
+// [2026-08-01] 与 mia/thea 5-7月线下订单 Excel 报表同一套订单类别口径
+const EXPORT_CATEGORIES = ['DTF打印film', '店内服装', '自带服装', '混合(店内+自带)', '无产品明细'];
+
 function getTimeRangeBounds(
   range: TimeRangeKey,
   customStart?: string,
@@ -101,6 +104,9 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
   const [customEnd, setCustomEnd] = useState('');
   const [scope, setScope] = useState<'all' | 'mine'>('all');
   const [creatorFilter, setCreatorFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const params = useMemo(() => {
     const bounds = getTimeRangeBounds(timeRange, customStart, customEnd);
@@ -111,6 +117,18 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
       creatorId: creatorFilter || undefined,
     };
   }, [timeRange, scope, customStart, customEnd, creatorFilter]);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    setExportError(null);
+    try {
+      await adminOfflineOrdersApi.exportCsv({ ...params, category: categoryFilter || undefined });
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsExporting(false);
+    }
+  }, [params, categoryFilter]);
 
   const { data: creatorsData } = useSWR(
     isManager ? 'sales-orders-creators' : null,
@@ -224,11 +242,26 @@ export function SalesDashboardTab({ locale, isManager }: SalesDashboardTabProps)
             </select>
           </div>
         )}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-700">{t('orderCategoryFilter')}</span>
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm cursor-pointer">
+            <option value="">{t('allOrderCategories')}</option>
+            {EXPORT_CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
         <button type="button" onClick={() => mutate()} disabled={isLoading} className="ml-auto inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60 cursor-pointer">
           {Icons.refresh}
           {t('refresh')}
         </button>
+        <button type="button" onClick={handleExport} disabled={isExporting} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60 cursor-pointer">
+          {isExporting ? t('exporting') : t('exportCsv')}
+        </button>
       </div>
+      {exportError && (
+        <p className="text-sm text-red-600">{t('exportFailed')}: {exportError}</p>
+      )}
 
       {isLoading ? (
         <p className="text-slate-600">{t('loadingDashboard')}</p>

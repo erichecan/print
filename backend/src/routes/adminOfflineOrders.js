@@ -74,6 +74,10 @@ router.delete(
 
 router.get('/metrics/summary', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.getOfflineOrderMetrics);
 
+// [2026-08-01] CSV 导出：与 metrics/summary 同一批角色即可用，不额外限制到 manager
+// 必须放在 /:id 之前，否则 'export' 会被当作 :id 截获
+router.get('/export', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.exportOfflineOrdersCsv);
+
 router.get('/', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.listOfflineOrders);
 
 router.get('/:id', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.getOfflineOrderById);

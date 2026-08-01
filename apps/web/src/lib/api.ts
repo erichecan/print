@@ -3131,6 +3131,37 @@ export const adminOfflineOrdersApi = {
     const qs = query.toString();
     return api<OfflineOrderMetricsResponse>(`/admin/offline-orders/metrics/summary${qs ? `?${qs}` : ''}`);
   },
+  exportCsv: async (params?: {
+    scope?: 'all' | 'mine';
+    startDate?: string;
+    endDate?: string;
+    creatorId?: string;
+    category?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.scope) query.append('scope', params.scope);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    if (params?.creatorId) query.append('creatorId', params.creatorId);
+    if (params?.category) query.append('category', params.category);
+    const qs = query.toString();
+    const response = await fetch(`${API_BASE_URL}/admin/offline-orders/export${qs ? `?${qs}` : ''}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || `Export failed: ${response.status}`);
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `offline-orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
   updateStage: (id: string, payload: { stageKey: string; note?: string }) =>
     api(`/admin/offline-orders/${id}/stage`, { method: 'PATCH', body: payload }),
   addNote: (id: string, note: string) =>
