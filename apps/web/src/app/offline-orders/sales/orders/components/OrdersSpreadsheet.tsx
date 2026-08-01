@@ -34,6 +34,8 @@ import {
   SalesOfflineOrderSummary,
   statusOptionsApi,
   OfflineOrderStatusOption,
+  offlineOrderProductApi,
+  OfflineOrderProduct,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { downloadFile } from '@/utils/download';
@@ -874,6 +876,42 @@ export default function OrdersSpreadsheet() {
     setCurrentPage(1);
   }, []);
 
+  // [2026-07-31] 快速录单产品明细行的本地类型：故意不用 lib/api.ts 的 OfflineOrderProductItem
+  // （那个类型是 variants[] 扁平结构，与 computeCostTotalFromConfig 实际解析的 colors[].sizes[] 嵌套结构不匹配）
+  type QuickEntryProductLine = {
+    productId: string;
+    productName: string;
+    quantity: number;
+  };
+
+  const [productCatalog, setProductCatalog] = useState<OfflineOrderProduct[]>([]);
+  const [quickEntryLines, setQuickEntryLines] = useState<QuickEntryProductLine[]>([]);
+  const [quickEntryPickerProductId, setQuickEntryPickerProductId] = useState('');
+  const [quickEntryPickerQty, setQuickEntryPickerQty] = useState('');
+
+  useEffect(() => {
+    offlineOrderProductApi
+      .getOrderConfig()
+      .then((res) => setProductCatalog(res.data.products || []))
+      .catch((err) => console.error('[OrdersSpreadsheet] load product catalog failed', err));
+  }, []);
+
+  const quickEntryTotalQuantity = quickEntryLines.reduce((sum, l) => sum + l.quantity, 0);
+
+  const addQuickEntryLine = useCallback(() => {
+    const qty = Number(quickEntryPickerQty);
+    if (!quickEntryPickerProductId || !qty || qty <= 0) return;
+    const product = productCatalog.find((p) => p.id === quickEntryPickerProductId);
+    if (!product) return;
+    setQuickEntryLines((prev) => [...prev, { productId: product.id, productName: product.name, quantity: qty }]);
+    setQuickEntryPickerProductId('');
+    setQuickEntryPickerQty('');
+  }, [quickEntryPickerProductId, quickEntryPickerQty, productCatalog]);
+
+  const removeQuickEntryLine = useCallback((index: number) => {
+    setQuickEntryLines((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
   // inline 新增行的草稿
   // 2026-04-21: 列序调整 — 编号 / 开始时间 / 客户名 / Due / 件数 / 总金额 / 预付款 / Type / Status / 发票 / 备注
   const [newDraft, setNewDraft] = useState<{
@@ -1047,6 +1085,36 @@ export default function OrdersSpreadsheet() {
     }
     setSavingNew(true);
     try {
+      // [2026-07-31] 把快速录单选的产品明细行组装成后端 computeCostTotalFromConfig 期望的
+      // colors[].sizes[] 嵌套结构（不是 lib/api.ts OfflineOrderProductItem 的 variants[] 扁平结构）
+      const productItems = quickEntryLines.map((line, idx) => ({
+        id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+        productId: line.productId,
+        productName: line.productName,
+        isCustomerOwned: false,
+        colors: [
+          {
+            groupId: `${Date.now()}-${idx}-color-${Math.random().toString(36).substr(2, 5)}`,
+            colorId: 'default',
+            colorName: '',
+            availableSizes: [],
+            sizes: [
+              {
+                size: 'NA',
+                quantity: line.quantity,
+                unitPrice: 0,
+                additionalFee: 0,
+                subtotal: 0,
+              },
+            ],
+            totalQuantity: line.quantity,
+            totalPrice: 0,
+          },
+        ],
+        totalQuantity: line.quantity,
+        totalPrice: 0,
+      }));
+
       const createPayload = {
         contactName: newDraft.contactName.trim() || null,
         company: newDraft.company.trim() || null,
@@ -1054,13 +1122,14 @@ export default function OrdersSpreadsheet() {
         orderCategory: newDraft.orderCategory,
         status: newDraft.status || '待确认订单',
         invoiceStatus: newDraft.invoiceStatus,
-        quantity: newDraft.quantity ? Number(newDraft.quantity) : null,
+        quantity: quickEntryTotalQuantity > 0 ? quickEntryTotalQuantity : (newDraft.quantity ? Number(newDraft.quantity) : null),
         totalAmount: newDraft.totalAmount ? Number(newDraft.totalAmount) : null,
         depositAmount: newDraft.depositAmount ? Number(newDraft.depositAmount) : null,
         description: newDraft.description.trim() || null,
         dueDate: newDraft.dueDate || undefined,
         // 补录历史订单时可指定订单日期，覆盖默认的"保存时刻"，让统计口径（按 created_at）能落进正确的月份
         startDate: newDraft.startDate || undefined,
+        ...(productItems.length > 0 ? { configuration: { productItems } } : {}),
       };
       console.log('[handleCreateInline] creating with payload:', createPayload, 'activeFilters:', filterStatuses);
       const createResult = await offlineOrdersInlineApi.create(createPayload);
@@ -1079,6 +1148,7 @@ export default function OrdersSpreadsheet() {
         description: '',
         orderCategory: '',
       });
+      setQuickEntryLines([]);
       setCurrentPage(1);
       await refreshOrders();
     } catch (err) {
@@ -1088,7 +1158,7 @@ export default function OrdersSpreadsheet() {
     } finally {
       setSavingNew(false);
     }
-  }, [newDraft, refreshOrders, savingNew]);
+  }, [newDraft, quickEntryLines, quickEntryTotalQuantity, refreshOrders, savingNew]);
 
   const totalPages = Math.max(1, Math.ceil(serverTotal / PAGE_SIZE));
 
@@ -1364,17 +1434,51 @@ export default function OrdersSpreadsheet() {
                   onChange={(e) => setNewDraft({ ...newDraft, dueDate: e.target.value })}
                 />
               </td>
-              {/* 件数 */}
-              <td className="px-2 py-1 text-right sticky left-[33rem] z-[1] bg-yellow-50">
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded text-right"
-                  placeholder="0"
-                  value={newDraft.quantity}
-                  onChange={(e) => setNewDraft({ ...newDraft, quantity: e.target.value })}
-                />
+              {/* 件数：改为产品明细驱动，自动汇总，不再直接手填 */}
+              <td className="px-2 py-1 text-right sticky left-[33rem] z-[1] bg-yellow-50 min-w-[140px]">
+                <div className="flex flex-col gap-1">
+                  <div className="text-right text-sm font-medium">{quickEntryTotalQuantity || (newDraft.quantity || 0)}</div>
+                  {quickEntryLines.map((line, idx) => (
+                    <div key={idx} className="flex items-center justify-between gap-1 text-xs bg-white border border-gray-200 rounded px-1.5 py-0.5">
+                      <span className="truncate">{line.productName} ×{line.quantity}</span>
+                      <button
+                        type="button"
+                        className="text-gray-400 hover:text-red-500"
+                        onClick={() => removeQuickEntryLine(idx)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-1">
+                    <select
+                      className="flex-1 min-w-0 text-xs border border-gray-300 rounded px-1 py-0.5"
+                      value={quickEntryPickerProductId}
+                      onChange={(e) => setQuickEntryPickerProductId(e.target.value)}
+                    >
+                      <option value="">+ 产品</option>
+                      {productCatalog.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      className="w-12 text-xs border border-gray-300 rounded px-1 py-0.5"
+                      placeholder="数量"
+                      value={quickEntryPickerQty}
+                      onChange={(e) => setQuickEntryPickerQty(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="text-xs px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded"
+                      onClick={addQuickEntryLine}
+                    >
+                      加
+                    </button>
+                  </div>
+                </div>
               </td>
               {/* 总金额 */}
               <td className="px-2 py-1 text-right sticky left-[37rem] z-[1] bg-yellow-50 border-r-2 border-gray-300 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.15)]">
