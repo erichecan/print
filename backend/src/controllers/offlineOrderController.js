@@ -1132,7 +1132,12 @@ function buildMetricsWhere(req) {
   }
   // [2026-07-31] Dashboard 统计口径排除规则：已取消订单 / DTF打印film订单 / 手动标记排除的订单
   where.status = { notIn: ['已取消', 'CANCELLED'] };
-  where.orderCategory = { not: 'DTF打印film' };
+  // [2026-08-01] 修复：orderCategory 是可空字段，Prisma 的 { not: X } 在该列为 NULL 时
+  // 生成 SQL `column != X`，NULL 参与比较结果恒为 NULL（falsy），会把 orderCategory 为空的订单
+  // 误排除出 count() 之外，与下面 buildRawWhereConditions 的 `IS DISTINCT FROM`（NULL 视为不等于，正确纳入）口径不一致。
+  // 用顶层 OR 表达"不等于 'DTF打印film'，或者为 NULL"，与本函数其余顶层字段隐式 AND。
+  // 已通过实际插入一条 orderCategory=NULL 的订单验证：旧写法漏计 1 条，此写法与 raw SQL IS DISTINCT FROM 结果一致。
+  where.OR = [{ orderCategory: { not: 'DTF打印film' } }, { orderCategory: null }];
   where.excludeFromReports = false;
   return where;
 }
