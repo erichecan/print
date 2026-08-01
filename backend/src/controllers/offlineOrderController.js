@@ -457,6 +457,8 @@ const mapOrder = (order) => ({
   // 2026-04-24: 备货/订货情况
   stockingStatus: order.stockingStatus ?? null,
   purchaseStatus: order.purchaseStatus ?? null,
+  // [2026-07-31] 手动"从报表排除"开关
+  excludeFromReports: order.excludeFromReports ?? false,
   contact: {
     name: order.contactName,
     company: order.company,
@@ -558,7 +560,9 @@ exports.createOfflineOrder = async (req, res) => {
       invoiceStatus,
       totalAmount,
       // [2026-07-31] 订单类别：烫印服装 / DTF打印film
-      orderCategory
+      orderCategory,
+      // [2026-07-31] 手动"从报表排除"开关，创建时默认 false（未传即为 false）
+      excludeFromReports
     } = req.body;
 
     logger.info('[offlineOrderController] Creating order with payload:', { startDate, status, dueDate, deliveryDate });
@@ -628,6 +632,7 @@ exports.createOfflineOrder = async (req, res) => {
       requiresMockups: parseBoolean(requiresMockups),
       requiresProof: parseBoolean(requiresProof),
       rushOrder: parseBoolean(rushOrder),
+      excludeFromReports: parseBoolean(excludeFromReports),
       stageKey: initialStage.key,
       stageLabel: initialStage.label,
       stagePosition: initialStage.position ?? 0,
@@ -1856,6 +1861,8 @@ exports.updateOfflineOrder = async (req, res) => {
       totalAmount,
       // [2026-07-31] 订单类别：烫印服装 / DTF打印film
       orderCategory,
+      // [2026-07-31] 手动"从报表排除"开关
+      excludeFromReports,
       // 2026-04-21: 列表 inline 编辑开始/交期 - 同步到 ProductionWorkOrder
       startDate,
       dueDate,
@@ -1890,6 +1897,7 @@ exports.updateOfflineOrder = async (req, res) => {
     if (requiresMockups !== undefined) data.requiresMockups = parseBoolean(requiresMockups);
     if (requiresProof !== undefined) data.requiresProof = parseBoolean(requiresProof);
     if (rushOrder !== undefined) data.rushOrder = parseBoolean(rushOrder);
+    if (excludeFromReports !== undefined) data.excludeFromReports = parseBoolean(excludeFromReports);
     if (req.body.rushFee !== undefined) data.rush_fee = req.body.rushFee ? parseFloat(req.body.rushFee) : null;
     // 修复：contactName 和 email 改为可选字段，允许为空或null
     if (contactName !== undefined) {

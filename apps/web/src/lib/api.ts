@@ -1063,6 +1063,8 @@ export interface SalesOfflineOrderSummary {
   // 2026-04-24: 备货/订货情况
   stockingStatus?: string | null;
   purchaseStatus?: string | null;
+  // [2026-07-31] 手动"从报表排除"开关
+  excludeFromReports?: boolean;
   // 列表 include assets：首张 image 作为缩略图，其余供下载浮层
   assets?: Array<{
     id: string;
