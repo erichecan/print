@@ -1131,6 +1131,11 @@ export default function OrdersSpreadsheet() {
           configuration: { ...existingConfig, productItems },
         });
         setBackfillProgress((prev) => ({ ...prev, [id]: 'done' }));
+        // [2026-07-31] 修复：提交成功后清空该订单已提交的明细行，避免"补充 A → 提交 → 再补充 B → 再次提交"
+        // 这种正常操作流程下，A 的产品行被 orders 状态里已持久化的 existingItems 与本地仍残留的
+        // backfillLines[A] 同时叠加，导致重复追加、costTotal 被重复计算。
+        // 清空后，若用户再次点击"提交回填"，该订单 lines.length === 0 会被上面的 skip 检查跳过。
+        setBackfillLines((prev) => ({ ...prev, [id]: [] }));
       } catch (err) {
         console.error('[submitBackfill] failed for order', id, err);
         setBackfillProgress((prev) => ({ ...prev, [id]: 'error' }));
@@ -2196,13 +2201,26 @@ export default function OrdersSpreadsheet() {
                       <button type="button" onClick={() => removeBackfillLine(id, idx)}>✕</button>
                     </div>
                   ))}
-                  <BackfillLinePicker productCatalog={productCatalog} onAdd={(pid, qty) => addBackfillLine(id, pid, qty)} />
+                  {/* [2026-07-31] 修复：该订单本轮已成功提交（backfillLines 已清空），不再展示选品输入，
+                      避免用户误以为还能继续给它叠加产品行而重复提交 */}
+                  {status === 'done' ? (
+                    <div className="text-[11px] text-gray-400">本轮已提交，如需继续补充请关闭弹窗后重新勾选该订单</div>
+                  ) : (
+                    <BackfillLinePicker productCatalog={productCatalog} onAdd={(pid, qty) => addBackfillLine(id, pid, qty)} />
+                  )}
                 </div>
               );
             })}
             <div className="flex justify-end gap-2 mt-3">
               <button type="button" className="text-xs px-3 py-1.5 border rounded" onClick={() => setBackfillModalOpen(false)}>关闭</button>
-              <button type="button" className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded" onClick={submitBackfill}>提交回填</button>
+              <button
+                type="button"
+                disabled={Object.values(backfillProgress).some((s) => s === 'saving')}
+                className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
+                onClick={submitBackfill}
+              >
+                {Object.values(backfillProgress).some((s) => s === 'saving') ? '提交中…' : '提交回填'}
+              </button>
             </div>
           </div>
         </div>,
