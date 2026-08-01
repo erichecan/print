@@ -1372,6 +1372,7 @@ export default function OrdersSpreadsheet() {
             <col className="w-[5rem]" />{/* 余款（只读） */}
             <col className="w-[7rem]" />{/* Type */}
             <col className="w-[8rem]" />{/* 订单类型 */}
+            <col className="w-[4rem]" />{/* 报表 */}
             <col className="w-[8rem]" />{/* 备货情况 */}
             <col className="w-[7rem]" />{/* 订货情况 */}
             <col className="w-[10rem]" />{/* Status */}
@@ -1393,6 +1394,7 @@ export default function OrdersSpreadsheet() {
               <th className="px-2 py-2 text-right">余款</th>
               <th className="px-2 py-2 text-left">Type</th>
               <th className="px-2 py-2 text-left">订单类型</th>
+              <th className="px-2 py-2 text-center">报表</th>
               <th className="px-2 py-2 text-left">备货情况</th>
               <th className="px-2 py-2 text-left">订货情况</th>
               <th className="px-2 py-2 text-left">Status</th>
@@ -1549,6 +1551,8 @@ export default function OrdersSpreadsheet() {
                   <option value="DTF打印film">DTF打印film</option>
                 </select>
               </td>
+              {/* [2026-07-31] 报表：新增行保存后才可切换排除，此处占位保持列对齐 */}
+              <td className="px-2 py-1 text-gray-400 text-xs text-center">—</td>
               {/* 备货情况 */}
               <td className="px-2 py-1 text-gray-400 text-xs">—</td>
               {/* 订货情况 */}
@@ -1821,6 +1825,33 @@ export default function OrdersSpreadsheet() {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  {/* [2026-07-31] 从报表排除开关 + DTF 类目视觉标记 */}
+                  <td className="px-2 py-1 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      {order.orderCategory === 'DTF打印film' && (
+                        <span
+                          className="text-[10px] px-1 py-0.5 bg-purple-100 text-purple-700 rounded"
+                          title="DTF打印film订单：不计入 sales dashboard 统计"
+                        >
+                          DTF
+                        </span>
+                      )}
+                      <label
+                        className="flex items-center gap-1 text-[10px] cursor-pointer"
+                        title="开启后该订单不计入 sales dashboard 统计"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(order.excludeFromReports)}
+                          onChange={(e) => patchOrder(order.id, { excludeFromReports: e.target.checked })}
+                        />
+                        排除
+                      </label>
+                      {order.excludeFromReports && (
+                        <span className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded">已排除</span>
+                      )}
+                    </div>
                   </td>
                   {/* 10. 备货情况 */}
                   <td className="px-2 py-1">
