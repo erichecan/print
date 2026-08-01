@@ -811,6 +811,46 @@ function TrashIcon({ className = 'w-4 h-4' }: { className?: string }) {
   );
 }
 
+// [2026-07-31] 快速录单 / 批量回填的产品明细行本地类型：故意不用 lib/api.ts 的 OfflineOrderProductItem
+// （那个类型是 variants[] 扁平结构，与 computeCostTotalFromConfig 实际解析的 colors[].sizes[] 嵌套结构不匹配）
+type QuickEntryProductLine = {
+  productId: string;
+  productName: string;
+  quantity: number;
+};
+
+// [2026-07-31] 把产品明细行组装成后端 computeCostTotalFromConfig 期望的 colors[].sizes[] 嵌套结构。
+// 快速录单（handleCreateInline）与批量回填（submitBackfill）共用，避免两处各写一份同样的对象字面量。
+function buildProductItemsFromLines(lines: QuickEntryProductLine[]) {
+  return lines.map((line, idx) => ({
+    id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+    productId: line.productId,
+    productName: line.productName,
+    isCustomerOwned: false,
+    colors: [
+      {
+        groupId: `${Date.now()}-${idx}-color-${Math.random().toString(36).substr(2, 5)}`,
+        colorId: 'default',
+        colorName: '',
+        availableSizes: [],
+        sizes: [
+          {
+            size: 'NA',
+            quantity: line.quantity,
+            unitPrice: 0,
+            additionalFee: 0,
+            subtotal: 0,
+          },
+        ],
+        totalQuantity: line.quantity,
+        totalPrice: 0,
+      },
+    ],
+    totalQuantity: line.quantity,
+    totalPrice: 0,
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // 主组件
 // ---------------------------------------------------------------------------
@@ -879,14 +919,6 @@ export default function OrdersSpreadsheet() {
     setFilterCostMissing(false);
     setCurrentPage(1);
   }, []);
-
-  // [2026-07-31] 快速录单产品明细行的本地类型：故意不用 lib/api.ts 的 OfflineOrderProductItem
-  // （那个类型是 variants[] 扁平结构，与 computeCostTotalFromConfig 实际解析的 colors[].sizes[] 嵌套结构不匹配）
-  type QuickEntryProductLine = {
-    productId: string;
-    productName: string;
-    quantity: number;
-  };
 
   const [productCatalog, setProductCatalog] = useState<OfflineOrderProduct[]>([]);
   const [quickEntryLines, setQuickEntryLines] = useState<QuickEntryProductLine[]>([]);
@@ -1092,26 +1124,20 @@ export default function OrdersSpreadsheet() {
     for (const id of ids) {
       const lines = backfillLines[id] || [];
       if (lines.length === 0) continue;
+
+      // [2026-07-31] 关键守卫：selectedOrderIds 不会在翻页/改筛选/搜索时自动清空，因此可能残留
+      // 当前 orders 数组里已经不存在的订单 id。下面的合并逻辑依赖 order.configuration 作为合并基底，
+      // 若 order 缺失就会退化成"空对象 + 新产品行"，PATCH 出去等于把该订单真实的 configuration
+      // （pricing.total / colorGroupsByProduct / 备注等）整体冲掉。这里必须无条件跳过，不做任何降级兜底。
+      const order = orders.find((o) => o.id === id);
+      if (!order) {
+        console.error('[submitBackfill] order not in loaded list, skipped to avoid wiping its configuration:', id);
+        setBackfillProgress((prev) => ({ ...prev, [id]: 'error' }));
+        continue;
+      }
+
       setBackfillProgress((prev) => ({ ...prev, [id]: 'saving' }));
-      const newItems = lines.map((line, idx) => ({
-        id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
-        productId: line.productId,
-        productName: line.productName,
-        isCustomerOwned: false,
-        colors: [
-          {
-            groupId: `${Date.now()}-${idx}-color-${Math.random().toString(36).substr(2, 5)}`,
-            colorId: 'default',
-            colorName: '',
-            availableSizes: [],
-            sizes: [{ size: 'NA', quantity: line.quantity, unitPrice: 0, additionalFee: 0, subtotal: 0 }],
-            totalQuantity: line.quantity,
-            totalPrice: 0,
-          },
-        ],
-        totalQuantity: line.quantity,
-        totalPrice: 0,
-      }));
+      const newItems = buildProductItemsFromLines(lines);
       try {
         // [2026-07-31] 与现有 configuration 合并而非整体替换：后端 PATCH 处理对 configuration
         // 字段是整体覆盖（data.configuration = configData），不是逐字段合并。历史订单的 configuration
@@ -1119,8 +1145,7 @@ export default function OrdersSpreadsheet() {
         // （如"自带服装"订单，costTotal=0 是因为客供服装本身无采购成本，并非缺产品行）。
         // 若直接 PATCH { configuration: { productItems } }，会把这些既有数据全部冲掉。
         // 这里保留原 configuration 的其它字段，并在原有 productItems 基础上追加，而非替换。
-        const order = orders.find((o) => o.id === id);
-        const existingConfig = (order?.configuration && typeof order.configuration === 'object')
+        const existingConfig = (order.configuration && typeof order.configuration === 'object')
           ? (order.configuration as Record<string, unknown>)
           : {};
         const existingItems = Array.isArray((existingConfig as any).productItems)
@@ -1180,34 +1205,8 @@ export default function OrdersSpreadsheet() {
     setSavingNew(true);
     try {
       // [2026-07-31] 把快速录单选的产品明细行组装成后端 computeCostTotalFromConfig 期望的
-      // colors[].sizes[] 嵌套结构（不是 lib/api.ts OfflineOrderProductItem 的 variants[] 扁平结构）
-      const productItems = quickEntryLines.map((line, idx) => ({
-        id: `${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
-        productId: line.productId,
-        productName: line.productName,
-        isCustomerOwned: false,
-        colors: [
-          {
-            groupId: `${Date.now()}-${idx}-color-${Math.random().toString(36).substr(2, 5)}`,
-            colorId: 'default',
-            colorName: '',
-            availableSizes: [],
-            sizes: [
-              {
-                size: 'NA',
-                quantity: line.quantity,
-                unitPrice: 0,
-                additionalFee: 0,
-                subtotal: 0,
-              },
-            ],
-            totalQuantity: line.quantity,
-            totalPrice: 0,
-          },
-        ],
-        totalQuantity: line.quantity,
-        totalPrice: 0,
-      }));
+      // colors[].sizes[] 嵌套结构（与批量回填共用 buildProductItemsFromLines）
+      const productItems = buildProductItemsFromLines(quickEntryLines);
 
       const createPayload = {
         contactName: newDraft.contactName.trim() || null,
@@ -1470,9 +1469,9 @@ export default function OrdersSpreadsheet() {
       </div>
 
       <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-420px)] min-h-[300px]">
-      <div className="border border-gray-200 rounded min-w-[1760px]">
+      <div className="border border-gray-200 rounded min-w-[2016px]">
         <table className="w-full text-sm table-fixed">
-          {/* 列宽 — 总计约 110rem ≈ 1760px */}
+          {/* 列宽 — 总计 126rem ≈ 2016px（18 列：Task 6 加了「报表」列、Task 7 加了批量选择 checkbox 列） */}
           <colgroup>
             <col className="w-[3rem]" />{/* [2026-07-31] 批量选择 checkbox */}
             <col className="w-[5rem]" />{/* 编号 */}
