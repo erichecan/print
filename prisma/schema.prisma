@@ -557,6 +557,8 @@ model OfflineOrder {
   type                String?                    @map("type")                           // 印花类型标签：DTF / EMB / Screen Printing / DTF + EMB；由产品 positions.method 自动汇总或用户手选
   // [2026-07-31] 订单类别：区分"烫印服装"（正常产品/服装订单）与"DTF打印film"（客户仅来打印转印膜，不烫印上衣）
   orderCategory       String?                    @map("order_category")
+  // [2026-07-31] 手动"从报表排除"开关：用于个别订单(如内部样品/测试单)不计入 sales dashboard 统计
+  excludeFromReports  Boolean                    @default(false) @map("exclude_from_reports")
   invoiceStatus       String                     @default("No") @map("invoice_status")   // 发票状态：No / Require / Sent
   totalAmount         Decimal?                   @map("total_amount") @db.Decimal(12, 2) // 订单总金额；inline 新增时用户手填
   stockingStatus      String?                    @map("stocking_status")                // 备货情况
