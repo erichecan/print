@@ -3006,6 +3006,9 @@ export interface AdminOfflineOrderSummary {
   contact: OfflineOrderContact;
   configuration?: any;
   metadata?: any;
+  // [2026-08-18] 订单归属（metadata.submittedByUserId）。别人创建的订单只能改 Status。
+  // null = 无归属的历史订单，所有人仍可编辑
+  creatorId?: string | null;
   assets: OfflineOrderAsset[];
   productionWorkOrder?: ProductionWorkOrderDetail | null;
   payment?: {

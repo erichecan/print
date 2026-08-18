@@ -11,6 +11,7 @@ import {
     ProductionWorkOrderPayload
 } from '@/lib/api';
 import { useAdminI18n } from '@/contexts/adminI18nContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
     month: 'short',
@@ -37,6 +38,7 @@ function toInputDate(value?: string | null) {
 export default function MobileOrderDetailPage({ params }: { params: { id: string } }) {
     const { id } = params;
     const { t, locale } = useAdminI18n();
+    const { user: currentUser } = useAuth();
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,6 +57,10 @@ export default function MobileOrderDetailPage({ params }: { params: { id: string
     );
 
     const order = detailWrapper?.order;
+
+    // [2026-08-18] 订单归属：别人创建的订单只能改 Status（在订单列表里改），
+    // 这里的附件上传 / 生产工单后端都会 403。creatorId 为空 = 无归属的历史订单，仍可编辑。
+    const canEditOrder = !order?.creatorId || order.creatorId === currentUser?.id;
 
     // Add Note Handler
     const handleAddNote = useCallback(
@@ -309,13 +315,19 @@ export default function MobileOrderDetailPage({ params }: { params: { id: string
                         <h2 className="text-sm font-bold text-gray-900 border-l-4 border-gray-500 pl-2 uppercase tracking-wide">
                             {t('assets')}
                         </h2>
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploading}
-                            className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full active:bg-gray-200"
-                        >
-                            {uploading ? 'Uploading...' : '+ Upload'}
-                        </button>
+                        {canEditOrder ? (
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploading}
+                                className="text-xs font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-full active:bg-gray-200"
+                            >
+                                {uploading ? 'Uploading...' : '+ Upload'}
+                            </button>
+                        ) : (
+                            <span className="text-[11px] text-gray-400" title="该订单由其他同事创建，附件只读">
+                                🔒 只读
+                            </span>
+                        )}
                         <input
                             type="file"
                             multiple

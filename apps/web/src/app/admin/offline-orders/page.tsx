@@ -15,6 +15,7 @@ import {
   ProductionWorkOrderPayload,
 } from '@/lib/api';
 import { useAdminI18n } from '@/contexts/adminI18nContext'; // 国际化支持
+import { useAuth } from '@/contexts/AuthContext';
 import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -41,6 +42,7 @@ const BOARD_KEY = 'admin-offline-orders-board';
 
 export default function AdminOfflineOrdersPage() {
   const { t, locale } = useAdminI18n(); // 国际化支持
+  const { user: currentUser } = useAuth();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [rushFilter, setRushFilter] = useState<'all' | 'rush' | 'standard'>('all');
@@ -150,6 +152,14 @@ export default function AdminOfflineOrdersPage() {
       setAssigneeNameDraft('');
     },
     []
+  );
+
+  // [2026-08-18] 订单归属：别人创建的订单只能改 Status，阶段/附件/生产工单后端都会 403。
+  // creatorId 为空 = 无归属的历史订单，仍可编辑。
+  const canEditOrder = useCallback(
+    (order?: { creatorId?: string | null } | null) =>
+      !order?.creatorId || order.creatorId === currentUser?.id,
+    [currentUser?.id]
   );
 
   const handleStageChange = useCallback(
@@ -497,7 +507,8 @@ export default function AdminOfflineOrdersPage() {
                             className={`kanban-card${draggingOrderId === order.id ? ' is-dragging' : ''}`}
                             role="button"
                             tabIndex={0}
-                            draggable
+                            draggable={canEditOrder(order)}
+                            title={canEditOrder(order) ? undefined : '该订单由其他同事创建，无法修改阶段'}
                             aria-grabbed={draggingOrderId === order.id}
                             onClick={() => handleSelectOrder(order)}
                             onKeyDown={(event) => event.key === 'Enter' && handleSelectOrder(order)}
@@ -505,7 +516,10 @@ export default function AdminOfflineOrdersPage() {
                             onDragEnd={handleCardDragEnd}
                           >
                             <header className="kanban-card-header">
-                              <span className="kanban-card-title">{order.projectName}</span>
+                              <span className="kanban-card-title">
+                                {!canEditOrder(order) && <span className="mr-1">🔒</span>}
+                                {order.projectName}
+                              </span>
                               {order.rushOrder && <span className="kanban-card-chip is-alert">Rush</span>}
                             </header>
                             <p className="kanban-card-meta">
@@ -560,6 +574,8 @@ export default function AdminOfflineOrdersPage() {
                       <select
                         value={stageDraft || selectedDetail.stage?.key || ''}
                         onChange={(event) => setStageDraft(event.target.value)}
+                        disabled={!canEditOrder(selectedDetail)}
+                        title={canEditOrder(selectedDetail) ? undefined : '该订单由其他同事创建，无法修改阶段'}
                       >
                         {stages.map((stage) => (
                           <option key={stage.key} value={stage.key}>
@@ -570,7 +586,7 @@ export default function AdminOfflineOrdersPage() {
                       <button
                         type="button"
                         className="btn btn--primary"
-                        disabled={!stageDraft}
+                        disabled={!stageDraft || !canEditOrder(selectedDetail)}
                         onClick={() => stageDraft && handleStageChange(selectedDetail.id, stageDraft)}
                       >
                         {t('updateStage')}
@@ -607,12 +623,16 @@ export default function AdminOfflineOrdersPage() {
 
                     <div className="admin-form">
                       <h3>{t('assets')}</h3>
-                      <input
-                        type="file"
-                        multiple
-                        onChange={(event) => handleUploadAssets(event.target.files)}
-                        disabled={uploading}
-                      />
+                      {canEditOrder(selectedDetail) ? (
+                        <input
+                          type="file"
+                          multiple
+                          onChange={(event) => handleUploadAssets(event.target.files)}
+                          disabled={uploading}
+                        />
+                      ) : (
+                        <p className="text-muted">🔒 该订单由其他同事创建，附件只读（可下载，不能上传）</p>
+                      )}
                       <ul className="detail-assets">
                         {(selectedDetail.assets || []).map((asset) => (
                           <li key={asset.id} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -648,6 +668,10 @@ export default function AdminOfflineOrdersPage() {
 
                   <div className="admin-form">
                     <h3>{t('production')}</h3>
+                    {!canEditOrder(selectedDetail) && (
+                      <p className="text-muted">🔒 该订单由其他同事创建，生产工单只读</p>
+                    )}
+                    {canEditOrder(selectedDetail) && (
                     <form className="detail-form" onSubmit={handleProductionUpdate}>
                       <select value={productionStatusDraft} onChange={(event) => setProductionStatusDraft(event.target.value)}>
                         <option value="">{t('status')}</option>
@@ -693,6 +717,7 @@ export default function AdminOfflineOrdersPage() {
                         {t('saveProductionUpdate')}
                       </button>
                     </form>
+                    )}
                   </div>
 
                   <div className="admin-grid-two">
