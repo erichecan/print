@@ -1,0 +1,13 @@
+createTime: '2026-01-04T20:10:42.703470272Z'
+description: Build and deploy backend+frontend via cloudbuild.yaml on push to main
+filename: cloudbuild.yaml
+github:
+  name: print
+  owner: erichecan
+  push:
+    branch: ^main$
+id: 15cf9692-cdf0-4b78-a275-74cf73b7f29e
+includeBuildLogs: INCLUDE_BUILD_LOGS_WITH_STATUS
+name: rmgpgab-print-northamerica-northeast2-erichecan-print--mawho
+resourceName: projects/print-482914/locations/global/triggers/15cf9692-cdf0-4b78-a275-74cf73b7f29e
+serviceAccount: projects/print-482914/serviceAccounts/651538279084-compute@developer.gserviceaccount.com

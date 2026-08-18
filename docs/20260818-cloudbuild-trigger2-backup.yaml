@@ -1,0 +1,12 @@
+autodetect: true
+createTime: '2026-04-01T04:24:51.792566989Z'
+github:
+  name: print
+  owner: erichecan
+  push:
+    branch: ^main$
+id: 1a92dd57-9cbf-49b4-92e3-4f9308bb118f
+includeBuildLogs: INCLUDE_BUILD_LOGS_WITH_STATUS
+name: GitHub
+resourceName: projects/print-482914/locations/northamerica-northeast2/triggers/1a92dd57-9cbf-49b4-92e3-4f9308bb118f
+serviceAccount: projects/print-482914/serviceAccounts/print-482914@appspot.gserviceaccount.com
