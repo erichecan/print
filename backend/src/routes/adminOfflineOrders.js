@@ -7,6 +7,11 @@ const offlineOrderController = require('../controllers/offlineOrderController');
 const offlineOrderStatusOptionController = require('../controllers/offlineOrderStatusOptionController');
 const { ensureOfflineUploadRoot, getAllowedExtensions, isExtensionAllowed } = require('../utils/offlineUpload');
 const { requireAdmin, authorizeRoles } = require('../middleware/auth');
+// [2026-08-18] 非创建者只读：别人的订单只能改 Status，其余写操作一律 403
+const {
+  requireOfflineOrderOwner,
+  restrictNonOwnerUpdateToStatus,
+} = require('../utils/offlineOrderOwnership');
 
 const router = express.Router();
 
@@ -82,7 +87,7 @@ router.get('/', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderControlle
 
 router.get('/:id', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.getOfflineOrderById);
 
-router.patch('/:id/stage', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.updateOfflineOrderStage);
+router.patch('/:id/stage', authorizeRoles(...ORDER_MANAGEMENT_ROLES), requireOfflineOrderOwner, offlineOrderController.updateOfflineOrderStage);
 
 // 修复：PATCH /:id 需要支持 FormData（用于更新订单时上传文件）
 // 使用 multer 中间件处理可能的文件上传（assets = 订单级附件，positionAssets = 印刷位置设计图）
@@ -93,6 +98,8 @@ router.patch(
     { name: 'assets', maxCount: adminMaxFilesPerField },
     { name: 'positionAssets', maxCount: adminMaxFilesPerField }
   ]),
+  // 必须放在 multer 之后：multipart 请求要等 multer 解析完才有 req.body / req.files
+  restrictNonOwnerUpdateToStatus,
   offlineOrderController.updateOfflineOrder
 );
 
@@ -101,6 +108,7 @@ router.post('/:id/notes', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrde
 router.post(
   '/:id/assets',
   authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  requireOfflineOrderOwner,
   adminUpload.array('assets', parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)),
   offlineOrderController.uploadOfflineOrderAssets
 );
@@ -108,16 +116,18 @@ router.post(
 router.patch(
   '/:id/assets/:assetId',
   authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  requireOfflineOrderOwner,
   offlineOrderController.updateOfflineOrderAssetComment
 );
 
 router.delete(
   '/:id/assets/:assetId',
   authorizeRoles(...ORDER_MANAGEMENT_ROLES),
+  requireOfflineOrderOwner,
   offlineOrderController.deleteOfflineOrderAsset
 );
 
-router.post('/:id/production', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.createOrUpdateProductionWorkOrder);
+router.post('/:id/production', authorizeRoles(...ORDER_MANAGEMENT_ROLES), requireOfflineOrderOwner, offlineOrderController.createOrUpdateProductionWorkOrder);
 
 // 删除订单 - 仅限 ADMIN
 router.delete('/:id', authorizeRoles('ADMIN'), offlineOrderController.deleteOfflineOrder);

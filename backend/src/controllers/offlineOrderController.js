@@ -15,6 +15,7 @@ const { uploadBufferToGcs, deleteFromGcs } = require('../utils/gcsStorage');
 const { ensureOfflineUploadRoot } = require('../utils/offlineUpload');
 const { InternalServerError } = require('../utils/errors');
 const settingService = require('../services/settingService');
+const { getOfflineOrderCreatorId } = require('../utils/offlineOrderOwnership');
 
 
 const parseBoolean = (value) => {
@@ -509,6 +510,9 @@ const mapOrder = (order) => ({
     email: order._creator.email,
     name: [order._creator.firstName, order._creator.lastName].filter(Boolean).join(' ') || order._creator.email
   } : null,
+  // [2026-08-18] 归属判定用：前端据此决定「别人的订单只能改 Status」。
+  // 不依赖上面的 creator（那个要 join users，详情接口并不填充；用户被删时也会变 null）
+  creatorId: getOfflineOrderCreatorId(order),
   createdAt: order.createdAt,
   updatedAt: order.updatedAt
 });
@@ -2120,7 +2124,21 @@ exports.updateOfflineOrder = async (req, res) => {
       }
       data.configuration = configData;
     }
-    if (metadata !== undefined) data.metadata = safeJsonParse(metadata) || metadata || null;
+    if (metadata !== undefined) {
+      const parsedMetadata = safeJsonParse(metadata) || metadata || null;
+      // [2026-08-18] metadata 是整体覆盖而非逐字段合并。若前端提交的 metadata 里没带
+      // submittedByUserId，订单会退化成「无归属」，非创建者只读的规则随之失效。
+      // 这里用中间件读到的原始创建者兜底回写。
+      const preservedCreatorId = req.offlineOrderCreatorId;
+      if (preservedCreatorId) {
+        const base = parsedMetadata && typeof parsedMetadata === 'object' && !Array.isArray(parsedMetadata)
+          ? parsedMetadata
+          : {};
+        data.metadata = { ...base, submittedByUserId: preservedCreatorId };
+      } else {
+        data.metadata = parsedMetadata;
+      }
+    }
 
     // Payment updates
     if (req.body.paymentMethod !== undefined) data.payment_method = req.body.paymentMethod?.trim() || null;
