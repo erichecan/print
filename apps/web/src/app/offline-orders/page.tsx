@@ -420,7 +420,7 @@ export default function OfflineOrdersIntakePage() {
 
 function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const router = useRouter();
-  const { user } = useAuth(); // 获取登录用户信息
+  const { user, loading: authLoading } = useAuth(); // 获取登录用户信息
 
   // 生成订单编号（与后端格式一致）
   const generateOrderCode = useCallback((): string => {
@@ -460,6 +460,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const [isEditMode, setIsEditMode] = useState(!!editId);
   const [editOrderData, setEditOrderData] = useState<SalesOfflineOrderDetail | null>(null);
   const [loadingEditData, setLoadingEditData] = useState(!!editId);
+  // [2026-08-18] 别人创建的订单不允许进编辑向导（后端 PATCH 也会 403）
+  const [editForbidden, setEditForbidden] = useState(false);
 
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [files, setFiles] = useState<File[]>([]);
@@ -485,12 +487,23 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
   // 加载编辑订单数据（如果editId存在）
   useEffect(() => {
-    if (!editId || !isClient) return;
+    // 等 auth 加载完再判断归属，否则 user 还是 null 会误放行
+    if (!editId || !isClient || authLoading) return;
 
     const loadEditOrder = async () => {
       try {
         setLoadingEditData(true);
         const order = await salesOrdersApi.get(editId);
+
+        // [2026-08-18] 归属校验：creatorId 为空 = 无归属的历史订单，仍可编辑；
+        // 否则只有创建者本人能进编辑向导
+        const ownerId = order?.creatorId ?? null;
+        if (ownerId && ownerId !== user?.id) {
+          setEditForbidden(true);
+          setEditOrderData(order);
+          return;
+        }
+
         setEditOrderData(order);
         setIsEditMode(true);
 
@@ -552,7 +565,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
     };
 
     loadEditOrder();
-  }, [editId, isClient]);
+  }, [editId, isClient, authLoading, user?.id]);
 
   // 确保客户端渲染后再读取localStorage，避免hydration错误
   // 在客户端生成订单编号，避免 hydration 错误
@@ -3010,6 +3023,31 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         {loadingEditData ? (
           <div className="bg-white rounded-2xl p-8 shadow-xl text-center">
             <p className="text-gray-600">正在加载订单数据...</p>
+          </div>
+        ) : editForbidden ? (
+          <div className="bg-white rounded-2xl p-8 shadow-xl text-center grid gap-4 justify-items-center">
+            <div className="text-4xl">🔒</div>
+            <h2 className="text-lg font-semibold text-gray-800">无法编辑他人的订单</h2>
+            <p className="text-gray-600 max-w-md">
+              订单 {editOrderData?.orderCode || editId} 由其他同事创建。你可以查看订单详情、打印和导出，
+              但只有创建人能修改内容；Status 可以在订单列表中直接修改。
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => router.push(`/offline-orders/sales/orders/${editId}`)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+              >
+                查看订单详情
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/offline-orders/sales/orders')}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+              >
+                返回订单列表
+              </button>
+            </div>
           </div>
         ) : (
           <form className="bg-white rounded-2xl p-8 shadow-xl grid gap-8" onSubmit={handleSubmit}>

@@ -4,6 +4,7 @@
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
+const { getOfflineOrderCreatorId } = require('../utils/offlineOrderOwnership');
 
 // Sales 订单映射函数
 // 添加 configuration 和其他字段支持详情页面显示
@@ -40,6 +41,8 @@ const mapSalesOfflineOrder = (order, includeDetails = false) => {
     },
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
+    // [2026-08-18] 归属判定用：别人创建的订单前端只允许改 Status
+    creatorId: getOfflineOrderCreatorId(order),
   };
 
   // 详情接口额外包含的字段

@@ -336,11 +336,13 @@ function AssetRow({
   orderId,
   onDelete,
   onChanged,
+  readOnly = false,
 }: {
   asset: { id: string; fileName: string; url: string; comment?: string | null };
   orderId: string;
   onDelete: (id: string, name: string) => void;
   onChanged: () => void;
+  readOnly?: boolean;
 }) {
   const [draft, setDraft] = useState(asset.comment ?? '');
   const [saving, setSaving] = useState(false);
@@ -388,23 +390,28 @@ function AssetRow({
         >
           ↓
         </button>
-        <button
-          type="button"
-          onClick={() => onDelete(asset.id, asset.fileName)}
-          className="shrink-0 px-1.5 py-0.5 text-[10px] bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          删除
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => onDelete(asset.id, asset.fileName)}
+            className="shrink-0 px-1.5 py-0.5 text-[10px] bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            删除
+          </button>
+        )}
       </div>
       <div className="mt-1">
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           rows={2}
-          placeholder="备注（可选）"
-          className="w-full px-1.5 py-1 text-[11px] border border-gray-200 rounded focus:border-blue-400 focus:outline-none resize-none leading-snug"
+          readOnly={readOnly}
+          placeholder={readOnly ? '' : '备注（可选）'}
+          className={`w-full px-1.5 py-1 text-[11px] border border-gray-200 rounded focus:border-blue-400 focus:outline-none resize-none leading-snug ${
+            readOnly ? 'bg-gray-50 text-gray-500 cursor-default' : ''
+          }`}
         />
-        {isDirty && (
+        {!readOnly && isDirty && (
           <button
             type="button"
             onClick={handleSave}
@@ -447,10 +454,13 @@ function FileCell({
   orderId,
   assets,
   onChanged,
+  readOnly = false,
 }: {
   orderId: string;
   assets: SalesOfflineOrderSummary['assets'];
   onChanged: () => void | Promise<void>;
+  // [2026-08-18] 别人创建的订单：只能查看/下载附件，不能上传、删除、改备注
+  readOnly?: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [rows, setRows] = useState<UploadRow[]>(() =>
@@ -563,6 +573,13 @@ function FileCell({
 
         <div className="flex flex-1 overflow-hidden">
           {/* Left: upload rows */}
+          {readOnly ? (
+            <div className="flex-1 flex items-center justify-center border-r border-gray-200 px-6 text-center text-xs text-gray-500 leading-relaxed">
+              该订单由其他同事创建，附件为只读。
+              <br />
+              你可以查看和下载，但不能上传或删除。
+            </div>
+          ) : (
           <div className="flex-1 flex flex-col border-r border-gray-200 overflow-hidden">
             <div className="px-4 pt-3 pb-1 text-xs text-gray-500 font-medium uppercase tracking-wide">
               上传新文件
@@ -639,6 +656,7 @@ function FileCell({
               </button>
             </div>
           </div>
+          )}
 
           {/* Right: existing files */}
           <div className="w-[260px] flex flex-col overflow-hidden">
@@ -657,6 +675,7 @@ function FileCell({
                       orderId={orderId}
                       onDelete={handleDeleteAsset}
                       onChanged={onChanged}
+                      readOnly={readOnly}
                     />
                   ))}
                 </ul>
@@ -1065,11 +1084,32 @@ export default function OrdersSpreadsheet() {
     refreshStatusOptions();
   }, [refreshStatusOptions]);
 
+  // [2026-08-18] 订单归属：别人创建的订单只能改 Status，其余字段只读预览。
+  // creatorId 为空 = 无归属的历史订单，保持所有人可编辑（否则旧数据会被永久锁死）。
+  const canEditOrder = useCallback(
+    (order: Pick<SalesOfflineOrderSummary, 'creatorId'>) =>
+      !order.creatorId || order.creatorId === currentUser?.id,
+    [currentUser?.id]
+  );
+
+  // 非创建者唯一允许 inline 修改的字段，与后端 restrictNonOwnerUpdateToStatus 保持一致
+  const NON_OWNER_EDITABLE_KEYS = 'status';
+
   // 单字段 patch
   const patchOrder = useCallback(
     async (id: string, patch: Record<string, unknown>) => {
       const order = orders.find((o) => o.id === id);
       const finalPatch = { ...patch };
+
+      // 兜底守卫：UI 已按归属禁用了控件，这里再拦一次，避免任何遗漏的入口把 403 变成脏的乐观更新
+      if (order && !canEditOrder(order)) {
+        const illegal = Object.keys(finalPatch).filter((k) => k !== NON_OWNER_EDITABLE_KEYS);
+        if (illegal.length > 0) {
+          // eslint-disable-next-line no-alert
+          alert('该订单由其他同事创建，你只能修改 Status。');
+          return;
+        }
+      }
       console.log('[patchOrder] id:', id, 'patch:', finalPatch);
 
       // 乐观更新：把 startDate/dueDate 正确嵌套到 productionWorkOrder，避免 key 不变导致 input 不刷新
@@ -1099,7 +1139,7 @@ export default function OrdersSpreadsheet() {
         await refreshOrders();
       }
     },
-    [orders, refreshOrders]
+    [orders, refreshOrders, canEditOrder]
   );
 
   // [2026-07-31] 批量补充成本：每单一个待添加产品明细行列表
@@ -1136,6 +1176,14 @@ export default function OrdersSpreadsheet() {
         continue;
       }
 
+      // [2026-08-18] 别人创建的订单不能改 configuration，后端会 403。这里提前跳过，
+      // 避免整批提交因为一条越权订单而中途报错
+      if (!canEditOrder(order)) {
+        console.warn('[submitBackfill] skipped: order belongs to another user', id);
+        setBackfillProgress((prev) => ({ ...prev, [id]: 'error' }));
+        continue;
+      }
+
       setBackfillProgress((prev) => ({ ...prev, [id]: 'saving' }));
       const newItems = buildProductItemsFromLines(lines);
       try {
@@ -1167,7 +1215,7 @@ export default function OrdersSpreadsheet() {
       }
     }
     await refreshOrders();
-  }, [selectedOrderIds, backfillLines, orders, refreshOrders]);
+  }, [selectedOrderIds, backfillLines, orders, refreshOrders, canEditOrder]);
 
   const addStatusOption = useCallback(
     async (value: string) => {
@@ -1498,10 +1546,15 @@ export default function OrdersSpreadsheet() {
               <th className="px-2 py-2 text-center sticky left-0 z-20 bg-gray-50">
                 <input
                   type="checkbox"
-                  checked={orders.length > 0 && orders.every((o) => selectedOrderIds.has(o.id))}
+                  checked={
+                    orders.filter(canEditOrder).length > 0 &&
+                    orders.filter(canEditOrder).every((o) => selectedOrderIds.has(o.id))
+                  }
                   onChange={(e) => {
                     if (e.target.checked) {
-                      setSelectedOrderIds(new Set(orders.map((o) => o.id)));
+                      // [2026-08-18] 全选只选本人可编辑的订单：批量补充成本会 PATCH configuration，
+                      // 别人的订单后端会 403
+                      setSelectedOrderIds(new Set(orders.filter(canEditOrder).map((o) => o.id)));
                     } else {
                       setSelectedOrderIds(new Set());
                     }
@@ -1760,6 +1813,9 @@ export default function OrdersSpreadsheet() {
               const paid = order.payment?.depositAmount ?? 0;
               const displayType =
                 order.type ?? aggregateTypeFromConfig(order.configuration);
+              // [2026-08-18] 别人创建的订单：除 Status 外全部只读
+              const editable = canEditOrder(order);
+              const lockCls = editable ? '' : ' disabled:bg-transparent disabled:text-gray-500 disabled:cursor-not-allowed';
 
               return (
                 <tr
@@ -1777,6 +1833,8 @@ export default function OrdersSpreadsheet() {
                       type="checkbox"
                       checked={selectedOrderIds.has(order.id)}
                       onChange={() => toggleOrderSelected(order.id)}
+                      disabled={!editable}
+                      title={editable ? undefined : '该订单由其他同事创建，无法批量补充成本'}
                     />
                   </td>
                   {/* 1. 编号 — 冻结列 */}
@@ -1789,6 +1847,14 @@ export default function OrdersSpreadsheet() {
                     )}`}
                   >
                     <span className="block truncate">
+                      {!editable && (
+                        <span
+                          className="mr-1 text-gray-400"
+                          title="该订单由其他同事创建：仅可查看，只有 Status 可改"
+                        >
+                          🔒
+                        </span>
+                      )}
                       {order.orderCode || '—'}
                     </span>
                   </td>
@@ -1802,7 +1868,8 @@ export default function OrdersSpreadsheet() {
                           ? formatDate(order.productionWorkOrder.startDate)
                           : ''
                       }
-                      className="w-full px-1 py-0.5 text-xs bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                      disabled={!editable}
+                      className={`w-full px-1 py-0.5 text-xs bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded${lockCls}`}
                       onBlur={(e) => {
                         const v = e.target.value;
                         const cur = order.productionWorkOrder?.startDate
@@ -1826,7 +1893,8 @@ export default function OrdersSpreadsheet() {
                               }`
                             : ''
                         }
-                        className="flex-1 min-w-0 px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 rounded"
+                        disabled={!editable}
+                        className={`flex-1 min-w-0 px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 rounded${lockCls}`}
                         onBlur={(e) => {
                           const v = e.target.value.trim();
                           const [namePart, ...rest] = v.split('/');
@@ -1849,7 +1917,8 @@ export default function OrdersSpreadsheet() {
                           ? formatDate(order.productionWorkOrder.dueDate)
                           : ''
                       }
-                      className="w-full px-1 py-0.5 text-xs bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                      disabled={!editable}
+                      className={`w-full px-1 py-0.5 text-xs bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded${lockCls}`}
                       onBlur={(e) => {
                         const v = e.target.value;
                         if (
@@ -1870,7 +1939,8 @@ export default function OrdersSpreadsheet() {
                       step="1"
                       min="0"
                       defaultValue={order.quantity != null ? String(order.quantity) : ''}
-                      className="w-full px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded text-right"
+                      disabled={!editable}
+                      className={`w-full px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded text-right${lockCls}`}
                       onBlur={(e) => {
                         const v = e.target.value;
                         const num = v === '' ? null : parseInt(v, 10);
@@ -1887,7 +1957,8 @@ export default function OrdersSpreadsheet() {
                       step="0.01"
                       min="0"
                       defaultValue={total ? total.toFixed(2) : ''}
-                      className="w-full px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded text-right"
+                      disabled={!editable}
+                      className={`w-full px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded text-right${lockCls}`}
                       onBlur={(e) => {
                         const v = e.target.value;
                         const num = v === '' ? null : Number(v);
@@ -1904,7 +1975,8 @@ export default function OrdersSpreadsheet() {
                       step="0.01"
                       min="0"
                       defaultValue={paid ? paid.toFixed(2) : ''}
-                      className="w-full px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded text-right"
+                      disabled={!editable}
+                      className={`w-full px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded text-right${lockCls}`}
                       onBlur={(e) => {
                         const v = e.target.value;
                         const num = v === '' ? null : Number(v);
@@ -1932,7 +2004,8 @@ export default function OrdersSpreadsheet() {
                       onChange={(e) =>
                         patchOrder(order.id, { type: e.target.value || null })
                       }
-                      className="w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                      disabled={!editable}
+                      className={`w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded${lockCls}`}
                     >
                       {TYPE_OPTIONS.map((o) => (
                         <option key={o.value || 'empty'} value={o.value}>
@@ -1951,9 +2024,10 @@ export default function OrdersSpreadsheet() {
                       onChange={(e) =>
                         patchOrder(order.id, { orderCategory: e.target.value || null })
                       }
+                      disabled={!editable}
                       className={`w-full px-1 py-1 text-sm bg-transparent border rounded hover:border-gray-300 focus:border-blue-400 focus:bg-white ${
                         order.orderCategory ? 'border-transparent' : 'border-red-300'
-                      }`}
+                      }${lockCls}`}
                     >
                       {ORDER_CATEGORY_OPTIONS.map((o) => (
                         <option key={o.value || 'empty'} value={o.value}>
@@ -1981,6 +2055,7 @@ export default function OrdersSpreadsheet() {
                           type="checkbox"
                           checked={Boolean(order.excludeFromReports)}
                           onChange={(e) => patchOrder(order.id, { excludeFromReports: e.target.checked })}
+                          disabled={!editable}
                         />
                         排除
                       </label>
@@ -1996,7 +2071,8 @@ export default function OrdersSpreadsheet() {
                       onChange={(e) =>
                         patchOrder(order.id, { stockingStatus: e.target.value || null })
                       }
-                      className="w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                      disabled={!editable}
+                      className={`w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded${lockCls}`}
                     >
                       {STOCKING_OPTIONS.map((o) => (
                         <option key={o.value || 'empty'} value={o.value}>
@@ -2012,7 +2088,8 @@ export default function OrdersSpreadsheet() {
                       onChange={(e) =>
                         patchOrder(order.id, { purchaseStatus: e.target.value || null })
                       }
-                      className="w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                      disabled={!editable}
+                      className={`w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded${lockCls}`}
                     >
                       {PURCHASE_OPTIONS.map((o) => (
                         <option key={o.value || 'empty'} value={o.value}>
@@ -2037,7 +2114,8 @@ export default function OrdersSpreadsheet() {
                       onChange={(e) =>
                         patchOrder(order.id, { invoiceStatus: e.target.value })
                       }
-                      className="w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                      disabled={!editable}
+                      className={`w-full px-1 py-1 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded${lockCls}`}
                     >
                       {INVOICE_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>
@@ -2051,7 +2129,8 @@ export default function OrdersSpreadsheet() {
                     <input
                       defaultValue={order.description || ''}
                       placeholder="备注"
-                      className="w-full px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded"
+                      disabled={!editable}
+                      className={`w-full px-1 py-0.5 text-sm bg-transparent border border-transparent hover:border-gray-300 focus:border-blue-400 focus:bg-white rounded${lockCls}`}
                       onBlur={(e) => {
                         const v = e.target.value;
                         if (v !== (order.description || '')) {
@@ -2067,6 +2146,7 @@ export default function OrdersSpreadsheet() {
                         orderId={order.id}
                         assets={order.assets}
                         onChanged={refreshOrders}
+                        readOnly={!editable}
                       />
                       <button
                         type="button"

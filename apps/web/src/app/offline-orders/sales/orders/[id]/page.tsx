@@ -171,6 +171,8 @@ export default function SalesOrderDetailPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<SalesOfflineOrderDetail | null>(null);
+  // [2026-08-18] 订单归属：别人创建的订单只能改 Status，其余只读预览
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [stages, setStages] = useState<Array<{ key: string; label: string; position: number }>>([]);
   const [updatingStage, setUpdatingStage] = useState(false);
@@ -247,6 +249,9 @@ export default function SalesOrderDetailPage() {
         if (!me || !isSales) {
           router.replace('/offline-orders/sales/login');
           return;
+        }
+        if (!cancelled) {
+          setCurrentUserId(me.id ?? null);
         }
       } catch {
         router.replace('/offline-orders/sales/login');
@@ -346,6 +351,10 @@ export default function SalesOrderDetailPage() {
   };
 
   const meta = order;
+
+  // [2026-08-18] 归属判定：creatorId 为空 = 无归属的历史订单，保持所有人可编辑；
+  // 否则只有创建者本人能改阶段、传/删附件、进编辑向导，其他人只读预览（Status 在列表页改）
+  const canEditOrder = !meta?.creatorId || meta.creatorId === currentUserId;
 
   // 解析配置信息
   const config: OfflineOrderConfiguration | null = meta?.configuration || null;
@@ -1185,8 +1194,26 @@ export default function SalesOrderDetailPage() {
                 </div>
                 <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600 }}>{t('orderDetail')}</h1>
               </div>
-              {/* 编辑按钮 */}
-              {meta && (
+              {/* 编辑按钮 —— [2026-08-18] 仅订单创建者可见，其他人只读预览 */}
+              {meta && !canEditOrder && (
+                <span
+                  className="print:hidden"
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    backgroundColor: '#f1f5f9',
+                    color: '#64748b',
+                    borderRadius: '8px',
+                    fontSize: '0.8125rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.375rem',
+                  }}
+                  title="该订单由其他同事创建，你只能查看；Status 可在订单列表中修改"
+                >
+                  🔒 只读（他人订单）
+                </span>
+              )}
+              {meta && canEditOrder && (
                 <button
                   type="button"
                   onClick={() => router.push(`/offline-orders?editId=${meta.id}`)}
@@ -1233,7 +1260,8 @@ export default function SalesOrderDetailPage() {
                       <select
                         value={meta.stage?.key || ''}
                         onChange={(e) => handleUpdateStage(e.target.value)}
-                        disabled={updatingStage}
+                        disabled={updatingStage || !canEditOrder}
+                        title={canEditOrder ? undefined : '该订单由其他同事创建，无法修改阶段'}
                         className="stage-update-select"
                       >
                         {stages.map((stage) => (
@@ -1249,6 +1277,7 @@ export default function SalesOrderDetailPage() {
                       placeholder={t('notePlaceholder')}
                       className="stage-update-note"
                       rows={2}
+                      disabled={!canEditOrder}
                     />
                   </div>
                 )}
@@ -2043,7 +2072,7 @@ export default function SalesOrderDetailPage() {
                         >
                           下载
                         </button>
-                        {!showPrintSettings && (
+                        {!showPrintSettings && canEditOrder && (
                           <button
                             type="button"
                             title="删除附件"

@@ -1043,6 +1043,9 @@ export interface SalesOfflineOrderSummary {
     email: string;
     name: string;
   } | null;
+  // [2026-08-18] 订单归属（metadata.submittedByUserId）。别人创建的订单只能改 Status。
+  // null = 无归属的历史订单，所有人仍可编辑
+  creatorId?: string | null;
   configuration?: any; // PRD v2.0
   payment?: {
     method: string | null;
